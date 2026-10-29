@@ -1,0 +1,33 @@
+# Runs on every push and pull request. A red check means: do not release.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bun install --frozen-lockfile || bun install
+      - name: Type check
+        run: bun run typecheck
+      - name: Unit tests
+        run: bun run test
+      - name: Build (Cloudflare)
+        run: bun run build:cf
+      - name: Migrations are named and ordered
+        run: |
+          set -e
+          ls supabase/migrations/*.sql >/dev/null
+          for f in supabase/migrations/*.sql; do
+            name=$(basename "$f")
+            echo "$name" | grep -Eq '^[0-9]{14}_[a-z0-9_]+\.sql$' || { echo "Bad migration name: $name"; exit 1; }
+          done
