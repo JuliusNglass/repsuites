@@ -24,6 +24,8 @@ export default defineConfig({
               name: process.env["REPSUITES_CF_WORKER_NAME"] || "repsuites",
               compatibility_date: "2026-09-01",
               observability: { enabled: true },
+              // Keep the plain settings set on the worker in Cloudflare between deploys.
+              keep_vars: true,
             },
           },
         },
