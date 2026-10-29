@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { PublicLayout } from "../components/site/PublicLayout";
 import { requestVisibilityCheck } from "../lib/leads.functions";
+import { BusinessSearch } from "../components/site/BusinessSearch";
+import type { BusinessDetails } from "../lib/places.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -101,8 +103,8 @@ function Home() {
             More local customers <span className="text-primary">finding you and choosing you.</span>
           </h1>
           <p className="mt-5 text-lg text-muted-foreground">
-            When someone nearby needs what you do, they search Google or ask an AI assistant, look at
-            the reviews and pick one. RepSuites makes sure that one is you.
+            When someone nearby needs what you do, they search Google or ask an AI assistant, look
+            at the reviews and pick one. RepSuites makes sure that one is you.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <a
@@ -111,20 +113,27 @@ function Home() {
             >
               Get my free visibility check
             </a>
-            <a href="#how" className="rounded-xl border border-border px-6 py-3 text-base font-semibold">
+            <a
+              href="#how"
+              className="rounded-xl border border-border px-6 py-3 text-base font-semibold"
+            >
               How it works
             </a>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">No card needed. Results within 2 working days.</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            No card needed. Results within 2 working days.
+          </p>
         </div>
       </section>
 
       <section className="px-4 py-14 bg-muted/40">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">Three things that bring in customers</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
+            Three things that bring in customers
+          </h2>
           <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Being good at what you do is not enough if people cannot find you, or find a competitor with
-            better reviews first.
+            Being good at what you do is not enough if people cannot find you, or find a competitor
+            with better reviews first.
           </p>
           <div className="grid md:grid-cols-3 gap-5">
             {outcomes.map((o) => (
@@ -175,13 +184,16 @@ function Home() {
             ))}
           </div>
           <p className="text-center text-sm text-muted-foreground mt-8 max-w-2xl mx-auto">
-            You connect with your own Google account and can disconnect at any time. Read how we handle
-            Google data in our{" "}
+            You connect with your own Google account and can disconnect at any time. Read how we
+            handle Google data in our{" "}
             <Link to="/privacy" className="underline underline-offset-2 text-foreground">
               Privacy Policy
             </Link>
             , or see{" "}
-            <Link to="/google-business-profile" className="underline underline-offset-2 text-foreground">
+            <Link
+              to="/google-business-profile"
+              className="underline underline-offset-2 text-foreground"
+            >
               how the Google connection works
             </Link>
             .
@@ -194,8 +206,9 @@ function Home() {
           <div>
             <h2 className="text-3xl font-bold mb-3">Reviews on the counter, not just online</h2>
             <p className="text-muted-foreground mb-4">
-              Tap-and-scan review cards and table stands send happy customers straight to your Google
-              review page. One scan, one tap, done. Already have RepSuites cards? They keep working.
+              Tap-and-scan review cards and table stands send happy customers straight to your
+              Google review page. One scan, one tap, done. Already have RepSuites cards? They keep
+              working.
             </p>
             <Link to="/cards" className="font-semibold underline underline-offset-2">
               About review cards
@@ -215,8 +228,8 @@ function Home() {
         <div className="max-w-xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-2">Get your free visibility check</h2>
           <p className="text-center text-muted-foreground mb-8">
-            See where you show up on Google Maps across your area, how your reviews compare, and whether
-            AI assistants mention you. We send it within 2 working days.
+            See where you show up on Google Maps across your area, how your reviews compare, and
+            whether AI assistants mention you. We send it within 2 working days.
           </p>
           <CheckForm />
         </div>
@@ -227,7 +240,15 @@ function Home() {
 
 function CheckForm() {
   const send = useServerFn(requestVisibilityCheck);
-  const [f, setF] = useState({ name: "", business: "", town: "", email: "", phone: "", website: "" });
+  const [f, setF] = useState({
+    name: "",
+    business: "",
+    town: "",
+    email: "",
+    phone: "",
+    website: "",
+  });
+  const [place, setPlace] = useState<BusinessDetails | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -248,7 +269,9 @@ function CheckForm() {
       <div className="rounded-2xl border border-border bg-card p-6 text-center">
         <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
         <p className="font-semibold">Thanks, we have your details.</p>
-        <p className="text-sm text-muted-foreground">Your visibility check will arrive by email within 2 working days.</p>
+        <p className="text-sm text-muted-foreground">
+          Your visibility check will arrive by email within 2 working days.
+        </p>
       </div>
     );
   return (
@@ -259,7 +282,21 @@ function CheckForm() {
         setBusy(true);
         setErr(null);
         try {
-          const r = await send({ data: f });
+          const r = await send({
+            data: {
+              ...f,
+              place: place
+                ? {
+                    placeId: place.placeId,
+                    address: place.address,
+                    rating: place.rating,
+                    reviewCount: place.reviewCount,
+                    websiteUrl: place.website,
+                    mapsUrl: place.mapsUrl,
+                  }
+                : null,
+            },
+          });
           if (r.ok) setDone(true);
           else setErr(r.error);
         } catch {
@@ -270,7 +307,21 @@ function CheckForm() {
       }}
     >
       {field("name", "Your name")}
-      {field("business", "Business name")}
+      <BusinessSearch
+        value={f.business}
+        onChange={(v) => setF((cur) => ({ ...cur, business: v }))}
+        confirmed={place}
+        onConfirm={(b) => {
+          setPlace(b);
+          if (b)
+            setF((cur) => ({
+              ...cur,
+              business: b.name || cur.business,
+              town: cur.town || b.town,
+              phone: cur.phone || b.phone,
+            }));
+        }}
+      />
       {field("town", "Town or city")}
       {field("email", "Email", "email")}
       {field("phone", "Phone (optional)", "tel", false)}
@@ -293,7 +344,10 @@ function CheckForm() {
       </button>
       <p className="text-xs text-muted-foreground text-center">
         We use your details only to send your check and follow up about it. See our{" "}
-        <Link to="/privacy" className="underline">Privacy Policy</Link>.
+        <Link to="/privacy" className="underline">
+          Privacy Policy
+        </Link>
+        .
       </p>
     </form>
   );

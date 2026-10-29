@@ -11,14 +11,10 @@ export const PRODUCTION_SUPABASE_URL = "https://ljosiwovyixvvxokyuel.supabase.co
 // project only.
 export const PRODUCTION_PROJECT_REF = "ljosiwovyixvvxokyuel";
 
-// The staging project. A deployment talks to staging only when it is
-// explicitly configured with REPSUITES_SUPABASE_PROJECT set to this ref; any
-// other value (or none) means production. No other project is ever allowed.
-export const STAGING_PROJECT_REF = "ckapvrahthzdnkmekdus";
-
+// RepSuites has one database (production). The ref is fixed so this app can
+// never talk to another project, including SparkOps' databases.
 export function activeProjectRef(): string {
-  const v = (process.env["REPSUITES_SUPABASE_PROJECT"] ?? "").trim();
-  return v === STAGING_PROJECT_REF ? STAGING_PROJECT_REF : PRODUCTION_PROJECT_REF;
+  return PRODUCTION_PROJECT_REF;
 }
 
 export function activeSupabaseUrl(): string {

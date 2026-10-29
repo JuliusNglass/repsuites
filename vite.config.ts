@@ -26,6 +26,8 @@ export default defineConfig({
               observability: { enabled: true },
               // Keep the plain settings set on the worker in Cloudflare between deploys.
               keep_vars: true,
+              // Only repsuites.com serves the app (sign-in is tied to that address).
+              workers_dev: false,
             },
           },
         },
