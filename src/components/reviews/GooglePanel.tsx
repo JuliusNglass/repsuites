@@ -286,13 +286,23 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
       ) : (
         <p className="text-xs text-muted-foreground">Stars only, no comment.</p>
       )}
-      {r.reply ? (
+      {r.reply && !open ? (
         <div className="rounded-md bg-muted/60 p-2 text-xs">
           <div className="font-semibold mb-0.5">
             {r.auto ? "Answered automatically" : "Your reply"}{" "}
             {r.replyAt ? `(${when(r.replyAt)})` : ""}
           </div>
           <p className="whitespace-pre-line">{r.reply}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setText(r.reply ?? "");
+              setOpen(true);
+            }}
+            className="mt-1.5 font-semibold text-primary"
+          >
+            Edit reply
+          </button>
         </div>
       ) : !open ? (
         <div className="flex gap-3 text-xs">
@@ -339,14 +349,18 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
                 setBusy("post");
                 const res = await postGoogleReplyFn({ data: { id: r.id, text } });
                 setBusy(null);
-                if (res.ok) toast.success("Reply posted on Google");
-                else toast.error(res.error);
+                if (res.ok) {
+                  toast.success(r.reply ? "Reply updated on Google" : "Reply posted on Google");
+                  setOpen(false);
+                } else toast.error(res.error);
                 await onChanged();
               }}
               className="rounded-lg bg-primary text-primary-foreground px-3 py-1 font-semibold disabled:opacity-50"
             >
               {busy === "post" ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : r.reply ? (
+                "Update reply on Google"
               ) : (
                 "Post reply on Google"
               )}
