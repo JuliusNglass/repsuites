@@ -51,7 +51,11 @@ async function askClaude(prompt: string): Promise<{ text: string } | { error: st
         messages: [{ role: "user", content: prompt }],
       }),
     });
-    if (!res.ok) return { error: `The summary could not be written (${res.status}).` };
+    if (!res.ok) {
+      const b = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+      const why = String(b?.error?.message ?? "").slice(0, 160);
+      return { error: `The summary could not be written (${res.status}${why ? `: ${why}` : ""}).` };
+    }
     const body = (await res.json()) as { content?: { type: string; text?: string }[] };
     return {
       text: (body.content ?? [])
