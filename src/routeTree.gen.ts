@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CardsRouteImport } from './routes/cards'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
@@ -20,6 +19,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
 import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
 import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
@@ -33,11 +33,6 @@ import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api.google.
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CardsRoute = CardsRouteImport.update({
-  id: '/cards',
-  path: '/cards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -85,15 +80,20 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CardsIndexRoute = CardsIndexRouteImport.update({
+  id: '/cards/',
+  path: '/cards/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CardsOrderRoute = CardsOrderRouteImport.update({
-  id: '/order',
-  path: '/order',
-  getParentRoute: () => CardsRoute,
+  id: '/cards/order',
+  path: '/cards/order',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CardsThanksRoute = CardsThanksRouteImport.update({
-  id: '/thanks',
-  path: '/thanks',
-  getParentRoute: () => CardsRoute,
+  id: '/cards/thanks',
+  path: '/cards/thanks',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const FeedbackIdRoute = FeedbackIdRouteImport.update({
   id: '/feedback/$id',
@@ -133,7 +133,6 @@ const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/cards': typeof CardsRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
@@ -147,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/r/$token': typeof RTokenRoute
+  '/cards/': typeof CardsIndexRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -155,7 +155,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/cards': typeof CardsRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
@@ -169,6 +168,7 @@ export interface FileRoutesByTo {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/r/$token': typeof RTokenRoute
+  '/cards': typeof CardsIndexRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -178,7 +178,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/cards': typeof CardsRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
@@ -192,6 +191,7 @@ export interface FileRoutesById {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/r/$token': typeof RTokenRoute
+  '/cards/': typeof CardsIndexRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -202,7 +202,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/cards'
     | '/dashboard'
     | '/forgot-password'
     | '/google-business-profile'
@@ -216,6 +215,7 @@ export interface FileRouteTypes {
     | '/cards/thanks'
     | '/feedback/$id'
     | '/r/$token'
+    | '/cards/'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -224,7 +224,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/cards'
     | '/dashboard'
     | '/forgot-password'
     | '/google-business-profile'
@@ -238,6 +237,7 @@ export interface FileRouteTypes {
     | '/cards/thanks'
     | '/feedback/$id'
     | '/r/$token'
+    | '/cards'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -246,7 +246,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/cards'
     | '/dashboard'
     | '/forgot-password'
     | '/google-business-profile'
@@ -260,6 +259,7 @@ export interface FileRouteTypes {
     | '/cards/thanks'
     | '/feedback/$id'
     | '/r/$token'
+    | '/cards/'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -269,7 +269,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CardsRoute: typeof CardsRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
@@ -279,8 +278,11 @@ export interface RootRouteChildren {
   ProspectsRoute: typeof ProspectsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  CardsOrderRoute: typeof CardsOrderRoute
+  CardsThanksRoute: typeof CardsThanksRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
   RTokenRoute: typeof RTokenRoute
+  CardsIndexRoute: typeof CardsIndexRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
@@ -295,13 +297,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cards': {
-      id: '/cards'
-      path: '/cards'
-      fullPath: '/cards'
-      preLoaderRoute: typeof CardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -367,19 +362,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cards/': {
+      id: '/cards/'
+      path: '/cards'
+      fullPath: '/cards/'
+      preLoaderRoute: typeof CardsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cards/order': {
       id: '/cards/order'
-      path: '/order'
+      path: '/cards/order'
       fullPath: '/cards/order'
       preLoaderRoute: typeof CardsOrderRouteImport
-      parentRoute: typeof CardsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/cards/thanks': {
       id: '/cards/thanks'
-      path: '/thanks'
+      path: '/cards/thanks'
       fullPath: '/cards/thanks'
       preLoaderRoute: typeof CardsThanksRouteImport
-      parentRoute: typeof CardsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/feedback/$id': {
       id: '/feedback/$id'
@@ -433,21 +435,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface CardsRouteChildren {
-  CardsOrderRoute: typeof CardsOrderRoute
-  CardsThanksRoute: typeof CardsThanksRoute
-}
-
-const CardsRouteChildren: CardsRouteChildren = {
-  CardsOrderRoute: CardsOrderRoute,
-  CardsThanksRoute: CardsThanksRoute,
-}
-
-const CardsRouteWithChildren = CardsRoute._addFileChildren(CardsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CardsRoute: CardsRouteWithChildren,
   DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GoogleBusinessProfileRoute: GoogleBusinessProfileRoute,
@@ -457,8 +446,11 @@ const rootRouteChildren: RootRouteChildren = {
   ProspectsRoute: ProspectsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  CardsOrderRoute: CardsOrderRoute,
+  CardsThanksRoute: CardsThanksRoute,
   FeedbackIdRoute: FeedbackIdRoute,
   RTokenRoute: RTokenRoute,
+  CardsIndexRoute: CardsIndexRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,

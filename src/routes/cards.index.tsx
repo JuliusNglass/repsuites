@@ -18,7 +18,7 @@ import { PublicLayout } from "../components/site/PublicLayout";
 import { CARD_MESSAGES, CardPreview, StandPreview } from "../components/shop/CardPreview";
 import { CARD_PACKS, STAND_PACKS, each, money } from "../lib/shop";
 
-export const Route = createFileRoute("/cards")({
+export const Route = createFileRoute("/cards/")({
   head: () => ({
     meta: [
       { title: "Google review cards and table stands | RepSuites" },
@@ -143,10 +143,10 @@ function Cards() {
           </div>
           <div className="relative h-[300px] sm:h-[380px]">
             <div className="absolute inset-0 rounded-[2rem] bg-primary/15 rotate-3" />
-            <div className="absolute left-[4%] top-[12%] w-[70%] -rotate-6">
+            <div className="absolute left-[2%] top-[8%] w-[66%] -rotate-6">
               <CardPreview name="The Corner Cafe" message={CARD_MESSAGES[0]!} />
             </div>
-            <div className="absolute right-[4%] bottom-[2%] w-[34%] rotate-3">
+            <div className="absolute right-[3%] bottom-[-2%] w-[30%] rotate-3">
               <StandPreview name="The Corner Cafe" message={CARD_MESSAGES[1]!} />
             </div>
           </div>
