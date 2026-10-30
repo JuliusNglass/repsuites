@@ -201,7 +201,9 @@ export async function mapsResults(auth: string, keyword: string, lat: number, ln
       body: JSON.stringify([
         {
           keyword,
-          location_coordinate: `${lat},${lng},14z`,
+          // Zoom 13: a phone screen shows about 3 miles across, so a business
+          // a mile or two away is not cut off just by the screen edge.
+          location_coordinate: `${lat},${lng},13z`,
           language_code: "en",
           device: "mobile",
           depth: 20,
