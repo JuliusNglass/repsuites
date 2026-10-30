@@ -11,8 +11,9 @@ import {
   removePostPictureFn,
   saveCardPictureFn,
 } from "../../lib/post-plan.functions";
-import { getBranding } from "../../lib/brand.functions";
-import { drawReviewCard } from "../../lib/review-card";
+import { getBranding, saveBrandLook } from "../../lib/brand.functions";
+import { CARD_STYLES, cardLook, chosenStyle, type SavedLook } from "../../lib/card-style";
+import { loadPicture, drawReviewCard } from "../../lib/review-card";
 import { cancelGooglePostFn } from "../../lib/google-business.functions";
 
 interface Draft {
@@ -48,6 +49,26 @@ export function PostPlanCard({
   // Picture shown full size (tap a thumbnail to check it before approving).
   const [viewing, setViewing] = useState<string | null>(null);
   const drawing = useRef(new Set<string>());
+  // The business's saved look (logo, QR stand photo and colours, card style).
+  const [look, setLook] = useState<SavedLook | null>(null);
+  const [styleBusy, setStyleBusy] = useState(false);
+  useEffect(() => {
+    void getBranding()
+      .then((b) =>
+        setLook(
+          b.ok
+            ? {
+                background: b.background,
+                standTheme: b.standTheme,
+                primary: b.primary,
+                cardStyle: b.cardStyle,
+              }
+            : { background: null, standTheme: null, primary: null, cardStyle: null },
+        ),
+      )
+      .catch(() => null);
+  }, []);
+  const hasCards = drafts.some((d) => d.imageKind === "card");
 
   // Review cards are drawn here, on the owner's screen, then saved where
   // Google can fetch them when the post goes out.
@@ -60,6 +81,18 @@ export function PostPlanCard({
       const b = await getBranding().catch(() => null);
       const primary = b && b.ok ? b.primary : null;
       const secondary = b && b.ok ? b.secondary : null;
+      const logo = b && b.ok && b.logo ? await loadPicture(b.logo) : null;
+      const chosen =
+        b && b.ok
+          ? cardLook({
+              background: b.background,
+              standTheme: b.standTheme,
+              primary: b.primary,
+              cardStyle: b.cardStyle,
+            })
+          : ({ kind: "brand" } as const);
+      const photo = chosen.kind === "photo" ? await loadPicture(chosen.url) : null;
+      const themeId = chosen.kind === "brand" ? "brand" : chosen.themeId;
       let saved = 0;
       for (const d of todo) {
         drawing.current.add(d.id);
@@ -69,6 +102,9 @@ export function PostPlanCard({
           by: d.imageBy,
           primary,
           secondary,
+          logo,
+          themeId,
+          photo,
         });
         const r = await saveCardPictureFn({ data: { id: d.id, png } }).catch(() => null);
         if (r?.ok) saved++;
@@ -119,6 +155,37 @@ export function PostPlanCard({
           <h2 className="text-sm font-bold flex items-center gap-1.5">
             <Sparkles className="w-4 h-4" /> Plan my month
           </h2>
+          {hasCards && look && (
+            <label className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-semibold">Card style</span>
+              <select
+                value={chosenStyle(look)}
+                disabled={styleBusy}
+                onChange={async (e) => {
+                  const id = e.target.value;
+                  setStyleBusy(true);
+                  const r = await saveBrandLook({ data: { cardStyle: id } }).catch(() => null);
+                  if (r?.ok) {
+                    setLook({ ...look, cardStyle: id });
+                    drawing.current.clear();
+                    await onChanged();
+                  } else toast.error(r && !r.ok ? r.error : "Could not change the style.");
+                  setStyleBusy(false);
+                }}
+                className="rounded-lg border border-input bg-background px-2 py-1 text-xs"
+              >
+                {CARD_STYLES(look).map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+              {styleBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span className="text-muted-foreground">
+                Review cards use your logo and this look.
+              </span>
+            </label>
+          )}
           <p className="text-xs text-muted-foreground">
             We write 4 posts from what your customers say, one for each week. You check them, then
             we post one every Tuesday at 11am.

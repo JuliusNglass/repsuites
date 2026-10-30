@@ -7,7 +7,14 @@ import { Download, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { brandTheme, normaliseHex } from "../../lib/brand";
-import { getBranding, saveBranding } from "../../lib/brand.functions";
+import {
+  getBranding,
+  saveBrandBackground,
+  saveBranding,
+  saveBrandLogo,
+  saveBrandLook,
+} from "../../lib/brand.functions";
+import { loadPicture } from "../../lib/review-card";
 import {
   downloadPdf,
   downloadPng,
@@ -29,6 +36,16 @@ function loadImage(file: File): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error("load"));
     img.src = url;
   });
+}
+
+// A smaller copy of a picture as a data URL, so it can be saved for next time.
+function shrink(img: HTMLImageElement, maxW: number, type: "image/png" | "image/jpeg"): string {
+  const k = Math.min(1, maxW / img.width);
+  const c = document.createElement("canvas");
+  c.width = Math.round(img.width * k);
+  c.height = Math.round(img.height * k);
+  c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL(type, 0.85);
 }
 
 const field =
@@ -64,6 +81,10 @@ export function PrintDesigner({
           setThemeId("brand");
         }
         if (r.secondary) setSecondaryHex(r.secondary);
+        // The QR stand look saved last time: theme, logo and background photo.
+        if (r.standTheme && (r.standTheme !== "brand" || r.primary)) setThemeId(r.standTheme);
+        if (r.logo) void loadPicture(r.logo).then((i) => i && setLogo(i));
+        if (r.background) void loadPicture(r.background).then((i) => i && setPhoto(i));
       })
       .catch(() => null);
   }, [loadBrand]);
@@ -135,13 +156,41 @@ export function PrintDesigner({
     preview.current.replaceChildren(c);
   }, [design]);
 
-  const pick = async (file: File | undefined, set: (i: HTMLImageElement) => void) => {
+  const pick = async (
+    file: File | undefined,
+    set: (i: HTMLImageElement) => void,
+    kind: "logo" | "photo",
+  ) => {
     if (!file) return;
+    let img: HTMLImageElement;
     try {
-      set(await loadImage(file));
+      img = await loadImage(file);
     } catch {
       toast.error("Use a PNG, JPG or WEBP image under 15 MB.");
+      return;
     }
+    set(img);
+    // Remembered for next time and used on review cards for Google posts.
+    const r =
+      kind === "logo"
+        ? await saveBrandLogo({ data: { png: shrink(img, 800, "image/png") } }).catch(() => null)
+        : await saveBrandBackground({ data: { jpeg: shrink(img, 1600, "image/jpeg") } }).catch(
+            () => null,
+          );
+    if (r && !r.ok) toast.error(r.error);
+  };
+  const forget = (kind: "logo" | "photo") => {
+    if (kind === "logo") {
+      setLogo(null);
+      void saveBrandLogo({ data: { png: null } }).catch(() => null);
+    } else {
+      setPhoto(null);
+      void saveBrandBackground({ data: { jpeg: null } }).catch(() => null);
+    }
+  };
+  const chooseTheme = (id: string) => {
+    setThemeId(id);
+    void saveBrandLook({ data: { standTheme: id } }).catch(() => null);
   };
 
   return (
@@ -236,7 +285,7 @@ export function PrintDesigner({
                     type="button"
                     title="Your brand colours"
                     aria-label="Your brand colours"
-                    onClick={() => setThemeId("brand")}
+                    onClick={() => chooseTheme("brand")}
                     className={`w-9 h-9 rounded-full border-2 ${themeId === "brand" ? "border-primary" : "border-border"}`}
                     style={{
                       background: `linear-gradient(135deg, ${primary} 60%, ${secondary ?? primary} 60%)`,
@@ -249,7 +298,7 @@ export function PrintDesigner({
                     type="button"
                     title={t.name}
                     aria-label={t.name}
-                    onClick={() => setThemeId(t.id)}
+                    onClick={() => chooseTheme(t.id)}
                     className={`w-9 h-9 rounded-full border-2 ${themeId === t.id ? "border-primary" : "border-border"}`}
                     style={{ background: `linear-gradient(135deg, ${t.bg[0]}, ${t.bg[1]})` }}
                   />
@@ -307,7 +356,7 @@ export function PrintDesigner({
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => void pick(e.target.files?.[0], setLogo)}
+                  onChange={(e) => void pick(e.target.files?.[0], setLogo, "logo")}
                 />
               </label>
               <label className="rounded-lg border border-dashed border-border px-3 py-3 text-sm cursor-pointer text-center">
@@ -317,19 +366,19 @@ export function PrintDesigner({
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => void pick(e.target.files?.[0], setPhoto)}
+                  onChange={(e) => void pick(e.target.files?.[0], setPhoto, "photo")}
                 />
               </label>
             </div>
             {(logo || photo) && (
               <div className="flex gap-3 text-xs">
                 {logo && (
-                  <button type="button" className="underline" onClick={() => setLogo(null)}>
+                  <button type="button" className="underline" onClick={() => forget("logo")}>
                     Remove logo
                   </button>
                 )}
                 {photo && (
-                  <button type="button" className="underline" onClick={() => setPhoto(null)}>
+                  <button type="button" className="underline" onClick={() => forget("photo")}>
                     Remove photo
                   </button>
                 )}
