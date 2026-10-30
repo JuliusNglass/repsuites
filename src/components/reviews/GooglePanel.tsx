@@ -261,7 +261,17 @@ function Stars({ n }: { n: number }) {
 function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<void> }) {
   const [text, setText] = useState(r.draft ?? "");
   const [busy, setBusy] = useState<string | null>(null);
+  // The reply box stays closed until needed, so the list stays short on phones.
+  const [open, setOpen] = useState(!!r.draft || !!r.error);
   useEffect(() => setText(r.draft ?? ""), [r.draft]);
+  const draft = async () => {
+    setOpen(true);
+    setBusy("draft");
+    const res = await draftGoogleReplyFn({ data: { id: r.id } });
+    setBusy(null);
+    if (res.ok) setText(res.draft);
+    else toast.error(res.error);
+  };
   return (
     <div
       className={`rounded-lg border p-3 space-y-2 ${!r.reply && r.stars <= 3 ? "border-destructive/40" : "border-border"}`}
@@ -284,6 +294,24 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
           </div>
           <p className="whitespace-pre-line">{r.reply}</p>
         </div>
+      ) : !open ? (
+        <div className="flex gap-3 text-xs">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="rounded-lg border border-border px-3 py-1 font-semibold"
+          >
+            Reply
+          </button>
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void draft()}
+            className="font-semibold text-primary disabled:opacity-50"
+          >
+            {busy === "draft" ? "Drafting..." : "Draft a reply"}
+          </button>
+        </div>
       ) : (
         <div className="space-y-2">
           <textarea
@@ -299,13 +327,7 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
             <button
               type="button"
               disabled={busy !== null}
-              onClick={async () => {
-                setBusy("draft");
-                const res = await draftGoogleReplyFn({ data: { id: r.id } });
-                setBusy(null);
-                if (res.ok) setText(res.draft);
-                else toast.error(res.error);
-              }}
+              onClick={() => void draft()}
               className="font-semibold text-primary disabled:opacity-50"
             >
               {busy === "draft" ? "Drafting..." : text ? "New draft" : "Draft a reply"}
