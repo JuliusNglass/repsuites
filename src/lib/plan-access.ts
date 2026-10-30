@@ -6,7 +6,7 @@
 // (banners, hidden menu items).
 
 export type Feature = "ranking" | "ai_visibility" | "nfc";
-export type Plan = "free" | "pro" | "gold";
+export type Plan = "free" | "starter" | "pro" | "gold";
 export type PaymentStatus = "active" | "overdue" | "read_only" | "on_hold" | "cancelled";
 
 export interface TenantAccess {
@@ -26,12 +26,13 @@ export interface TenantAccess {
   agency: boolean;
 }
 
-export const PLANS: Plan[] = ["free", "pro", "gold"];
+export const PLANS: Plan[] = ["free", "starter", "pro", "gold"];
 export const FEATURES: Feature[] = ["ranking", "ai_visibility", "nfc"];
 const STATUSES: PaymentStatus[] = ["active", "overdue", "read_only", "on_hold", "cancelled"];
 
 export const PLAN_LABELS: Record<Plan, string> = {
   free: "Free",
+  starter: "Starter",
   pro: "Pro",
   gold: "Gold",
 };

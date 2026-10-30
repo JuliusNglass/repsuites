@@ -15,16 +15,19 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
+import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
 import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api.google.oauth.callback'
 
 const IndexRoute = IndexRouteImport.update({
@@ -57,6 +60,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -80,6 +88,11 @@ const TermsRoute = TermsRouteImport.update({
 const CardsOrderRoute = CardsOrderRouteImport.update({
   id: '/order',
   path: '/order',
+  getParentRoute: () => CardsRoute,
+} as any)
+const CardsThanksRoute = CardsThanksRouteImport.update({
+  id: '/thanks',
+  path: '/thanks',
   getParentRoute: () => CardsRoute,
 } as any)
 const FeedbackIdRoute = FeedbackIdRouteImport.update({
@@ -107,6 +120,11 @@ const ApiInternalRankChecksRoute = ApiInternalRankChecksRouteImport.update({
   path: '/api/internal/rank-checks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   id: '/api/google/oauth/callback',
   path: '/api/google/oauth/callback',
@@ -120,16 +138,19 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/cards/order': typeof CardsOrderRoute
+  '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/r/$token': typeof RTokenRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -139,16 +160,19 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/cards/order': typeof CardsOrderRoute
+  '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/r/$token': typeof RTokenRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
 export interface FileRoutesById {
@@ -159,16 +183,19 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
+  '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/cards/order': typeof CardsOrderRoute
+  '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/r/$token': typeof RTokenRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
 export interface FileRouteTypes {
@@ -180,16 +207,19 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/prospects'
     | '/reset-password'
     | '/terms'
     | '/cards/order'
+    | '/cards/thanks'
     | '/feedback/$id'
     | '/r/$token'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
+    | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -199,16 +229,19 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/prospects'
     | '/reset-password'
     | '/terms'
     | '/cards/order'
+    | '/cards/thanks'
     | '/feedback/$id'
     | '/r/$token'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
+    | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
   id:
     | '__root__'
@@ -218,16 +251,19 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
+    | '/pricing'
     | '/privacy'
     | '/prospects'
     | '/reset-password'
     | '/terms'
     | '/cards/order'
+    | '/cards/thanks'
     | '/feedback/$id'
     | '/r/$token'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
+    | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
   fileRoutesById: FileRoutesById
 }
@@ -238,6 +274,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
   LoginRoute: typeof LoginRoute
+  PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProspectsRoute: typeof ProspectsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -247,6 +284,7 @@ export interface RootRouteChildren {
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
 }
 
@@ -294,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -327,6 +372,13 @@ declare module '@tanstack/react-router' {
       path: '/order'
       fullPath: '/cards/order'
       preLoaderRoute: typeof CardsOrderRouteImport
+      parentRoute: typeof CardsRoute
+    }
+    '/cards/thanks': {
+      id: '/cards/thanks'
+      path: '/thanks'
+      fullPath: '/cards/thanks'
+      preLoaderRoute: typeof CardsThanksRouteImport
       parentRoute: typeof CardsRoute
     }
     '/feedback/$id': {
@@ -364,6 +416,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalRankChecksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/google/oauth/callback': {
       id: '/api/google/oauth/callback'
       path: '/api/google/oauth/callback'
@@ -376,10 +435,12 @@ declare module '@tanstack/react-router' {
 
 interface CardsRouteChildren {
   CardsOrderRoute: typeof CardsOrderRoute
+  CardsThanksRoute: typeof CardsThanksRoute
 }
 
 const CardsRouteChildren: CardsRouteChildren = {
   CardsOrderRoute: CardsOrderRoute,
+  CardsThanksRoute: CardsThanksRoute,
 }
 
 const CardsRouteWithChildren = CardsRoute._addFileChildren(CardsRouteChildren)
@@ -391,6 +452,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   GoogleBusinessProfileRoute: GoogleBusinessProfileRoute,
   LoginRoute: LoginRoute,
+  PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProspectsRoute: ProspectsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -400,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport

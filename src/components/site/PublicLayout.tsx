@@ -13,11 +13,14 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             <Logo />
           </Link>
           <nav className="flex items-center gap-2 sm:gap-4 text-sm">
+            <Link to="/cards" className="text-muted-foreground hover:text-foreground px-1">
+              Cards
+            </Link>
             <Link
-              to="/privacy"
+              to="/pricing"
               className="hidden sm:inline text-muted-foreground hover:text-foreground"
             >
-              Privacy
+              Pricing
             </Link>
             <Link to="/login" className="text-muted-foreground hover:text-foreground px-2">
               Log in
@@ -26,7 +29,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               href="/#check"
               className="rounded-lg bg-primary text-primary-foreground font-semibold px-3 sm:px-4 py-2"
             >
-              Free visibility check
+              <span className="sm:hidden">Free check</span>
+              <span className="hidden sm:inline">Free visibility check</span>
             </a>
           </nav>
         </div>
@@ -43,6 +47,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             </Link>
             <Link to="/google-business-profile" className="hover:text-foreground">
               Google connection
+            </Link>
+            <Link to="/pricing" className="hover:text-foreground">
+              Pricing
             </Link>
             <Link to="/terms" className="hover:text-foreground">
               Terms of Service
