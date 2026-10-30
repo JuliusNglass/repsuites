@@ -45,6 +45,8 @@ export function PostPlanCard({
   const [busy, setBusy] = useState<"plan" | "approve" | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
   const [picBusy, setPicBusy] = useState<string | null>(null);
+  // Picture shown full size (tap a thumbnail to check it before approving).
+  const [viewing, setViewing] = useState<string | null>(null);
   const drawing = useRef(new Set<string>());
 
   // Review cards are drawn here, on the owner's screen, then saved where
@@ -90,6 +92,28 @@ export function PostPlanCard({
 
   return (
     <section className="rounded-xl border border-primary/40 bg-primary/5 p-4 space-y-3">
+      {viewing && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Picture full size"
+          onClick={() => setViewing(null)}
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <img
+            src={viewing}
+            alt="Picture for this post, full size"
+            className="max-w-full max-h-[85vh] rounded-xl shadow-2xl"
+          />
+          <button
+            type="button"
+            onClick={() => setViewing(null)}
+            className="absolute top-4 right-4 rounded-full bg-white text-black px-3 py-1 text-sm font-bold"
+          >
+            Close
+          </button>
+        </div>
+      )}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-sm font-bold flex items-center gap-1.5">
@@ -152,11 +176,18 @@ export function PostPlanCard({
                 </div>
                 <div className="flex items-center gap-3">
                   {p.imageUrl ? (
-                    <img
-                      src={p.imageUrl}
-                      alt="Picture for this post"
-                      className="w-20 h-20 rounded-lg object-cover border border-border bg-muted"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setViewing(p.imageUrl)}
+                      aria-label="See this picture full size"
+                      className="shrink-0"
+                    >
+                      <img
+                        src={p.imageUrl}
+                        alt="Picture for this post"
+                        className="w-20 h-20 rounded-lg object-cover border border-border bg-muted hover:opacity-90"
+                      />
+                    </button>
                   ) : (
                     <div className="w-20 h-20 rounded-lg border border-dashed border-border bg-muted flex items-center justify-center text-[10px] text-muted-foreground text-center p-1">
                       {p.imageKind === "card" ? (
@@ -169,7 +200,9 @@ export function PostPlanCard({
                   <div className="flex flex-col items-start gap-1 text-xs">
                     <span className="text-muted-foreground">
                       {p.imageKind === "google"
-                        ? "A photo from your Google profile"
+                        ? p.imageBy === "customer"
+                          ? "A customer's photo from Google (tap to see it). Only use it if you are happy to."
+                          : "A photo from your Google profile (tap to see it)"
                         : p.imageKind === "card"
                           ? "A card with a customer's review"
                           : "Text only"}

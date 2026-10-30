@@ -242,7 +242,7 @@ export async function planGooglePosts() {
       image_url: photo?.url ?? null,
       image_kind: photo ? "google" : card ? "card" : null,
       image_quote: card?.quote ?? null,
-      image_by: card?.by || null,
+      image_by: photo ? (photo.byCustomer ? "customer" : null) : card?.by || null,
       tenant_id: g.tenantId,
       summary: p.text,
       action_type: button,
@@ -306,16 +306,28 @@ function toQuotes(rows: { reviewer: string | null; comment: string | null }[]): 
     }));
 }
 
-// The business's own photos on Google (one call, up to 100).
+// Photos on the Google profile: the business's own first, then photos
+// customers added (labelled, so the owner can choose). One call each.
 async function googlePhotos(token: string, path: string): Promise<GooglePhoto[]> {
-  const r = await google(token, `https://mybusiness.googleapis.com/v4/${path}/media?pageSize=100`);
-  if (!r.ok)
-    console.error(
+  const [own, customers] = await Promise.all([
+    google(token, `https://mybusiness.googleapis.com/v4/${path}/media?pageSize=100`),
+    google(token, `https://mybusiness.googleapis.com/v4/${path}/media/customers?pageSize=100`),
+  ]);
+  for (const [name, r] of [
+    ["own", own],
+    ["customers", customers],
+  ] as const)
+    console.log(
       "[post-plan] google media",
+      name,
       r.status,
-      String(r.data?.error?.message ?? "").slice(0, 300),
+      r.ok ? (r.data?.mediaItems?.length ?? 0) : String(r.data?.error?.message ?? "").slice(0, 300),
     );
-  return r.ok ? choosePhotos(r.data?.mediaItems) : [];
+  const mine = own.ok ? choosePhotos(own.data?.mediaItems) : [];
+  const theirs = customers.ok
+    ? choosePhotos(customers.data?.mediaItems).map((p) => ({ ...p, byCustomer: true }))
+    : [];
+  return [...mine, ...theirs];
 }
 
 async function postFor(tenantId: string, id: string) {
@@ -362,7 +374,7 @@ export async function changePostPicture(input: { id: string }) {
       image_url: next.url,
       image_kind: "google",
       image_quote: null,
-      image_by: null,
+      image_by: next.byCustomer ? "customer" : null,
     });
   // No more photos: a review card.
   const reviews = await serviceRead<{ reviewer: string | null; comment: string | null }[]>(

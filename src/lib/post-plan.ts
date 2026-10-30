@@ -138,6 +138,7 @@ export function parsePlan(text: string): PlannedPost[] {
 export interface GooglePhoto {
   url: string; // full-size picture Google can fetch
   thumb: string; // small version for the screen
+  byCustomer?: boolean; // taken by a customer, not the business
 }
 
 // Kinds of Google profile photo that suit a post, best first. Logos, the
