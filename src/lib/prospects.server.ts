@@ -224,11 +224,11 @@ export async function buildReport(
   const middle = rivals.length
     ? [...rivals].sort((a, b) => a.reviews - b.reviews)[Math.floor(rivals.length / 2)]!.reviews
     : 0;
-  const reviewPoints = rivals.length
-    ? Math.round(Math.min(1, reviews / Math.max(1, middle)) * 25)
-    : reviews >= 100
-      ? 25
-      : Math.round((reviews / 100) * 25);
+  // Log curve: each doubling of reviews earns the same points, so 68 reviews
+  // against rivals with around 1,000 scores fairly instead of almost nothing.
+  const curve = (n: number, goal: number) =>
+    Math.round(Math.min(1, Math.log(1 + n) / Math.log(1 + Math.max(goal, 10))) * 25);
+  const reviewPoints = curve(reviews, rivals.length ? middle : 100);
   // Only what Google reliably tells us: website, phone and opening hours.
   const profilePoints = Math.round(
     ((website ? 1 : 0) + (phone ? 1 : 0) + (hasHours ? 1 : 0)) * (25 / 3),
