@@ -22,6 +22,7 @@ import {
 import { change } from "../../lib/google-performance";
 import { RankingCard } from "./RankingCard";
 import { InsightsCard } from "./InsightsCard";
+import { AiVisibilityCard } from "./AiVisibilityCard";
 
 type Data = Extract<Awaited<ReturnType<typeof getGoogleFn>>, { ok: true }>;
 type Review = Data["reviews"][number];
@@ -185,6 +186,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
           <InsightsCard />
           <PerformanceCard />
           <RankingCard />
+          <AiVisibilityCard />
         </>
       )}
       {connected && tab === "settings" && (
