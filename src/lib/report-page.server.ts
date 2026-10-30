@@ -88,13 +88,12 @@ function realNumbers(token: string, snap: ProspectSnapshot | null, flash: string
   const leadsBefore = pv.calls + pv.directions + pv.websiteClicks;
   const delta = (now: number, before: number) => {
     if (before <= 0) return "";
-    const pc = Math.round(((now - before) / before) * 100);
-    return `<div class="small" style="color:${pc >= 0 ? "#059669" : "#dc2626"}">${pc >= 0 ? "+" : ""}${pc}% on the 3 months before</div>`;
+    const up = now >= before;
+    return `<div class="small" style="color:${up ? "#059669" : "#dc2626"}">${up ? "Up" : "Down"} from ${fmt(before)}</div>`;
   };
   const tile = (label: string, now: number, before: number) =>
     `<div style="background:#f8fafc;border-radius:12px;padding:12px"><div style="font-size:1.5rem;font-weight:800">${fmt(now)}</div><div style="font-size:.88rem">${label}</div>${delta(now, before)}</div>`;
-  const perWeek = Math.round((leads / 13) * 10) / 10;
-  const conv = views > 0 ? Math.round((leads / views) * 1000) / 10 : null;
+  const perWeek = Math.round(leads / 13);
   const words = snap.searchTerms.length
     ? `<p style="margin:16px 0 6px"><b>What people typed to find you</b> <span class="small">(${esc(snap.searchMonth)})</span></p><ul style="margin:0;padding-left:18px">${snap.searchTerms
         .map(
@@ -112,9 +111,8 @@ ${tile("phone calls", c.calls, pv.calls)}
 ${tile("requests for directions", c.directions, pv.directions)}
 ${tile("website visits", c.websiteClicks, pv.websiteClicks)}
 </div>
-<p style="margin:14px 0 0">That is <b>${fmt(leads)} people</b> who called, asked for directions or visited your website${leadsBefore > 0 ? ` (${fmt(leadsBefore)} in the 3 months before)` : ""}.
-Worked out simply: ${fmt(leads)} divided by 13 weeks is about <b>${perWeek} a week</b>.${conv !== null ? ` Out of every 100 people who saw your profile, about ${conv} took one of these steps.` : ""}</p>
-<p class="muted" style="margin:8px 0 0">More top 3 spots on the map above, and more recent reviews, mean more people see you, and more of them get in touch.</p>
+<p style="margin:14px 0 0">That is about <b>${fmt(perWeek)} people a week</b> getting in touch with you from Google${leadsBefore > 0 && leads !== leadsBefore ? ` (${leads > leadsBefore ? "up" : "down"} from ${fmt(Math.round(leadsBefore / 13))})` : ""}.</p>
+<p class="muted" style="margin:8px 0 0">More reviews and more top 3 spots on the map mean more of these.</p>
 ${words}
 <p class="small" style="margin:14px 0 0">We keep these figures, not access to your profile. <a href="${connect}" style="color:#64748b">Update my numbers</a></p></div>`;
 }
@@ -246,7 +244,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
   const g = r.reviewGap;
   const gap = g
     ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
-<p class="muted" style="margin:6px 0 0">Worked out simply: ${g.need} reviews divided by 52 weeks is about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b> to catch them within a year, or ${g.perWeekIn6Months} a week to do it in 6 months. Asking every customer, every day, is how businesses get there.</p></div>`
+<p class="muted" style="margin:6px 0 0">To catch them in a year, you need about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b>. The easy way: ask every customer, every day.</p></div>`
     : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">

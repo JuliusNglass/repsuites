@@ -32,8 +32,8 @@ describe("report real numbers", () => {
   it("shows the figures with a worked example", () => {
     const h = renderReport(report, { token: "a".repeat(24), snapshot: snap, flash: "connected" });
     expect(h).toContain("1,200");
-    expect(h).toContain("130 people");
-    expect(h).toContain("10 a week");
+    expect(h).toContain("10 people a week");
+    expect(h).toContain("Up from 1,000");
     expect(h).toContain("cafe newport");
     expect(h).not.toContain("—");
   });
