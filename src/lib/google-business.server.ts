@@ -345,7 +345,7 @@ export async function readGoogle() {
       "",
     ),
     serviceRead<any[]>(
-      `google_posts?select=id,summary,action_type,action_url,publish_at,status,error,posted_at&tenant_id=eq.${g.tenantId}&status=neq.cancelled&order=publish_at.desc&limit=30`,
+      `google_posts?select=id,summary,action_type,action_url,publish_at,status,error,posted_at,image_url,image_kind,image_quote,image_by&tenant_id=eq.${g.tenantId}&status=neq.cancelled&order=publish_at.desc&limit=30`,
       "",
     ),
   ]);
@@ -386,6 +386,10 @@ export async function readGoogle() {
       status: String(p.status),
       error: (p.error as string | null) ?? null,
       postedAt: (p.posted_at as string | null) ?? null,
+      imageUrl: (p.image_url as string | null) ?? null,
+      imageKind: (p.image_kind as "google" | "card" | null) ?? null,
+      imageQuote: (p.image_quote as string | null) ?? null,
+      imageBy: (p.image_by as string | null) ?? null,
     })),
   };
 }
@@ -842,6 +846,9 @@ async function publishPost(row: any): Promise<{ ok: true } | { ok: false; error:
         languageCode: "en-GB",
         topicType: "STANDARD",
         summary: row.summary,
+        ...(typeof row.image_url === "string" && /^https:\/\//.test(row.image_url)
+          ? { media: [{ mediaFormat: "PHOTO", sourceUrl: row.image_url }] }
+          : {}),
         ...(row.action_type
           ? {
               callToAction: {
@@ -879,7 +886,7 @@ export async function runGoogleSync(token: string) {
   // synced longest ago. Runs every 10 minutes; Cloudflare allows 50 outgoing
   // requests per run, so one business at a time.
   const due = await serviceRead<any[]>(
-    `google_posts?select=id,tenant_id,summary,action_type,action_url&status=eq.scheduled&publish_at=lte.${new Date().toISOString()}&order=publish_at.asc&limit=3`,
+    `google_posts?select=id,tenant_id,summary,action_type,action_url,image_url&status=eq.scheduled&publish_at=lte.${new Date().toISOString()}&order=publish_at.asc&limit=3`,
     "",
   );
   let posted = 0;

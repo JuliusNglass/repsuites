@@ -12,7 +12,19 @@ import {
 import { accessToken, connectionFor, google } from "./google-business.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { featureBlockedFor } from "./tenant-access.server";
-import { parsePlan, planDates, POST_BUTTONS, seasonNotes, tidyPost } from "./post-plan";
+import { getSupabaseConfig } from "./config.server";
+import { getServiceKey } from "./supabase-service.server";
+import {
+  choosePhotos,
+  parsePlan,
+  pickQuote,
+  planDates,
+  POST_BUTTONS,
+  seasonNotes,
+  tidyPost,
+  type GooglePhoto,
+  type ReviewQuote,
+} from "./post-plan";
 
 const EDITORS = ["owner", "admin", "super_admin", "manager"];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -59,7 +71,12 @@ async function businessDetails(tenantId: string) {
       category = String(r.data?.categories?.primaryCategory?.displayName ?? "");
     }
   }
-  return { conn, website: /^https:\/\//.test(website) ? website.slice(0, 490) : "", category };
+  return {
+    conn,
+    token,
+    website: /^https:\/\//.test(website) ? website.slice(0, 490) : "",
+    category,
+  };
 }
 
 async function askClaude(prompt: string): Promise<{ text: string } | { error: string }> {
@@ -153,7 +170,7 @@ export async function planGooglePosts() {
       error: `You planned posts this week already. You can plan more on ${when}.`,
     };
   }
-  const { conn, website, category } = await businessDetails(g.tenantId);
+  const { conn, token, website, category } = await businessDetails(g.tenantId);
   if (!conn) return { ok: false as const, error: "Connect your Google profile first." };
 
   const [ins, reviews] = await Promise.all([
@@ -206,9 +223,26 @@ export async function planGooglePosts() {
   if (posts.length < 2)
     return { ok: false as const, error: "The posts came back in the wrong shape. Try again." };
 
+  // A picture for each post: the business's own Google photos first, then a
+  // branded review card (drawn on the owner's screen when they open the drafts).
+  const photos = conn && token ? await googlePhotos(token, conn.path) : [];
+  const reviewList = toQuotes(reviews.data ?? []);
+  const usedQuotes = new Set<string>();
   const rows = posts.map((p, i) => {
     const button = p.button && p.button !== "CALL" && !website ? "CALL" : p.button;
+    const photo = photos[i];
+    const card = photo ? null : pickQuote(p.text, reviewList, usedQuotes);
+    if (card) {
+      const r = reviewList.find(
+        (x) => x.first === card.by && x.comment.includes(card.quote.replace(/\.\.\.$/, "")),
+      );
+      if (r) usedQuotes.add(r.comment);
+    }
     return {
+      image_url: photo?.url ?? null,
+      image_kind: photo ? "google" : card ? "card" : null,
+      image_quote: card?.quote ?? null,
+      image_by: card?.by || null,
       tenant_id: g.tenantId,
       summary: p.text,
       action_type: button,
@@ -259,4 +293,128 @@ export async function editGooglePost(input: { id: string; summary: string }) {
     { method: "PATCH", body: { summary: text } },
   );
   return w.error ? { ok: false as const, error: "Could not save." } : { ok: true as const, text };
+}
+
+// ---------- pictures ----------
+
+function toQuotes(rows: { reviewer: string | null; comment: string | null }[]): ReviewQuote[] {
+  return rows
+    .filter((r) => (r.comment ?? "").trim().length > 15)
+    .map((r) => ({
+      first: String(r.reviewer ?? "").split(/\s+/)[0] || "",
+      comment: String(r.comment),
+    }));
+}
+
+// The business's own photos on Google (one call, up to 100).
+async function googlePhotos(token: string, path: string): Promise<GooglePhoto[]> {
+  const r = await google(token, `https://mybusiness.googleapis.com/v4/${path}/media?pageSize=100`);
+  return r.ok ? choosePhotos(r.data?.mediaItems) : [];
+}
+
+async function postFor(tenantId: string, id: string) {
+  if (!UUID_RE.test(id)) return null;
+  const r = await serviceRead<
+    { id: string; summary: string; image_url: string | null; image_kind: string | null }[]
+  >(
+    `google_posts?select=id,summary,image_url,image_kind&id=eq.${id}&tenant_id=eq.${tenantId}&status=in.(draft,scheduled)`,
+    "",
+  );
+  return r.data?.[0] ?? null;
+}
+
+async function setPicture(tenantId: string, id: string, body: Record<string, unknown>) {
+  const w = await serviceWrite(`google_posts?id=eq.${id}&tenant_id=eq.${tenantId}`, "", {
+    method: "PATCH",
+    body,
+  });
+  return w.error
+    ? { ok: false as const, error: "Could not save the picture." }
+    : { ok: true as const };
+}
+
+// "Change picture": the next Google photo not used by another waiting post;
+// after the last photo, a review card; after the card, back to the first photo.
+export async function changePostPicture(input: { id: string }) {
+  const g = await guard();
+  if (!g.ok) return g;
+  const post = await postFor(g.tenantId, input.id);
+  if (!post) return { ok: false as const, error: "Unknown post." };
+  const conn = await connectionFor(g.tenantId);
+  const token = conn ? await accessToken(g.tenantId) : null;
+  const photos = conn && token ? await googlePhotos(token, conn.path) : [];
+  const others = await serviceRead<{ image_url: string | null }[]>(
+    `google_posts?select=image_url&tenant_id=eq.${g.tenantId}&status=in.(draft,scheduled)&id=neq.${post.id}`,
+    "",
+  );
+  const taken = new Set((others.data ?? []).map((o) => o.image_url).filter(Boolean));
+  const at = post.image_kind === "google" ? photos.findIndex((p) => p.url === post.image_url) : -1;
+  const startFrom = post.image_kind === "card" ? 0 : at + 1;
+  const next = photos.slice(startFrom).find((p) => !taken.has(p.url));
+  if (next && !(post.image_kind === "card" && !photos.length))
+    return setPicture(g.tenantId, post.id, {
+      image_url: next.url,
+      image_kind: "google",
+      image_quote: null,
+      image_by: null,
+    });
+  // No more photos: a review card.
+  const reviews = await serviceRead<{ reviewer: string | null; comment: string | null }[]>(
+    `google_reviews?select=reviewer,comment&tenant_id=eq.${g.tenantId}&stars=gte.4&comment=not.is.null&order=created_at_google.desc.nullslast&limit=15`,
+    "",
+  );
+  const card = pickQuote(post.summary, toQuotes(reviews.data ?? []));
+  if (!card) return { ok: false as const, error: "There are no more pictures to choose from." };
+  return setPicture(g.tenantId, post.id, {
+    image_url: null,
+    image_kind: "card",
+    image_quote: card.quote,
+    image_by: card.by || null,
+  });
+}
+
+export async function removePostPicture(input: { id: string }) {
+  const g = await guard();
+  if (!g.ok) return g;
+  const post = await postFor(g.tenantId, input.id);
+  if (!post) return { ok: false as const, error: "Unknown post." };
+  return setPicture(g.tenantId, post.id, {
+    image_url: null,
+    image_kind: null,
+    image_quote: null,
+    image_by: null,
+  });
+}
+
+// The review card drawn on the owner's screen, saved where Google can fetch it.
+export async function saveCardPicture(input: { id: string; png: string }) {
+  const g = await guard();
+  if (!g.ok) return g;
+  const post = await postFor(g.tenantId, input.id);
+  if (!post || post.image_kind !== "card") return { ok: false as const, error: "Unknown post." };
+  const m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(input.png);
+  if (!m) return { ok: false as const, error: "That picture could not be read." };
+  const bytes = Uint8Array.from(atob(m[1]!), (c) => c.charCodeAt(0));
+  if (bytes.length < 1000 || bytes.length > 4_000_000)
+    return { ok: false as const, error: "That picture is the wrong size." };
+  const cfg = getSupabaseConfig();
+  const key = getServiceKey();
+  if (!cfg.isConfigured || !key) return { ok: false as const, error: "Storage is not set up." };
+  const path = `${g.tenantId}/${post.id}-${Date.now()}.png`;
+  const up = await fetch(`${cfg.url}/storage/v1/object/post-images/${path}`, {
+    method: "POST",
+    // Legacy JWT keys go in Authorization; sb_secret_ keys only as apikey.
+    headers: {
+      ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {}),
+      apikey: key,
+      "Content-Type": "image/png",
+      "x-upsert": "true",
+    },
+    body: bytes,
+    signal: AbortSignal.timeout(20000),
+  }).catch(() => null);
+  if (!up?.ok) return { ok: false as const, error: "Could not save the picture. Try again." };
+  const url = `${cfg.url}/storage/v1/object/public/post-images/${path}`;
+  const res = await setPicture(g.tenantId, post.id, { image_url: url });
+  return res.ok ? { ok: true as const, url } : res;
 }

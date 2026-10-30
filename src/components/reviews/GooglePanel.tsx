@@ -198,7 +198,11 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
       )}
       {connected && tab === "posts" && (
         <>
-          <PostPlanCard drafts={d.posts.filter((p) => p.status === "draft")} onChanged={load} />
+          <PostPlanCard
+            drafts={d.posts.filter((p) => p.status === "draft")}
+            business={c?.title ?? ""}
+            onChanged={load}
+          />
           <GooglePosts posts={d.posts.filter((p) => p.status !== "draft")} onChanged={load} />
         </>
       )}

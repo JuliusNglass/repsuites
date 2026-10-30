@@ -132,3 +132,95 @@ export function parsePlan(text: string): PlannedPost[] {
     .filter((p) => p.text.length >= 40)
     .slice(0, 4);
 }
+
+// ---------- pictures ----------
+
+export interface GooglePhoto {
+  url: string; // full-size picture Google can fetch
+  thumb: string; // small version for the screen
+}
+
+// Kinds of Google profile photo that suit a post, best first. Logos, the
+// profile picture and the cover are left out.
+const PHOTO_ORDER = [
+  "FOOD_AND_DRINK",
+  "PRODUCT",
+  "AT_WORK",
+  "TEAMS",
+  "INTERIOR",
+  "EXTERIOR",
+  "MENU",
+  "COMMON_AREA",
+  "ROOMS",
+  "ADDITIONAL",
+  "CATEGORY_UNSPECIFIED",
+];
+const SKIP = new Set(["LOGO", "PROFILE", "COVER"]);
+
+// The business's own photos from Google's media list, best kinds first and
+// newest first within a kind.
+export function choosePhotos(media: unknown): GooglePhoto[] {
+  const list = Array.isArray(media) ? (media as Record<string, unknown>[]) : [];
+  const rank = (c: string) => {
+    const i = PHOTO_ORDER.indexOf(c);
+    return i < 0 ? PHOTO_ORDER.length : i;
+  };
+  return list
+    .filter((m) => m["mediaFormat"] === "PHOTO" && /^https:\/\//.test(String(m["googleUrl"] ?? "")))
+    .map((m) => {
+      const cat = String(
+        (m["locationAssociation"] as Record<string, unknown> | undefined)?.["category"] ??
+          "CATEGORY_UNSPECIFIED",
+      );
+      const dims = (m["dimensions"] as Record<string, unknown> | undefined) ?? {};
+      return {
+        cat,
+        at: Date.parse(String(m["createTime"] ?? "")) || 0,
+        small:
+          Number(dims["widthPixels"] ?? 999) < 250 || Number(dims["heightPixels"] ?? 999) < 250,
+        url: String(m["googleUrl"]),
+        thumb: /^https:\/\//.test(String(m["thumbnailUrl"] ?? ""))
+          ? String(m["thumbnailUrl"])
+          : String(m["googleUrl"]),
+      };
+    })
+    .filter((m) => !SKIP.has(m.cat) && !m.small)
+    .sort((a, b) => rank(a.cat) - rank(b.cat) || b.at - a.at)
+    .map(({ url, thumb }) => ({ url, thumb }));
+}
+
+// Shortens a quote at a word, adding "..." when cut. Worked example: a
+// 200-letter review cut at 110 letters keeps the words that fit.
+export function trimQuote(raw: string, max = 110): string {
+  const t = raw
+    .replace(/\s+/g, " ")
+    .replace(/^["'“”\s]+|["'“”\s]+$/g, "")
+    .trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const at = cut.lastIndexOf(" ");
+  return `${(at > 40 ? cut.slice(0, at) : cut).replace(/[,.;:!?-]+$/, "")}...`;
+}
+
+export interface ReviewQuote {
+  first: string;
+  comment: string;
+}
+
+// The quote for a review card: a phrase the post already quotes (and whose
+// review we can find), otherwise the first good review not yet used.
+export function pickQuote(
+  postText: string,
+  reviews: ReviewQuote[],
+  used: Set<string> = new Set(),
+): { quote: string; by: string } | null {
+  const phrases = [...postText.matchAll(/["“]([^"”]{4,140})["”]/g)].map((m) => m[1]!.trim());
+  for (const ph of phrases) {
+    const r = reviews.find((x) => x.comment.toLowerCase().includes(ph.toLowerCase()));
+    if (r) return { quote: trimQuote(ph), by: r.first };
+  }
+  const r = reviews.find((x) => !used.has(x.comment) && x.comment.trim().length >= 15);
+  if (!r) return phrases[0] ? { quote: trimQuote(phrases[0]), by: "" } : null;
+  const first = r.comment.split(/(?<=[.!?])\s/)[0] ?? r.comment;
+  return { quote: trimQuote(first.length >= 15 ? first : r.comment), by: r.first };
+}
