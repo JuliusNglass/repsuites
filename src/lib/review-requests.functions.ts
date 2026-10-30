@@ -12,7 +12,7 @@ import {
 const UUID = z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 const CHANNEL = z.enum(["whatsapp", "sms", "email"]);
 
-export const getRequestsFn = createServerFn({ method: "GET" }).handler(async () => readRequests());
+export const getRequestsFn = createServerFn({ method: "POST" }).handler(async () => readRequests());
 
 export const addRequestsFn = createServerFn({ method: "POST" })
   .validator((d: unknown) =>
