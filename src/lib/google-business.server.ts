@@ -325,6 +325,10 @@ export async function finishGoogleConnect(params: URLSearchParams): Promise<stri
     },
   });
   if (one) await syncReviews(st.tid).catch(() => null);
+  if (UUID_RE.test(st.uid)) {
+    const { confirmByGoogle } = await import("./email-check.server");
+    await confirmByGoogle(st.uid, emailFromIdToken(t.body.id_token)).catch(() => null);
+  }
   return `${back}/dashboard?google=connected`;
 }
 
@@ -1035,6 +1039,9 @@ export async function saveGoogleReportSettings(input: { enabled: boolean; email:
   if (input.enabled) {
     const paid = await growthBlocked(g);
     if (paid) return { ok: false as const, error: paid };
+    const { emailUnconfirmed } = await import("./email-check.server");
+    const unconfirmed = await emailUnconfirmed(g.userId);
+    if (unconfirmed) return { ok: false as const, error: unconfirmed };
   }
   const email = String(input.email ?? "")
     .trim()

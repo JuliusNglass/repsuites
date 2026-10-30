@@ -207,7 +207,8 @@ export async function savePrivateFeedback(t: FeedbackTarget, form: FormData): Pr
     `<blockquote style="border-left:3px solid #cbd5e1;margin:0;padding:4px 12px">${esc(message).replace(/\n/g, "<br>")}</blockquote>` +
     `<p>From: ${esc(name ?? "not given")}<br>Contact: ${esc(contact ?? "not given")}</p>` +
     `<p><a href="https://repsuites.com/dashboard">Open RepSuites</a></p>`;
-  for (const to of (owners.data ?? []).slice(0, 5)) {
+  const { confirmedOnly } = await import("./email-check.server");
+  for (const to of (await confirmedOnly(owners.data ?? [])).slice(0, 5)) {
     await sendEmail({
       to,
       subject: `Private feedback for ${t.business}`,

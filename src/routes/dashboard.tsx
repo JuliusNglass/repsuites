@@ -14,6 +14,7 @@ import { GooglePanel } from "../components/reviews/GooglePanel";
 import { QrCodesCard } from "../components/reviews/QrCodesCard";
 import { ReviewLinksCard } from "../components/reviews/ReviewLinksCard";
 import { WelcomeCard } from "../components/reviews/WelcomeCard";
+import { EmailCheckBar } from "../components/reviews/EmailCheckBar";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -192,6 +193,7 @@ function Dashboard() {
             {s.agency ? " (Accelur8 team)" : ""}
           </p>
         </div>
+        {!s.agency && <EmailCheckBar />}
         {!active && <p className="text-muted-foreground">Choose a business to get started.</p>}
         {active && s.plan === "free" && !s.agency && (tab === "reviews" || welcome) && (
           <WelcomeCard googleConnected={s.googleConnected} welcome={welcome} onTab={setTab} />

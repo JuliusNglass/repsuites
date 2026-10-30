@@ -122,6 +122,9 @@ export async function addRequests(input: {
     const { featureBlockedFor } = await import("./tenant-access.server");
     const paid = await featureBlockedFor(g.jwt, g.tenantId, "growth");
     if (paid) return { ok: false as const, error: paid };
+    const { emailUnconfirmed } = await import("./email-check.server");
+    const unconfirmed = await emailUnconfirmed(g.userId);
+    if (unconfirmed) return { ok: false as const, error: unconfirmed };
   }
   const s = await settingsFor(g.tenantId);
   const due = new Date(

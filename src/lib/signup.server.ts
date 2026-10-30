@@ -142,6 +142,12 @@ export async function signUpFree(
     return { ok: false as const, error: "We could not create your account. Try again." };
   }
 
+  // A 6-digit code to confirm their email (they can use the account now).
+  {
+    const { sendEmailCode } = await import("./email-check.server");
+    await sendEmailCode(userId, email, true).catch(() => null);
+  }
+
   // Their QR code and review page, pointing at Google when we know the place.
   await serviceWrite("qr_links", "", {
     method: "POST",

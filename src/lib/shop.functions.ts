@@ -172,6 +172,7 @@ async function billingGuard() {
     ok: true as const,
     tenantId: g.session.active_tenant_id!,
     email: g.session.email,
+    userId: g.session.user_id,
   };
 }
 
@@ -187,6 +188,11 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const g = await billingGuard();
     if (!g.ok) return g;
+    {
+      const { emailUnconfirmed } = await import("./email-check.server");
+      const unconfirmed = await emailUnconfirmed(g.userId);
+      if (unconfirmed) return { ok: false as const, error: unconfirmed };
+    }
     const b = await serviceRead<{ stripe_customer_id: string | null; status: string | null }[]>(
       `tenant_billing?select=stripe_customer_id,status&tenant_id=eq.${g.tenantId}`,
       "",
