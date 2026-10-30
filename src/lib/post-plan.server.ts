@@ -309,6 +309,12 @@ function toQuotes(rows: { reviewer: string | null; comment: string | null }[]): 
 // The business's own photos on Google (one call, up to 100).
 async function googlePhotos(token: string, path: string): Promise<GooglePhoto[]> {
   const r = await google(token, `https://mybusiness.googleapis.com/v4/${path}/media?pageSize=100`);
+  if (!r.ok)
+    console.error(
+      "[post-plan] google media",
+      r.status,
+      String(r.data?.error?.message ?? "").slice(0, 300),
+    );
   return r.ok ? choosePhotos(r.data?.mediaItems) : [];
 }
 
