@@ -83,6 +83,56 @@ function Prospects() {
   const search = useServerFn(searchProspects);
   const build = useServerFn(buildProspectReport);
   const addPhrase = useServerFn(addProspectPhrase);
+  const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
+
+  // Builds one report (plus any extra search phrases). Returns true if it worked.
+  async function buildOne(h: { placeId: string; name: string }, quiet = false): Promise<boolean> {
+    setBuilding(h.placeId);
+    const r = await build({
+      data: {
+        placeId: h.placeId,
+        ...(words.trim() ? { keyword: words.trim() } : {}),
+        niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
+      },
+    }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    // Extra search phrases: one at a time (each is 25 map searches).
+    const extra = words
+      .split(",")
+      .map((w) => w.trim())
+      .filter(Boolean)
+      .slice(1, 3);
+    if (r.ok)
+      for (const w of extra) {
+        const a = await addPhrase({ data: { placeId: h.placeId, keyword: w } });
+        if (!a.ok && !quiet) toast.error(`"${w}": ${a.error}`);
+      }
+    setBuilding(null);
+    if (r.ok) {
+      if (!quiet) toast.success(`Report ready for ${r.name}: score ${r.score}`);
+      setHits(
+        (cur) => cur?.map((x) => (x.placeId === h.placeId ? { ...x, saved: true } : x)) ?? null,
+      );
+      if (!quiet) await load();
+      return true;
+    }
+    if (!quiet) toast.error(r.error);
+    return false;
+  }
+
+  // "Build all": up to 10 businesses without a report yet, one after another.
+  async function buildAll() {
+    const todo = (hits ?? []).filter((h) => !h.saved).slice(0, 10);
+    if (!todo.length) return;
+    let ok = 0;
+    setBatch({ done: 0, total: todo.length });
+    for (let i = 0; i < todo.length; i++) {
+      if (await buildOne(todo[i]!, true)) ok++;
+      setBatch({ done: i + 1, total: todo.length });
+    }
+    setBatch(null);
+    await load();
+    toast.success(`${ok} of ${todo.length} reports ready. They are in your Pipeline.`);
+  }
   const update = useServerFn(updateProspect);
   const [tab, setTab] = useState<"find" | "pipeline" | "due">("find");
   const [items, setItems] = useState<List | null>(null);
@@ -213,6 +263,24 @@ function Prospects() {
             {hits && hits.length === 0 && (
               <p className="text-sm text-muted-foreground">Nothing found. Try another search.</p>
             )}
+            {(hits ?? []).filter((h) => !h.saved).length > 1 && (
+              <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 flex flex-wrap items-center gap-3">
+                <p className="text-sm flex-1 min-w-0">
+                  {batch
+                    ? `Building ${batch.done + 1 > batch.total ? batch.total : batch.done + 1} of ${batch.total}. Keep this page open.`
+                    : `Build reports for all ${Math.min(10, (hits ?? []).filter((h) => !h.saved).length)} new businesses here in one go (about ${Math.min(10, (hits ?? []).filter((h) => !h.saved).length) * 10}p).`}
+                </p>
+                <button
+                  type="button"
+                  disabled={building !== null || batch !== null}
+                  onClick={() => void buildAll()}
+                  className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-bold inline-flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {batch && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Build all
+                </button>
+              </div>
+            )}
             <ul className="space-y-2">
               {(hits ?? []).map((h) => (
                 <li
@@ -231,40 +299,7 @@ function Prospects() {
                   <button
                     type="button"
                     disabled={building !== null}
-                    onClick={async () => {
-                      setBuilding(h.placeId);
-                      const r = await build({
-                        data: {
-                          placeId: h.placeId,
-                          ...(words.trim() ? { keyword: words.trim() } : {}),
-                          niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
-                        },
-                      });
-                      setBuilding(null);
-                      // Extra search phrases: one at a time (each is 25 map searches).
-                      const extra = words
-                        .split(",")
-                        .map((w) => w.trim())
-                        .filter(Boolean)
-                        .slice(1, 3);
-                      if (r.ok)
-                        for (const w of extra) {
-                          setBuilding(h.placeId);
-                          const a = await addPhrase({ data: { placeId: h.placeId, keyword: w } });
-                          if (!a.ok) toast.error(`"${w}": ${a.error}`);
-                        }
-                      setBuilding(null);
-                      if (r.ok) {
-                        toast.success(`Report ready for ${r.name}: score ${r.score}`);
-                        setHits(
-                          (cur) =>
-                            cur?.map((x) =>
-                              x.placeId === h.placeId ? { ...x, saved: true } : x,
-                            ) ?? null,
-                        );
-                        await load();
-                      } else toast.error(r.error);
-                    }}
+                    onClick={() => void buildOne(h)}
                     className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
                   >
                     {building === h.placeId ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
