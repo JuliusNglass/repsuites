@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { applyNoStoreHeaders, requireProtectedRequest } from "./auth.server";
 import { serviceRead } from "./supabase-service.server";
+import { tenantKind } from "./business-type";
 
 export const getMyQrCodes = createServerFn({ method: "GET" }).handler(async () => {
   applyNoStoreHeaders();
@@ -21,6 +22,11 @@ export const getMyQrCodes = createServerFn({ method: "GET" }).handler(async () =
     `qr_links?select=id,kind,location_name,target_url,active&tenant_id=eq.${tenantId}&order=kind.asc,location_name.asc`,
     "",
   );
+  const tenant = await serviceRead<{ name: string | null; settings: unknown }[]>(
+    `tenants?select=name,settings&id=eq.${tenantId}`,
+    "",
+  );
+  const hospitality = tenantKind(tenant.data?.[0] ?? {}) === "hospitality";
   const ids = (links.data ?? []).map((l) => l.id);
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
   const counts = new Map<string, number>();
@@ -33,6 +39,7 @@ export const getMyQrCodes = createServerFn({ method: "GET" }).handler(async () =
   }
   return {
     ok: true as const,
+    hospitality,
     codes: (links.data ?? []).map((l) => ({
       id: l.id,
       label: l.kind === "location" ? l.location_name || "Branch" : "Main code",

@@ -1,9 +1,10 @@
-// Design a printable review coaster or A5 table stand for one QR code, with a
+// Design a printable review card (table stand, business card, sticker and
+// more) or an online picture for one QR code, in four numbered steps with a
 // live preview, then download a print-ready PDF (or PNG).
 // No em dashes in this copy (AGENTS.md).
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import { Download, ImagePlus, Loader2, X } from "lucide-react";
+import { Copy, Download, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { brandTheme, normaliseHex } from "../../lib/brand";
@@ -16,11 +17,17 @@ import {
 } from "../../lib/brand.functions";
 import { loadPicture } from "../../lib/review-card";
 import {
+  defaultFormat,
+  defaultMessage,
   downloadPdf,
   downloadPng,
+  FORMAT_GROUPS,
   FORMATS,
+  isDigital,
   MESSAGES,
+  messageOrder,
   renderDesign,
+  sizeText,
   THEMES,
   type Design,
   type PrintFormat,
@@ -48,21 +55,77 @@ function shrink(img: HTMLImageElement, maxW: number, type: "image/png" | "image/
   return c.toDataURL(type, 0.85);
 }
 
+// A tiny outline of each format's shape for the format buttons.
+function Thumb({ format }: { format: PrintFormat }) {
+  const f = FORMATS[format];
+  const w = f.px ? 30 : f.wMm >= f.hMm ? 26 : Math.round((26 * f.wMm) / f.hMm);
+  const h = f.px ? 10 : f.wMm >= f.hMm ? Math.round((26 * f.hMm) / f.wMm) : 26;
+  const q = Math.min(w, h) * 0.5;
+  return (
+    <svg width="32" height="28" viewBox="0 0 32 28" aria-hidden="true" className="shrink-0">
+      {f.round ? (
+        <circle
+          cx="16"
+          cy="14"
+          r="12"
+          className="fill-primary/15 stroke-primary"
+          strokeWidth="1.2"
+        />
+      ) : (
+        <rect
+          x={16 - w / 2}
+          y={14 - h / 2}
+          width={w}
+          height={h}
+          rx="1.5"
+          className="fill-primary/15 stroke-primary"
+          strokeWidth="1.2"
+        />
+      )}
+      <rect
+        x={f.px || format === "card" ? 16 + w / 2 - q - 2 : 16 - q / 2}
+        y={14 - q / 2}
+        width={q}
+        height={q}
+        className="fill-foreground/70"
+      />
+    </svg>
+  );
+}
+
+function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+  return (
+    <section className="space-y-2">
+      <h3 className="flex items-center gap-2 font-bold">
+        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs inline-flex items-center justify-center shrink-0">
+          {n}
+        </span>
+        {title}
+      </h3>
+      <div className="pl-0 sm:pl-8 space-y-2">{children}</div>
+    </section>
+  );
+}
+
 const field =
   "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
 
 export function PrintDesigner({
   url,
   business,
+  hospitality = false,
   onClose,
 }: {
   url: string;
   business: string;
+  // Restaurants, cafes, bars and hotels start on the table stand; everyone
+  // else on the business card.
+  hospitality?: boolean;
   onClose: () => void;
 }) {
   const qrWrap = useRef<HTMLDivElement>(null);
   const preview = useRef<HTMLDivElement>(null);
-  const [format, setFormat] = useState<PrintFormat>("a5");
+  const [format, setFormat] = useState<PrintFormat>(() => defaultFormat(hospitality));
   const [themeId, setThemeId] = useState(THEMES[0]!.id);
   // Brand colours as hex codes, saved per business.
   const loadBrand = useServerFn(getBranding);
@@ -104,9 +167,10 @@ export function PrintDesigner({
     else toast.error(r?.error ?? "Could not save the colours.");
   }
   const [name, setName] = useState(business);
-  const [msg, setMsg] = useState(0);
-  const [headline, setHeadline] = useState(MESSAGES[0]!.headline);
-  const [sub, setSub] = useState(MESSAGES[0]!.sub);
+  const order = useMemo(() => messageOrder(hospitality), [hospitality]);
+  const [msg, setMsg] = useState(() => defaultMessage(hospitality));
+  const [headline, setHeadline] = useState(() => MESSAGES[defaultMessage(hospitality)]!.headline);
+  const [sub, setSub] = useState(() => MESSAGES[defaultMessage(hospitality)]!.sub);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
   const [footer, setFooter] = useState(true);
@@ -151,9 +215,12 @@ export function PrintDesigner({
   // Redraw the small preview whenever something changes.
   useEffect(() => {
     if (!design || !preview.current) return;
-    const c = renderDesign(design, true, 0.3);
-    c.className = "max-w-full h-auto rounded-lg shadow-lg";
-    c.style.maxHeight = "60vh";
+    // Small cards are drawn a little bigger so the words can be read.
+    const f = FORMATS[design.format];
+    const scale = f.px ? 1 : f.wMm <= 60 ? 0.6 : f.wMm <= 110 ? 0.4 : 0.3;
+    const c = renderDesign(design, true, scale);
+    c.className = `max-w-full h-auto shadow-lg ${f.round ? "rounded-full" : "rounded-lg"}`;
+    c.style.maxHeight = "45vh";
     preview.current.replaceChildren(c);
   }, [design]);
 
@@ -198,7 +265,12 @@ export function PrintDesigner({
     <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center">
       <div className="bg-background w-full sm:max-w-4xl max-h-[95vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-4 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-lg">Design a printable review card</h2>
+          <div>
+            <h2 className="font-bold text-lg">Make a review card</h2>
+            <p className="text-xs text-muted-foreground">
+              Four quick steps. The preview updates as you go.
+            </p>
+          </div>
           <button
             type="button"
             aria-label="Close"
@@ -222,227 +294,311 @@ export function PrintDesigner({
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-4 order-2 md:order-1">
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.keys(FORMATS) as PrintFormat[]).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setFormat(f)}
-                  className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
-                    format === f ? "border-primary bg-primary/10" : "border-border"
-                  }`}
-                >
-                  {FORMATS[f].label}
-                </button>
+          <div className="min-w-0 space-y-6 order-2 md:order-1">
+            <Step n={1} title="Choose what to print">
+              {FORMAT_GROUPS.map((g) => (
+                <div key={g.id} className="space-y-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground">{g.title}</p>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {(Object.keys(FORMATS) as PrintFormat[])
+                      .filter((f) => FORMATS[f].group === g.id)
+                      .map((f) => (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => setFormat(f)}
+                          aria-pressed={format === f}
+                          className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left ${
+                            format === f ? "border-primary bg-primary/10" : "border-border"
+                          }`}
+                        >
+                          <Thumb format={f} />
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold leading-tight">
+                              {FORMATS[f].label}
+                            </span>
+                            <span className="block text-[11px] text-muted-foreground leading-tight">
+                              Best for: {FORMATS[f].bestFor}
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                </div>
               ))}
-            </div>
+            </Step>
 
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold">Business name</span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={60}
-                className={field}
-              />
-            </label>
-
-            <div className="space-y-1">
-              <span className="text-sm font-semibold">Message</span>
-              <select
-                value={msg}
-                onChange={(e) => {
-                  const i = Number(e.target.value);
-                  setMsg(i);
-                  setHeadline(MESSAGES[i]!.headline);
-                  setSub(MESSAGES[i]!.sub);
-                }}
-                className={field}
-              >
-                {MESSAGES.map((m, i) => (
-                  <option key={i} value={i}>
-                    {m.headline}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={headline}
-                onChange={(e) => setHeadline(e.target.value)}
-                maxLength={60}
-                className={field}
-              />
-              <textarea
-                value={sub}
-                onChange={(e) => setSub(e.target.value)}
-                maxLength={140}
-                rows={2}
-                className={field}
-              />
-              <p className="text-[11px] text-muted-foreground">
-                Keep it open to every customer and do not offer anything in return for a review.
-                Google does not allow either.
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm font-semibold">Colours</span>
-              <div className="flex flex-wrap gap-2">
-                {primary && (
-                  <button
-                    type="button"
-                    title="Your brand colours"
-                    aria-label="Your brand colours"
-                    onClick={() => chooseTheme("brand")}
-                    className={`w-9 h-9 rounded-full border-2 ${themeId === "brand" ? "border-primary" : "border-border"}`}
-                    style={{
-                      background: `linear-gradient(135deg, ${primary} 60%, ${secondary ?? primary} 60%)`,
-                    }}
+            <Step n={2} title="Choose the words">
+              <label className="block space-y-1">
+                <span className="text-sm font-semibold">Business name</span>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={60}
+                  className={field}
+                />
+              </label>
+              <div className="space-y-1">
+                <span className="text-sm font-semibold">Message</span>
+                <select
+                  value={msg}
+                  onChange={(e) => {
+                    const i = Number(e.target.value);
+                    setMsg(i);
+                    setHeadline(MESSAGES[i]!.headline);
+                    setSub(MESSAGES[i]!.sub);
+                  }}
+                  className={field}
+                >
+                  {order.map((i) => (
+                    <option key={i} value={i}>
+                      {MESSAGES[i]!.headline}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={headline}
+                  onChange={(e) => setHeadline(e.target.value)}
+                  maxLength={60}
+                  aria-label="Headline"
+                  className={field}
+                />
+                {FORMATS[format].small || isDigital(format) ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    This size only shows the headline, so keep it short
+                    {headline.length > 32 ? " (yours is quite long)" : ""}.
+                  </p>
+                ) : (
+                  <textarea
+                    value={sub}
+                    onChange={(e) => setSub(e.target.value)}
+                    maxLength={140}
+                    rows={2}
+                    aria-label="Second line"
+                    className={field}
                   />
                 )}
-                {THEMES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    title={t.name}
-                    aria-label={t.name}
-                    onClick={() => chooseTheme(t.id)}
-                    className={`w-9 h-9 rounded-full border-2 ${themeId === t.id ? "border-primary" : "border-border"}`}
-                    style={{ background: `linear-gradient(135deg, ${t.bg[0]}, ${t.bg[1]})` }}
-                  />
-                ))}
+                <p className="text-[11px] text-muted-foreground">
+                  Keep it open to every customer and do not offer anything in return for a review.
+                  Google does not allow either.
+                </p>
               </div>
-              <div className="rounded-lg border border-border p-3 space-y-2">
-                <span className="text-xs font-semibold">Your brand colours (hex codes)</span>
-                {(
-                  [
-                    ["Primary (background)", primaryHex, setPrimaryHex, primary, "#0b1d3a"],
-                    ["Secondary (highlight)", secondaryHex, setSecondaryHex, secondary, "#f5b324"],
-                  ] as const
-                ).map(([label, val, set, ok, eg]) => (
-                  <label key={label} className="flex items-center gap-2 text-xs">
-                    <input
-                      type="color"
-                      value={ok ?? eg}
-                      onChange={(e) => {
-                        set(e.target.value);
-                        setThemeId("brand");
+              {format !== "coaster" && format !== "sticker" && format !== "square" && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={footer}
+                    onChange={(e) => setFooter(e.target.checked)}
+                  />
+                  Show a short "scan the code" line
+                </label>
+              )}
+            </Step>
+
+            <Step n={3} title="Your look">
+              <div className="space-y-1">
+                <span className="text-sm font-semibold">Colours</span>
+                <div className="flex flex-wrap gap-2">
+                  {primary && (
+                    <button
+                      type="button"
+                      title="Your brand colours"
+                      aria-label="Your brand colours"
+                      onClick={() => chooseTheme("brand")}
+                      className={`w-9 h-9 rounded-full border-2 ${themeId === "brand" ? "border-primary" : "border-border"}`}
+                      style={{
+                        background: `linear-gradient(135deg, ${primary} 60%, ${secondary ?? primary} 60%)`,
                       }}
-                      className="w-9 h-9 rounded-md border border-border bg-background p-0.5 cursor-pointer shrink-0"
-                      aria-label={label}
                     />
-                    <span className="w-32 shrink-0 text-muted-foreground">{label}</span>
-                    <input
-                      value={val}
-                      onChange={(e) => {
-                        set(e.target.value);
-                        if (normaliseHex(e.target.value)) setThemeId("brand");
-                      }}
-                      placeholder={eg}
-                      maxLength={7}
-                      spellCheck={false}
-                      className={`${field} font-mono uppercase ${val && !ok ? "border-destructive" : ""}`}
+                  )}
+                  {THEMES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      title={t.name}
+                      aria-label={t.name}
+                      onClick={() => chooseTheme(t.id)}
+                      className={`w-9 h-9 rounded-full border-2 ${themeId === t.id ? "border-primary" : "border-border"}`}
+                      style={{ background: `linear-gradient(135deg, ${t.bg[0]}, ${t.bg[1]})` }}
                     />
-                  </label>
-                ))}
+                  ))}
+                </div>
+                <div className="rounded-lg border border-border p-3 space-y-2">
+                  <span className="text-xs font-semibold">Your brand colours (hex codes)</span>
+                  {(
+                    [
+                      ["Primary (background)", primaryHex, setPrimaryHex, primary, "#0b1d3a"],
+                      [
+                        "Secondary (highlight)",
+                        secondaryHex,
+                        setSecondaryHex,
+                        secondary,
+                        "#f5b324",
+                      ],
+                    ] as const
+                  ).map(([label, val, set, ok, eg]) => (
+                    <label key={label} className="flex items-center gap-2 text-xs">
+                      <input
+                        type="color"
+                        value={ok ?? eg}
+                        onChange={(e) => {
+                          set(e.target.value);
+                          setThemeId("brand");
+                        }}
+                        className="w-9 h-9 rounded-md border border-border bg-background p-0.5 cursor-pointer shrink-0"
+                        aria-label={label}
+                      />
+                      <span className="w-32 shrink-0 text-muted-foreground">{label}</span>
+                      <input
+                        value={val}
+                        onChange={(e) => {
+                          set(e.target.value);
+                          if (normaliseHex(e.target.value)) setThemeId("brand");
+                        }}
+                        placeholder={eg}
+                        maxLength={7}
+                        spellCheck={false}
+                        className={`${field} font-mono uppercase ${val && !ok ? "border-destructive" : ""}`}
+                      />
+                    </label>
+                  ))}
+                  <button
+                    type="button"
+                    disabled={savingBrand || !primary}
+                    onClick={() => void keepBrand()}
+                    className="w-full rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  >
+                    {savingBrand ? "Saving..." : "Save as this business's brand colours"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <label className="rounded-lg border border-dashed border-border px-3 py-3 text-sm cursor-pointer text-center">
+                  <ImagePlus className="w-4 h-4 mx-auto mb-1" />
+                  {logo ? "Change logo" : "Add your logo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => void pick(e.target.files?.[0], setLogo, "logo")}
+                  />
+                </label>
+                <label className="rounded-lg border border-dashed border-border px-3 py-3 text-sm cursor-pointer text-center">
+                  <ImagePlus className="w-4 h-4 mx-auto mb-1" />
+                  {photo ? "Change photo" : "Background photo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => void pick(e.target.files?.[0], setPhoto, "photo")}
+                  />
+                </label>
+              </div>
+              {(logo || photo) && (
+                <div className="flex gap-3 text-xs">
+                  {logo && (
+                    <button type="button" className="underline" onClick={() => forget("logo")}>
+                      Remove logo
+                    </button>
+                  )}
+                  {photo && (
+                    <button type="button" className="underline" onClick={() => forget("photo")}>
+                      Remove photo
+                    </button>
+                  )}
+                </div>
+              )}
+            </Step>
+
+            <Step n={4} title="Download">
+              <p className="text-xs text-muted-foreground">
+                Size: <b>{sizeText(format)}</b>
+                {isDigital(format) ? "" : ", with 3 mm extra round the edge (bleed) at 300 dpi"}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                {!isDigital(format) && (
+                  <button
+                    type="button"
+                    disabled={!design || busy}
+                    onClick={async () => {
+                      if (!design) return;
+                      setBusy(true);
+                      try {
+                        await downloadPdf(design);
+                      } catch {
+                        toast.error("Could not make the PDF. Try again.");
+                      }
+                      setBusy(false);
+                    }}
+                    className="flex-1 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {busy ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    PDF for a printer
+                  </button>
+                )}
                 <button
                   type="button"
-                  disabled={savingBrand || !primary}
-                  onClick={() => void keepBrand()}
-                  className="w-full rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  disabled={!design}
+                  onClick={() => design && downloadPng(design)}
+                  className={
+                    isDigital(format)
+                      ? "flex-1 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                      : "rounded-lg border border-border px-4 py-2.5 font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                  }
                 >
-                  {savingBrand ? "Saving..." : "Save as this business's brand colours"}
+                  <Download className="w-4 h-4" />{" "}
+                  {isDigital(format) ? "Download picture (PNG)" : "PNG"}
                 </button>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <label className="rounded-lg border border-dashed border-border px-3 py-3 text-sm cursor-pointer text-center">
-                <ImagePlus className="w-4 h-4 mx-auto mb-1" />
-                {logo ? "Change logo" : "Add your logo"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => void pick(e.target.files?.[0], setLogo, "logo")}
-                />
-              </label>
-              <label className="rounded-lg border border-dashed border-border px-3 py-3 text-sm cursor-pointer text-center">
-                <ImagePlus className="w-4 h-4 mx-auto mb-1" />
-                {photo ? "Change photo" : "Background photo"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => void pick(e.target.files?.[0], setPhoto, "photo")}
-                />
-              </label>
-            </div>
-            {(logo || photo) && (
-              <div className="flex gap-3 text-xs">
-                {logo && (
-                  <button type="button" className="underline" onClick={() => forget("logo")}>
-                    Remove logo
-                  </button>
-                )}
-                {photo && (
-                  <button type="button" className="underline" onClick={() => forget("photo")}>
-                    Remove photo
-                  </button>
-                )}
-              </div>
-            )}
-            {format === "a5" && (
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={footer}
-                  onChange={(e) => setFooter(e.target.checked)}
-                />
-                Show "Point your phone camera at the code"
-              </label>
-            )}
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                disabled={!design || busy}
-                onClick={async () => {
-                  if (!design) return;
-                  setBusy(true);
-                  try {
-                    await downloadPdf(design);
-                  } catch {
-                    toast.error("Could not make the PDF. Try again.");
-                  }
-                  setBusy(false);
-                }}
-                className="flex-1 rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 inline-flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {busy ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
-                Print-ready PDF
-              </button>
-              <button
-                type="button"
-                disabled={!design}
-                onClick={() => design && downloadPng(design)}
-                className="rounded-lg border border-border px-4 py-2.5 font-semibold"
-              >
-                PNG
-              </button>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Exact size with 3 mm bleed at 300 dpi. The dotted pink line in the preview is where it
-              is cut; it is not printed.
-            </p>
+              {isDigital(format) ? (
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs space-y-2">
+                  <p>
+                    Add the picture to your email signature, invoices or WhatsApp. In an email, link
+                    the picture to your review page so people can tap it:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 min-w-0 truncate rounded bg-background border border-border px-2 py-1">
+                      {url}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void navigator.clipboard
+                          .writeText(url)
+                          .then(() => toast.success("Link copied"))
+                          .catch(() => toast.error("Could not copy the link."))
+                      }
+                      className="shrink-0 inline-flex items-center gap-1 rounded border border-border px-2 py-1 font-semibold"
+                    >
+                      <Copy className="w-3.5 h-3.5" /> Copy
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100 p-3 text-xs space-y-1">
+                  <p className="font-semibold">Tip</p>
+                  <p>
+                    Take the PDF to any local printer or order online (e.g. business cards from
+                    Vistaprint, Solopress). Ask for the size shown.
+                  </p>
+                  <p className="text-[11px] opacity-80">
+                    The dotted line in the preview shows where it is cut. It is not printed.
+                  </p>
+                </div>
+              )}
+            </Step>
           </div>
 
-          <div className="order-1 md:order-2 flex items-start justify-center bg-muted/40 rounded-xl p-4 min-h-[16rem]">
-            <div ref={preview} className="flex items-center justify-center w-full" />
+          <div className="min-w-0 order-1 md:order-2 md:sticky md:top-0 md:self-start flex flex-col items-center gap-2 bg-muted/40 rounded-xl p-4 min-h-[10rem]">
+            <p className="text-xs font-semibold text-muted-foreground">
+              Preview: {FORMATS[format].label}
+            </p>
+            <div ref={preview} className="flex items-center justify-center w-full min-w-0" />
           </div>
         </div>
       </div>

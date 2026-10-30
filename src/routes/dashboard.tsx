@@ -11,7 +11,7 @@ import { Building2, ChevronDown, Plus, Search } from "lucide-react";
 import { selectTenant, signOut } from "../lib/auth.functions";
 import { listMyBusinesses } from "../lib/businesses.functions";
 import { GooglePanel } from "../components/reviews/GooglePanel";
-import { QrCodesCard } from "../components/reviews/QrCodesCard";
+import { PrintCardButton, QrCodesCard } from "../components/reviews/QrCodesCard";
 import { ReviewLinksCard } from "../components/reviews/ReviewLinksCard";
 import { WelcomeCard } from "../components/reviews/WelcomeCard";
 import { EmailCheckBar } from "../components/reviews/EmailCheckBar";
@@ -248,7 +248,12 @@ function Dashboard() {
         )}
         {active && tab === "ask" && <RequestsPanel key={`a-${active.id}`} />}
         {active && tab === "results" && <GooglePanel key={`g-${active.id}`} tab="results" />}
-        {active && tab === "posts" && <GooglePanel key={`p-${active.id}`} tab="posts" />}
+        {active && tab === "posts" && (
+          <>
+            <PrintCardButton key={`pc-${active.id}`} business={active.name} />
+            <GooglePanel key={`p-${active.id}`} tab="posts" />
+          </>
+        )}
         {active && tab === "qr" && (
           <>
             <QrCodesCard key={`qr-${active.id}`} business={active.name} />

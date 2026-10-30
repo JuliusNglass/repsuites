@@ -18,6 +18,7 @@ import { getSupabaseConfig } from "./config.server";
 import { decryptSessionData, encryptSessionData } from "./session.server";
 import { hasServiceRole, serviceRead, serviceWrite } from "./supabase-service.server";
 import { linkOrigin, SHARED_ORIGIN } from "./tenant-links.server";
+import { googleLinkPlan, primaryCategory } from "./google-link";
 import {
   DEFAULT_TEMPLATES,
   draftReviewReply,
@@ -515,6 +516,8 @@ export async function syncReviews(tenantId: string) {
       method: "PATCH",
       body: { error: err, last_sync_at: new Date().toISOString() },
     });
+    // The profile itself may still be readable even when reviews are not.
+    await linkGoogleProfile(tenantId).catch(() => null);
     return { ok: false as const, error: err };
   }
   const rows = (r.data?.reviews ?? [])
@@ -531,6 +534,8 @@ export async function syncReviews(tenantId: string) {
     body: { error: null, last_sync_at: new Date().toISOString() },
   });
   const handled = await handleNewReviews(tenantId).catch(() => ({ drafted: 0, replied: 0 }));
+  // Link QR codes and review links to the profile (on connect and every sync).
+  await linkGoogleProfile(tenantId).catch(() => null);
   return { ok: true as const, count: rows.length, ...handled };
 }
 
@@ -1165,6 +1170,7 @@ export async function profileBasics(tenantId: string): Promise<{
   lat: number | null;
   lng: number | null;
   title: string;
+  category: { name: string; id: string } | null;
 } | null> {
   const c = await serviceRead<any[]>(
     `google_connections?select=location_name,location_title,status&tenant_id=eq.${tenantId}`,
@@ -1176,7 +1182,7 @@ export async function profileBasics(tenantId: string): Promise<{
   if (!token) return null;
   const r = await google(
     token,
-    `https://mybusinessbusinessinformation.googleapis.com/v1/${conn.location_name}?readMask=title,latlng,metadata`,
+    `https://mybusinessbusinessinformation.googleapis.com/v1/${conn.location_name}?readMask=title,latlng,metadata,categories`,
   );
   if (!r.ok) return null;
   const lat = Number(r.data?.latlng?.latitude);
@@ -1186,7 +1192,78 @@ export async function profileBasics(tenantId: string): Promise<{
     lat: Number.isFinite(lat) && r.data?.latlng ? lat : null,
     lng: Number.isFinite(lng) && r.data?.latlng ? lng : null,
     title: String(r.data?.title ?? conn.location_title ?? ""),
+    category: primaryCategory(r.data),
   };
+}
+
+// Once a Google profile is connected: point the business's QR codes that
+// have no target yet at its Google review page, switch them on, add a
+// Google review link if there is none, and remember the Google category
+// (used to pick printed card designs). Codes that already have a target are
+// left alone. Only calls Google when something is missing.
+export async function linkGoogleProfile(tenantId: string): Promise<void> {
+  if (!UUID_RE.test(tenantId)) return;
+  const [t, q, rl] = await Promise.all([
+    serviceRead<{ settings: Record<string, unknown> | null }[]>(
+      `tenants?select=settings&id=eq.${tenantId}`,
+      "",
+    ),
+    serviceRead<{ id: string; target_url: string | null }[]>(
+      `qr_links?select=id,target_url&tenant_id=eq.${tenantId}&target_url=is.null`,
+      "",
+    ),
+    serviceRead<{ id: string }[]>(
+      `review_links?select=id&tenant_id=eq.${tenantId}&platform=eq.google&limit=1`,
+      "",
+    ),
+  ]);
+  if (t.error || q.error || rl.error || !t.data?.[0]) return;
+  const settings = t.data[0].settings ?? {};
+  const needCategory = typeof settings["google_category"] !== "string";
+  const codes = q.data ?? [];
+  const hasGoogleReviewLink = (rl.data?.length ?? 0) > 0;
+  if (!needCategory && !codes.length && hasGoogleReviewLink) return;
+
+  const basics = await profileBasics(tenantId);
+  if (!basics) return;
+  if (needCategory)
+    await serviceWrite<unknown>(`tenants?id=eq.${tenantId}`, "", {
+      method: "PATCH",
+      body: {
+        settings: {
+          ...settings,
+          google_category: basics.category?.name ?? "",
+          google_types: basics.category?.id ? [basics.category.id] : [],
+        },
+      },
+    });
+  const plan = googleLinkPlan({ placeId: basics.placeId, codes, hasGoogleReviewLink });
+  if (plan.codeIds.length)
+    await serviceWrite<unknown>(
+      `qr_links?tenant_id=eq.${tenantId}&target_url=is.null&id=in.(${plan.codeIds.join(",")})`,
+      "",
+      {
+        method: "PATCH",
+        body: {
+          google_place_id: plan.placeId,
+          target_url: plan.target,
+          active: true,
+          updated_at: new Date().toISOString(),
+        },
+      },
+    );
+  if (plan.addReviewLink && plan.target)
+    await serviceWrite<unknown>("review_links", "", {
+      method: "POST",
+      body: {
+        tenant_id: tenantId,
+        platform: "google",
+        label: "Google",
+        url: plan.target,
+        position: 0,
+        active: true,
+      },
+    });
 }
 
 // ---------- customer insights ----------

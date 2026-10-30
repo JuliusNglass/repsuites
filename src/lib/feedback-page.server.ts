@@ -6,6 +6,7 @@
 // everyone as an extra, never instead of a review.
 // No em dashes in this copy (AGENTS.md).
 import { textOn } from "./brand";
+import { tenantKind } from "./business-type";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { sendEmail } from "./email.server";
 
@@ -31,6 +32,9 @@ export interface FeedbackTarget {
   links: { platform: Platform; label: string; url: string }[];
   // The business's own colours (hex), when set.
   brand?: { primary: string; secondary: string | null } | null;
+  // Restaurants, cafes, bars and hotels: "Thanks for visiting". Everyone
+  // else: "Thanks for choosing".
+  hospitality?: boolean;
 }
 
 function esc(s: string): string {
@@ -60,9 +64,13 @@ export async function loadFeedbackTarget(id: string): Promise<FeedbackTarget | n
   let business = qr.business_name ?? "";
   let saved: { platform: Platform; label: string | null; url: string }[] = [];
   let brand: FeedbackTarget["brand"] = null;
+  let hospitality = false;
   if (qr.tenant_id) {
     const [t, l, b] = await Promise.all([
-      serviceRead<{ name: string }[]>(`tenants?select=name&id=eq.${qr.tenant_id}`, ""),
+      serviceRead<{ name: string; settings: unknown }[]>(
+        `tenants?select=name,settings&id=eq.${qr.tenant_id}`,
+        "",
+      ),
       serviceRead<{ platform: Platform; label: string | null; url: string }[]>(
         `review_links?select=platform,label,url&tenant_id=eq.${qr.tenant_id}&active=eq.true&order=position.asc,created_at.asc`,
         "",
@@ -73,6 +81,7 @@ export async function loadFeedbackTarget(id: string): Promise<FeedbackTarget | n
       ),
     ]);
     business = t.data?.[0]?.name ?? business;
+    hospitality = tenantKind(t.data?.[0] ?? { name: business }) === "hospitality";
     const pb = b.data?.[0];
     if (pb?.primary_hex && /^#[0-9a-f]{6}$/.test(pb.primary_hex))
       brand = {
@@ -99,7 +108,15 @@ export async function loadFeedbackTarget(id: string): Promise<FeedbackTarget | n
   }
   if (own && !usedOwn) links.unshift({ platform: "google", label: "", url: own });
   if (!links.length) return null;
-  return { qrId: qr.id, tenantId: qr.tenant_id, business: business || "us", links, brand };
+  if (!qr.tenant_id) hospitality = tenantKind({ name: business }) === "hospitality";
+  return {
+    qrId: qr.id,
+    tenantId: qr.tenant_id,
+    business: business || "us",
+    links,
+    brand,
+    hospitality,
+  };
 }
 
 function buttonText(l: FeedbackTarget["links"][number]): string {
@@ -124,6 +141,11 @@ button{margin-top:14px;width:100%;font:inherit;font-weight:700;border:0;border-r
 footer{text-align:center;margin-top:28px}footer a{color:#64748b;font-size:.8rem}
 .ok{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:14px;padding:14px 16px;color:#065f46;margin-bottom:20px}
 `;
+
+// The page heading, escaped.
+export function greeting(t: Pick<FeedbackTarget, "business" | "hospitality">): string {
+  return `${t.hospitality ? "Thanks for visiting" : "Thanks for choosing"} ${esc(t.business)}`;
+}
 
 export function renderFeedbackPage(t: FeedbackTarget, note?: "sent" | "error"): string {
   const [first, ...rest] = t.links;
@@ -154,7 +176,7 @@ export function renderFeedbackPage(t: FeedbackTarget, note?: "sent" | "error"): 
 <title>Review ${name}</title><meta property="og:title" content="Leave ${name} a quick review"><meta property="og:description" content="It takes about 30 seconds. Thank you!"><meta property="og:image" content="https://repsuites.com/og-image.png?v=2"><meta name="robots" content="noindex">
 <style>${STYLE}</style></head><body>${bar}<main>
 ${banner}
-<h1>Thanks for visiting ${name}</h1>
+<h1>${greeting(t)}</h1>
 <p>Your review helps other people find us. It only takes a minute.</p>
 ${primary}${others}
 <details${note === "error" ? " open" : ""}>
