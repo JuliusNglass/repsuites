@@ -36,6 +36,7 @@ tr.you td{font-weight:700;background:#fffbeb}
 .fix b{display:block}.fix span{color:#475569;font-size:.92rem}
 .cta{display:block;text-align:center;background:#f5b324;color:#0f172a;font-weight:800;text-decoration:none;border-radius:14px;padding:16px;font-size:1.05rem;margin-top:16px}
 .small{font-size:.8rem;color:#64748b}
+.found{border:2px solid #f5b324}.finding{display:flex;gap:10px;align-items:flex-start;margin:10px 0}.finding p{margin:0;font-size:1rem}.fi{font-size:1.3rem;line-height:1.3}
 .map{position:relative;aspect-ratio:1;max-width:560px;margin:0 auto;border-radius:12px;overflow:hidden;background:#e8eef0;z-index:0}
 .kw{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.kw button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}.kw button.on{background:#0f172a;color:#fff;border-color:#0f172a}
 .pin{position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
@@ -76,7 +77,7 @@ function realNumbers(token: string, snap: ProspectSnapshot | null, flash: string
     : "";
   const connect = `/api/prospect-connect?r=${encodeURIComponent(token)}`;
   if (!snap)
-    return `<div class="noprint">${note}<h2>See your real numbers</h2><div class="card">
+    return `<div class="noprint">${note}<h2 id="real">See your real numbers</h2><div class="card">
 <p style="margin:0">Google keeps private figures only the owner can see: how many people <b>called you</b>, <b>asked for directions</b> and <b>visited your website</b> from your Google profile, and the words they searched. Sign in with the Google account you use for your profile to add them to this report.</p>
 <a class="cta" style="margin-top:14px" href="${connect}">See my real numbers</a>
 <p class="small" style="margin:10px 0 0">Free, and takes a minute. We read the figures once and keep no access to your profile afterwards. Google will ask you to allow RepSuites; you can remove it any time in your Google account under Security, Third-party connections.</p></div></div>`;
@@ -103,7 +104,7 @@ function realNumbers(token: string, snap: ProspectSnapshot | null, flash: string
         .join("")}</ul>`
     : "";
   const when = new Date(snap.at).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
-  return `${note}<h2>Your real numbers from Google</h2><div class="card">
+  return `${note}<h2 id="real">Your real numbers from Google</h2><div class="card">
 <p class="muted" style="margin:0 0 12px">${esc(snap.title)}, last 3 months (to ${esc(new Date(snap.period.end + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long" }))}). Read from Google on ${esc(when)}.</p>
 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
 ${tile("times your profile was seen", views, viewsBefore)}
@@ -211,6 +212,105 @@ document.getElementById("rmap-sum").innerHTML=g.s;}
 draw(0);document.querySelectorAll(".kw button").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".kw button").forEach(function(x){x.classList.remove("on")});b.classList.add("on");draw(+b.getAttribute("data-i"));});});})();</script>`;
 }
 
+// The Maps part of the score uses the whole area (all search phrases), not
+// just the business's own street. Worked example: top 3 in 6 of 25 places
+// and 4th to 10th in 10 more is (6 + 0.4 x 10) / 25 = 0.4 of the 25 points,
+// so 10 points.
+export function areaPoints(grids: { ranks: (number | null)[] }[]): number | null {
+  if (!grids.length) return null;
+  const each = grids.map((g) => {
+    const top3 = g.ranks.filter((v) => v !== null && v >= 1 && v <= 3).length;
+    const near = g.ranks.filter((v) => v !== null && v >= 4 && v <= 10).length;
+    return (top3 + 0.4 * near) / 25;
+  });
+  return Math.round((each.reduce((t, x) => t + x, 0) / each.length) * 25);
+}
+
+function gridsOf(r: Report) {
+  return r.grids && r.grids.length
+    ? r.grids
+    : r.grid
+      ? [{ keyword: r.maps.keyword, ...r.grid }]
+      : [];
+}
+
+// Score, parts and fixes as shown, worked out again from the area checks.
+export function scoreView(r: Report) {
+  const grids = gridsOf(r);
+  const area = areaPoints(grids);
+  const parts = r.parts.map((p) =>
+    p.label === "Position on Google Maps" && area !== null
+      ? { label: "Showing in the top 3 on Google Maps around you", got: area, max: 25 }
+      : p,
+  );
+  const got = parts.reduce((t, x) => t + x.got, 0);
+  const max = parts.reduce((t, x) => t + x.max, 0);
+  const score = max ? Math.round((got / max) * 100) : r.score;
+  const fixes = [...r.fixes];
+  for (const g of grids.slice(1))
+    if (g.top3 < 13)
+      fixes.push({
+        title:
+          g.top3 === 0
+            ? `For "${g.keyword}" you are not in the top 3 on Google Maps anywhere around you`
+            : `For "${g.keyword}" you are in the top 3 in only ${g.top3} of the 25 places around you`,
+        why: "People searching for this nearby see other businesses first. More recent reviews that mention it, and posts about it, help you move up.",
+        priority: g.top3 < 6 ? "high" : "medium",
+      });
+  fixes.sort((a, b) => (a.priority === b.priority ? 0 : a.priority === "high" ? -1 : 1));
+  return { score, parts, fixes };
+}
+
+// "What we found": the 3 things an owner most needs to know, at the top.
+function findings(
+  r: Report,
+  view: ReturnType<typeof scoreView>,
+  extra: RenderExtra | null,
+  rows: { name: string; reviews: number; you: boolean; away: string }[],
+): string {
+  const items: { icon: string; text: string }[] = [];
+  const grids = gridsOf(r);
+  if (grids.length) {
+    const worst = [...grids].sort((a, b) => a.top3 - b.top3)[0]!;
+    items.push({
+      icon: worst.top3 >= 20 ? "&#9989;" : "&#128205;",
+      text:
+        worst.top3 === 0
+          ? `When people near you search <b>"${esc(worst.keyword)}"</b>, you are <b>not in the top 3 anywhere</b> on Google Maps. They see other businesses first.`
+          : worst.top3 >= 25
+            ? `When people near you search <b>"${esc(worst.keyword)}"</b>, you are <b>in the top 3 everywhere</b>. Great work.`
+            : `When people near you search <b>"${esc(worst.keyword)}"</b>, you are in the top 3 in only <b>${worst.top3} of 25 places</b>. In the rest, they see other businesses first.`,
+    });
+  }
+  const g = r.reviewGap;
+  if (g) {
+    const rival = rows.find((x) => !x.you && x.name === g.leader);
+    items.push({
+      icon: "&#11088;",
+      text: `<b>${esc(g.leader)}</b>${rival?.away ? ` (${esc(rival.away)} away)` : ""} has <b>${g.need.toLocaleString("en-GB")} more Google reviews</b> than you. Google and customers both favour the business with more reviews.`,
+    });
+  }
+  const snap = extra?.snapshot;
+  if (snap) {
+    const c = snap.current;
+    const perWeek = Math.round((c.calls + c.directions + c.websiteClicks) / 13);
+    items.push({
+      icon: "&#128222;",
+      text: `About <b>${perWeek} people a week</b> already call you, ask for directions or visit your website from Google. Showing higher means more of them.`,
+    });
+  } else if (extra) {
+    items.push({
+      icon: "&#128222;",
+      text: `Want to know how many people call you from Google each week? <a href="#real">See your real numbers</a>. It takes one minute.`,
+    });
+  }
+  if (!items.length) return "";
+  const start = extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start";
+  return `<div class="card found"><h2 style="margin:0 0 10px">What we found</h2>
+${items.map((i) => `<div class="finding"><span class="fi">${i.icon}</span><p>${i.text}</p></div>`).join("")}
+<div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px" href="${start}">Fix this: start free</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></div></div>`;
+}
+
 export interface RenderExtra {
   token: string;
   snapshot: ProspectSnapshot | null;
@@ -267,6 +367,8 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
 <p class="muted" style="margin:6px 0 0">To catch them in a year, you need about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b>. The easy way: ask every customer, every day.</p></div>`
     : "";
+  const view = scoreView(r);
+  const headline = findings(r, view, extra, rows);
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>${esc(b.name)}: how you show up on Google</title><meta property="og:title" content="${esc(b.name)}: how you show up on Google"><meta property="og:description" content="Your local visibility score, your nearest rivals and what to fix first."><meta property="og:image" content="https://repsuites.com/og-image.png?v=2"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>${STYLE}</style></head><body><main>
@@ -274,14 +376,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
 <h1>${esc(b.name)}: how you show up on Google</h1>
 <p class="muted">${esc(b.address)}<br>Prepared ${date}</p>
 
-<div class="card score"><div class="dial" style="background:${scoreColour(r.score)}">${r.score}</div>
-<div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
-<div class="card">${r.parts
-    .map(
-      (p) =>
-        `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:.92rem"><span>${esc(p.label)}</span><b>${p.got} / ${p.max}</b></div><div class="bar"><span style="width:${Math.round((p.got / p.max) * 100)}%"></span></div></div>`,
-    )
-    .join("")}</div>
+${headline}
 
 ${heat || (mapsLine ? `<h2>Where you show up on Google Maps</h2><div class="card">${mapsLine}</div>` : "")}
 
@@ -298,13 +393,22 @@ ${gap}
 ${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
 
 <h2>What to fix first</h2>
-${r.fixes.length ? r.fixes.map((f) => `<div class="fix ${f.priority}"><b>${esc(f.title)}</b><span>${esc(f.why)}</span></div>`).join("") : `<div class="card">Your Google profile is in good shape. The next step is a steady flow of new reviews.</div>`}
+${view.fixes.length ? view.fixes.map((f) => `<div class="fix ${f.priority}"><b>${esc(f.title)}</b><span>${esc(f.why)}</span></div>`).join("") : `<div class="card">Your Google profile is in good shape. The next step is a steady flow of new reviews.</div>`}
 
 <div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
 <p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
 <p class="small" style="text-align:center;margin:6px 0 0"><a href="${esc(bookingLink(b.name))}" style="color:#64748b">Or book a free 15-minute call</a></p></div>
+<h2 id="score">How we worked out your score</h2>
+<div class="card score"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
+<div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
+<div class="card">${view.parts
+    .map(
+      (p) =>
+        `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:.92rem"><span>${esc(p.label)}</span><b>${p.got} / ${p.max}</b></div><div class="bar"><span style="width:${Math.round((p.got / p.max) * 100)}%"></span></div></div>`,
+    )
+    .join("")}</div>
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#64748b">Save or print this report</a></p>
-<p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time. The Maps position is one search from your business's own location.</p>
+<p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time.</p>
 </main>${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
 }
 

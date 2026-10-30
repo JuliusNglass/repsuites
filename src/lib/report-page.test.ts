@@ -43,3 +43,32 @@ describe("report real numbers", () => {
     ).toContain("print()");
   });
 });
+
+describe("score uses the whole area", async () => {
+  const { areaPoints, scoreView } = await import("./report-page.server");
+  it("works out area points", () => {
+    // 6 in the top 3 and 10 at 4th to 10th: (6 + 4) / 25 x 25 = 10
+    const ranks = [...Array(6).fill(1), ...Array(10).fill(5), ...Array(9).fill(null)];
+    expect(areaPoints([{ ranks }])).toBe(10);
+  });
+  it("a phrase where you are nowhere pulls the score down and adds a fix", () => {
+    const r = {
+      ...report,
+      score: 91,
+      parts: [
+        { label: "Star rating", got: 20, max: 25 },
+        { label: "Position on Google Maps", got: 25, max: 25 },
+      ],
+      grids: [
+        { keyword: "burger", ranks: Array(25).fill(1), top3: 25, found: 25, size: 5 },
+        { keyword: "fast food", ranks: Array(25).fill(null), top3: 0, found: 0, size: 5 },
+      ],
+    };
+    const v = scoreView(r);
+    expect(v.score).toBeLessThan(91);
+    expect(v.fixes.some((f) => f.title.includes("fast food"))).toBe(true);
+    const h = renderReport(r, { token: "a".repeat(24), snapshot: null, flash: "" });
+    expect(h).toContain("What we found");
+    expect(h.indexOf("What we found")).toBeLessThan(h.indexOf("How we worked out your score"));
+  });
+});
