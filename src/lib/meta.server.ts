@@ -143,11 +143,16 @@ export async function metaConnectUrl() {
     { kind: "meta", uid: g.userId, tid: g.tenantId, exp: Date.now() + MAX_AGE_MS } satisfies State,
     cfg.sessionSecret,
   );
+  // Facebook Login for Business uses a saved configuration (its id lists the
+  // permissions and assets); without one, fall back to plain scopes.
+  const configId = (process.env["REPSUITES_META_CONFIG_ID"] ?? "").trim();
   const q = new URLSearchParams({
     client_id: a.id,
     redirect_uri: `${SHARED_ORIGIN}${META_CALLBACK_PATH}`,
     response_type: "code",
-    scope: META_SCOPES.join(","),
+    ...(/^\d+$/.test(configId)
+      ? { config_id: configId, override_default_response_type: "true" }
+      : { scope: META_SCOPES.join(",") }),
     state,
   });
   return { ok: true as const, url: `https://www.facebook.com/v21.0/dialog/oauth?${q}` };
