@@ -868,6 +868,14 @@ async function publishPost(row: any): Promise<{ ok: true } | { ok: false; error:
       ? { status: "failed", error }
       : { status: "posted", google_name: name, posted_at: new Date().toISOString(), error: null },
   });
+  // Same post to the business's Facebook Page and Instagram, if connected.
+  // Never stops the Google post; problems are saved on the post.
+  try {
+    const { publishToMeta } = await import("./meta.server");
+    await publishToMeta(row);
+  } catch (e) {
+    console.error("[meta] publish", String(e).slice(0, 200));
+  }
   return error ? { ok: false, error } : { ok: true };
 }
 

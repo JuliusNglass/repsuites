@@ -153,7 +153,8 @@ export function drawReviewCard(input: CardInput): string {
   ctx.fillText("Google review", SIZE / 2, 1010);
   ctx.globalAlpha = 1;
 
-  return c.toDataURL("image/png");
+  // JPEG: Instagram only accepts JPEG pictures; Google and Facebook take it too.
+  return c.toDataURL("image/jpeg", 0.92);
 }
 
 // Loads a picture from a web address so it can be drawn (needs CORS).

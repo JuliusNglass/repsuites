@@ -24,6 +24,7 @@ import { RankingCard } from "./RankingCard";
 import { InsightsCard } from "./InsightsCard";
 import { AiVisibilityCard } from "./AiVisibilityCard";
 import { PostPlanCard } from "./PostPlanCard";
+import { SocialPanel } from "./SocialPanel";
 
 type Data = Extract<Awaited<ReturnType<typeof getGoogleFn>>, { ok: true }>;
 type Review = Data["reviews"][number];
@@ -204,6 +205,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
             onChanged={load}
           />
           <GooglePosts posts={d.posts.filter((p) => p.status !== "draft")} onChanged={load} />
+          <SocialPanel posts={d.posts} />
         </>
       )}
       {connected && tab === "reviews" && (

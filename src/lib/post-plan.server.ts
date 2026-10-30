@@ -410,22 +410,23 @@ export async function saveCardPicture(input: { id: string; png: string }) {
   if (!g.ok) return g;
   const post = await postFor(g.tenantId, input.id);
   if (!post || post.image_kind !== "card") return { ok: false as const, error: "Unknown post." };
-  const m = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(input.png);
+  const m = /^data:image\/(png|jpeg);base64,([A-Za-z0-9+/=]+)$/.exec(input.png);
   if (!m) return { ok: false as const, error: "That picture could not be read." };
-  const bytes = Uint8Array.from(atob(m[1]!), (c) => c.charCodeAt(0));
+  const jpeg = m[1] === "jpeg";
+  const bytes = Uint8Array.from(atob(m[2]!), (c) => c.charCodeAt(0));
   if (bytes.length < 1000 || bytes.length > 4_000_000)
     return { ok: false as const, error: "That picture is the wrong size." };
   const cfg = getSupabaseConfig();
   const key = getServiceKey();
   if (!cfg.isConfigured || !key) return { ok: false as const, error: "Storage is not set up." };
-  const path = `${g.tenantId}/${post.id}-${Date.now()}.png`;
+  const path = `${g.tenantId}/${post.id}-${Date.now()}.${jpeg ? "jpg" : "png"}`;
   const up = await fetch(`${cfg.url}/storage/v1/object/post-images/${path}`, {
     method: "POST",
     // Legacy JWT keys go in Authorization; sb_secret_ keys only as apikey.
     headers: {
       ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {}),
       apikey: key,
-      "Content-Type": "image/png",
+      "Content-Type": jpeg ? "image/jpeg" : "image/png",
       "x-upsert": "true",
     },
     body: bytes,

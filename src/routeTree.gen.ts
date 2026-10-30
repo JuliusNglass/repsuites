@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MetaDeletionRouteImport } from './routes/meta-deletion'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProspectsRouteImport } from './routes/prospects'
@@ -34,8 +35,10 @@ import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.intern
 import { Route as ApiInternalLifecycleRouteImport } from './routes/api.internal.lifecycle'
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
 import { Route as ApiInternalReviewRequestsRouteImport } from './routes/api.internal.review-requests'
+import { Route as ApiMetaDataDeletionRouteImport } from './routes/api.meta.data-deletion'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api.google.oauth.callback'
+import { Route as ApiMetaOauthCallbackRouteImport } from './routes/api.meta.oauth.callback'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -60,6 +63,11 @@ const GoogleBusinessProfileRoute = GoogleBusinessProfileRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetaDeletionRoute = MetaDeletionRouteImport.update({
+  id: '/meta-deletion',
+  path: '/meta-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -163,6 +171,11 @@ const ApiInternalReviewRequestsRoute =
     path: '/api/internal/review-requests',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiMetaDataDeletionRoute = ApiMetaDataDeletionRouteImport.update({
+  id: '/api/meta/data-deletion',
+  path: '/api/meta/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -173,6 +186,11 @@ const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   path: '/api/google/oauth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMetaOauthCallbackRoute = ApiMetaOauthCallbackRouteImport.update({
+  id: '/api/meta/oauth/callback',
+  path: '/api/meta/oauth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -180,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
+  '/meta-deletion': typeof MetaDeletionRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
@@ -200,8 +219,10 @@ export interface FileRoutesByFullPath {
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
+  '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
+  '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -209,6 +230,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
+  '/meta-deletion': typeof MetaDeletionRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
@@ -229,8 +251,10 @@ export interface FileRoutesByTo {
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
+  '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
+  '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -239,6 +263,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
+  '/meta-deletion': typeof MetaDeletionRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
@@ -259,8 +284,10 @@ export interface FileRoutesById {
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
+  '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
+  '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -270,6 +297,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
+    | '/meta-deletion'
     | '/pricing'
     | '/privacy'
     | '/prospects'
@@ -290,8 +318,10 @@ export interface FileRouteTypes {
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
+    | '/api/meta/data-deletion'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
+    | '/api/meta/oauth/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -299,6 +329,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
+    | '/meta-deletion'
     | '/pricing'
     | '/privacy'
     | '/prospects'
@@ -319,8 +350,10 @@ export interface FileRouteTypes {
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
+    | '/api/meta/data-deletion'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
+    | '/api/meta/oauth/callback'
   id:
     | '__root__'
     | '/'
@@ -328,6 +361,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
+    | '/meta-deletion'
     | '/pricing'
     | '/privacy'
     | '/prospects'
@@ -348,8 +382,10 @@ export interface FileRouteTypes {
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
+    | '/api/meta/data-deletion'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
+    | '/api/meta/oauth/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -358,6 +394,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
   LoginRoute: typeof LoginRoute
+  MetaDeletionRoute: typeof MetaDeletionRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProspectsRoute: typeof ProspectsRoute
@@ -378,8 +415,10 @@ export interface RootRouteChildren {
   ApiInternalLifecycleRoute: typeof ApiInternalLifecycleRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
   ApiInternalReviewRequestsRoute: typeof ApiInternalReviewRequestsRoute
+  ApiMetaDataDeletionRoute: typeof ApiMetaDataDeletionRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
+  ApiMetaOauthCallbackRoute: typeof ApiMetaOauthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -417,6 +456,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meta-deletion': {
+      id: '/meta-deletion'
+      path: '/meta-deletion'
+      fullPath: '/meta-deletion'
+      preLoaderRoute: typeof MetaDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -559,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalReviewRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/meta/data-deletion': {
+      id: '/api/meta/data-deletion'
+      path: '/api/meta/data-deletion'
+      fullPath: '/api/meta/data-deletion'
+      preLoaderRoute: typeof ApiMetaDataDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
@@ -573,6 +626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/meta/oauth/callback': {
+      id: '/api/meta/oauth/callback'
+      path: '/api/meta/oauth/callback'
+      fullPath: '/api/meta/oauth/callback'
+      preLoaderRoute: typeof ApiMetaOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -582,6 +642,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   GoogleBusinessProfileRoute: GoogleBusinessProfileRoute,
   LoginRoute: LoginRoute,
+  MetaDeletionRoute: MetaDeletionRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProspectsRoute: ProspectsRoute,
@@ -602,8 +663,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalLifecycleRoute: ApiInternalLifecycleRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
   ApiInternalReviewRequestsRoute: ApiInternalReviewRequestsRoute,
+  ApiMetaDataDeletionRoute: ApiMetaDataDeletionRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
+  ApiMetaOauthCallbackRoute: ApiMetaOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
