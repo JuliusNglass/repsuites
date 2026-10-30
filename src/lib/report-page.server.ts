@@ -52,6 +52,31 @@ export function renderReport(r: Report): string {
     : r.maps.position === null
       ? `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>not in the first 20</b> results on Google Maps.</p>`
       : `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>number ${r.maps.position}</b> on Google Maps.${r.maps.position <= 3 ? " That is the top 3. Well done." : " The first 3 are the ones most people tap."}</p>`;
+  // Heatmap: one coloured dot per spot, the business in the middle.
+  const hm = r.grid;
+  const dot = (v: number | null) =>
+    v === -1
+      ? { bg: "#e2e8f0", fg: "#64748b", t: "?" }
+      : v === null
+        ? { bg: "#dc2626", fg: "#fff", t: "20+" }
+        : v <= 3
+          ? { bg: "#059669", fg: "#fff", t: String(v) }
+          : v <= 10
+            ? { bg: "#f59e0b", fg: "#111", t: String(v) }
+            : { bg: "#ef4444", fg: "#fff", t: String(v) };
+  const heat = hm
+    ? `<h2>Where you show up across your area</h2><div class="card">
+<p style="margin:0 0 12px">We searched <b>"${esc(r.maps.keyword)}"</b> from 25 spots around you, each ${esc(hm.spacing)} apart, as a customer standing there would. The middle dot is your street.</p>
+<div style="display:grid;grid-template-columns:repeat(${hm.size},1fr);gap:8px;max-width:340px;margin:0 auto">${hm.ranks
+        .map((v, i) => {
+          const d = dot(v);
+          const mid = i === Math.floor((hm.size * hm.size) / 2);
+          return `<div style="aspect-ratio:1;border-radius:50%;background:${d.bg};color:${d.fg};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;${mid ? "box-shadow:0 0 0 3px #0f172a" : ""}">${d.t}</div>`;
+        })
+        .join("")}</div>
+<p class="small" style="text-align:center;margin:10px 0 0"><span style="color:#059669">&#9679;</span> top 3 &nbsp; <span style="color:#f59e0b">&#9679;</span> 4 to 10 &nbsp; <span style="color:#ef4444">&#9679;</span> 11 or lower</p>
+<p style="margin:14px 0 0">You are in the <b>top 3 in ${hm.top3} of 25 spots</b>${hm.found < 25 ? `, and not in the first 20 results in ${25 - hm.found}` : ""}. The top 3 get most of the calls, so every red or amber dot is customers going elsewhere.</p></div>`
+    : "";
   const g = r.reviewGap;
   const gap = g
     ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
@@ -73,7 +98,7 @@ export function renderReport(r: Report): string {
     )
     .join("")}</div>
 
-${mapsLine ? `<h2>Where you show up on Google Maps</h2><div class="card">${mapsLine}</div>` : ""}
+${heat || (mapsLine ? `<h2>Where you show up on Google Maps</h2><div class="card">${mapsLine}</div>` : "")}
 
 <h2>You and your nearest rivals</h2>
 <div class="card"><table><tr><th>Business</th><th>Rating</th><th>Google reviews</th></tr>

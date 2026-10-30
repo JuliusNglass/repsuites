@@ -103,6 +103,16 @@ export interface Report {
   };
   rivals: { name: string; rating: number | null; reviews: number }[];
   maps: { keyword: string; position: number | null; checked: boolean; error?: string };
+  // 5 by 5 heatmap, row by row from the north-west corner. -1 = not checked,
+  // null = not in the top 20.
+  grid?: {
+    size: number;
+    spacing: string;
+    ranks: (number | null)[];
+    found: number;
+    top3: number;
+    average: number | null;
+  } | null;
   score: number;
   parts: { label: string; got: number; max: number }[];
   fixes: { title: string; why: string; priority: "high" | "medium" }[];
@@ -199,16 +209,53 @@ export async function buildReport(
   let position: number | null = null;
   let checked = false;
   let mapsError = "";
+  let grid: Report["grid"] = null;
   if (keyword && lat !== null && lng !== null) {
     const { creds, mapsResults } = await import("./rank-tracking.server");
     const { rankIn } = await import("./rank-grid");
     const auth = creds();
     if (auth) {
-      const r = await mapsResults(auth, keyword, lat, lng);
-      if (r.ok) {
+      // A 5 by 5 heatmap around the business: 25 searches, about half a mile
+      // (or 1 km) apart. The middle spot is the business's own street.
+      const { gridPoints, summarisePoints } = await import("./rank-grid");
+      const { usesMiles, distanceLabel } = await import("./units");
+      const miles = usesMiles(lat, lng);
+      const spacingKm = miles ? 0.8 : 1;
+      const pts = gridPoints({ lat, lng }, 5, spacingKm);
+      const ranks: (number | null | undefined)[] = new Array(pts.length).fill(undefined);
+      let failed = 0;
+      let next = 0;
+      const worker = async () => {
+        while (next < pts.length) {
+          const i = next++;
+          const pt = pts[i]!;
+          const r = await mapsResults(auth, keyword, pt.lat, pt.lng);
+          if (r.ok) ranks[i] = rankIn(r.items, p.id, name);
+          else {
+            failed++;
+            if (!mapsError) mapsError = String(r.error).slice(0, 200);
+          }
+        }
+      };
+      await Promise.all(Array.from({ length: 6 }, worker));
+      const middle = ranks[12];
+      if (middle !== undefined) {
         checked = true;
-        position = rankIn(r.items, p.id, name);
-      } else mapsError = String(r.error).slice(0, 200);
+        position = middle;
+        mapsError = "";
+      }
+      if (failed <= 5) {
+        const done = pts.map((pt, i) => ({ lat: pt.lat, lng: pt.lng, rank: ranks[i] ?? null }));
+        const sum = summarisePoints(done);
+        grid = {
+          size: 5,
+          spacing: distanceLabel(miles ? 0.8 : 1, miles),
+          ranks: ranks.map((r) => (r === undefined ? -1 : r)),
+          found: sum.found,
+          top3: sum.top3,
+          average: sum.average,
+        };
+      }
     } else mapsError = "DataForSEO login not set";
   }
 
@@ -252,6 +299,12 @@ export async function buildReport(
           : `You are number ${position} on Google Maps for "${keyword}" from your own street`,
       why: "People nearby tap one of the first 3 businesses on the map. Getting into those 3 is the fastest way to more calls.",
       priority: "high",
+    });
+  if (grid && grid.top3 < 13)
+    fixes.push({
+      title: `You are in the top 3 on Google Maps in only ${grid.top3} of the 25 spots around you`,
+      why: "Customers a few streets away see your competitors first. More recent reviews and a complete profile are what move you up across your whole area.",
+      priority: grid.top3 < 6 ? "high" : "medium",
     });
   if (target)
     fixes.push({
@@ -322,6 +375,7 @@ export async function buildReport(
       },
       rivals,
       maps: { keyword, position, checked, ...(mapsError ? { error: mapsError } : {}) },
+      grid,
       score,
       parts,
       fixes: fixes
