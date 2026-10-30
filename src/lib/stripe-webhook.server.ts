@@ -48,6 +48,10 @@ async function shopPaid(session: any) {
     method: "PATCH",
     body: {
       status: "paid",
+      // What the customer actually paid, after any discount code.
+      ...(Number.isFinite(Number(session.amount_total))
+        ? { total_pence: Math.round(Number(session.amount_total)) }
+        : {}),
       paid_at: new Date().toISOString(),
       email: cust.email ?? null,
       contact_name: ship?.name ?? cust.name ?? null,

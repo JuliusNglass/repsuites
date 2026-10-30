@@ -406,7 +406,22 @@ export async function disconnectGoogle() {
     method: "POST",
     body: { p_tenant: g.tenantId },
   });
-  if (typeof rt.data === "string" && rt.data) {
+  // Google cancels a refresh token for the whole Google account, so revoking
+  // it would also cut off every other business connected with the same
+  // account. Only revoke when this is the last business using it.
+  const me = await serviceRead<{ google_email: string | null }[]>(
+    `google_connections?select=google_email&tenant_id=eq.${g.tenantId}`,
+    "",
+  );
+  const email = me.data?.[0]?.google_email ?? null;
+  const others = email
+    ? await serviceRead<{ tenant_id: string }[]>(
+        `google_connections?select=tenant_id&google_email=eq.${encodeURIComponent(email)}&tenant_id=neq.${g.tenantId}&limit=1`,
+        "",
+      )
+    : { data: [] };
+  const shared = (others.data?.length ?? 0) > 0;
+  if (!shared && typeof rt.data === "string" && rt.data) {
     await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(rt.data)}`, {
       method: "POST",
       signal: AbortSignal.timeout(10000),
