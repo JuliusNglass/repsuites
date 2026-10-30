@@ -26,7 +26,7 @@ function OneCode({ c }: { c: Code }) {
       <div className="min-w-0 flex-1">
         <p className="font-semibold truncate">{c.label}</p>
         <p className="text-xs text-muted-foreground">
-          {c.working ? "Opens your Google review page" : "Not linked to a Google listing yet"}
+          {c.working ? "Opens your review page" : "Not linked to a Google listing yet"}
           {" - "}
           {c.scans30} scan{c.scans30 === 1 ? "" : "s"} in the last 30 days
         </p>
@@ -56,7 +56,7 @@ export function QrCodesCard() {
         <QrCode className="w-5 h-5" /> Review QR codes
       </h2>
       <p className="text-sm text-muted-foreground mb-2">
-        Customers scan these on cards and table stands to leave a Google review.
+        Customers scan these on cards and table stands to reach your review page.
       </p>
       {codes === null ? (
         <p className="text-sm text-muted-foreground">Loading...</p>

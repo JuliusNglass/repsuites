@@ -10,6 +10,7 @@ import { selectTenant, signOut } from "../lib/auth.functions";
 import { listMyBusinesses } from "../lib/businesses.functions";
 import { GooglePanel } from "../components/reviews/GooglePanel";
 import { QrCodesCard } from "../components/reviews/QrCodesCard";
+import { ReviewLinksCard } from "../components/reviews/ReviewLinksCard";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -142,6 +143,7 @@ function Dashboard() {
           <>
             <GooglePanel key={active.id} />
             <QrCodesCard key={`qr-${active.id}`} />
+            <ReviewLinksCard key={`links-${active.id}`} />
           </>
         ) : (
           <p className="text-muted-foreground">Choose a business to get started.</p>

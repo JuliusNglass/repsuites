@@ -1,39 +1,48 @@
-// Printed RepSuites QR codes point here: /feedback/<ID>. Each ID belongs to
-// one business (or one branch). Send the customer to that business's
-// Google review page and count the scan.
+// Printed RepSuites QR codes point here: /feedback/<ID> (never change this
+// address). Shows the business's review buttons (Google and any other sites
+// they chose, in their order) plus a private feedback form, and counts the
+// scan. The page itself is in feedback-page.server.ts.
 import { createFileRoute } from "@tanstack/react-router";
-import { serviceRead, serviceWrite } from "../lib/supabase-service.server";
+import { serviceWrite } from "../lib/supabase-service.server";
+import {
+  loadFeedbackTarget,
+  notFoundPage,
+  renderFeedbackPage,
+  savePrivateFeedback,
+} from "../lib/feedback-page.server";
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const HTML = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" };
+
+function sameSite(request: Request): boolean {
+  const o = request.headers.get("origin");
+  return !o || /^https:\/\/(www\.)?repsuites\.com$/.test(o);
+}
 
 export const Route = createFileRoute("/feedback/$id")({
   server: {
     handlers: {
       GET: async ({ params }) => {
         const id = String(params.id || "").toLowerCase();
-        if (UUID_RE.test(id)) {
-          const r = await serviceRead<{ target_url: string }[]>(
-            `qr_links?select=target_url&id=eq.${id}&active=eq.true`,
-            "",
-          );
-          const target = r.data?.[0]?.target_url;
-          if (target && target.startsWith("https://")) {
-            await serviceWrite("qr_scans", "", { method: "POST", body: { qr_id: id } }).catch(
-              () => null,
-            );
-            return new Response(null, {
-              status: 302,
-              headers: { Location: target, "Cache-Control": "no-store" },
-            });
-          }
-        }
-        return new Response(
-          `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title></head><body style="font-family:system-ui,sans-serif;max-width:28rem;margin:4rem auto;padding:0 1rem;text-align:center"><h1 style="font-size:1.4rem">Thanks for scanning</h1><p>This review code is not active at the moment. Please ask the business for their review link.</p><p><a href="/">RepSuites</a></p></body></html>`,
-          {
-            status: 404,
-            headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
-          },
+        const t = await loadFeedbackTarget(id);
+        if (!t) return new Response(notFoundPage(), { status: 404, headers: HTML });
+        await serviceWrite("qr_scans", "", { method: "POST", body: { qr_id: id } }).catch(
+          () => null,
         );
+        return new Response(renderFeedbackPage(t), { status: 200, headers: HTML });
+      },
+      POST: async ({ params, request }) => {
+        const id = String(params.id || "").toLowerCase();
+        const t = await loadFeedbackTarget(id);
+        if (!t) return new Response(notFoundPage(), { status: 404, headers: HTML });
+        let ok = false;
+        if (sameSite(request)) {
+          const form = await request.formData().catch(() => null);
+          ok = form ? await savePrivateFeedback(t, form) : false;
+        }
+        return new Response(renderFeedbackPage(t, ok ? "sent" : "error"), {
+          status: ok ? 200 : 400,
+          headers: HTML,
+        });
       },
     },
   },
