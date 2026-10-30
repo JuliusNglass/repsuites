@@ -132,7 +132,7 @@ export async function tokenRequest(form: Record<string, string>) {
 // the same business several times asks Google once.
 const tokenCache = new Map<string, { token: string; until: number }>();
 
-async function accessToken(tenantId: string): Promise<string | null> {
+export async function accessToken(tenantId: string): Promise<string | null> {
   const hit = tokenCache.get(tenantId);
   if (hit && hit.until > Date.now()) return hit.token;
   const fresh = await fetchAccessToken(tenantId);
@@ -468,7 +468,7 @@ export async function disconnectGoogle() {
 
 // ---------- reviews ----------
 
-async function connectionFor(tenantId: string) {
+export async function connectionFor(tenantId: string) {
   const c = await serviceRead<any[]>(
     `google_connections?select=account_name,location_name,location_title,status&tenant_id=eq.${tenantId}`,
     "",
@@ -819,7 +819,7 @@ export async function cancelGooglePost(input: { id: string }) {
   if (!g.ok) return { ok: false as const, error: g.error };
   if (!UUID_RE.test(input.id)) return { ok: false as const, error: "Unknown post." };
   await serviceWrite<unknown>(
-    `google_posts?id=eq.${input.id}&tenant_id=eq.${g.tenantId}&status=in.(scheduled,failed)`,
+    `google_posts?id=eq.${input.id}&tenant_id=eq.${g.tenantId}&status=in.(draft,scheduled,failed)`,
     "",
     {
       method: "PATCH",

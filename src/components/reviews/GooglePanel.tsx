@@ -23,6 +23,7 @@ import { change } from "../../lib/google-performance";
 import { RankingCard } from "./RankingCard";
 import { InsightsCard } from "./InsightsCard";
 import { AiVisibilityCard } from "./AiVisibilityCard";
+import { PostPlanCard } from "./PostPlanCard";
 
 type Data = Extract<Awaited<ReturnType<typeof getGoogleFn>>, { ok: true }>;
 type Review = Data["reviews"][number];
@@ -195,7 +196,12 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
           <ReportSettingsCard s={d.reportSettings} canEdit={d.canConnect} onSaved={load} />
         </>
       )}
-      {connected && tab === "posts" && <GooglePosts posts={d.posts} onChanged={load} />}
+      {connected && tab === "posts" && (
+        <>
+          <PostPlanCard drafts={d.posts.filter((p) => p.status === "draft")} onChanged={load} />
+          <GooglePosts posts={d.posts.filter((p) => p.status !== "draft")} onChanged={load} />
+        </>
+      )}
       {connected && tab === "reviews" && (
         <section className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
