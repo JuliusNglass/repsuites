@@ -527,7 +527,9 @@ export async function saveProspectReport(
     keywords?: string[];
   } = {},
 ) {
-  const built = await buildReport(placeId, extra.keyword, extra.keywords ?? []);
+  // Extra phrases run as separate requests (addProspectGrid): each grid is 25
+  // outside calls and a request may make at most 50.
+  const built = await buildReport(placeId, extra.keyword);
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
   const existing = await serviceRead<{ id: string; report_token: string | null }[]>(
@@ -569,4 +571,37 @@ export function validStage(s: string): s is Stage {
 
 export function isUuid(s: string): boolean {
   return UUID_RE.test(s);
+}
+
+// Adds (or redoes) the heatmap for one more search phrase on a saved report.
+export async function addProspectGrid(placeId: string, keyword: string) {
+  const k = keyword.toLowerCase().trim().slice(0, 80);
+  if (!k) return { ok: false as const, error: "Add a search phrase." };
+  const r = await serviceRead<
+    { id: string; name: string; lat: number | null; lng: number | null; report: Report | null }[]
+  >(`prospects?select=id,name,lat,lng,report&place_id=eq.${encodeURIComponent(placeId)}`, "");
+  const row = r.data?.[0];
+  if (!row?.report || row.lat === null || row.lng === null)
+    return { ok: false as const, error: "Build the report first." };
+  const { creds } = await import("./rank-tracking.server");
+  const auth = creds();
+  if (!auth) return { ok: false as const, error: "DataForSEO login not set" };
+  const res = await runGrid(auth, k, { lat: row.lat, lng: row.lng }, placeId, row.name);
+  if (!res.grid) return { ok: false as const, error: res.error || "Google Maps check failed." };
+  const report = row.report;
+  const grids = (
+    report.grids?.length
+      ? report.grids
+      : report.grid
+        ? [{ keyword: report.maps.keyword, ...report.grid }]
+        : []
+  ).filter((g) => g.keyword !== k);
+  report.grids = [...grids, { keyword: k, ...res.grid }].slice(0, 3);
+  const w = await serviceWrite<unknown>(`prospects?id=eq.${row.id}`, "", {
+    method: "PATCH",
+    body: { report, updated_at: new Date().toISOString() },
+  });
+  return w.error
+    ? { ok: false as const, error: "Could not save the report." }
+    : { ok: true as const };
 }

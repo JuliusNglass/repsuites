@@ -5,6 +5,7 @@ import { serviceRead, serviceWrite } from "./supabase-service.server";
 import {
   agencyGuard,
   saveProspectReport,
+  addProspectGrid,
   searchBusinesses,
   STAGES,
   type Report,
@@ -58,6 +59,18 @@ export const buildProspectReport = createServerFn({ method: "POST" })
       createdBy: g.userId,
       ...phrases(data.keyword),
     });
+  });
+
+export const addProspectPhrase = createServerFn({ method: "POST" })
+  .validator((d: { placeId: string; keyword: string }) =>
+    z
+      .object({ placeId: z.string().regex(PLACE_RE), keyword: z.string().trim().min(2).max(80) })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    return addProspectGrid(data.placeId, data.keyword);
   });
 
 export const listProspects = createServerFn({ method: "GET" }).handler(async () => {

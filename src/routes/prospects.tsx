@@ -21,6 +21,7 @@ import {
 import { Logo } from "../components/site/Logo";
 import {
   buildProspectReport,
+  addProspectPhrase,
   listProspects,
   searchProspects,
   updateProspect,
@@ -81,6 +82,7 @@ function Prospects() {
   const list = useServerFn(listProspects);
   const search = useServerFn(searchProspects);
   const build = useServerFn(buildProspectReport);
+  const addPhrase = useServerFn(addProspectPhrase);
   const update = useServerFn(updateProspect);
   const [tab, setTab] = useState<"find" | "pipeline" | "due">("find");
   const [items, setItems] = useState<List | null>(null);
@@ -238,6 +240,19 @@ function Prospects() {
                           niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
                         },
                       });
+                      setBuilding(null);
+                      // Extra search phrases: one at a time (each is 25 map searches).
+                      const extra = words
+                        .split(",")
+                        .map((w) => w.trim())
+                        .filter(Boolean)
+                        .slice(1, 3);
+                      if (r.ok)
+                        for (const w of extra) {
+                          setBuilding(h.placeId);
+                          const a = await addPhrase({ data: { placeId: h.placeId, keyword: w } });
+                          if (!a.ok) toast.error(`"${w}": ${a.error}`);
+                        }
                       setBuilding(null);
                       if (r.ok) {
                         toast.success(`Report ready for ${r.name}: score ${r.score}`);
