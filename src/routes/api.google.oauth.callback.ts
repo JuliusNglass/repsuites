@@ -5,6 +5,7 @@
 // starts on repsuites.com, so the cookie is sent and the person stays signed in.
 import { createFileRoute } from "@tanstack/react-router";
 import { finishGoogleConnect } from "../lib/google-business.server";
+import { finishProspectConnect } from "../lib/prospect-connect.server";
 
 function bouncePage(to: string): string {
   const safe = to.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -19,7 +20,9 @@ export const Route = createFileRoute("/api/google/oauth/callback")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const to = await finishGoogleConnect(new URL(request.url).searchParams);
+        const params = new URL(request.url).searchParams;
+        // A prospect adding figures to their report, or a business connecting.
+        const to = (await finishProspectConnect(params)) ?? (await finishGoogleConnect(params));
         // Only ever bounce to our own site.
         const dest = /^https:\/\/(www\.)?repsuites\.com\//.test(to)
           ? to

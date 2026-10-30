@@ -68,11 +68,12 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       report_token: string | null;
       opens: number;
       last_opened_at: string | null;
+      gbp_connected_at: string | null;
       source: string;
       created_at: string;
     }[]
   >(
-    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,source,created_at&order=updated_at.desc&limit=300",
+    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at&order=updated_at.desc&limit=300",
     "",
   );
   return {
@@ -92,6 +93,7 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       link: p.report_token ? `https://repsuites.com/r/${p.report_token}` : null,
       opens: p.opens,
       lastOpenedAt: p.last_opened_at,
+      googleConnected: !!p.gbp_connected_at,
       source: p.source,
       createdAt: p.created_at,
     })),

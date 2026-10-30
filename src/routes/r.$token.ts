@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { serviceRead, serviceWrite } from "../lib/supabase-service.server";
 import { renderReport, reportNotFound } from "../lib/report-page.server";
 import type { Report } from "../lib/prospects.server";
+import type { ProspectSnapshot } from "../lib/prospect-connect.server";
 
 const HTML = {
   "Content-Type": "text/html; charset=utf-8",
@@ -18,10 +19,9 @@ export const Route = createFileRoute("/r/$token")({
         const token = String(params.token || "");
         if (!/^[A-Za-z0-9_-]{20,64}$/.test(token))
           return new Response(reportNotFound(), { status: 404, headers: HTML });
-        const r = await serviceRead<{ report: Report | null }[]>(
-          `prospects?select=report&report_token=eq.${token}`,
-          "",
-        );
+        const r = await serviceRead<
+          { report: Report | null; gbp_snapshot: ProspectSnapshot | null }[]
+        >(`prospects?select=report,gbp_snapshot&report_token=eq.${token}`, "");
         const report = r.data?.[0]?.report;
         if (!report) return new Response(reportNotFound(), { status: 404, headers: HTML });
         // Do not count our own team opening it (they are signed in).
@@ -31,7 +31,16 @@ export const Route = createFileRoute("/r/$token")({
             method: "POST",
             body: { p_token: token },
           }).catch(() => null);
-        return new Response(renderReport(report), { status: 200, headers: HTML });
+        const q = new URL(request.url).searchParams;
+        const flash = q.get("print") ? "print" : (q.get("google") ?? "");
+        return new Response(
+          renderReport(report, {
+            token,
+            snapshot: r.data?.[0]?.gbp_snapshot ?? null,
+            flash: flash.slice(0, 20),
+          }),
+          { status: 200, headers: HTML },
+        );
       },
     },
   },

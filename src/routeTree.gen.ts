@@ -19,6 +19,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiProspectConnectRouteImport } from './routes/api.prospect-connect'
 import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
 import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
@@ -80,6 +81,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProspectConnectRoute = ApiProspectConnectRouteImport.update({
+  id: '/api/prospect-connect',
+  path: '/api/prospect-connect',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CardsIndexRoute = CardsIndexRouteImport.update({
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/prospects'
     | '/reset-password'
     | '/terms'
+    | '/api/prospect-connect'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/prospects'
     | '/reset-password'
     | '/terms'
+    | '/api/prospect-connect'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -278,6 +289,7 @@ export interface FileRouteTypes {
     | '/prospects'
     | '/reset-password'
     | '/terms'
+    | '/api/prospect-connect'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -303,6 +315,7 @@ export interface RootRouteChildren {
   ProspectsRoute: typeof ProspectsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ApiProspectConnectRoute: typeof ApiProspectConnectRoute
   CardsOrderRoute: typeof CardsOrderRoute
   CardsThanksRoute: typeof CardsThanksRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
@@ -387,6 +400,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/prospect-connect': {
+      id: '/api/prospect-connect'
+      path: '/api/prospect-connect'
+      fullPath: '/api/prospect-connect'
+      preLoaderRoute: typeof ApiProspectConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cards/': {
@@ -487,6 +507,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProspectsRoute: ProspectsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ApiProspectConnectRoute: ApiProspectConnectRoute,
   CardsOrderRoute: CardsOrderRoute,
   CardsThanksRoute: CardsThanksRoute,
   FeedbackIdRoute: FeedbackIdRoute,

@@ -25,8 +25,8 @@ import {
   type ReplyTemplates,
 } from "./review-reply-draft";
 
-const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
-const TOKEN_URL = "https://oauth2.googleapis.com/token";
+export const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+export const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const SCOPES = ["openid", "email", "https://www.googleapis.com/auth/business.manage"];
 const STATE_MAX_AGE_MS = 30 * 60 * 1000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -36,7 +36,7 @@ const OWNERS = ["owner", "admin", "super_admin"];
 export const CALLBACK_PATH = "/api/google/oauth/callback";
 export const STAR: Record<string, number> = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 };
 
-function clientCreds(): { id: string; secret: string } | null {
+export function clientCreds(): { id: string; secret: string } | null {
   const id = (process.env["REPSUITES_GOOGLE_CLIENT_ID"] ?? "").trim();
   const secret = (process.env["REPSUITES_GOOGLE_CLIENT_SECRET"] ?? "").trim();
   return id && secret ? { id, secret } : null;
@@ -64,7 +64,11 @@ async function guard(write: boolean, owners = false) {
 
 // ---------- Google calls ----------
 
-async function google(token: string, url: string, init: { method?: string; body?: unknown } = {}) {
+export async function google(
+  token: string,
+  url: string,
+  init: { method?: string; body?: unknown } = {},
+) {
   try {
     const r = await fetch(url, {
       method: init.method ?? "GET",
@@ -85,7 +89,7 @@ async function google(token: string, url: string, init: { method?: string; body?
   }
 }
 
-function googleError(r: { status: number; data: any }): string {
+export function googleError(r: { status: number; data: any }): string {
   const m = String(r.data?.error?.message ?? "").slice(0, 200);
   if (r.status === 401 || r.status === 403)
     return m.includes("disabled") || m.includes("quota")
@@ -95,7 +99,7 @@ function googleError(r: { status: number; data: any }): string {
   return m ? `Google said: ${m}` : "Google could not be reached. Try again.";
 }
 
-async function tokenRequest(form: Record<string, string>) {
+export async function tokenRequest(form: Record<string, string>) {
   try {
     const r = await fetch(TOKEN_URL, {
       method: "POST",
@@ -166,14 +170,14 @@ export function emailFromIdToken(idToken: unknown): string | null {
   }
 }
 
-interface Place {
+export interface Place {
   account: string;
   location: string;
   title: string;
   address: string;
 }
 
-async function listPlaces(token: string): Promise<Place[] | { error: string }> {
+export async function listPlaces(token: string): Promise<Place[] | { error: string }> {
   const acc = await google(
     token,
     "https://mybusinessaccountmanagement.googleapis.com/v1/accounts?pageSize=20",
@@ -875,23 +879,15 @@ export async function readGooglePerformance() {
   );
 }
 
-// Figures for one business: daily totals from p.start to p.end split at
-// p.split, and the search words for the month starting wordsMonth.
-export async function performanceFor(
-  tenantId: string,
-  p: { start: string; split: string; end: string },
+// Daily figures from p.start to p.end and the search words for wordsMonth,
+// for one location, with any access token that can read it.
+export async function fetchMetrics(
+  token: string,
+  location: string,
+  p: { start: string; end: string },
   wordsMonth: Date,
 ) {
-  const c = await serviceRead<any[]>(
-    `google_connections?select=location_name,location_title,status&tenant_id=eq.${tenantId}`,
-    "",
-  );
-  const conn = c.data?.[0];
-  if (!conn || conn.status !== "connected" || !conn.location_name)
-    return { ok: false as const, error: "Connect your Google profile first." };
-  const token = await accessToken(tenantId);
-  if (!token) return { ok: false as const, error: "Connect Google again." };
-  const { summarise, searchTerms, DAILY_METRICS } = await import("./google-performance");
+  const { DAILY_METRICS } = await import("./google-performance");
   const [y1, m1, d1] = p.start.split("-").map(Number);
   const [y2, m2, d2] = p.end.split("-").map(Number);
   const q = new URLSearchParams();
@@ -910,20 +906,44 @@ export async function performanceFor(
     "monthlyRange.end_month.month": String(lm.getUTCMonth() + 1),
     pageSize: "100",
   });
-  const [metrics, words, reviews] = await Promise.all([
+  const [metrics, words] = await Promise.all([
     google(
       token,
-      `https://businessprofileperformance.googleapis.com/v1/${conn.location_name}:fetchMultiDailyMetricsTimeSeries?${q}`,
+      `https://businessprofileperformance.googleapis.com/v1/${location}:fetchMultiDailyMetricsTimeSeries?${q}`,
     ),
     google(
       token,
-      `https://businessprofileperformance.googleapis.com/v1/${conn.location_name}/searchkeywords/impressions/monthly?${k}`,
+      `https://businessprofileperformance.googleapis.com/v1/${location}/searchkeywords/impressions/monthly?${k}`,
     ),
+  ]);
+  return { metrics, words };
+}
+
+// Figures for one business: daily totals from p.start to p.end split at
+// p.split, and the search words for the month starting wordsMonth.
+export async function performanceFor(
+  tenantId: string,
+  p: { start: string; split: string; end: string },
+  wordsMonth: Date,
+) {
+  const c = await serviceRead<any[]>(
+    `google_connections?select=location_name,location_title,status&tenant_id=eq.${tenantId}`,
+    "",
+  );
+  const conn = c.data?.[0];
+  if (!conn || conn.status !== "connected" || !conn.location_name)
+    return { ok: false as const, error: "Connect your Google profile first." };
+  const token = await accessToken(tenantId);
+  if (!token) return { ok: false as const, error: "Connect Google again." };
+  const { summarise, searchTerms } = await import("./google-performance");
+  const [{ metrics, words }, reviews] = await Promise.all([
+    fetchMetrics(token, conn.location_name, p, wordsMonth),
     serviceRead<{ stars: number | null; created_at_google: string | null }[]>(
       `google_reviews?select=stars,created_at_google&tenant_id=eq.${tenantId}&created_at_google=gte.${p.start}`,
       "",
     ),
   ]);
+  const lm = wordsMonth;
   if (!metrics.ok) return { ok: false as const, error: googleError(metrics) };
   const { current, previous } = summarise(metrics.data, p.split);
   const rv = reviews.data ?? [];

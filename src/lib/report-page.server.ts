@@ -2,6 +2,7 @@
 // Plain HTML so it loads instantly on a phone and prints cleanly to PDF.
 // No em dashes in this copy (AGENTS.md).
 import type { Report } from "./prospects.server";
+import type { ProspectSnapshot } from "./prospect-connect.server";
 
 function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -36,7 +37,76 @@ tr.you td{font-weight:700;background:#fffbeb}
 @media print{.cta,.noprint{display:none}body{background:#fff}.card{break-inside:avoid}}
 `;
 
-export function renderReport(r: Report): string {
+const FLASH: Record<string, string> = {
+  connected: "Done. Your real numbers from Google are below.",
+  cancelled: "No problem. Nothing was shared.",
+  noprofile:
+    "That Google account does not look after a Business Profile. Try the account you use for your profile.",
+  permission:
+    "Google did not give permission to read the figures, so nothing was shared. Tick the box on Google's screen to try again.",
+  expired: "That took a little long. Please try again.",
+  failed: "Google could not give us the figures just now. Please try again in a few minutes.",
+  unavailable: "This is not available just now. Please try again later.",
+};
+
+function fmt(n: number): string {
+  return Math.round(n).toLocaleString("en-GB");
+}
+
+// "See your real numbers": the invitation, or the figures once shared.
+function realNumbers(token: string, snap: ProspectSnapshot | null, flash: string): string {
+  const note = FLASH[flash]
+    ? `<div class="card" style="border-color:${flash === "connected" ? "#059669" : "#f59e0b"}">${esc(FLASH[flash]!)}</div>`
+    : "";
+  const connect = `/api/prospect-connect?r=${encodeURIComponent(token)}`;
+  if (!snap)
+    return `<div class="noprint">${note}<h2>See your real numbers</h2><div class="card">
+<p style="margin:0">Google keeps private figures only the owner can see: how many people <b>called you</b>, <b>asked for directions</b> and <b>visited your website</b> from your Google profile, and the words they searched. Sign in with the Google account you use for your profile to add them to this report.</p>
+<a class="cta" style="margin-top:14px" href="${connect}">See my real numbers</a>
+<p class="small" style="margin:10px 0 0">Free, and takes a minute. We read the figures once and keep no access to your profile afterwards. Google will ask you to allow RepSuites; you can remove it any time in your Google account under Security, Third-party connections.</p></div></div>`;
+  const c = snap.current;
+  const pv = snap.previous;
+  const views = c.searchViews + c.mapsViews;
+  const viewsBefore = pv.searchViews + pv.mapsViews;
+  const leads = c.calls + c.directions + c.websiteClicks;
+  const leadsBefore = pv.calls + pv.directions + pv.websiteClicks;
+  const delta = (now: number, before: number) => {
+    if (before <= 0) return "";
+    const pc = Math.round(((now - before) / before) * 100);
+    return `<div class="small" style="color:${pc >= 0 ? "#059669" : "#dc2626"}">${pc >= 0 ? "+" : ""}${pc}% on the 3 months before</div>`;
+  };
+  const tile = (label: string, now: number, before: number) =>
+    `<div style="background:#f8fafc;border-radius:12px;padding:12px"><div style="font-size:1.5rem;font-weight:800">${fmt(now)}</div><div style="font-size:.88rem">${label}</div>${delta(now, before)}</div>`;
+  const perWeek = Math.round((leads / 13) * 10) / 10;
+  const conv = views > 0 ? Math.round((leads / views) * 1000) / 10 : null;
+  const words = snap.searchTerms.length
+    ? `<p style="margin:16px 0 6px"><b>What people typed to find you</b> <span class="small">(${esc(snap.searchMonth)})</span></p><ul style="margin:0;padding-left:18px">${snap.searchTerms
+        .map(
+          (t) =>
+            `<li>${esc(t.term)} <span class="small">(${t.under ? "under " : ""}${fmt(t.count)})</span></li>`,
+        )
+        .join("")}</ul>`
+    : "";
+  const when = new Date(snap.at).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+  return `${note}<h2>Your real numbers from Google</h2><div class="card">
+<p class="muted" style="margin:0 0 12px">${esc(snap.title)}, last 3 months (to ${esc(new Date(snap.period.end + "T12:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "long" }))}). Read from Google on ${esc(when)}.</p>
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+${tile("times your profile was seen", views, viewsBefore)}
+${tile("phone calls", c.calls, pv.calls)}
+${tile("requests for directions", c.directions, pv.directions)}
+${tile("website visits", c.websiteClicks, pv.websiteClicks)}
+</div>
+<p style="margin:14px 0 0">That is <b>${fmt(leads)} people</b> who called, asked for directions or visited your website${leadsBefore > 0 ? ` (${fmt(leadsBefore)} in the 3 months before)` : ""}.
+Worked out simply: ${fmt(leads)} divided by 13 weeks is about <b>${perWeek} a week</b>.${conv !== null ? ` Out of every 100 people who saw your profile, about ${conv} took one of these steps.` : ""}</p>
+<p class="muted" style="margin:8px 0 0">More top 3 spots on the map above, and more recent reviews, mean more people see you, and more of them get in touch.</p>
+${words}
+<p class="small" style="margin:14px 0 0">We keep these figures, not access to your profile. <a href="${connect}" style="color:#64748b">Update my numbers</a></p></div>`;
+}
+
+export function renderReport(
+  r: Report,
+  extra: { token: string; snapshot: ProspectSnapshot | null; flash: string } | null = null,
+): string {
   const b = r.business;
   const date = new Date(r.createdAt).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -110,13 +180,15 @@ ${rows
   .join("")}</table></div>
 ${gap}
 
+${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
+
 <h2>What to fix first</h2>
 ${r.fixes.length ? r.fixes.map((f) => `<div class="fix ${f.priority}"><b>${esc(f.title)}</b><span>${esc(f.why)}</span></div>`).join("") : `<div class="card">Your Google profile is in good shape. The next step is a steady flow of new reviews.</div>`}
 
 <a class="cta" href="${esc(bookingLink(b.name))}">Book a free 15-minute call to fix this</a>
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#64748b">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time. The Maps position is one search from your business's own location.</p>
-</main></body></html>`;
+</main>${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
 }
 
 export function reportNotFound(): string {

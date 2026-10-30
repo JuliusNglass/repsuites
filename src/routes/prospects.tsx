@@ -10,6 +10,7 @@ import {
   ChevronUp,
   Copy,
   ExternalLink,
+  FileDown,
   Loader2,
   Mail,
   MessageCircle,
@@ -318,12 +319,15 @@ function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) =
               ? ` - follow up ${new Date(p.followUpOn).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
               : ""}
             {p.source === "inbound" ? " - asked for a check" : ""}
+            {p.googleConnected ? " - connected Google" : ""}
           </p>
           {p.topFix && <p className="text-xs mt-0.5 truncate">{p.topFix}</p>}
         </div>
         <select
           value={p.stage}
-          onChange={(e) => void onSave(p.id, { stage: e.target.value as (typeof STAGE_IDS)[number] })}
+          onChange={(e) =>
+            void onSave(p.id, { stage: e.target.value as (typeof STAGE_IDS)[number] })
+          }
           className="shrink-0 rounded-lg border border-input bg-background px-2 py-1 text-xs"
         >
           {STAGES.map((s) => (
@@ -342,6 +346,15 @@ function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) =
             className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
           >
             <ExternalLink className="w-3.5 h-3.5" /> Open
+          </a>
+          <a
+            href={`${p.link}?print=1`}
+            target="_blank"
+            rel="noopener"
+            title="Opens the report ready to save as a PDF"
+            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+          >
+            <FileDown className="w-3.5 h-3.5" /> PDF
           </a>
           <button
             type="button"
