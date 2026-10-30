@@ -46,8 +46,55 @@ async function askClaude(prompt: string): Promise<{ text: string } | { error: st
       signal: AbortSignal.timeout(60000),
       body: JSON.stringify({
         model: (process.env["REPSUITES_INSIGHTS_MODEL"] ?? "").trim() || "claude-sonnet-5-5",
-        max_tokens: 1200,
+        max_tokens: 2000,
         system: INSIGHTS_SYSTEM,
+        // A fixed form the answer must fill in, so it always comes back readable.
+        tools: [
+          {
+            name: "customer_insights",
+            description: "Record the summary of customer feedback for the owner.",
+            input_schema: {
+              type: "object",
+              properties: {
+                headline: { type: "string" },
+                praises: { type: "array", items: { $ref: "#/$defs/theme" }, maxItems: 3 },
+                complaints: { type: "array", items: { $ref: "#/$defs/theme" }, maxItems: 3 },
+                people: {
+                  type: "array",
+                  maxItems: 5,
+                  items: {
+                    type: "object",
+                    properties: {
+                      name: { type: "string" },
+                      mentions: { type: "integer" },
+                      tone: { type: "string", enum: ["positive", "mixed", "negative"] },
+                    },
+                    required: ["name", "mentions", "tone"],
+                  },
+                },
+                trend: { type: "string" },
+                action: {
+                  type: "object",
+                  properties: { title: { type: "string" }, why: { type: "string" } },
+                  required: ["title", "why"],
+                },
+              },
+              required: ["headline", "praises", "complaints", "people", "trend", "action"],
+              $defs: {
+                theme: {
+                  type: "object",
+                  properties: {
+                    theme: { type: "string" },
+                    mentions: { type: "integer" },
+                    quote: { type: "string" },
+                  },
+                  required: ["theme", "mentions", "quote"],
+                },
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "tool", name: "customer_insights" },
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -56,12 +103,17 @@ async function askClaude(prompt: string): Promise<{ text: string } | { error: st
       const why = String(b?.error?.message ?? "").slice(0, 160);
       return { error: `The summary could not be written (${res.status}${why ? `: ${why}` : ""}).` };
     }
-    const body = (await res.json()) as { content?: { type: string; text?: string }[] };
+    const body = (await res.json()) as {
+      content?: { type: string; text?: string; input?: unknown }[];
+    };
+    const used = (body.content ?? []).find((c) => c.type === "tool_use");
     return {
-      text: (body.content ?? [])
-        .filter((c) => c.type === "text")
-        .map((c) => c.text ?? "")
-        .join(""),
+      text: used
+        ? JSON.stringify(used.input ?? {})
+        : (body.content ?? [])
+            .filter((c) => c.type === "text")
+            .map((c) => c.text ?? "")
+            .join(""),
     };
   } catch {
     return { error: "The summary could not be written. Try again shortly." };

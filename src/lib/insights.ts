@@ -141,7 +141,7 @@ export const INSIGHTS_SYSTEM =
   "Only use what is in the feedback; do not invent themes, numbers or names. Group similar comments into themes " +
   "and count how many separate comments mention each. Quotes must be short exact extracts. " +
   "People are staff the customers name (not the customers). If there are no complaints, return an empty list. " +
-  "Reply with JSON only, in this shape: " +
+  "Fill in the customer_insights form: " +
   '{"headline": one sentence on the overall picture, "praises": [{"theme","mentions","quote"}] up to 3, ' +
   '"complaints": [{"theme","mentions","quote"}] up to 3, "people": [{"name","mentions","tone": "positive"|"mixed"|"negative"}], ' +
   '"trend": one or two sentences using the facts given, "action": {"title": the single most useful next step, "why": one sentence}}';
