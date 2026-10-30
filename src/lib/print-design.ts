@@ -1,15 +1,16 @@
-// Printable review cards: coaster (95 mm square, round cut) and A5 table
+// Printable review cards: coaster (95 mm, round cut), square card (95 mm) and A5 table
 // stand. Drawn on a canvas at 300 dpi with a 3 mm bleed, then saved as a
 // print-ready PDF (exact size) or PNG. Client-only (uses the browser canvas).
 // No em dashes in this copy (AGENTS.md).
 
-export type PrintFormat = "coaster" | "a5";
+export type PrintFormat = "coaster" | "square" | "a5";
 
 export const FORMATS: Record<
   PrintFormat,
   { label: string; wMm: number; hMm: number; round: boolean }
 > = {
   coaster: { label: "Coaster (95 mm, round cut)", wMm: 95, hMm: 95, round: true },
+  square: { label: "Square card (95 mm)", wMm: 95, hMm: 95, round: false },
   a5: { label: "Table stand (A5, 148 x 210 mm)", wMm: 148, hMm: 210, round: false },
 };
 
@@ -338,6 +339,69 @@ export function renderDesign(d: Design, showGuides = false, scale = 1): HTMLCanv
       ctx.fillText(small, x0 + q + gap, yq + q / 2 + 2.4 * mm);
       ctx.restore();
     }
+  } else if (d.format === "square") {
+    // Square card: logo or name, headline, QR code, message, and a tiny
+    // "Powered by RepSuites" code at the foot.
+    const maxW = W - inner * 2;
+    let y = inner;
+    if (d.logo) {
+      const lh = 9 * mm;
+      const lw = Math.min(maxW * 0.6, (d.logo.width / d.logo.height) * lh);
+      ctx.drawImage(d.logo, cx - lw / 2, y, lw, lh);
+      y += lh + 2.5 * mm;
+    } else {
+      ctx.fillStyle = accent;
+      const name = fit(ctx, d.business.toUpperCase(), maxW, 1, 4.6 * mm, 800);
+      y = drawLines(ctx, name.lines, cx, y, name.size * 1.15) + 2 * mm;
+    }
+    ctx.fillStyle = text;
+    const head = fit(ctx, d.headline, maxW, 2, 6.6 * mm, 800);
+    y = drawLines(ctx, head.lines, cx, y, head.size * 1.1) + 2.5 * mm;
+
+    const powerH = d.poweredQr ? 9 * mm + 2 * mm : 0;
+    ctx.globalAlpha = 0.9;
+    ctx.font = `500 ${3.1 * mm}px system-ui, sans-serif`;
+    const subLines = wrap(ctx, d.sub, maxW).slice(0, 2);
+    ctx.globalAlpha = 1;
+    const subH = subLines.length * 3.1 * mm * 1.3;
+    const room = H - inner - powerH - subH - 2.5 * mm - y;
+    const card = Math.min(40 * mm, room);
+    const pad = 2.5 * mm;
+    ctx.fillStyle = "#ffffff";
+    roundRect(ctx, cx - card / 2, y, card, card, 3 * mm);
+    ctx.fill();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(d.qr, cx - card / 2 + pad, y + pad, card - pad * 2, card - pad * 2);
+    ctx.imageSmoothingEnabled = true;
+    y += card + 2.5 * mm;
+    ctx.fillStyle = text;
+    ctx.globalAlpha = 0.9;
+    ctx.font = `500 ${3.1 * mm}px system-ui, sans-serif`;
+    drawLines(ctx, subLines, cx, y, 3.1 * mm * 1.3);
+    ctx.globalAlpha = 1;
+    if (d.poweredQr) {
+      const q = 9 * mm;
+      const qp = 0.9 * mm;
+      const label = "Powered by RepSuites";
+      ctx.font = `700 ${2.5 * mm}px system-ui, sans-serif`;
+      const tw = ctx.measureText(label).width;
+      const gap = 2 * mm;
+      const x0 = cx - (q + gap + tw) / 2;
+      const yq = H - inner - q;
+      ctx.fillStyle = "#ffffff";
+      roundRect(ctx, x0, yq, q, q, 1.2 * mm);
+      ctx.fill();
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(d.poweredQr, x0 + qp, yq + qp, q - qp * 2, q - qp * 2);
+      ctx.imageSmoothingEnabled = true;
+      ctx.save();
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = text;
+      ctx.globalAlpha = 0.8;
+      ctx.fillText(label, x0 + q + gap, yq + q / 2);
+      ctx.restore();
+    }
   } else {
     // Coaster: the headline follows the top of the circle, the message the
     // bottom, with the logo and QR code in the middle.
@@ -429,7 +493,9 @@ export function fileName(d: Design, ext: string): string {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || "review";
-  return `${slug}-${d.format === "a5" ? "a5-table-stand" : "coaster-95mm"}.${ext}`;
+  const kind =
+    d.format === "a5" ? "a5-table-stand" : d.format === "square" ? "square-95mm" : "coaster-95mm";
+  return `${slug}-${kind}.${ext}`;
 }
 
 // Print-ready PDF: page size = artwork plus bleed, image at 300 dpi.

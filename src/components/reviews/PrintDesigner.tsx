@@ -223,7 +223,7 @@ export function PrintDesigner({
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4 order-2 md:order-1">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {(Object.keys(FORMATS) as PrintFormat[]).map((f) => (
                 <button
                   key={f}
