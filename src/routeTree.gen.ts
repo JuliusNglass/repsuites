@@ -8,321 +8,341 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as CardsRouteImport } from "./routes/cards";
-import { Route as DashboardRouteImport } from "./routes/dashboard";
-import { Route as ForgotPasswordRouteImport } from "./routes/forgot-password";
-import { Route as GoogleBusinessProfileRouteImport } from "./routes/google-business-profile";
-import { Route as LoginRouteImport } from "./routes/login";
-import { Route as PrivacyRouteImport } from "./routes/privacy";
-import { Route as ResetPasswordRouteImport } from "./routes/reset-password";
-import { Route as TermsRouteImport } from "./routes/terms";
-import { Route as CardsOrderRouteImport } from "./routes/cards.order";
-import { Route as FeedbackIdRouteImport } from "./routes/feedback.$id";
-import { Route as ApiInternalGoogleRouteImport } from "./routes/api.internal.google";
-import { Route as ApiInternalGoogleReportRouteImport } from "./routes/api.internal.google-report";
-import { Route as ApiGoogleOauthCallbackRouteImport } from "./routes/api.google.oauth.callback";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as CardsRouteImport } from './routes/cards'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as CardsOrderRouteImport } from './routes/cards.order'
+import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
+import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
+import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
+import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
+import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api.google.oauth.callback'
 
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const CardsRoute = CardsRouteImport.update({
-  id: "/cards",
-  path: "/cards",
+  id: '/cards',
+  path: '/cards',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
-  id: "/dashboard",
-  path: "/dashboard",
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: "/forgot-password",
-  path: "/forgot-password",
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const GoogleBusinessProfileRoute = GoogleBusinessProfileRouteImport.update({
-  id: "/google-business-profile",
-  path: "/google-business-profile",
+  id: '/google-business-profile',
+  path: '/google-business-profile',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LoginRoute = LoginRouteImport.update({
-  id: "/login",
-  path: "/login",
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
-  id: "/privacy",
-  path: "/privacy",
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: "/reset-password",
-  path: "/reset-password",
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TermsRoute = TermsRouteImport.update({
-  id: "/terms",
-  path: "/terms",
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const CardsOrderRoute = CardsOrderRouteImport.update({
-  id: "/order",
-  path: "/order",
+  id: '/order',
+  path: '/order',
   getParentRoute: () => CardsRoute,
-} as any);
+} as any)
 const FeedbackIdRoute = FeedbackIdRouteImport.update({
-  id: "/feedback/$id",
-  path: "/feedback/$id",
+  id: '/feedback/$id',
+  path: '/feedback/$id',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ApiInternalGoogleRoute = ApiInternalGoogleRouteImport.update({
-  id: "/api/internal/google",
-  path: "/api/internal/google",
+  id: '/api/internal/google',
+  path: '/api/internal/google',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const ApiInternalGoogleReportRoute = ApiInternalGoogleReportRouteImport.update({
-  id: "/api/internal/google-report",
-  path: "/api/internal/google-report",
+  id: '/api/internal/google-report',
+  path: '/api/internal/google-report',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
+const ApiInternalRankChecksRoute = ApiInternalRankChecksRouteImport.update({
+  id: '/api/internal/rank-checks',
+  path: '/api/internal/rank-checks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
-  id: "/api/google/oauth/callback",
-  path: "/api/google/oauth/callback",
+  id: '/api/google/oauth/callback',
+  path: '/api/google/oauth/callback',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/cards": typeof CardsRouteWithChildren;
-  "/dashboard": typeof DashboardRoute;
-  "/forgot-password": typeof ForgotPasswordRoute;
-  "/google-business-profile": typeof GoogleBusinessProfileRoute;
-  "/login": typeof LoginRoute;
-  "/privacy": typeof PrivacyRoute;
-  "/reset-password": typeof ResetPasswordRoute;
-  "/terms": typeof TermsRoute;
-  "/cards/order": typeof CardsOrderRoute;
-  "/feedback/$id": typeof FeedbackIdRoute;
-  "/api/internal/google": typeof ApiInternalGoogleRoute;
-  "/api/internal/google-report": typeof ApiInternalGoogleReportRoute;
-  "/api/google/oauth/callback": typeof ApiGoogleOauthCallbackRoute;
+  '/': typeof IndexRoute
+  '/cards': typeof CardsRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/google-business-profile': typeof GoogleBusinessProfileRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/cards/order': typeof CardsOrderRoute
+  '/feedback/$id': typeof FeedbackIdRoute
+  '/api/internal/google': typeof ApiInternalGoogleRoute
+  '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/cards": typeof CardsRouteWithChildren;
-  "/dashboard": typeof DashboardRoute;
-  "/forgot-password": typeof ForgotPasswordRoute;
-  "/google-business-profile": typeof GoogleBusinessProfileRoute;
-  "/login": typeof LoginRoute;
-  "/privacy": typeof PrivacyRoute;
-  "/reset-password": typeof ResetPasswordRoute;
-  "/terms": typeof TermsRoute;
-  "/cards/order": typeof CardsOrderRoute;
-  "/feedback/$id": typeof FeedbackIdRoute;
-  "/api/internal/google": typeof ApiInternalGoogleRoute;
-  "/api/internal/google-report": typeof ApiInternalGoogleReportRoute;
-  "/api/google/oauth/callback": typeof ApiGoogleOauthCallbackRoute;
+  '/': typeof IndexRoute
+  '/cards': typeof CardsRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/google-business-profile': typeof GoogleBusinessProfileRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/cards/order': typeof CardsOrderRoute
+  '/feedback/$id': typeof FeedbackIdRoute
+  '/api/internal/google': typeof ApiInternalGoogleRoute
+  '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/cards": typeof CardsRouteWithChildren;
-  "/dashboard": typeof DashboardRoute;
-  "/forgot-password": typeof ForgotPasswordRoute;
-  "/google-business-profile": typeof GoogleBusinessProfileRoute;
-  "/login": typeof LoginRoute;
-  "/privacy": typeof PrivacyRoute;
-  "/reset-password": typeof ResetPasswordRoute;
-  "/terms": typeof TermsRoute;
-  "/cards/order": typeof CardsOrderRoute;
-  "/feedback/$id": typeof FeedbackIdRoute;
-  "/api/internal/google": typeof ApiInternalGoogleRoute;
-  "/api/internal/google-report": typeof ApiInternalGoogleReportRoute;
-  "/api/google/oauth/callback": typeof ApiGoogleOauthCallbackRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/cards': typeof CardsRouteWithChildren
+  '/dashboard': typeof DashboardRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/google-business-profile': typeof GoogleBusinessProfileRoute
+  '/login': typeof LoginRoute
+  '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/cards/order': typeof CardsOrderRoute
+  '/feedback/$id': typeof FeedbackIdRoute
+  '/api/internal/google': typeof ApiInternalGoogleRoute
+  '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/cards"
-    | "/dashboard"
-    | "/forgot-password"
-    | "/google-business-profile"
-    | "/login"
-    | "/privacy"
-    | "/reset-password"
-    | "/terms"
-    | "/cards/order"
-    | "/feedback/$id"
-    | "/api/internal/google"
-    | "/api/internal/google-report"
-    | "/api/google/oauth/callback";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/cards'
+    | '/dashboard'
+    | '/forgot-password'
+    | '/google-business-profile'
+    | '/login'
+    | '/privacy'
+    | '/reset-password'
+    | '/terms'
+    | '/cards/order'
+    | '/feedback/$id'
+    | '/api/internal/google'
+    | '/api/internal/google-report'
+    | '/api/internal/rank-checks'
+    | '/api/google/oauth/callback'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/cards"
-    | "/dashboard"
-    | "/forgot-password"
-    | "/google-business-profile"
-    | "/login"
-    | "/privacy"
-    | "/reset-password"
-    | "/terms"
-    | "/cards/order"
-    | "/feedback/$id"
-    | "/api/internal/google"
-    | "/api/internal/google-report"
-    | "/api/google/oauth/callback";
+    | '/'
+    | '/cards'
+    | '/dashboard'
+    | '/forgot-password'
+    | '/google-business-profile'
+    | '/login'
+    | '/privacy'
+    | '/reset-password'
+    | '/terms'
+    | '/cards/order'
+    | '/feedback/$id'
+    | '/api/internal/google'
+    | '/api/internal/google-report'
+    | '/api/internal/rank-checks'
+    | '/api/google/oauth/callback'
   id:
-    | "__root__"
-    | "/"
-    | "/cards"
-    | "/dashboard"
-    | "/forgot-password"
-    | "/google-business-profile"
-    | "/login"
-    | "/privacy"
-    | "/reset-password"
-    | "/terms"
-    | "/cards/order"
-    | "/feedback/$id"
-    | "/api/internal/google"
-    | "/api/internal/google-report"
-    | "/api/google/oauth/callback";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/cards'
+    | '/dashboard'
+    | '/forgot-password'
+    | '/google-business-profile'
+    | '/login'
+    | '/privacy'
+    | '/reset-password'
+    | '/terms'
+    | '/cards/order'
+    | '/feedback/$id'
+    | '/api/internal/google'
+    | '/api/internal/google-report'
+    | '/api/internal/rank-checks'
+    | '/api/google/oauth/callback'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  CardsRoute: typeof CardsRouteWithChildren;
-  DashboardRoute: typeof DashboardRoute;
-  ForgotPasswordRoute: typeof ForgotPasswordRoute;
-  GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute;
-  LoginRoute: typeof LoginRoute;
-  PrivacyRoute: typeof PrivacyRoute;
-  ResetPasswordRoute: typeof ResetPasswordRoute;
-  TermsRoute: typeof TermsRoute;
-  FeedbackIdRoute: typeof FeedbackIdRoute;
-  ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute;
-  ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute;
-  ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute;
+  IndexRoute: typeof IndexRoute
+  CardsRoute: typeof CardsRouteWithChildren
+  DashboardRoute: typeof DashboardRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
+  LoginRoute: typeof LoginRoute
+  PrivacyRoute: typeof PrivacyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  TermsRoute: typeof TermsRoute
+  FeedbackIdRoute: typeof FeedbackIdRoute
+  ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
+  ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
+  ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
+  ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/cards": {
-      id: "/cards";
-      path: "/cards";
-      fullPath: "/cards";
-      preLoaderRoute: typeof CardsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/dashboard": {
-      id: "/dashboard";
-      path: "/dashboard";
-      fullPath: "/dashboard";
-      preLoaderRoute: typeof DashboardRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/forgot-password": {
-      id: "/forgot-password";
-      path: "/forgot-password";
-      fullPath: "/forgot-password";
-      preLoaderRoute: typeof ForgotPasswordRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/google-business-profile": {
-      id: "/google-business-profile";
-      path: "/google-business-profile";
-      fullPath: "/google-business-profile";
-      preLoaderRoute: typeof GoogleBusinessProfileRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/login": {
-      id: "/login";
-      path: "/login";
-      fullPath: "/login";
-      preLoaderRoute: typeof LoginRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/privacy": {
-      id: "/privacy";
-      path: "/privacy";
-      fullPath: "/privacy";
-      preLoaderRoute: typeof PrivacyRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/reset-password": {
-      id: "/reset-password";
-      path: "/reset-password";
-      fullPath: "/reset-password";
-      preLoaderRoute: typeof ResetPasswordRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/terms": {
-      id: "/terms";
-      path: "/terms";
-      fullPath: "/terms";
-      preLoaderRoute: typeof TermsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/cards/order": {
-      id: "/cards/order";
-      path: "/order";
-      fullPath: "/cards/order";
-      preLoaderRoute: typeof CardsOrderRouteImport;
-      parentRoute: typeof CardsRoute;
-    };
-    "/feedback/$id": {
-      id: "/feedback/$id";
-      path: "/feedback/$id";
-      fullPath: "/feedback/$id";
-      preLoaderRoute: typeof FeedbackIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/api/internal/google": {
-      id: "/api/internal/google";
-      path: "/api/internal/google";
-      fullPath: "/api/internal/google";
-      preLoaderRoute: typeof ApiInternalGoogleRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/api/internal/google-report": {
-      id: "/api/internal/google-report";
-      path: "/api/internal/google-report";
-      fullPath: "/api/internal/google-report";
-      preLoaderRoute: typeof ApiInternalGoogleReportRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/api/google/oauth/callback": {
-      id: "/api/google/oauth/callback";
-      path: "/api/google/oauth/callback";
-      fullPath: "/api/google/oauth/callback";
-      preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cards': {
+      id: '/cards'
+      path: '/cards'
+      fullPath: '/cards'
+      preLoaderRoute: typeof CardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/google-business-profile': {
+      id: '/google-business-profile'
+      path: '/google-business-profile'
+      fullPath: '/google-business-profile'
+      preLoaderRoute: typeof GoogleBusinessProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cards/order': {
+      id: '/cards/order'
+      path: '/order'
+      fullPath: '/cards/order'
+      preLoaderRoute: typeof CardsOrderRouteImport
+      parentRoute: typeof CardsRoute
+    }
+    '/feedback/$id': {
+      id: '/feedback/$id'
+      path: '/feedback/$id'
+      fullPath: '/feedback/$id'
+      preLoaderRoute: typeof FeedbackIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/google': {
+      id: '/api/internal/google'
+      path: '/api/internal/google'
+      fullPath: '/api/internal/google'
+      preLoaderRoute: typeof ApiInternalGoogleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/google-report': {
+      id: '/api/internal/google-report'
+      path: '/api/internal/google-report'
+      fullPath: '/api/internal/google-report'
+      preLoaderRoute: typeof ApiInternalGoogleReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/rank-checks': {
+      id: '/api/internal/rank-checks'
+      path: '/api/internal/rank-checks'
+      fullPath: '/api/internal/rank-checks'
+      preLoaderRoute: typeof ApiInternalRankChecksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/google/oauth/callback': {
+      id: '/api/google/oauth/callback'
+      path: '/api/google/oauth/callback'
+      fullPath: '/api/google/oauth/callback'
+      preLoaderRoute: typeof ApiGoogleOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface CardsRouteChildren {
-  CardsOrderRoute: typeof CardsOrderRoute;
+  CardsOrderRoute: typeof CardsOrderRoute
 }
 
 const CardsRouteChildren: CardsRouteChildren = {
   CardsOrderRoute: CardsOrderRoute,
-};
+}
 
-const CardsRouteWithChildren = CardsRoute._addFileChildren(CardsRouteChildren);
+const CardsRouteWithChildren = CardsRoute._addFileChildren(CardsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -337,18 +357,19 @@ const rootRouteChildren: RootRouteChildren = {
   FeedbackIdRoute: FeedbackIdRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
+  ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
-import type { getRouter } from "./router.tsx";
-import type { startInstance } from "./start.ts";
-declare module "@tanstack/react-start" {
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
   interface Register {
-    ssr: true;
-    router: Awaited<ReturnType<typeof getRouter>>;
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>;
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

@@ -20,6 +20,7 @@ import {
   sendTestGoogleReportFn,
 } from "../../lib/google-business.functions";
 import { change } from "../../lib/google-performance";
+import { RankingCard } from "./RankingCard";
 
 type Data = Extract<Awaited<ReturnType<typeof getGoogleFn>>, { ok: true }>;
 type Review = Data["reviews"][number];
@@ -169,6 +170,7 @@ export function GooglePanel() {
       {c?.status === "connected" && (
         <>
           <PerformanceCard />
+          <RankingCard />
           <ReportSettingsCard s={d.reportSettings} canEdit={d.canConnect} onSaved={load} />
           <ReplySettingsCard s={d.replySettings} canEdit={d.canConnect} onSaved={load} />
           <section className="rounded-xl border border-border bg-card p-4 space-y-3">
