@@ -12,8 +12,10 @@ import {
   findCardPack,
   findStandPack,
   GROWTH,
+  MANAGED,
   planPence,
   type BillingInterval,
+  type CheckoutPlan,
   type PaidPlan,
 } from "./shop";
 
@@ -180,7 +182,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
   .validator((d: { plan: PaidPlan; interval?: BillingInterval }) =>
     z
       .object({
-        plan: z.literal("gold"),
+        plan: z.enum(["gold", "managed"]),
         interval: z.enum(["month", "year"]).default("month"),
       })
       .parse(d),
@@ -213,9 +215,9 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
           quantity: 1,
           price_data: {
             currency: "gbp",
-            unit_amount: planPence(data.interval),
+            unit_amount: planPence(data.interval, data.plan as CheckoutPlan),
             recurring: { interval: data.interval },
-            product_data: { name: GROWTH.name },
+            product_data: { name: data.plan === "managed" ? MANAGED.name : GROWTH.name },
           },
         },
       ],

@@ -5,8 +5,8 @@
 // the same rules apply on the server (blocking changes) and in the browser
 // (banners, hidden menu items).
 
-export type Feature = "ranking" | "ai_visibility" | "nfc" | "growth";
-export type Plan = "free" | "starter" | "pro" | "gold";
+export type Feature = "ranking" | "ai_visibility" | "nfc" | "growth" | "managed";
+export type Plan = "free" | "starter" | "pro" | "gold" | "managed";
 export type PaymentStatus = "active" | "overdue" | "read_only" | "on_hold" | "cancelled";
 
 export interface TenantAccess {
@@ -26,8 +26,8 @@ export interface TenantAccess {
   agency: boolean;
 }
 
-export const PLANS: Plan[] = ["free", "starter", "pro", "gold"];
-export const FEATURES: Feature[] = ["ranking", "ai_visibility", "nfc", "growth"];
+export const PLANS: Plan[] = ["free", "starter", "pro", "gold", "managed"];
+export const FEATURES: Feature[] = ["ranking", "ai_visibility", "nfc", "growth", "managed"];
 const STATUSES: PaymentStatus[] = ["active", "overdue", "read_only", "on_hold", "cancelled"];
 
 export const PLAN_LABELS: Record<Plan, string> = {
@@ -35,6 +35,7 @@ export const PLAN_LABELS: Record<Plan, string> = {
   starter: "Starter",
   pro: "Pro",
   gold: "Growth",
+  managed: "We do it for you",
 };
 
 export const FEATURE_LABELS: Record<Feature, string> = {
@@ -42,6 +43,7 @@ export const FEATURE_LABELS: Record<Feature, string> = {
   ai_visibility: "AI search checks",
   nfc: "NFC review cards",
   growth: "This",
+  managed: "We do it for you",
 };
 
 export const STATUS_LABELS: Record<PaymentStatus, string> = {

@@ -7,7 +7,7 @@ import { sendEmail } from "./email.server";
 import { money, PLAN_FEATURES, type PaidPlan } from "./shop";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-const PLANS: PaidPlan[] = ["starter", "pro", "gold"];
+const PLANS: PaidPlan[] = ["starter", "pro", "gold", "managed"];
 
 async function setPlan(tenantId: string, plan: PaidPlan | "free") {
   await serviceWrite("tenant_plans?on_conflict=tenant_id", "", {
@@ -37,6 +37,23 @@ async function saveSubscription(sub: any) {
   });
   const live = ["active", "trialing", "past_due"].includes(String(sub.status));
   await setPlan(tenantId, live ? plan : "free");
+}
+
+// Someone bought "We do it for you": Julius needs to get in touch and set up access.
+async function managedBought(session: any) {
+  const tenantId = String(session?.metadata?.tenant_id ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(tenantId)) return;
+  const t = await serviceRead<{ name: string }[]>(`tenants?select=name&id=eq.${tenantId}`, "");
+  const name = t.data?.[0]?.name ?? "A business";
+  const email = String(session?.customer_details?.email ?? session?.customer_email ?? "");
+  const to = (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
+  await sendEmail({
+    to,
+    subject: `New "We do it for you" customer: ${name}`,
+    html: `<p><b>${esc(name)}</b> just bought RepSuites: We do it for you (${money(Number(session?.amount_total ?? 0))}).</p>
+<p>Email: ${esc(email || "not given")}</p>
+<p>Next: get in touch today, get added as a manager on their Google profile (see Settings, Access help), then approve their first replies and posts.</p>`,
+  }).catch(() => null);
 }
 
 async function shopPaid(session: any) {
@@ -120,6 +137,7 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
       if (obj.metadata?.kind === "plan" && obj.subscription) {
         const sub = await stripe(`subscriptions/${obj.subscription}`);
         if (sub.ok) await saveSubscription(sub.data);
+        if (obj.metadata?.plan === "managed") await managedBought(obj);
       }
       break;
     case "checkout.session.async_payment_succeeded":

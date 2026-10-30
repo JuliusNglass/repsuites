@@ -12,11 +12,13 @@ import { openBillingPortal, startPlanCheckout } from "../lib/shop.functions";
 import {
   FREE_FEATURES,
   GROWTH,
+  MANAGED,
   money,
   perDay,
   planPence,
   yearSaving,
   type BillingInterval,
+  type CheckoutPlan,
 } from "../lib/shop";
 
 export const Route = createFileRoute("/pricing")({
@@ -38,7 +40,7 @@ function Pricing() {
   const start = useServerFn(startPlanCheckout);
   const portal = useServerFn(openBillingPortal);
   const [signedIn, setSignedIn] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<CheckoutPlan | null>(null);
   const [interval, setInterval] = useState<BillingInterval>("month");
 
   useEffect(() => {
@@ -47,11 +49,11 @@ function Pricing() {
       .catch(() => null);
   }, [session]);
 
-  async function upgrade() {
+  async function upgrade(plan: CheckoutPlan) {
     if (!signedIn) return void (window.location.href = "/start");
-    setBusy(true);
+    setBusy(plan);
     try {
-      const r = await start({ data: { plan: "gold", interval } });
+      const r = await start({ data: { plan, interval } });
       if (r.ok) return void (window.location.href = r.url);
       if (r.error === "manage") {
         const p = await portal();
@@ -62,7 +64,7 @@ function Pricing() {
     } catch {
       toast.error("Something went wrong. Try again.");
     }
-    setBusy(false);
+    setBusy(null);
   }
 
   const yearly = interval === "year";
@@ -70,7 +72,7 @@ function Pricing() {
   return (
     <PublicLayout>
       <section className="px-4 pt-14 pb-16 md:pt-20">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto">
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
               Start free. Grow when you are ready.
@@ -97,7 +99,7 @@ function Pricing() {
             </div>
           </div>
 
-          <div className="mt-10 grid md:grid-cols-2 gap-5 items-stretch">
+          <div className="mt-10 grid md:grid-cols-3 gap-5 items-stretch">
             <div className="rounded-3xl border border-border bg-card p-7 flex flex-col">
               <h2 className="text-xl font-bold">Free</h2>
               <p className="text-sm text-muted-foreground mt-1">
@@ -126,7 +128,7 @@ function Pricing() {
 
             <div className="relative rounded-3xl border border-primary ring-2 ring-primary/40 bg-card p-7 flex flex-col md:-translate-y-2">
               <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary text-primary-foreground text-xs font-bold px-3 py-1">
-                Best value
+                Most popular
               </span>
               <h2 className="text-xl font-bold">{GROWTH.name}</h2>
               <p className="text-sm text-muted-foreground mt-1">{GROWTH.tagline}</p>
@@ -153,12 +155,45 @@ function Pricing() {
               </ul>
               <button
                 type="button"
-                onClick={upgrade}
-                disabled={busy}
+                onClick={() => void upgrade("gold")}
+                disabled={busy !== null}
                 className="mt-7 rounded-xl bg-primary text-primary-foreground font-bold py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+                {busy === "gold" && <Loader2 className="w-4 h-4 animate-spin" />}
                 {signedIn ? "Upgrade to Growth" : "Start free, upgrade any time"}
+              </button>
+            </div>
+
+            <div className="rounded-3xl border border-border bg-card p-7 flex flex-col">
+              <h2 className="text-xl font-bold">We do it for you</h2>
+              <p className="text-sm text-muted-foreground mt-1">{MANAGED.tagline}</p>
+              <div className="mt-5 flex items-baseline gap-1">
+                <span className="text-5xl font-extrabold">
+                  {money(planPence(interval, "managed"))}
+                </span>
+                <span className="text-muted-foreground">{yearly ? "a year" : "a month"}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {yearly
+                  ? `That is ${money(Math.round(MANAGED.yearPence / 12))} a month. You save ${money(yearSaving("managed"))}.`
+                  : `About ${perDay(MANAGED.monthPence)} a day`}
+              </p>
+              <ul className="mt-6 space-y-2.5 text-sm flex-1">
+                {MANAGED.features.map((f, i) => (
+                  <li key={f} className={`flex gap-2.5 ${i === 0 ? "font-semibold" : ""}`}>
+                    <Check className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => void upgrade("managed")}
+                disabled={busy !== null}
+                className="mt-7 rounded-xl border border-foreground font-bold py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {busy === "managed" && <Loader2 className="w-4 h-4 animate-spin" />}
+                {signedIn ? "Let us run it" : "Start free, then let us run it"}
               </button>
             </div>
           </div>

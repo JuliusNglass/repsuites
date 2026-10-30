@@ -18,9 +18,30 @@ export function WelcomeCard({
       title: "Connect your Google profile",
       text: "See how many people find you, call you and ask for directions.",
       action: (
-        <button type="button" onClick={() => onTab("settings")} className="font-semibold underline">
-          Connect Google
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => onTab("settings")}
+            className="font-semibold underline"
+          >
+            Connect Google
+          </button>{" "}
+          or{" "}
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                sessionStorage.setItem("open-access-help", "1");
+              } catch {
+                // fine: the card just opens closed
+              }
+              onTab("settings");
+            }}
+            className="font-semibold underline"
+          >
+            let us do it for you
+          </button>
+        </>
       ),
     },
     {

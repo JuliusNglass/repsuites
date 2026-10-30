@@ -30,7 +30,7 @@ export function each(p: Pack): string {
   return money(Math.round(p.pence / p.qty));
 }
 
-export type PaidPlan = "starter" | "pro" | "gold";
+export type PaidPlan = "starter" | "pro" | "gold" | "managed";
 
 export type BillingInterval = "month" | "year";
 
@@ -53,6 +53,25 @@ export const GROWTH = {
   ],
 };
 
+// "We do it for you": Growth plus Accelur8 running it. Internal id "managed".
+export const MANAGED = {
+  id: "managed" as const,
+  name: "RepSuites: We do it for you",
+  monthPence: 9900,
+  yearPence: 99700,
+  tagline: "Too busy? We run it for you. You just hand out the QR code.",
+  features: [
+    "Everything in Growth",
+    "We approve your AI review replies, so every review gets an answer",
+    "We plan and approve your Google posts each month",
+    "We send your review requests for you",
+    "We keep your Google profile tidy and up to date",
+    "A monthly check-in call or message with your numbers",
+  ],
+};
+
+export type CheckoutPlan = "gold" | "managed";
+
 export const FREE_FEATURES = [
   "Your own review page",
   "QR codes to print for tables, counters and receipts",
@@ -60,20 +79,23 @@ export const FREE_FEATURES = [
   "Connect Google and see your real numbers: views, calls and directions",
 ];
 
-export function planPence(interval: BillingInterval): number {
-  return interval === "year" ? GROWTH.yearPence : GROWTH.monthPence;
+export function planPence(interval: BillingInterval, plan: CheckoutPlan = "gold"): number {
+  const p = plan === "managed" ? MANAGED : GROWTH;
+  return interval === "year" ? p.yearPence : p.monthPence;
 }
 
 // How much a year saves against paying monthly.
 // Worked example: £49 x 12 = £588. £588 - £497 = £91 saved.
-export function yearSaving(): number {
-  return GROWTH.monthPence * 12 - GROWTH.yearPence;
+export function yearSaving(plan: CheckoutPlan = "gold"): number {
+  const p = plan === "managed" ? MANAGED : GROWTH;
+  return p.monthPence * 12 - p.yearPence;
 }
 
 export const PLAN_FEATURES: Record<PaidPlan, string[]> = {
   starter: ["growth"],
   pro: ["ranking", "growth"],
   gold: ["ranking", "ai_visibility", "nfc", "growth"],
+  managed: ["ranking", "ai_visibility", "nfc", "growth", "managed"],
 };
 
 // Daily cost in plain words: £99 a month is about £3.25 a day (99 x 12 / 365).

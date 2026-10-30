@@ -16,6 +16,7 @@ import { ReviewLinksCard } from "../components/reviews/ReviewLinksCard";
 import { WelcomeCard } from "../components/reviews/WelcomeCard";
 import { EmailCheckBar } from "../components/reviews/EmailCheckBar";
 import { BillingCard } from "../components/reviews/BillingCard";
+import { AccessHelpCard } from "../components/reviews/AccessHelpCard";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -235,6 +236,7 @@ function Dashboard() {
         )}
         {active && tab === "settings" && !s.agency && <BillingCard key={`b-${active.id}`} />}
         {active && tab === "settings" && <GooglePanel key={`s-${active.id}`} tab="settings" />}
+        {active && tab === "settings" && <AccessHelpCard key={`a-${active.id}`} />}
       </main>
     </div>
   );
