@@ -372,9 +372,10 @@ export function renderDesign(d: Design, showGuides = false, scale = 1): HTMLCanv
 
   if (showGuides) {
     ctx.save();
-    ctx.setLineDash([3 * mm, 2 * mm]);
-    ctx.lineWidth = Math.max(1, 0.4 * mm);
-    ctx.strokeStyle = "rgba(255, 0, 90, 0.85)";
+    // Faint, so it shows where the cut is without spoiling the preview.
+    ctx.setLineDash([1.5 * mm, 1.5 * mm]);
+    ctx.lineWidth = Math.max(1, 0.2 * mm);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
     if (f.round) {
       ctx.beginPath();
       ctx.arc(W / 2, H / 2, (f.wMm / 2) * mm, 0, Math.PI * 2);
