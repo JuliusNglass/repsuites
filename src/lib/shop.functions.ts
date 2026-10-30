@@ -220,7 +220,7 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
         },
       ],
       allow_promotion_codes: true,
-      success_url: `${ORIGIN}/dashboard?billing=done#settings`,
+      success_url: `${ORIGIN}/api/billing/back?paid=1`,
       cancel_url: `${ORIGIN}/pricing`,
     });
     return s.ok ? { ok: true as const, url: s.data.url } : { ok: false as const, error: s.error };
@@ -237,7 +237,7 @@ export const openBillingPortal = createServerFn({ method: "POST" }).handler(asyn
   if (!customer) return { ok: false as const, error: "No plan to manage yet." };
   const s = await stripe<{ url: string }>("billing_portal/sessions", {
     customer,
-    return_url: `${ORIGIN}/dashboard#settings`,
+    return_url: `${ORIGIN}/api/billing/back`,
   });
   return s.ok ? { ok: true as const, url: s.data.url } : { ok: false as const, error: s.error };
 });

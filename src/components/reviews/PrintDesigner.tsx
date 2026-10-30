@@ -116,7 +116,7 @@ export function PrintDesigner({
   useEffect(() => setQrReady(true), []);
 
   const design = useMemo((): Design | null => {
-    const qr = qrWrap.current?.querySelector("canvas");
+    const [qr, powered] = Array.from(qrWrap.current?.querySelectorAll("canvas") ?? []);
     if (!qr || !qrReady) return null;
     return {
       format,
@@ -131,6 +131,7 @@ export function PrintDesigner({
       photo,
       qr,
       footer,
+      ...(powered ? { poweredQr: powered } : {}),
     };
   }, [
     format,
@@ -211,6 +212,13 @@ export function PrintDesigner({
         {/* Hidden, large QR code used for the artwork. */}
         <div ref={qrWrap} className="hidden">
           <QRCodeCanvas value={url} size={1400} level="M" marginSize={0} />
+          {/* Small "Powered by RepSuites" code on the stand. */}
+          <QRCodeCanvas
+            value="https://repsuites.com/?utm_source=stand"
+            size={500}
+            level="M"
+            marginSize={0}
+          />
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">

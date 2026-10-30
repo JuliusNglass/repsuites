@@ -15,6 +15,7 @@ import { QrCodesCard } from "../components/reviews/QrCodesCard";
 import { ReviewLinksCard } from "../components/reviews/ReviewLinksCard";
 import { WelcomeCard } from "../components/reviews/WelcomeCard";
 import { EmailCheckBar } from "../components/reviews/EmailCheckBar";
+import { BillingCard } from "../components/reviews/BillingCard";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -232,6 +233,7 @@ function Dashboard() {
             <ReviewLinksCard key={`l-${active.id}`} part="links" />
           </>
         )}
+        {active && tab === "settings" && !s.agency && <BillingCard key={`b-${active.id}`} />}
         {active && tab === "settings" && <GooglePanel key={`s-${active.id}`} tab="settings" />}
       </main>
     </div>

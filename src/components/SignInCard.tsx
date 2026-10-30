@@ -69,12 +69,7 @@ export function SignInCard({
         </div>
       ) : (
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-lg font-black">
-              S
-            </span>
-            RepSuites
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Sign in</h1>
           <p className="text-xs text-muted-foreground mt-1">
             Local visibility for local businesses
           </p>

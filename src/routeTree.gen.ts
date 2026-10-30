@@ -27,6 +27,7 @@ import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
 import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
+import { Route as ApiBillingBackRouteImport } from './routes/api.billing.back'
 import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
@@ -124,6 +125,11 @@ const RTokenRoute = RTokenRouteImport.update({
   path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBillingBackRoute = ApiBillingBackRouteImport.update({
+  id: '/api/billing/back',
+  path: '/api/billing/back',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalGoogleRoute = ApiInternalGoogleRouteImport.update({
   id: '/api/internal/google',
   path: '/api/internal/google',
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRoute
   '/cards/': typeof CardsIndexRoute
+  '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRoute
   '/cards': typeof CardsIndexRoute
+  '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRoute
   '/cards/': typeof CardsIndexRoute
+  '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/q/$token'
     | '/r/$token'
     | '/cards/'
+    | '/api/billing/back'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/q/$token'
     | '/r/$token'
     | '/cards'
+    | '/api/billing/back'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/q/$token'
     | '/r/$token'
     | '/cards/'
+    | '/api/billing/back'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -335,6 +347,7 @@ export interface RootRouteChildren {
   QTokenRoute: typeof QTokenRoute
   RTokenRoute: typeof RTokenRoute
   CardsIndexRoute: typeof CardsIndexRoute
+  ApiBillingBackRoute: typeof ApiBillingBackRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/billing/back': {
+      id: '/api/billing/back'
+      path: '/api/billing/back'
+      fullPath: '/api/billing/back'
+      preLoaderRoute: typeof ApiBillingBackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/google': {
       id: '/api/internal/google'
       path: '/api/internal/google'
@@ -535,6 +555,7 @@ const rootRouteChildren: RootRouteChildren = {
   QTokenRoute: QTokenRoute,
   RTokenRoute: RTokenRoute,
   CardsIndexRoute: CardsIndexRoute,
+  ApiBillingBackRoute: ApiBillingBackRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,

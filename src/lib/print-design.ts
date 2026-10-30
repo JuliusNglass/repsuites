@@ -93,6 +93,7 @@ export interface Design {
   photo: HTMLImageElement | null; // background photo (optional)
   qr: HTMLCanvasElement; // a large QR code canvas
   footer: boolean; // small "Scan with your phone camera" line
+  poweredQr?: HTMLCanvasElement; // small code to repsuites.com ("Powered by RepSuites")
 }
 
 function px(mm: number): number {
@@ -285,7 +286,8 @@ export function renderDesign(d: Design, showGuides = false, scale = 1): HTMLCanv
     ctx.globalAlpha = 1;
 
     // QR on a white card, as large as the space allows.
-    const footerH = d.footer ? 12 * mm : 4 * mm;
+    const poweredH = d.poweredQr ? 17 * mm : 0;
+    const footerH = (d.footer ? 12 * mm : 4 * mm) + poweredH;
     const room = H - inner - footerH - y;
     const card = Math.min(78 * mm, room, maxW);
     const pad = 5 * mm;
@@ -302,6 +304,39 @@ export function renderDesign(d: Design, showGuides = false, scale = 1): HTMLCanv
       ctx.font = `600 ${4.2 * mm}px system-ui, sans-serif`;
       ctx.fillText("Point your phone camera at the code", cx, y);
       ctx.globalAlpha = 1;
+    }
+    // "Powered by RepSuites" with a small code to repsuites.com, at the foot.
+    if (d.poweredQr) {
+      const q = 13 * mm;
+      const qp = 1.2 * mm;
+      const label = "Powered by RepSuites";
+      const small = "Get more reviews: repsuites.com";
+      ctx.font = `700 ${3.4 * mm}px system-ui, sans-serif`;
+      const w1 = ctx.measureText(label).width;
+      ctx.font = `500 ${2.8 * mm}px system-ui, sans-serif`;
+      const w2 = ctx.measureText(small).width;
+      const textW = Math.max(w1, w2);
+      const gap = 3 * mm;
+      const total = q + gap + textW;
+      const x0 = cx - total / 2;
+      const yq = H - inner - q;
+      ctx.fillStyle = "#ffffff";
+      roundRect(ctx, x0, yq, q, q, 1.5 * mm);
+      ctx.fill();
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(d.poweredQr, x0 + qp, yq + qp, q - qp * 2, q - qp * 2);
+      ctx.imageSmoothingEnabled = true;
+      ctx.save();
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = text;
+      ctx.globalAlpha = 0.9;
+      ctx.font = `700 ${3.4 * mm}px system-ui, sans-serif`;
+      ctx.fillText(label, x0 + q + gap, yq + q / 2 - 2.2 * mm);
+      ctx.globalAlpha = 0.75;
+      ctx.font = `500 ${2.8 * mm}px system-ui, sans-serif`;
+      ctx.fillText(small, x0 + q + gap, yq + q / 2 + 2.4 * mm);
+      ctx.restore();
     }
   } else {
     // Coaster: the headline follows the top of the circle, the message the
