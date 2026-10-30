@@ -94,7 +94,8 @@ async function askClaude(prompt: string): Promise<{ text: string } | { error: st
             },
           },
         ],
-        tool_choice: { type: "tool", name: "customer_insights" },
+        // Some models refuse a forced tool; "auto" plus the system instruction works on all.
+        tool_choice: { type: "auto" },
         messages: [{ role: "user", content: prompt }],
       }),
     });
