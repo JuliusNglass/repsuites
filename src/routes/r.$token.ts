@@ -20,9 +20,15 @@ export const Route = createFileRoute("/r/$token")({
         if (!/^[A-Za-z0-9_-]{20,64}$/.test(token))
           return new Response(reportNotFound(), { status: 404, headers: HTML });
         const r = await serviceRead<
-          { report: Report | null; gbp_snapshot: ProspectSnapshot | null }[]
-        >(`prospects?select=report,gbp_snapshot&report_token=eq.${token}`, "");
-        const report = r.data?.[0]?.report;
+          {
+            report: Report | null;
+            gbp_snapshot: ProspectSnapshot | null;
+            lat: number | null;
+            lng: number | null;
+          }[]
+        >(`prospects?select=report,gbp_snapshot,lat,lng&report_token=eq.${token}`, "");
+        const row = r.data?.[0];
+        const report = row?.report;
         if (!report) return new Response(reportNotFound(), { status: 404, headers: HTML });
         // Do not count our own team opening it (they are signed in).
         const ours = (request.headers.get("cookie") ?? "").includes("repsuites_session=");
@@ -36,8 +42,9 @@ export const Route = createFileRoute("/r/$token")({
         return new Response(
           renderReport(report, {
             token,
-            snapshot: r.data?.[0]?.gbp_snapshot ?? null,
+            snapshot: row?.gbp_snapshot ?? null,
             flash: flash.slice(0, 20),
+            center: row?.lat != null && row?.lng != null ? { lat: row.lat, lng: row.lng } : null,
           }),
           { status: 200, headers: HTML },
         );

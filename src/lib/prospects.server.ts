@@ -101,7 +101,15 @@ export interface Report {
     mapsUrl: string;
     newestReviewDays: number | null;
   };
-  rivals: { name: string; rating: number | null; reviews: number }[];
+  rivals: {
+    name: string;
+    rating: number | null;
+    reviews: number;
+    lat?: number;
+    lng?: number;
+    km?: number; // distance from the business
+    kind?: string; // e.g. "Hamburger Restaurant"
+  }[];
   maps: { keyword: string; position: number | null; checked: boolean; error?: string };
   // 5 by 5 heatmap, row by row from the north-west corner. -1 = not checked,
   // null = not in the top 20.
@@ -112,6 +120,8 @@ export interface Report {
     found: number;
     top3: number;
     average: number | null;
+    center?: { lat: number; lng: number };
+    spacingKm?: number;
   } | null;
   score: number;
   parts: { label: string; got: number; max: number }[];
@@ -126,7 +136,90 @@ export interface Report {
 }
 
 const DETAIL_MASK =
-  "id,displayName,formattedAddress,addressComponents,location,rating,userRatingCount,nationalPhoneNumber,internationalPhoneNumber,websiteUri,regularOpeningHours,editorialSummary,photos,primaryTypeDisplayName,googleMapsUri,reviews";
+  "id,displayName,formattedAddress,addressComponents,location,rating,userRatingCount,nationalPhoneNumber,internationalPhoneNumber,websiteUri,regularOpeningHours,editorialSummary,photos,primaryTypeDisplayName,primaryType,types,googleMapsUri,reviews";
+
+// Types too general to tell a burger bar from a curry house.
+const GENERAL_TYPES = new Set([
+  "point_of_interest",
+  "establishment",
+  "food",
+  "store",
+  "restaurant",
+  "service",
+  "premise",
+  "health",
+  "finance",
+  "general_contractor",
+]);
+
+// Distance in km between two points (haversine). Worked example: two places
+// 0.01 degrees of latitude apart are about 1.1 km apart.
+export function kmBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+export function rivalTypes(primary: string, types: string[]): string[] {
+  const specific = [primary, ...types].filter((t) => t && !GENERAL_TYPES.has(t));
+  return [...new Set(specific)].slice(0, 5);
+}
+
+async function nearestRivals(p: any, lat: number, lng: number): Promise<Report["rivals"]> {
+  const kinds = rivalTypes(String(p.primaryType ?? ""), (p.types ?? []).map(String));
+  const mask =
+    "places.id,places.displayName,places.rating,places.userRatingCount,places.location,places.primaryTypeDisplayName,places.businessStatus";
+  const pick = (list: any[]) =>
+    list
+      .filter((x) => x.id !== p.id && x.businessStatus !== "CLOSED_PERMANENTLY")
+      .map((x) => {
+        const at = { lat: Number(x.location?.latitude), lng: Number(x.location?.longitude) };
+        return {
+          name: String(x.displayName?.text ?? "").slice(0, 200),
+          rating: typeof x.rating === "number" ? x.rating : null,
+          reviews: Number(x.userRatingCount ?? 0),
+          lat: at.lat,
+          lng: at.lng,
+          km: Math.round(kmBetween({ lat, lng }, at) * 10) / 10,
+          kind: String(x.primaryTypeDisplayName?.text ?? "").slice(0, 80),
+        };
+      })
+      .filter((x) => x.name && Number.isFinite(x.km) && x.reviews > 0)
+      .sort((a, b) => a.km - b.km)
+      .slice(0, 3);
+  if (kinds.length) {
+    for (const radius of [5000, 15000]) {
+      const j = await places("places:searchNearby", mask, {
+        includedTypes: kinds,
+        maxResultCount: 15,
+        rankPreference: "DISTANCE",
+        languageCode: "en",
+        locationRestriction: { circle: { center: { latitude: lat, longitude: lng }, radius } },
+      });
+      const got = pick(j?.places ?? []);
+      if (got.length >= 3 || (radius === 15000 && got.length)) return got;
+    }
+  }
+  // Fallback: a text search for its category, kept within 15 km.
+  const category = String(p.primaryTypeDisplayName?.text ?? "");
+  if (!category) return [];
+  const j = await places("places:searchText", mask, {
+    textQuery: category,
+    pageSize: 15,
+    languageCode: "en",
+    locationRestriction: {
+      rectangle: {
+        low: { latitude: lat - 0.135, longitude: lng - 0.135 / Math.cos((lat * Math.PI) / 180) },
+        high: { latitude: lat + 0.135, longitude: lng + 0.135 / Math.cos((lat * Math.PI) / 180) },
+      },
+    },
+  });
+  return pick(j?.places ?? []);
+}
 
 function ratingPoints(r: number | null): number {
   if (r === null) return 0;
@@ -180,29 +273,11 @@ export async function buildReport(
     .sort((a: number, b: number) => b - a)[0];
   const newestReviewDays = newest ? Math.floor((Date.now() - newest) / 86400000) : null;
 
-  // Nearest rivals: same kind of business within about 3 km, busiest first.
-  let rivals: Report["rivals"] = [];
-  if (category && lat !== null && lng !== null) {
-    const j = await places(
-      "places:searchText",
-      "places.id,places.displayName,places.rating,places.userRatingCount",
-      {
-        textQuery: category,
-        pageSize: 15,
-        languageCode: "en",
-        locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: 3000 } },
-      },
-    );
-    rivals = (j?.places ?? [])
-      .filter((x: any) => x.id !== p.id)
-      .map((x: any) => ({
-        name: String(x.displayName?.text ?? "").slice(0, 200),
-        rating: typeof x.rating === "number" ? x.rating : null,
-        reviews: Number(x.userRatingCount ?? 0),
-      }))
-      .sort((a: any, b: any) => b.reviews - a.reviews)
-      .slice(0, 3);
-  }
+  // Nearest rivals: businesses of the same kind (any of its specific Google
+  // types, e.g. burger, fast food or American restaurant), closest first,
+  // within 5 km, widening to 15 km in quiet areas. Never the busiest chain in
+  // the nearest city just because it is famous.
+  const rivals = lat !== null && lng !== null ? await nearestRivals(p, lat, lng) : [];
 
   // Where it shows on Google Maps for its main search, from its own street.
   const keyword = (keywordOverride || category || "").toLowerCase().slice(0, 80);
@@ -254,6 +329,8 @@ export async function buildReport(
           found: sum.found,
           top3: sum.top3,
           average: sum.average,
+          center: { lat, lng },
+          spacingKm,
         };
       }
     } else mapsError = "DataForSEO login not set";
