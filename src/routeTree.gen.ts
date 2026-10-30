@@ -23,10 +23,12 @@ import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
 import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
 import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
+import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
+import { Route as ApiInternalReviewRequestsRouteImport } from './routes/api.internal.review-requests'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api.google.oauth.callback'
 
@@ -100,6 +102,11 @@ const FeedbackIdRoute = FeedbackIdRouteImport.update({
   path: '/feedback/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QTokenRoute = QTokenRouteImport.update({
+  id: '/q/$token',
+  path: '/q/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RTokenRoute = RTokenRouteImport.update({
   id: '/r/$token',
   path: '/r/$token',
@@ -120,6 +127,12 @@ const ApiInternalRankChecksRoute = ApiInternalRankChecksRouteImport.update({
   path: '/api/internal/rank-checks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalReviewRequestsRoute =
+  ApiInternalReviewRequestsRouteImport.update({
+    id: '/api/internal/review-requests',
+    path: '/api/internal/review-requests',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -145,11 +158,13 @@ export interface FileRoutesByFullPath {
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRoute
   '/cards/': typeof CardsIndexRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
@@ -167,11 +182,13 @@ export interface FileRoutesByTo {
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRoute
   '/cards': typeof CardsIndexRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
@@ -190,11 +207,13 @@ export interface FileRoutesById {
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRoute
   '/cards/': typeof CardsIndexRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
 }
@@ -214,11 +233,13 @@ export interface FileRouteTypes {
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
+    | '/q/$token'
     | '/r/$token'
     | '/cards/'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
+    | '/api/internal/review-requests'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
   fileRoutesByTo: FileRoutesByTo
@@ -236,11 +257,13 @@ export interface FileRouteTypes {
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
+    | '/q/$token'
     | '/r/$token'
     | '/cards'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
+    | '/api/internal/review-requests'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
   id:
@@ -258,11 +281,13 @@ export interface FileRouteTypes {
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
+    | '/q/$token'
     | '/r/$token'
     | '/cards/'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
+    | '/api/internal/review-requests'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
   fileRoutesById: FileRoutesById
@@ -281,11 +306,13 @@ export interface RootRouteChildren {
   CardsOrderRoute: typeof CardsOrderRoute
   CardsThanksRoute: typeof CardsThanksRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
+  QTokenRoute: typeof QTokenRoute
   RTokenRoute: typeof RTokenRoute
   CardsIndexRoute: typeof CardsIndexRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
+  ApiInternalReviewRequestsRoute: typeof ApiInternalReviewRequestsRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
 }
@@ -390,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedbackIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/q/$token': {
+      id: '/q/$token'
+      path: '/q/$token'
+      fullPath: '/q/$token'
+      preLoaderRoute: typeof QTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/r/$token': {
       id: '/r/$token'
       path: '/r/$token'
@@ -416,6 +450,13 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/rank-checks'
       fullPath: '/api/internal/rank-checks'
       preLoaderRoute: typeof ApiInternalRankChecksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/review-requests': {
+      id: '/api/internal/review-requests'
+      path: '/api/internal/review-requests'
+      fullPath: '/api/internal/review-requests'
+      preLoaderRoute: typeof ApiInternalReviewRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/stripe/webhook': {
@@ -449,11 +490,13 @@ const rootRouteChildren: RootRouteChildren = {
   CardsOrderRoute: CardsOrderRoute,
   CardsThanksRoute: CardsThanksRoute,
   FeedbackIdRoute: FeedbackIdRoute,
+  QTokenRoute: QTokenRoute,
   RTokenRoute: RTokenRoute,
   CardsIndexRoute: CardsIndexRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
+  ApiInternalReviewRequestsRoute: ApiInternalReviewRequestsRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
 }

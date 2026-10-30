@@ -1,6 +1,7 @@
 // Signed-in home: pick the business (agency staff can open any of them),
 // then its Google profile, reviews, posts and performance.
 // No em dashes in this copy (AGENTS.md).
+import { RequestsPanel } from "../components/reviews/RequestsPanel";
 import { Logo } from "../components/site/Logo";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/dashboard")({
 
 const TABS = [
   { id: "reviews", label: "Reviews" },
+  { id: "ask", label: "Ask" },
   { id: "results", label: "Results" },
   { id: "posts", label: "Posts" },
   { id: "qr", label: "QR & links" },
@@ -212,6 +214,7 @@ function Dashboard() {
             )}
           </>
         )}
+        {active && tab === "ask" && <RequestsPanel key={`a-${active.id}`} />}
         {active && tab === "results" && <GooglePanel key={`g-${active.id}`} tab="results" />}
         {active && tab === "posts" && <GooglePanel key={`p-${active.id}`} tab="posts" />}
         {active && tab === "qr" && (
