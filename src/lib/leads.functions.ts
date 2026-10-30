@@ -34,7 +34,10 @@ function esc(s: string): string {
 }
 
 // Best effort: a failed email never loses the request (it is already saved).
-async function notifyNewLead(lead: z.output<typeof Lead>): Promise<void> {
+async function notifyNewLead(
+  lead: z.output<typeof Lead>,
+  reportLink: string | null,
+): Promise<void> {
   const key = (process.env["REPSUITES_RESEND_API_KEY"] ?? "").trim();
   if (!key) return;
   const to = (process.env["REPSUITES_LEADS_TO"] ?? "julius@accelur8.com").trim();
@@ -49,11 +52,12 @@ async function notifyNewLead(lead: z.output<typeof Lead>): Promise<void> {
     ["Rating", p && p.rating != null ? `${p.rating} (${p.reviewCount ?? 0} reviews)` : "-"],
     ["Website", p?.websiteUrl || "-"],
     ["Maps link", p?.mapsUrl || "-"],
+    ["Draft report", reportLink ?? "not built (no Google listing picked)"],
   ];
   const html =
     `<p>New free visibility check request on repsuites.com.</p><table>` +
     rows.map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td>${esc(v)}</td></tr>`).join("") +
-    `</table><p>Promised reply: within 2 working days.</p>`;
+    `</table><p>Promised reply: within 2 working days. Check the draft report, then send it from Prospects on repsuites.com.</p>`;
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -94,6 +98,16 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
     });
     if (w.error)
       return { ok: false as const, error: "Sorry, that did not send. Please try again." };
-    await notifyNewLead(data);
+    // Turn a request with a Google listing into a prospect with a ready report.
+    let reportLink: string | null = null;
+    if (p?.placeId) {
+      const { saveProspectReport } = await import("./prospects.server");
+      const r = await saveProspectReport(p.placeId, "inbound", {
+        email: data.email.toLowerCase(),
+        contactName: data.name,
+      }).catch(() => null);
+      if (r?.ok) reportLink = `https://repsuites.com/r/${r.token}`;
+    }
+    await notifyNewLead(data, reportLink);
     return { ok: true as const };
   });

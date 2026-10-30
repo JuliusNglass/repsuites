@@ -104,6 +104,11 @@ function Dashboard() {
               <ChevronDown className="w-4 h-4 shrink-0" />
             </button>
           )}
+          {s.agency && (
+            <a href="/prospects" className="text-sm font-semibold shrink-0">
+              Prospects
+            </a>
+          )}
           <button
             type="button"
             className="text-sm text-muted-foreground shrink-0"

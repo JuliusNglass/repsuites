@@ -1,0 +1,438 @@
+// Lead generator (Accelur8 team): find a business or a niche in a town, build
+// a free Google visibility report, share it, and track follow-ups.
+// No em dashes in this copy (AGENTS.md).
+import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ExternalLink,
+  Loader2,
+  Mail,
+  MessageCircle,
+  Search,
+  Smartphone,
+  Star,
+} from "lucide-react";
+import { Logo } from "../components/site/Logo";
+import {
+  buildProspectReport,
+  listProspects,
+  searchProspects,
+  updateProspect,
+} from "../lib/prospects.functions";
+
+export const Route = createFileRoute("/prospects")({
+  head: () => ({
+    meta: [{ title: "Prospects | RepSuites" }, { name: "robots", content: "noindex" }],
+  }),
+  component: Prospects,
+});
+
+type List = Extract<Awaited<ReturnType<typeof listProspects>>, { ok: true }>["prospects"];
+type P = List[number];
+type Patch = {
+  stage?: (typeof STAGE_IDS)[number];
+  followUpOn?: string | null;
+  notes?: string;
+  email?: string;
+  contactName?: string;
+};
+type Hit = Extract<Awaited<ReturnType<typeof searchProspects>>, { ok: true }>["hits"][number];
+
+const STAGE_IDS = ["new", "sent", "opened", "replied", "booked", "won", "lost"] as const;
+const STAGES: { id: (typeof STAGE_IDS)[number]; label: string }[] = [
+  { id: "new", label: "New" },
+  { id: "sent", label: "Sent" },
+  { id: "opened", label: "Opened" },
+  { id: "replied", label: "Replied" },
+  { id: "booked", label: "Call booked" },
+  { id: "won", label: "Won" },
+  { id: "lost", label: "Lost" },
+];
+
+const field =
+  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+
+function scoreClass(n: number | null) {
+  if (n === null) return "bg-muted text-muted-foreground";
+  return n >= 75
+    ? "bg-emerald-100 text-emerald-800"
+    : n >= 50
+      ? "bg-amber-100 text-amber-800"
+      : "bg-red-100 text-red-800";
+}
+
+function shareText(p: { name: string; contactName?: string }, link: string) {
+  const hi = p.contactName ? `Hi ${p.contactName.split(" ")[0]}` : "Hi";
+  return `${hi}, I put together a free report on how ${p.name} shows up on Google and Google Maps, compared with the businesses nearest to you. It takes 2 minutes to read and shows what to fix first: ${link}`;
+}
+
+function today(offsetDays = 0) {
+  const d = new Date(Date.now() + offsetDays * 86400000);
+  return d.toISOString().slice(0, 10);
+}
+
+function Prospects() {
+  const list = useServerFn(listProspects);
+  const search = useServerFn(searchProspects);
+  const build = useServerFn(buildProspectReport);
+  const update = useServerFn(updateProspect);
+  const [tab, setTab] = useState<"find" | "pipeline" | "due">("find");
+  const [items, setItems] = useState<List | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState<Hit[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [building, setBuilding] = useState<string | null>(null);
+  const [stage, setStage] = useState<string>("all");
+
+  const load = useCallback(async () => {
+    const r = await list();
+    if (r.ok) setItems(r.prospects);
+    else setErr(r.error);
+  }, [list]);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const due = useMemo(
+    () =>
+      (items ?? []).filter(
+        (p) => p.followUpOn && p.followUpOn <= today() && !["won", "lost"].includes(p.stage),
+      ),
+    [items],
+  );
+  const shown = useMemo(
+    () => (tab === "due" ? due : (items ?? []).filter((p) => stage === "all" || p.stage === stage)),
+    [tab, due, items, stage],
+  );
+
+  const save = async (id: string, patch: Patch) => {
+    const r = await update({ data: { id, ...patch } });
+    if (!r.ok) toast.error(r.error);
+    await load();
+  };
+
+  if (err)
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 text-center">
+        <div>
+          <p className="mb-4">{err}</p>
+          <a href="/dashboard" className="underline">
+            Back to the dashboard
+          </a>
+        </div>
+      </div>
+    );
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border px-4 h-16 flex items-center justify-between">
+        <a href="/dashboard">
+          <Logo />
+        </a>
+        <a href="/dashboard" className="text-sm text-muted-foreground">
+          Dashboard
+        </a>
+      </header>
+      <nav className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+        <div className="max-w-4xl mx-auto px-2 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar">
+          {(
+            [
+              ["find", "Find prospects"],
+              ["pipeline", `Pipeline (${items?.length ?? 0})`],
+              ["due", `Follow up today (${due.length})`],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              className={`shrink-0 px-3 py-3 text-sm font-semibold border-b-2 ${
+                tab === id ? "border-primary" : "border-transparent text-muted-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      <main className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
+        {tab === "find" && (
+          <>
+            <form
+              className="flex gap-2"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (q.trim().length < 3) return;
+                setSearching(true);
+                const r = await search({ data: { q } });
+                setSearching(false);
+                if (r.ok) setHits(r.hits);
+                else toast.error(r.error);
+              }}
+            >
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="A business name, or a niche and town: dentists in Newport"
+                className={field}
+              />
+              <button
+                type="submit"
+                disabled={searching}
+                className="rounded-lg bg-primary text-primary-foreground px-4 font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {searching ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
+                <span className="hidden sm:inline">Search</span>
+              </button>
+            </form>
+            <p className="text-xs text-muted-foreground">
+              Each report checks the business against its nearest rivals and its Google Maps
+              position. About 5p to 10p per report.
+            </p>
+            {hits && hits.length === 0 && (
+              <p className="text-sm text-muted-foreground">Nothing found. Try another search.</p>
+            )}
+            <ul className="space-y-2">
+              {(hits ?? []).map((h) => (
+                <li
+                  key={h.placeId}
+                  className="rounded-xl border border-border bg-card p-3 flex flex-wrap items-center gap-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold truncate">{h.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{h.address}</p>
+                    <p className="text-xs mt-0.5 inline-flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      {h.rating?.toFixed(1) ?? "-"} ({h.reviews} reviews)
+                      {h.category ? ` - ${h.category}` : ""}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={building !== null}
+                    onClick={async () => {
+                      setBuilding(h.placeId);
+                      const r = await build({
+                        data: {
+                          placeId: h.placeId,
+                          niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
+                        },
+                      });
+                      setBuilding(null);
+                      if (r.ok) {
+                        toast.success(`Report ready for ${r.name}: score ${r.score}`);
+                        setHits(
+                          (cur) =>
+                            cur?.map((x) =>
+                              x.placeId === h.placeId ? { ...x, saved: true } : x,
+                            ) ?? null,
+                        );
+                        await load();
+                      } else toast.error(r.error);
+                    }}
+                    className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {building === h.placeId ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {h.saved ? "Rebuild report" : "Build report"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {tab !== "find" && (
+          <>
+            {tab === "pipeline" && (
+              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+                {[{ id: "all", label: "All" }, ...STAGES].map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setStage(s.id)}
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold border ${
+                      stage === s.id
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {items === null && <Loader2 className="w-4 h-4 animate-spin" />}
+            {items && shown.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                {tab === "due"
+                  ? "No follow-ups due. Nice."
+                  : "No prospects here yet. Find some first."}
+              </p>
+            )}
+            <ul className="space-y-2">
+              {shown.map((p) => (
+                <ProspectRow key={p.id} p={p} onSave={save} />
+              ))}
+            </ul>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [notes, setNotes] = useState(p.notes);
+  const [email, setEmail] = useState(p.email);
+  const [contact, setContact] = useState(p.contactName);
+  const text = p.link ? shareText(p, p.link) : "";
+  // Sharing a report moves a new prospect to "sent" and sets a follow-up in 3 days.
+  const shared = async () => {
+    if (p.stage === "new") await onSave(p.id, { stage: "sent", followUpOn: today(3) });
+  };
+  const phone = p.phone.replace(/[^\d+]/g, "");
+  return (
+    <li className="rounded-xl border border-border bg-card p-3 space-y-2">
+      <div className="flex items-start gap-3">
+        <span className={`shrink-0 rounded-lg px-2 py-1 text-sm font-bold ${scoreClass(p.score)}`}>
+          {p.score ?? "-"}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold truncate">{p.name}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {p.town}
+            {p.opens > 0 ? ` - opened ${p.opens} time${p.opens === 1 ? "" : "s"}` : ""}
+            {p.followUpOn
+              ? ` - follow up ${new Date(p.followUpOn).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+              : ""}
+            {p.source === "inbound" ? " - asked for a check" : ""}
+          </p>
+          {p.topFix && <p className="text-xs mt-0.5 truncate">{p.topFix}</p>}
+        </div>
+        <select
+          value={p.stage}
+          onChange={(e) => void onSave(p.id, { stage: e.target.value as (typeof STAGE_IDS)[number] })}
+          className="shrink-0 rounded-lg border border-input bg-background px-2 py-1 text-xs"
+        >
+          {STAGES.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {p.link && (
+        <div className="flex flex-wrap gap-1.5 text-xs">
+          <a
+            href={p.link}
+            target="_blank"
+            rel="noopener"
+            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> Open
+          </a>
+          <button
+            type="button"
+            onClick={async () => {
+              await navigator.clipboard.writeText(text);
+              toast.success("Message and link copied");
+              await shared();
+            }}
+            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+          >
+            <Copy className="w-3.5 h-3.5" /> Copy
+          </button>
+          <a
+            href={`https://wa.me/${phone.startsWith("+") ? phone.slice(1) : ""}?text=${encodeURIComponent(text)}`}
+            target="_blank"
+            rel="noopener"
+            onClick={() => void shared()}
+            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+          >
+            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+          </a>
+          <a
+            href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(`How ${p.name} shows up on Google`)}&body=${encodeURIComponent(text)}`}
+            onClick={() => void shared()}
+            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+          >
+            <Mail className="w-3.5 h-3.5" /> Email
+          </a>
+          <a
+            href={`sms:${phone}?&body=${encodeURIComponent(text)}`}
+            onClick={() => void shared()}
+            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+          >
+            <Smartphone className="w-3.5 h-3.5" /> Text
+          </a>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="ml-auto px-2 py-1.5 inline-flex items-center gap-1 text-muted-foreground"
+          >
+            Details{" "}
+            {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      )}
+      {open && (
+        <div className="grid sm:grid-cols-2 gap-2 pt-1">
+          <input
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder="Contact name"
+            className={field}
+          />
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className={field}
+          />
+          <label className="text-xs space-y-1 sm:col-span-2">
+            <span className="font-semibold">Follow up on</span>
+            <input
+              type="date"
+              value={p.followUpOn ?? ""}
+              onChange={(e) => void onSave(p.id, { followUpOn: e.target.value || null })}
+              className={field}
+            />
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Notes"
+            className={`${field} sm:col-span-2`}
+          />
+          <button
+            type="button"
+            onClick={() =>
+              void onSave(p.id, { notes, email, contactName: contact }).then(() =>
+                toast.success("Saved"),
+              )
+            }
+            className="rounded-lg bg-primary text-primary-foreground font-semibold px-3 py-2 text-sm sm:col-span-2"
+          >
+            Save details
+          </button>
+          {p.phone && (
+            <p className="text-xs text-muted-foreground sm:col-span-2">Phone: {p.phone}</p>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}

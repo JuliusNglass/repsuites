@@ -16,10 +16,12 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
 import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
+import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
@@ -60,6 +62,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProspectsRoute = ProspectsRouteImport.update({
+  id: '/prospects',
+  path: '/prospects',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -78,6 +85,11 @@ const CardsOrderRoute = CardsOrderRouteImport.update({
 const FeedbackIdRoute = FeedbackIdRouteImport.update({
   id: '/feedback/$id',
   path: '/feedback/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RTokenRoute = RTokenRouteImport.update({
+  id: '/r/$token',
+  path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiInternalGoogleRoute = ApiInternalGoogleRouteImport.update({
@@ -109,10 +121,12 @@ export interface FileRoutesByFullPath {
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/cards/order': typeof CardsOrderRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/r/$token': typeof RTokenRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -126,10 +140,12 @@ export interface FileRoutesByTo {
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/cards/order': typeof CardsOrderRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/r/$token': typeof RTokenRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -144,10 +160,12 @@ export interface FileRoutesById {
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/cards/order': typeof CardsOrderRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/r/$token': typeof RTokenRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
@@ -163,10 +181,12 @@ export interface FileRouteTypes {
     | '/google-business-profile'
     | '/login'
     | '/privacy'
+    | '/prospects'
     | '/reset-password'
     | '/terms'
     | '/cards/order'
     | '/feedback/$id'
+    | '/r/$token'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -180,10 +200,12 @@ export interface FileRouteTypes {
     | '/google-business-profile'
     | '/login'
     | '/privacy'
+    | '/prospects'
     | '/reset-password'
     | '/terms'
     | '/cards/order'
     | '/feedback/$id'
+    | '/r/$token'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -197,10 +219,12 @@ export interface FileRouteTypes {
     | '/google-business-profile'
     | '/login'
     | '/privacy'
+    | '/prospects'
     | '/reset-password'
     | '/terms'
     | '/cards/order'
     | '/feedback/$id'
+    | '/r/$token'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/rank-checks'
@@ -215,9 +239,11 @@ export interface RootRouteChildren {
   GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  ProspectsRoute: typeof ProspectsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
+  RTokenRoute: typeof RTokenRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
@@ -275,6 +301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/prospects': {
+      id: '/prospects'
+      path: '/prospects'
+      fullPath: '/prospects'
+      preLoaderRoute: typeof ProspectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -301,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/feedback/$id'
       fullPath: '/feedback/$id'
       preLoaderRoute: typeof FeedbackIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$token': {
+      id: '/r/$token'
+      path: '/r/$token'
+      fullPath: '/r/$token'
+      preLoaderRoute: typeof RTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/internal/google': {
@@ -352,9 +392,11 @@ const rootRouteChildren: RootRouteChildren = {
   GoogleBusinessProfileRoute: GoogleBusinessProfileRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  ProspectsRoute: ProspectsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   FeedbackIdRoute: FeedbackIdRoute,
+  RTokenRoute: RTokenRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
