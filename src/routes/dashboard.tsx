@@ -9,6 +9,7 @@ import { Building2, ChevronDown, Search } from "lucide-react";
 import { selectTenant, signOut } from "../lib/auth.functions";
 import { listMyBusinesses } from "../lib/businesses.functions";
 import { GooglePanel } from "../components/reviews/GooglePanel";
+import { QrCodesCard } from "../components/reviews/QrCodesCard";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -138,7 +139,10 @@ function Dashboard() {
           </p>
         </div>
         {active ? (
-          <GooglePanel key={active.id} />
+          <>
+            <GooglePanel key={active.id} />
+            <QrCodesCard key={`qr-${active.id}`} />
+          </>
         ) : (
           <p className="text-muted-foreground">Choose a business to get started.</p>
         )}
