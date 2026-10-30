@@ -5,6 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { Download, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { brandTheme, normaliseHex } from "../../lib/brand";
+import { getBranding, saveBranding } from "../../lib/brand.functions";
 import {
   downloadPdf,
   downloadPng,
@@ -44,6 +47,41 @@ export function PrintDesigner({
   const preview = useRef<HTMLDivElement>(null);
   const [format, setFormat] = useState<PrintFormat>("a5");
   const [themeId, setThemeId] = useState(THEMES[0]!.id);
+  // Brand colours as hex codes, saved per business.
+  const loadBrand = useServerFn(getBranding);
+  const storeBrand = useServerFn(saveBranding);
+  const [primaryHex, setPrimaryHex] = useState("");
+  const [secondaryHex, setSecondaryHex] = useState("");
+  const [savingBrand, setSavingBrand] = useState(false);
+  const primary = normaliseHex(primaryHex);
+  const secondary = normaliseHex(secondaryHex);
+  useEffect(() => {
+    void loadBrand()
+      .then((r) => {
+        if (!r.ok) return;
+        if (r.primary) {
+          setPrimaryHex(r.primary);
+          setThemeId("brand");
+        }
+        if (r.secondary) setSecondaryHex(r.secondary);
+      })
+      .catch(() => null);
+  }, [loadBrand]);
+  async function keepBrand() {
+    if (primaryHex && !primary) {
+      toast.error("Primary colour: use a hex code like #0b1d3a.");
+      return;
+    }
+    if (secondaryHex && !secondary) {
+      toast.error("Secondary colour: use a hex code like #f5b324.");
+      return;
+    }
+    setSavingBrand(true);
+    const r = await storeBrand({ data: { primary, secondary } }).catch(() => null);
+    setSavingBrand(false);
+    if (r?.ok) toast.success("Brand colours saved for this business");
+    else toast.error(r?.error ?? "Could not save the colours.");
+  }
   const [name, setName] = useState(business);
   const [msg, setMsg] = useState(0);
   const [headline, setHeadline] = useState(MESSAGES[0]!.headline);
@@ -64,13 +102,29 @@ export function PrintDesigner({
       business: name.trim() || business,
       headline: headline.trim(),
       sub: sub.trim(),
-      theme: THEMES.find((t) => t.id === themeId) ?? THEMES[0]!,
+      theme:
+        themeId === "brand" && primary
+          ? brandTheme(primary, secondary)
+          : (THEMES.find((t) => t.id === themeId) ?? THEMES[0]!),
       logo,
       photo,
       qr,
       footer,
     };
-  }, [format, name, business, headline, sub, themeId, logo, photo, footer, qrReady]);
+  }, [
+    format,
+    name,
+    business,
+    headline,
+    sub,
+    themeId,
+    primary,
+    secondary,
+    logo,
+    photo,
+    footer,
+    qrReady,
+  ]);
 
   // Redraw the small preview whenever something changes.
   useEffect(() => {
@@ -177,6 +231,18 @@ export function PrintDesigner({
             <div className="space-y-1">
               <span className="text-sm font-semibold">Colours</span>
               <div className="flex flex-wrap gap-2">
+                {primary && (
+                  <button
+                    type="button"
+                    title="Your brand colours"
+                    aria-label="Your brand colours"
+                    onClick={() => setThemeId("brand")}
+                    className={`w-9 h-9 rounded-full border-2 ${themeId === "brand" ? "border-primary" : "border-border"}`}
+                    style={{
+                      background: `linear-gradient(135deg, ${primary} 60%, ${secondary ?? primary} 60%)`,
+                    }}
+                  />
+                )}
                 {THEMES.map((t) => (
                   <button
                     key={t.id}
@@ -188,6 +254,48 @@ export function PrintDesigner({
                     style={{ background: `linear-gradient(135deg, ${t.bg[0]}, ${t.bg[1]})` }}
                   />
                 ))}
+              </div>
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                <span className="text-xs font-semibold">Your brand colours (hex codes)</span>
+                {(
+                  [
+                    ["Primary (background)", primaryHex, setPrimaryHex, primary, "#0b1d3a"],
+                    ["Secondary (highlight)", secondaryHex, setSecondaryHex, secondary, "#f5b324"],
+                  ] as const
+                ).map(([label, val, set, ok, eg]) => (
+                  <label key={label} className="flex items-center gap-2 text-xs">
+                    <input
+                      type="color"
+                      value={ok ?? eg}
+                      onChange={(e) => {
+                        set(e.target.value);
+                        setThemeId("brand");
+                      }}
+                      className="w-9 h-9 rounded-md border border-border bg-background p-0.5 cursor-pointer shrink-0"
+                      aria-label={label}
+                    />
+                    <span className="w-32 shrink-0 text-muted-foreground">{label}</span>
+                    <input
+                      value={val}
+                      onChange={(e) => {
+                        set(e.target.value);
+                        if (normaliseHex(e.target.value)) setThemeId("brand");
+                      }}
+                      placeholder={eg}
+                      maxLength={7}
+                      spellCheck={false}
+                      className={`${field} font-mono uppercase ${val && !ok ? "border-destructive" : ""}`}
+                    />
+                  </label>
+                ))}
+                <button
+                  type="button"
+                  disabled={savingBrand || !primary}
+                  onClick={() => void keepBrand()}
+                  className="w-full rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                >
+                  {savingBrand ? "Saving..." : "Save as this business's brand colours"}
+                </button>
               </div>
             </div>
 

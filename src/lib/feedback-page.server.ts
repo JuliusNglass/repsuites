@@ -5,6 +5,7 @@
 // unhappy customers away from public reviews. Private feedback is offered to
 // everyone as an extra, never instead of a review.
 // No em dashes in this copy (AGENTS.md).
+import { textOn } from "./brand";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { sendEmail } from "./email.server";
 
@@ -28,6 +29,8 @@ export interface FeedbackTarget {
   tenantId: string | null;
   business: string;
   links: { platform: Platform; label: string; url: string }[];
+  // The business's own colours (hex), when set.
+  brand?: { primary: string; secondary: string | null } | null;
 }
 
 function esc(s: string): string {
@@ -56,15 +59,27 @@ export async function loadFeedbackTarget(id: string): Promise<FeedbackTarget | n
 
   let business = qr.business_name ?? "";
   let saved: { platform: Platform; label: string | null; url: string }[] = [];
+  let brand: FeedbackTarget["brand"] = null;
   if (qr.tenant_id) {
-    const [t, l] = await Promise.all([
+    const [t, l, b] = await Promise.all([
       serviceRead<{ name: string }[]>(`tenants?select=name&id=eq.${qr.tenant_id}`, ""),
       serviceRead<{ platform: Platform; label: string | null; url: string }[]>(
         `review_links?select=platform,label,url&tenant_id=eq.${qr.tenant_id}&active=eq.true&order=position.asc,created_at.asc`,
         "",
       ),
+      serviceRead<{ primary_hex: string | null; secondary_hex: string | null }[]>(
+        `business_branding?select=primary_hex,secondary_hex&tenant_id=eq.${qr.tenant_id}`,
+        "",
+      ),
     ]);
     business = t.data?.[0]?.name ?? business;
+    const pb = b.data?.[0];
+    if (pb?.primary_hex && /^#[0-9a-f]{6}$/.test(pb.primary_hex))
+      brand = {
+        primary: pb.primary_hex,
+        secondary:
+          pb.secondary_hex && /^#[0-9a-f]{6}$/.test(pb.secondary_hex) ? pb.secondary_hex : null,
+      };
     saved = (l.data ?? []).filter((x) => x.url.startsWith("https://") && x.platform in PLATFORMS);
   }
 
@@ -84,7 +99,7 @@ export async function loadFeedbackTarget(id: string): Promise<FeedbackTarget | n
   }
   if (own && !usedOwn) links.unshift({ platform: "google", label: "", url: own });
   if (!links.length) return null;
-  return { qrId: qr.id, tenantId: qr.tenant_id, business: business || "us", links };
+  return { qrId: qr.id, tenantId: qr.tenant_id, business: business || "us", links, brand };
 }
 
 function buttonText(l: FeedbackTarget["links"][number]): string {
@@ -122,6 +137,12 @@ export function renderFeedbackPage(t: FeedbackTarget, note?: "sent" | "error"): 
         .map((l) => `<a class="alt" href="${esc(l.url)}" rel="noopener">${esc(buttonText(l))}</a>`)
         .join("")
     : "";
+  // Brand colours: a bar with the business name and the private-message button.
+  const bc = t.brand?.primary ?? null;
+  const bcText = bc ? textOn(bc) : "#ffffff";
+  const bar = bc
+    ? `<div style="background:${bc};color:${bcText};padding:14px 20px;text-align:center;font-weight:800;letter-spacing:.02em${t.brand?.secondary ? `;border-bottom:4px solid ${t.brand.secondary}` : ""}">${name}</div>`
+    : "";
   const banner =
     note === "sent"
       ? `<div class="ok">Thank you. Your message has been passed to ${name}.</div>`
@@ -131,7 +152,7 @@ export function renderFeedbackPage(t: FeedbackTarget, note?: "sent" | "error"): 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Review ${name}</title><meta name="robots" content="noindex">
-<style>${STYLE}</style></head><body><main>
+<style>${STYLE}</style></head><body>${bar}<main>
 ${banner}
 <h1>Thanks for visiting ${name}</h1>
 <p>Your review helps other people find us. It only takes a minute.</p>
@@ -144,7 +165,7 @@ ${primary}${others}
 <label for="n">Your name (optional)</label><input id="n" name="name" maxlength="120" autocomplete="name">
 <label for="c">Email or phone, if you would like a reply (optional)</label><input id="c" name="contact" maxlength="200" autocomplete="email">
 <input class="hp" tabindex="-1" autocomplete="off" name="website" aria-hidden="true">
-<button type="submit">Send privately</button>
+<button type="submit"${bc ? ` style="background:${bc};color:${bcText}"` : ""}>Send privately</button>
 </form></details>
 <footer><a href="https://repsuites.com">Powered by RepSuites</a></footer>
 </main></body></html>`;
