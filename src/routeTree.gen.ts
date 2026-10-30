@@ -20,7 +20,6 @@ import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiProspectConnectRouteImport } from './routes/api.prospect-connect'
-import { Route as ApiReportMapRouteImport } from './routes/api.report-map'
 import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
 import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
@@ -87,11 +86,6 @@ const TermsRoute = TermsRouteImport.update({
 const ApiProspectConnectRoute = ApiProspectConnectRouteImport.update({
   id: '/api/prospect-connect',
   path: '/api/prospect-connect',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiReportMapRoute = ApiReportMapRouteImport.update({
-  id: '/api/report-map',
-  path: '/api/report-map',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CardsIndexRoute = CardsIndexRouteImport.update({
@@ -168,7 +162,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
-  '/api/report-map': typeof ApiReportMapRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -194,7 +187,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
-  '/api/report-map': typeof ApiReportMapRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -221,7 +213,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
-  '/api/report-map': typeof ApiReportMapRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -249,7 +240,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/api/prospect-connect'
-    | '/api/report-map'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -275,7 +265,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/api/prospect-connect'
-    | '/api/report-map'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -301,7 +290,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/terms'
     | '/api/prospect-connect'
-    | '/api/report-map'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -328,7 +316,6 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   ApiProspectConnectRoute: typeof ApiProspectConnectRoute
-  ApiReportMapRoute: typeof ApiReportMapRoute
   CardsOrderRoute: typeof CardsOrderRoute
   CardsThanksRoute: typeof CardsThanksRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
@@ -420,13 +407,6 @@ declare module '@tanstack/react-router' {
       path: '/api/prospect-connect'
       fullPath: '/api/prospect-connect'
       preLoaderRoute: typeof ApiProspectConnectRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/report-map': {
-      id: '/api/report-map'
-      path: '/api/report-map'
-      fullPath: '/api/report-map'
-      preLoaderRoute: typeof ApiReportMapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cards/': {
@@ -528,7 +508,6 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   ApiProspectConnectRoute: ApiProspectConnectRoute,
-  ApiReportMapRoute: ApiReportMapRoute,
   CardsOrderRoute: CardsOrderRoute,
   CardsThanksRoute: CardsThanksRoute,
   FeedbackIdRoute: FeedbackIdRoute,

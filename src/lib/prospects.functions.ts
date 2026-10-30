@@ -31,12 +31,22 @@ export const searchProspects = createServerFn({ method: "POST" })
     return { ok: true as const, hits: hits.map((h) => ({ ...h, saved: have.has(h.placeId) })) };
   });
 
+function phrases(raw?: string): { keyword?: string; keywords?: string[] } {
+  const list = (raw ?? "")
+    .split(",")
+    .map((k) => k.trim().slice(0, 80))
+    .filter(Boolean)
+    .slice(0, 3);
+  return list.length ? { keyword: list[0]!, keywords: list.slice(1) } : {};
+}
+
 export const buildProspectReport = createServerFn({ method: "POST" })
   .validator((d: { placeId: string; keyword?: string; niche?: boolean }) =>
     z
       .object({
         placeId: z.string().regex(PLACE_RE),
-        keyword: z.string().trim().max(80).optional(),
+        // Up to 3 search phrases, separated by commas. The first is the main one.
+        keyword: z.string().trim().max(250).optional(),
         niche: z.boolean().optional(),
       })
       .parse(d),
@@ -46,7 +56,7 @@ export const buildProspectReport = createServerFn({ method: "POST" })
     if (!g.ok) return g;
     return saveProspectReport(data.placeId, data.niche ? "niche" : "search", {
       createdBy: g.userId,
-      ...(data.keyword ? { keyword: data.keyword } : {}),
+      ...phrases(data.keyword),
     });
   });
 

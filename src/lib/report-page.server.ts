@@ -3,7 +3,7 @@
 // No em dashes in this copy (AGENTS.md).
 import type { Report } from "./prospects.server";
 import type { ProspectSnapshot } from "./prospect-connect.server";
-import { gridSpots, pinAt, zoomFor } from "./report-map";
+import { gridSpots } from "./report-map";
 import { usesMiles } from "./units";
 
 function esc(s: string): string {
@@ -36,12 +36,12 @@ tr.you td{font-weight:700;background:#fffbeb}
 .fix b{display:block}.fix span{color:#475569;font-size:.92rem}
 .cta{display:block;text-align:center;background:#f5b324;color:#0f172a;font-weight:800;text-decoration:none;border-radius:14px;padding:16px;font-size:1.05rem;margin-top:16px}
 .small{font-size:.8rem;color:#64748b}
-.map{position:relative;aspect-ratio:1;max-width:520px;margin:0 auto;border-radius:12px;overflow:hidden;background:#e8eef0}
-.map img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.map{position:relative;aspect-ratio:1;max-width:560px;margin:0 auto;border-radius:12px;overflow:hidden;background:#e8eef0;z-index:0}
+.kw{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.kw button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}.kw button.on{background:#0f172a;color:#fff;border-color:#0f172a}
 .pin{position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .pin.home{width:38px;height:38px;background:#0f172a;z-index:3}
 .pin.home .rank{position:absolute;right:-10px;top:-10px;min-width:22px;height:22px;padding:0 4px;border-radius:11px;font-size:.68rem;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
-.rpin{position:absolute;transform:translate(-50%,-100%);width:22px;height:22px;border-radius:50% 50% 50% 0;rotate:-45deg;background:#475569;color:#fff;font-weight:800;font-size:.7rem;display:flex;align-items:center;justify-content:center;border:2px solid #fff;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.rpin{position:absolute;transform:translate(-50%,-110%) rotate(-45deg);width:24px;height:24px;border-radius:50% 50% 50% 0;background:#475569;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}.rpin span{transform:rotate(45deg);color:#fff;font-weight:800;font-size:.7rem}
 .rkey{display:inline-block;width:16px;height:16px;border-radius:50%;background:#475569;color:#fff;text-align:center;font-size:.65rem;line-height:16px}
 @media print{.cta,.noprint{display:none}body{background:#fff}.card{break-inside:avoid}}
 `;
@@ -117,77 +117,83 @@ ${words}
 <p class="small" style="margin:14px 0 0">We keep these figures, not access to your profile. <a href="${connect}" style="color:#64748b">Update my numbers</a></p></div>`;
 }
 
-const HOUSE = `<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff" aria-hidden="true"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>`;
+// The 5 by 5 check drawn as pins on a real map people can zoom and drag
+// (Leaflet with OpenStreetMap), the business as a house and its nearest
+// rivals as lettered grey pins. With several search phrases, buttons switch
+// between them. Without a location, or if the map cannot load, the plain
+// grid of dots shows instead.
+function rankColour(v: number | null) {
+  return v === -1
+    ? { bg: "#94a3b8", fg: "#fff", t: "?" }
+    : v === null
+      ? { bg: "#dc2626", fg: "#fff", t: "20+" }
+      : v <= 3
+        ? { bg: "#059669", fg: "#fff", t: String(v) }
+        : v <= 10
+          ? { bg: "#f59e0b", fg: "#111", t: String(v) }
+          : { bg: "#ef4444", fg: "#fff", t: String(v) };
+}
 
-// The 5 by 5 check drawn as pins on a real Google map, the business as a
-// house in the middle and its nearest rivals as lettered grey pins. If the
-// map picture cannot load, the pins still show on a plain background.
 function heatMap(r: Report, extra: RenderExtra | null): string {
-  const hm = r.grid!;
   const b = r.business;
-  const center = hm.center ?? extra?.center ?? null;
+  const grids =
+    r.grids && r.grids.length ? r.grids : r.grid ? [{ keyword: r.maps.keyword, ...r.grid }] : [];
+  if (!grids.length) return "";
+  const center = grids[0]!.center ?? extra?.center ?? null;
   const miles = usesMiles(center?.lat, center?.lng);
-  const spacingKm = hm.spacingKm ?? (miles ? 0.8 : 1);
-  const colour = (v: number | null) =>
-    v === -1
-      ? { bg: "#94a3b8", fg: "#fff", t: "?" }
-      : v === null
-        ? { bg: "#dc2626", fg: "#fff", t: "20+" }
-        : v <= 3
-          ? { bg: "#059669", fg: "#fff", t: String(v) }
-          : v <= 10
-            ? { bg: "#f59e0b", fg: "#111", t: String(v) }
-            : { bg: "#ef4444", fg: "#fff", t: String(v) };
-  const summary = `<p style="margin:14px 0 0">You are in the <b>top 3 in ${hm.top3} of 25 spots</b>${hm.found < 25 ? `, and not in the first 20 results in ${25 - hm.found}` : ""}. The top 3 get most of the calls, so every red or amber pin is customers going elsewhere.</p>`;
-  const intro = `<p style="margin:0 0 12px">We searched <b>"${esc(r.maps.keyword)}"</b> on Google Maps from 25 spots around you, each ${esc(hm.spacing)} apart, as a customer standing there would. Each pin shows where you came in the results from that spot. The house is you.</p>`;
-  const legend = `<p class="small" style="text-align:center;margin:10px 0 0"><span style="color:#059669">&#9679;</span> top 3 &nbsp; <span style="color:#f59e0b">&#9679;</span> 4 to 10 &nbsp; <span style="color:#ef4444">&#9679;</span> 11 or lower &nbsp; <span style="color:#dc2626">&#9679;</span> not in the first 20</p>`;
-  if (!center || !extra) {
-    // No location stored: the plain grid.
-    const dots = hm.ranks
+  const spacingKm = grids[0]!.spacingKm ?? (miles ? 0.8 : 1);
+  const legend = `<p class="small" style="text-align:center;margin:10px 0 0"><span style="color:#059669">&#9679;</span> top 3 &nbsp; <span style="color:#f59e0b">&#9679;</span> 4 to 10 &nbsp; <span style="color:#ef4444">&#9679;</span> 11 to 20 &nbsp; <span style="color:#dc2626">&#9679;</span> not in the top 20</p>`;
+  const summaryOf = (g: (typeof grids)[number]) =>
+    `In <b>${g.top3} of the 25 spots</b> you are in the top 3 for "${esc(g.keyword)}".${g.found < 25 ? ` In ${25 - g.found} spots you are not in the top 20 at all.` : ""} Most people tap one of the top 3, so every red or amber pin is customers going somewhere else.`;
+  const dots = (g: (typeof grids)[number]) =>
+    `<div style="display:grid;grid-template-columns:repeat(${g.size},1fr);gap:8px;max-width:340px;margin:0 auto">${g.ranks
       .map((v) => {
-        const d = colour(v);
+        const d = rankColour(v);
         return `<div style="aspect-ratio:1;border-radius:50%;background:${d.bg};color:${d.fg};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem">${d.t}</div>`;
       })
-      .join("");
-    return `<h2>Where you show up across your area</h2><div class="card">${intro}<div style="display:grid;grid-template-columns:repeat(${hm.size},1fr);gap:8px;max-width:340px;margin:0 auto">${dots}</div>${legend}${summary}</div>`;
-  }
-  const zoom = zoomFor(center.lat, spacingKm);
-  const spots = gridSpots(center, hm.size, spacingKm);
-  const mid = Math.floor((hm.size * hm.size) / 2);
-  const pins = spots
-    .map((pt, i) => {
-      const at = pinAt(center, zoom, pt);
-      if (!at) return "";
-      const d = colour(hm.ranks[i] ?? -1);
-      // The middle spot is the business itself: shown by the house instead.
-      if (i === mid)
-        return `<div class="pin home" style="left:${at.x}%;top:${at.y}%" title="${esc(b.name)}: number ${hm.ranks[i] ?? "20+"} here">${HOUSE}<span class="rank" style="background:${d.bg};color:${d.fg}">${d.t}</span></div>`;
-      return `<div class="pin" style="left:${at.x}%;top:${at.y}%;background:${d.bg};color:${d.fg}">${d.t}</div>`;
-    })
-    .join("");
-  const letters = "ABC";
-  const shown = r.rivals
-    .map((x, i) => ({
-      x,
-      i,
-      at: x.lat != null && x.lng != null ? pinAt(center, zoom, { lat: x.lat, lng: x.lng }) : null,
-    }))
-    .filter((v) => v.at);
-  const rivalPins = shown
-    .map(
-      ({ x, i, at }) =>
-        `<div class="rpin" style="left:${at!.x}%;top:${at!.y}%" title="${esc(x.name)}">${letters[i]}</div>`,
-    )
-    .join("");
-  const rivalKey = shown.length
-    ? `<p class="small" style="margin:8px 0 0">${shown.map(({ x, i }) => `<b class="rkey">${letters[i]}</b> ${esc(x.name)}`).join(" &nbsp; ")}</p>`
+      .join("")}</div>`;
+  const tabs =
+    grids.length > 1
+      ? `<div class="kw noprint">${grids.map((g, i) => `<button type="button" data-i="${i}"${i === 0 ? ' class="on"' : ""}>${esc(g.keyword)}</button>`).join("")}</div>`
+      : "";
+  const intro = `<p style="margin:0 0 12px">We searched Google Maps from 25 spots around you, ${esc(grids[0]!.spacing)} apart, like a customer standing there. Each pin shows where you came in the list. The house is you. Zoom in to see the businesses around you.</p>`;
+  if (!center || !extra)
+    return `<h2>Where you show up across your area</h2><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div>`;
+  const spots = gridSpots(center, 5, spacingKm).map((p) => [
+    Math.round(p.lat * 1e6) / 1e6,
+    Math.round(p.lng * 1e6) / 1e6,
+  ]);
+  const data = {
+    c: [center.lat, center.lng],
+    spots,
+    name: b.name,
+    grids: grids.map((g) => ({
+      k: g.keyword,
+      pins: g.ranks.map((v) => rankColour(v)),
+      s: summaryOf(g),
+    })),
+    rivals: r.rivals
+      .filter((x) => x.lat != null && x.lng != null)
+      .map((x, i) => ({ l: "ABC"[i], n: x.name, at: [x.lat, x.lng] })),
+  };
+  const json = JSON.stringify(data).replace(/</g, "\\u003c");
+  const rivalKey = data.rivals.length
+    ? `<p class="small" style="margin:8px 0 0">${data.rivals.map((x) => `<b class="rkey">${x.l}</b> ${esc(x.n)}`).join(" &nbsp; ")}</p>`
     : "";
-  const mapLink = b.mapsUrl
-    ? `<p class="small noprint" style="margin:8px 0 0;text-align:center"><a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#64748b">Open your business in Google Maps</a></p>`
-    : "";
-  return `<h2>Where you show up across your area</h2><div class="card">${intro}
-<div class="map"><img src="/api/report-map?r=${encodeURIComponent(extra.token)}" alt="Map of the area around ${esc(b.name)}" onerror="this.remove()">${pins}${rivalPins}</div>
-${legend}${rivalKey}${mapLink}${summary}</div>`;
+  return `<h2>Where you show up across your area</h2><div class="card">${intro}${tabs}
+<div id="rmap" class="map"><div id="rmap-fallback" style="padding:16px">${dots(grids[0]!)}</div></div>
+${legend}${rivalKey}<p id="rmap-sum" style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>(function(){var D=${json};if(!window.L)return;var el=document.getElementById("rmap");document.getElementById("rmap-fallback").remove();
+var m=L.map(el,{scrollWheelZoom:false,zoomSnap:0.5});L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(m);
+m.fitBounds(L.latLngBounds(D.spots),{padding:[24,24]});var layer=L.layerGroup().addTo(m);
+var house='<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>';
+function draw(i){layer.clearLayers();var g=D.grids[i];D.spots.forEach(function(p,j){var d=g.pins[j];var html=j===12?'<div class="pin home">'+house+'<span class="rank" style="background:'+d.bg+';color:'+d.fg+'">'+d.t+'</span></div>':'<div class="pin" style="background:'+d.bg+';color:'+d.fg+'">'+d.t+'</div>';
+L.marker(p,{icon:L.divIcon({className:"",html:html,iconSize:[0,0]}),zIndexOffset:j===12?1000:0}).bindTooltip(j===12?D.name+": "+d.t:"From here: "+d.t).addTo(layer);});
+D.rivals.forEach(function(x){L.marker(x.at,{icon:L.divIcon({className:"",html:'<div class="rpin"><span>'+x.l+'</span></div>',iconSize:[0,0]})}).bindTooltip(x.n).addTo(layer);});
+document.getElementById("rmap-sum").innerHTML=g.s;}
+draw(0);document.querySelectorAll(".kw button").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".kw button").forEach(function(x){x.classList.remove("on")});b.classList.add("on");draw(+b.getAttribute("data-i"));});});})();</script>`;
 }
 
 export interface RenderExtra {

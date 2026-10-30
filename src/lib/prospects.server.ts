@@ -123,6 +123,8 @@ export interface Report {
     center?: { lat: number; lng: number };
     spacingKm?: number;
   } | null;
+  // The same heatmap for each search phrase checked (the first is grid).
+  grids?: (NonNullable<Report["grid"]> & { keyword: string })[];
   score: number;
   parts: { label: string; got: number; max: number }[];
   fixes: { title: string; why: string; priority: "high" | "medium" }[];
@@ -237,9 +239,67 @@ function mapsPoints(pos: number | null): number {
   return 8;
 }
 
+// One 5 by 5 heatmap around the business for one search phrase: 25
+// searches about half a mile (or 1 km) apart. The middle spot is the
+// business's own street.
+async function runGrid(
+  auth: string,
+  keyword: string,
+  at: { lat: number; lng: number },
+  placeId: string,
+  name: string,
+): Promise<{
+  middle: number | null | undefined;
+  error: string;
+  grid: NonNullable<Report["grid"]> | null;
+}> {
+  const { mapsResults } = await import("./rank-tracking.server");
+  const { gridPoints, summarisePoints, rankIn } = await import("./rank-grid");
+  const { usesMiles, distanceLabel } = await import("./units");
+  const miles = usesMiles(at.lat, at.lng);
+  const spacingKm = miles ? 0.8 : 1;
+  const pts = gridPoints(at, 5, spacingKm);
+  const ranks: (number | null | undefined)[] = new Array(pts.length).fill(undefined);
+  let failed = 0;
+  let error = "";
+  let next = 0;
+  const worker = async () => {
+    while (next < pts.length) {
+      const i = next++;
+      const pt = pts[i]!;
+      const r = await mapsResults(auth, keyword, pt.lat, pt.lng);
+      if (r.ok) ranks[i] = rankIn(r.items, placeId, name);
+      else {
+        failed++;
+        if (!error) error = String(r.error).slice(0, 200);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: 6 }, worker));
+  if (failed > 5) return { middle: ranks[12], error, grid: null };
+  const sum = summarisePoints(
+    pts.map((pt, i) => ({ lat: pt.lat, lng: pt.lng, rank: ranks[i] ?? null })),
+  );
+  return {
+    middle: ranks[12],
+    error,
+    grid: {
+      size: 5,
+      spacing: distanceLabel(spacingKm, miles),
+      ranks: ranks.map((r) => (r === undefined ? -1 : r)),
+      found: sum.found,
+      top3: sum.top3,
+      average: sum.average,
+      center: at,
+      spacingKm,
+    },
+  };
+}
+
 export async function buildReport(
   placeId: string,
   keywordOverride?: string,
+  extraKeywords: string[] = [],
 ): Promise<{
   report: Report;
   meta: {
@@ -279,60 +339,33 @@ export async function buildReport(
   // the nearest city just because it is famous.
   const rivals = lat !== null && lng !== null ? await nearestRivals(p, lat, lng) : [];
 
-  // Where it shows on Google Maps for its main search, from its own street.
+  // Where it shows on Google Maps for its main search, from its own street,
+  // and across a 5 by 5 grid. Extra search phrases get their own grid.
   const keyword = (keywordOverride || category || "").toLowerCase().slice(0, 80);
   let position: number | null = null;
   let checked = false;
   let mapsError = "";
   let grid: Report["grid"] = null;
+  const grids: NonNullable<Report["grids"]> = [];
   if (keyword && lat !== null && lng !== null) {
-    const { creds, mapsResults } = await import("./rank-tracking.server");
-    const { rankIn } = await import("./rank-grid");
+    const { creds } = await import("./rank-tracking.server");
     const auth = creds();
     if (auth) {
-      // A 5 by 5 heatmap around the business: 25 searches, about half a mile
-      // (or 1 km) apart. The middle spot is the business's own street.
-      const { gridPoints, summarisePoints } = await import("./rank-grid");
-      const { usesMiles, distanceLabel } = await import("./units");
-      const miles = usesMiles(lat, lng);
-      const spacingKm = miles ? 0.8 : 1;
-      const pts = gridPoints({ lat, lng }, 5, spacingKm);
-      const ranks: (number | null | undefined)[] = new Array(pts.length).fill(undefined);
-      let failed = 0;
-      let next = 0;
-      const worker = async () => {
-        while (next < pts.length) {
-          const i = next++;
-          const pt = pts[i]!;
-          const r = await mapsResults(auth, keyword, pt.lat, pt.lng);
-          if (r.ok) ranks[i] = rankIn(r.items, p.id, name);
-          else {
-            failed++;
-            if (!mapsError) mapsError = String(r.error).slice(0, 200);
-          }
-        }
-      };
-      await Promise.all(Array.from({ length: 6 }, worker));
-      const middle = ranks[12];
-      if (middle !== undefined) {
+      const phrases = [keyword, ...extraKeywords.map((k) => k.toLowerCase().trim().slice(0, 80))]
+        .filter((k, i, a) => k && a.indexOf(k) === i)
+        .slice(0, 3);
+      const results = await Promise.all(
+        phrases.map((k) => runGrid(auth, k, { lat, lng }, p.id, name)),
+      );
+      const first = results[0]!;
+      if (first.middle !== undefined) {
         checked = true;
-        position = middle;
-        mapsError = "";
-      }
-      if (failed <= 5) {
-        const done = pts.map((pt, i) => ({ lat: pt.lat, lng: pt.lng, rank: ranks[i] ?? null }));
-        const sum = summarisePoints(done);
-        grid = {
-          size: 5,
-          spacing: distanceLabel(miles ? 0.8 : 1, miles),
-          ranks: ranks.map((r) => (r === undefined ? -1 : r)),
-          found: sum.found,
-          top3: sum.top3,
-          average: sum.average,
-          center: { lat, lng },
-          spacingKm,
-        };
-      }
+        position = first.middle;
+      } else mapsError = first.error;
+      grid = first.grid ?? null;
+      results.forEach((r, i) => {
+        if (r.grid) grids.push({ keyword: phrases[i]!, ...r.grid });
+      });
     } else mapsError = "DataForSEO login not set";
   }
 
@@ -452,6 +485,7 @@ export async function buildReport(
       },
       rivals,
       maps: { keyword, position, checked, ...(mapsError ? { error: mapsError } : {}) },
+      grids,
       grid,
       score,
       parts,
@@ -490,9 +524,10 @@ export async function saveProspectReport(
     contactName?: string | null;
     createdBy?: string | null;
     keyword?: string;
+    keywords?: string[];
   } = {},
 ) {
-  const built = await buildReport(placeId, extra.keyword);
+  const built = await buildReport(placeId, extra.keyword, extra.keywords ?? []);
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
   const existing = await serviceRead<{ id: string; report_token: string | null }[]>(

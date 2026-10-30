@@ -86,6 +86,7 @@ function Prospects() {
   const [items, setItems] = useState<List | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [words, setWords] = useState("");
   const [hits, setHits] = useState<Hit[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [building, setBuilding] = useState<string | null>(null);
@@ -197,9 +198,15 @@ function Prospects() {
                 <span className="hidden sm:inline">Search</span>
               </button>
             </form>
+            <input
+              value={words}
+              onChange={(e) => setWords(e.target.value)}
+              placeholder="Optional: up to 3 search phrases, with commas: burger, fast food, takeaway"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
             <p className="text-xs text-muted-foreground">
               Each report checks the business against its nearest rivals and its Google Maps
-              position. About 5p to 10p per report.
+              position. About 5p to 10p per report, plus about 8p for each extra search phrase.
             </p>
             {hits && hits.length === 0 && (
               <p className="text-sm text-muted-foreground">Nothing found. Try another search.</p>
@@ -227,6 +234,7 @@ function Prospects() {
                       const r = await build({
                         data: {
                           placeId: h.placeId,
+                          ...(words.trim() ? { keyword: words.trim() } : {}),
                           niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
                         },
                       });
