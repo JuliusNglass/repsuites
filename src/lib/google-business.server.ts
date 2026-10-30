@@ -18,7 +18,12 @@ import { getSupabaseConfig } from "./config.server";
 import { decryptSessionData, encryptSessionData } from "./session.server";
 import { hasServiceRole, serviceRead, serviceWrite } from "./supabase-service.server";
 import { linkOrigin, SHARED_ORIGIN } from "./tenant-links.server";
-import { DEFAULT_TEMPLATES, draftReviewReply, type ReplyTemplates } from "./review-reply-draft";
+import {
+  DEFAULT_TEMPLATES,
+  draftReviewReply,
+  lastDraftProblem,
+  type ReplyTemplates,
+} from "./review-reply-draft";
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -692,9 +697,13 @@ export async function draftGoogleReply(input: { id: string }) {
     businessName(g.tenantId),
   ]);
   const draft = await draftFor(g.tenantId, rev, settings, business);
+  // Say so when the AI could not write it and the template was used instead.
+  const problem = lastDraftProblem
+    ? `Written from your template because the AI was unavailable (${lastDraftProblem}).`
+    : null;
   await serviceWrite<unknown>(`google_reviews?id=eq.${rev.id}`, "", {
     method: "PATCH",
-    body: { draft, error: null },
+    body: { draft, error: problem },
   });
   return { ok: true as const, draft };
 }

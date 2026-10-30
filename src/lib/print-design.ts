@@ -169,6 +169,65 @@ function roundRect(
   ctx.closePath();
 }
 
+// Text along an arc of the circle, letters upright and reading left to
+// right: "top" runs over the top edge, "bottom" along the bottom edge.
+// The font shrinks (down to minSize) until the text fits in maxAngle.
+function arcText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  cx: number,
+  cy: number,
+  radius: number,
+  side: "top" | "bottom",
+  size: number,
+  minSize: number,
+  weight: number,
+  maxAngle: number,
+) {
+  const t = text.trim();
+  if (!t) return;
+  let fs = size;
+  let widths: number[] = [];
+  let total = 0;
+  for (; fs >= minSize; fs -= 0.5) {
+    ctx.font = `${weight} ${fs}px "Inter", system-ui, -apple-system, "Segoe UI", sans-serif`;
+    const track = fs * 0.04;
+    widths = [...t].map((ch) => ctx.measureText(ch).width + track);
+    total = widths.reduce((a, b) => a + b, 0) / radius;
+    if (total <= maxAngle) break;
+  }
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const chars = [...t];
+  if (side === "top") {
+    let a = -Math.PI / 2 - total / 2;
+    chars.forEach((ch, i) => {
+      const half = widths[i]! / 2 / radius;
+      a += half;
+      ctx.save();
+      ctx.translate(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
+      ctx.rotate(a + Math.PI / 2);
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+      a += half;
+    });
+  } else {
+    let a = Math.PI / 2 + total / 2;
+    chars.forEach((ch, i) => {
+      const half = widths[i]! / 2 / radius;
+      a -= half;
+      ctx.save();
+      ctx.translate(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
+      ctx.rotate(a - Math.PI / 2);
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+      a -= half;
+    });
+  }
+  ctx.restore();
+}
+
 // Draw the full artwork (including bleed) and return the canvas.
 // showGuides adds the cut line and safe area for the on-screen preview only.
 export function renderDesign(d: Design, showGuides = false, scale = 1): HTMLCanvasElement {
@@ -245,39 +304,70 @@ export function renderDesign(d: Design, showGuides = false, scale = 1): HTMLCanv
       ctx.globalAlpha = 1;
     }
   } else {
-    // Coaster: everything inside the round cut.
+    // Coaster: the headline follows the top of the circle, the message the
+    // bottom, with the logo and QR code in the middle.
     const r = (f.wMm / 2) * mm;
     const cy = H / 2;
-    const maxW = r * 1.25;
-    let y = cy - r + 13 * mm;
+    // A fine ring just inside the cut, in the highlight colour.
+    ctx.save();
+    ctx.strokeStyle = accent;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 0.6 * mm;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r - 3.2 * mm, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = text;
+    arcText(
+      ctx,
+      d.headline,
+      cx,
+      cy,
+      r - 9.5 * mm,
+      "top",
+      7.2 * mm,
+      3.6 * mm,
+      800,
+      (150 * Math.PI) / 180,
+    );
+    ctx.globalAlpha = 0.92;
+    arcText(
+      ctx,
+      d.sub,
+      cx,
+      cy,
+      r - 7.8 * mm,
+      "bottom",
+      3.6 * mm,
+      2.5 * mm,
+      600,
+      (165 * Math.PI) / 180,
+    );
+    ctx.globalAlpha = 1;
+
+    const card = 36 * mm;
+    const pad = 3 * mm;
+    const top = cy - card / 2 + 3 * mm;
+    // Logo (or the business name) between the headline and the code.
+    const room = top - (cy - r + 15 * mm);
     if (d.logo) {
-      const lh = 11 * mm;
-      const lw = Math.min(maxW * 0.7, (d.logo.width / d.logo.height) * lh);
-      ctx.drawImage(d.logo, cx - lw / 2, y - 3 * mm, lw, lh);
-      y += lh;
+      const lh = Math.min(10 * mm, room - 1.5 * mm);
+      const lw = Math.min(30 * mm, (d.logo.width / d.logo.height) * lh);
+      ctx.drawImage(d.logo, cx - lw / 2, top - lh - 1.5 * mm, lw, lh);
     } else {
       ctx.fillStyle = accent;
-      const name = fit(ctx, d.business.toUpperCase(), maxW * 0.85, 2, 5 * mm, 800);
-      y = drawLines(ctx, name.lines, cx, y, name.size * 1.15) + 1 * mm;
+      const name = fit(ctx, d.business.toUpperCase(), 34 * mm, 1, 4.2 * mm, 800);
+      ctx.textBaseline = "bottom";
+      ctx.fillText(name.lines[0] ?? "", cx, top - 1.8 * mm);
+      ctx.textBaseline = "top";
     }
-    ctx.fillStyle = text;
-    const head = fit(ctx, d.headline, maxW, 2, 7 * mm, 800);
-    y = drawLines(ctx, head.lines, cx, y, head.size * 1.1) + 2.5 * mm;
-
-    const card = 40 * mm;
-    const pad = 3 * mm;
     ctx.fillStyle = "#ffffff";
-    roundRect(ctx, cx - card / 2, y, card, card, 3.5 * mm);
+    roundRect(ctx, cx - card / 2, top, card, card, 3.5 * mm);
     ctx.fill();
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(d.qr, cx - card / 2 + pad, y + pad, card - pad * 2, card - pad * 2);
+    ctx.drawImage(d.qr, cx - card / 2 + pad, top + pad, card - pad * 2, card - pad * 2);
     ctx.imageSmoothingEnabled = true;
-    y += card + 2.5 * mm;
-    ctx.fillStyle = text;
-    ctx.globalAlpha = 0.9;
-    const sub = fit(ctx, d.sub, maxW * 0.8, 2, 3.4 * mm, 600);
-    drawLines(ctx, sub.lines, cx, y, sub.size * 1.3);
-    ctx.globalAlpha = 1;
   }
 
   if (showGuides) {

@@ -67,12 +67,30 @@ export function templateReply(r: ReviewForDraft, t: ReplyTemplates = DEFAULT_TEM
   return fillTemplate(templateFor(r.stars, t), r);
 }
 
+// Why the last AI draft fell back to the template (shown to the owner).
+export let lastDraftProblem: string | null = null;
+
 export async function draftReviewReply(
   r: ReviewForDraft,
   t: ReplyTemplates = DEFAULT_TEMPLATES,
 ): Promise<string> {
+  lastDraftProblem = null;
   const key = (process.env["REPSUITES_ANTHROPIC_API_KEY"] ?? "").trim();
   if (!key) return templateReply(r, t);
+  const first = (process.env["REPSUITES_ANTHROPIC_MODEL"] ?? "").trim() || "claude-haiku-5-5";
+  for (const model of [first, "claude-sonnet-5-5"]) {
+    const out = await draftWithModel(r, t, key, model);
+    if (out) return out;
+  }
+  return templateReply(r, t);
+}
+
+async function draftWithModel(
+  r: ReviewForDraft,
+  t: ReplyTemplates,
+  key: string,
+  model: string,
+): Promise<string | null> {
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -83,7 +101,7 @@ export async function draftReviewReply(
       },
       signal: AbortSignal.timeout(20000),
       body: JSON.stringify({
-        model: (process.env["REPSUITES_ANTHROPIC_MODEL"] ?? "").trim() || "claude-haiku-5-5",
+        model,
         max_tokens: 300,
         system:
           "You write short replies from a UK business to its Google reviews. British English, warm and professional, " +
@@ -103,15 +121,22 @@ export async function draftReviewReply(
         ],
       }),
     });
-    if (!res.ok) return templateReply(r, t);
+    if (!res.ok) {
+      const b = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+      lastDraftProblem = `${res.status} ${String(b?.error?.message ?? "").slice(0, 120)}`;
+      return null;
+    }
     const body = (await res.json()) as { content?: { type: string; text?: string }[] };
     const text = (body.content ?? [])
       .filter((c) => c.type === "text")
       .map((c) => c.text ?? "")
       .join("")
       .trim();
-    return text && text.length <= 4000 ? noDash(text) : templateReply(r, t);
+    if (text && text.length <= 4000) return noDash(text);
+    lastDraftProblem = "empty answer";
+    return null;
   } catch {
-    return templateReply(r, t);
+    lastDraftProblem = "timed out";
+    return null;
   }
 }
