@@ -23,3 +23,34 @@ describe("AI visibility", () => {
     expect(readAnswer("q", "no list", "X").named).toBe(false);
   });
 });
+
+import { aiSummary, cleanService } from "./ai-visibility";
+describe("AI visibility extras", () => {
+  it("cleans the service words", () => {
+    expect(cleanService("best burger")).toBe("burger");
+    expect(cleanService("Top cleaners near me")).toBe("cleaners");
+  });
+  it("summarises rivals and sites", () => {
+    const s = aiSummary(
+      [
+        {
+          question: "a",
+          named: false,
+          position: null,
+          businesses: ["Five Guys", "Me Ltd"],
+          sources: ["tripadvisor.co.uk", "yell.com"],
+        },
+        {
+          question: "b",
+          named: true,
+          position: 2,
+          businesses: ["Five Guys", "Me"],
+          sources: ["tripadvisor.co.uk"],
+        },
+      ],
+      "Me",
+    );
+    expect(s.rivals[0]).toEqual({ name: "Five Guys", count: 2 });
+    expect(s.sites[0]).toEqual({ name: "tripadvisor.co.uk", count: 2 });
+  });
+});

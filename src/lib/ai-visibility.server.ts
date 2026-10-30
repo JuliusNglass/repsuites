@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Anthropic response blocks are checked field by field. */
 // Server-only: asks an AI assistant that searches the web the questions a
 // customer would ask ("best plumber in Newport?") and records whether it
 // names the business. Needs REPSUITES_ANTHROPIC_API_KEY (a workspace key).
@@ -8,7 +9,14 @@ import {
 } from "./auth.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { featureBlockedFor } from "./tenant-access.server";
-import { aiQuestions, readAnswer, type AiAnswer } from "./ai-visibility";
+import {
+  aiQuestions,
+  cleanService,
+  domainOf,
+  hasList,
+  readAnswer,
+  type AiAnswer,
+} from "./ai-visibility";
 
 const EDITORS = ["owner", "admin", "super_admin", "manager"];
 
@@ -61,6 +69,7 @@ export async function readAiVisibility() {
   const l = last.data?.[0];
   return {
     ok: true as const,
+    business: await businessName(g.tenantId),
     ready: !!(process.env["REPSUITES_ANTHROPIC_API_KEY"] ?? "").trim(),
     service: s.data?.[0]?.service ?? "",
     town: s.data?.[0]?.town ?? "",
@@ -70,7 +79,17 @@ export async function readAiVisibility() {
   };
 }
 
-async function ask(question: string, town: string): Promise<{ text: string } | { error: string }> {
+type Asked = { text: string; sources: string[] } | { error: string };
+
+// Ask once; if the answer has no readable list, ask again (answers vary).
+async function ask(question: string, town: string): Promise<Asked> {
+  const first = await askOnce(question, town);
+  if ("error" in first || hasList(first.text)) return first;
+  const second = await askOnce(question, town);
+  return "error" in second ? first : second;
+}
+
+async function askOnce(question: string, town: string): Promise<Asked> {
   const key = (process.env["REPSUITES_ANTHROPIC_API_KEY"] ?? "").trim();
   if (!key) return { error: "AI is not switched on yet." };
   try {
@@ -88,7 +107,9 @@ async function ask(question: string, town: string): Promise<{ text: string } | {
         system:
           "You are a helpful assistant answering a member of the public who wants a local business. " +
           "Search the web, then recommend real businesses as you normally would. " +
-          'Finish with JSON only on the last line: {"businesses": ["name", ...]} listing the businesses you recommended, best first.',
+          "Answer in a few short lines. Then, ALWAYS, finish with one line of JSON exactly like " +
+          '{"businesses": ["Business name", "Business name"]} listing every business you recommended, best first ' +
+          "(use [] if you recommended none). Nothing after the JSON.",
         tools: [
           {
             type: "web_search_20250305",
@@ -106,12 +127,22 @@ async function ask(question: string, town: string): Promise<{ text: string } | {
         error: `AI check failed (${res.status}): ${String(b?.error?.message ?? "").slice(0, 140)}`,
       };
     }
-    const body = (await res.json()) as { content?: { type: string; text?: string }[] };
+    const body = (await res.json()) as { content?: any[] };
+    const content = body.content ?? [];
+    // The websites it read: search results and the pages it cited.
+    const urls: string[] = [];
+    for (const c of content) {
+      if (c?.type === "web_search_tool_result" && Array.isArray(c.content))
+        for (const r of c.content) if (typeof r?.url === "string") urls.push(r.url);
+      if (c?.type === "text" && Array.isArray(c.citations))
+        for (const r of c.citations) if (typeof r?.url === "string") urls.push(r.url);
+    }
     return {
-      text: (body.content ?? [])
-        .filter((c) => c.type === "text")
-        .map((c) => c.text ?? "")
+      text: content
+        .filter((c) => c?.type === "text")
+        .map((c) => String(c.text ?? ""))
         .join("\n"),
+      sources: urls.map(domainOf).filter((d): d is string => !!d),
     };
   } catch {
     return { error: "The AI check timed out. Try again shortly." };
@@ -121,7 +152,7 @@ async function ask(question: string, town: string): Promise<{ text: string } | {
 export async function runAiVisibility(input: { service: string; town: string }) {
   const g = await guard(true);
   if (!g.ok) return g;
-  const service = input.service.trim().slice(0, 80);
+  const service = (cleanService(input.service) || input.service.trim()).slice(0, 80);
   const town = input.town.trim().slice(0, 80);
   if (service.length < 3 || town.length < 2)
     return { ok: false as const, error: "Add what you do and your town." };
@@ -136,19 +167,19 @@ export async function runAiVisibility(input: { service: string; town: string }) 
       updated_at: new Date().toISOString(),
     },
   });
-  // At most one check an hour per business, to keep AI costs predictable.
+  // At most one check every 10 minutes per business, to keep AI costs predictable.
   const recent = await serviceRead<{ id: string }[]>(
-    `ai_visibility_checks?select=id&tenant_id=eq.${g.tenantId}&error=is.null&created_at=gte.${new Date(Date.now() - 3600_000).toISOString()}&limit=1`,
+    `ai_visibility_checks?select=id&tenant_id=eq.${g.tenantId}&error=is.null&created_at=gte.${new Date(Date.now() - 600_000).toISOString()}&limit=1`,
     "",
   );
   if (recent.data?.length)
-    return { ok: false as const, error: "Checked in the last hour. Try again later." };
+    return { ok: false as const, error: "Checked in the last 10 minutes. Try again shortly." };
   const business = await businessName(g.tenantId);
   const questions = aiQuestions(service, town);
   const answers = await Promise.all(questions.map((q) => ask(q, town)));
   const failed = answers.find((a) => "error" in a) as { error: string } | undefined;
   const results: AiAnswer[] = answers
-    .map((a, i) => ("text" in a ? readAnswer(questions[i]!, a.text, business) : null))
+    .map((a, i) => ("text" in a ? readAnswer(questions[i]!, a.text, business, a.sources) : null))
     .filter((a): a is AiAnswer => !!a);
   const named = results.filter((r) => r.named).length;
   await serviceWrite("ai_visibility_checks", "", {

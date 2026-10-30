@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Loader2, Sparkles, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getAiVisibilityFn, runAiVisibilityFn } from "../../lib/ai-visibility.functions";
+import { aiSummary } from "../../lib/ai-visibility";
 
 type Data = Extract<Awaited<ReturnType<typeof getAiVisibilityFn>>, { ok: true }>;
 
@@ -51,15 +52,16 @@ export function AiVisibilityCard() {
           <Sparkles className="w-4 h-4" /> Are AI assistants recommending you?
         </h3>
         <p className="text-xs text-muted-foreground">
-          More people now ask an AI assistant who to use. We ask the questions your customers would
-          and check whether you are named.
+          More people now ask an AI assistant who to use. We ask an assistant that searches the web
+          (Claude) the questions your customers would, and see who it recommends and where it
+          looked. Answers vary, so watch the trend month to month.
         </p>
       </div>
       <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
         <input
           value={service}
           onChange={(e) => setService(e.target.value)}
-          placeholder="What you do, e.g. cleaning company"
+          placeholder="Type of business, e.g. burger restaurant"
           className={field}
         />
         <input
@@ -100,6 +102,46 @@ export function AiVisibilityCard() {
               {new Date(l.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })})
             </span>
           </p>
+          {(() => {
+            const sum = aiSummary(l.results, d.business);
+            return (
+              <div className="grid sm:grid-cols-2 gap-3">
+                {sum.rivals.length > 0 && (
+                  <div className="rounded-lg bg-muted/60 p-3">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">
+                      Recommended instead of you
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {sum.rivals.map((x) => (
+                        <li key={x.name}>
+                          {x.name}{" "}
+                          <span className="text-muted-foreground">
+                            ({x.count} of {l.total})
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {sum.sites.length > 0 && (
+                  <div className="rounded-lg bg-muted/60 p-3">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">
+                      Where the AI looked
+                    </p>
+                    <ul className="text-sm space-y-0.5">
+                      {sum.sites.map((x) => (
+                        <li key={x.name}>{x.name}</li>
+                      ))}
+                    </ul>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      Being listed, with good reviews, on these sites makes you more likely to be
+                      recommended.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           <ul className="space-y-2">
             {l.results.map((r) => (
               <li key={r.question} className="rounded-lg border border-border p-3 text-sm">

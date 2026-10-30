@@ -5,11 +5,50 @@ export interface AiAnswer {
   named: boolean;
   position: number | null; // 1 = first business the assistant named
   businesses: string[]; // the businesses it named, in order
+  sources?: string[]; // websites the assistant read (domains)
+}
+
+// "best burger", "top cleaners near me" -> "burger", "cleaners".
+export function cleanService(raw: string): string {
+  return raw
+    .toLowerCase()
+    .replace(/\b(the|best|top|good|great|cheap|cheapest|recommended)\b/g, " ")
+    .replace(/\bnear me\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function domainOf(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+// Across all answers: who the assistant recommends most, and which websites
+// it read most. These two lists are what an owner can act on.
+export function aiSummary(results: AiAnswer[], business: string) {
+  const names = new Map<string, number>();
+  const sites = new Map<string, number>();
+  for (const r of results) {
+    for (const b of r.businesses) {
+      if (sameBusiness(b, business)) continue;
+      names.set(b, (names.get(b) ?? 0) + 1);
+    }
+    for (const d of new Set(r.sources ?? [])) sites.set(d, (sites.get(d) ?? 0) + 1);
+  }
+  const top = (m: Map<string, number>, n: number) =>
+    [...m.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, n)
+      .map(([k, v]) => ({ name: k, count: v }));
+  return { rivals: top(names, 5), sites: top(sites, 6) };
 }
 
 // The questions a customer would ask an assistant.
 export function aiQuestions(service: string, town: string): string[] {
-  const s = service.trim().toLowerCase();
+  const s = cleanService(service) || service.trim().toLowerCase();
   const t = town.trim();
   return [
     `What is the best ${s} in ${t}?`,
@@ -39,9 +78,25 @@ export function sameBusiness(listed: string, business: string): boolean {
 }
 
 // Reads the assistant's list (JSON {"businesses": [...]}) and finds the business.
-export function readAnswer(question: string, text: string, business: string): AiAnswer {
+// True when the text holds a readable list (even an empty one).
+export function hasList(text: string): boolean {
+  const m = text.match(/\{[^{}]*"businesses"[\s\S]*?\}/);
+  if (!m) return false;
+  try {
+    return Array.isArray((JSON.parse(m[0]) as { businesses?: unknown }).businesses);
+  } catch {
+    return false;
+  }
+}
+
+export function readAnswer(
+  question: string,
+  text: string,
+  business: string,
+  sources: string[] = [],
+): AiAnswer {
   let list: string[] = [];
-  const m = text.match(/\{[\s\S]*\}/);
+  const m = text.match(/\{[^{}]*"businesses"[\s\S]*?\}/);
   if (m) {
     try {
       const o = JSON.parse(m[0]) as { businesses?: unknown };
@@ -61,5 +116,6 @@ export function readAnswer(question: string, text: string, business: string): Ai
     named: idx >= 0,
     position: idx >= 0 ? idx + 1 : null,
     businesses: list,
+    sources: [...new Set(sources)].slice(0, 12),
   };
 }
