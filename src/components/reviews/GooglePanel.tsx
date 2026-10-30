@@ -41,7 +41,11 @@ const BACK_MESSAGES: Record<string, [boolean, string]> = {
   failed: [false, "Google did not connect. Please try again"],
 };
 
-export function GooglePanel() {
+export type PanelTab = "reviews" | "results" | "posts" | "settings";
+
+export function GooglePanel({ tab }: { tab: PanelTab }) {
+  const [shown, setShown] = useState(10);
+  const [onlyOpen, setOnlyOpen] = useState(true);
   const [d, setD] = useState<Data | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -89,106 +93,153 @@ export function GooglePanel() {
 
   const c = d.connection;
   const needReply = d.reviews.filter((r) => !r.reply);
+  const connected = c?.status === "connected";
+  // The connection box: always on Settings; elsewhere only until connected.
+  const showConnection = tab === "settings" || !connected;
+  const list = onlyOpen && needReply.length ? needReply : d.reviews;
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-border bg-card p-4 space-y-3">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-bold">Google Business Profile</h2>
-            <p className="text-xs text-muted-foreground">
-              {!d.ready
-                ? "The Google connection is being set up. Check back soon."
-                : !c
-                  ? "Connect your Google profile to see and answer your Google reviews here, publish Google posts and see what your profile brings in. Google will ask you to allow RepSuites."
-                  : c.status === "connected"
-                    ? `Connected to ${c.title ?? "your profile"}${c.email ? ` (${c.email})` : ""}.${c.lastSyncAt ? ` Reviews checked ${new Date(c.lastSyncAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.` : ""}`
-                    : c.status === "choose_location"
-                      ? "Choose which Google profile is this business."
-                      : "Google needs connecting again."}
-            </p>
-            {c?.error && <p className="text-xs text-destructive mt-1">{c.error}</p>}
-          </div>
-          <div className="flex gap-2 text-xs">
-            {d.ready && d.canConnect && (!c || c.status === "needs_reconnect") && (
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={async () => {
-                  setBusy("connect");
-                  const r = await googleConnectUrlFn();
-                  if (r.ok) window.location.href = r.url;
-                  else {
-                    setBusy(null);
-                    toast.error(r.error);
+    <div className="space-y-4">
+      {showConnection && (
+        <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-bold">Google Business Profile</h2>
+              <p className="text-xs text-muted-foreground">
+                {!d.ready
+                  ? "The Google connection is being set up. Check back soon."
+                  : !c
+                    ? "Connect your Google profile to see and answer your Google reviews here, publish Google posts and see what your profile brings in. Google will ask you to allow RepSuites."
+                    : c.status === "connected"
+                      ? `Connected to ${c.title ?? "your profile"}${c.email ? ` (${c.email})` : ""}.${c.lastSyncAt ? ` Reviews checked ${new Date(c.lastSyncAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}.` : ""}`
+                      : c.status === "choose_location"
+                        ? "Choose which Google profile is this business."
+                        : "Google needs connecting again."}
+              </p>
+              {c?.error && <p className="text-xs text-destructive mt-1">{c.error}</p>}
+            </div>
+            <div className="flex gap-2 text-xs">
+              {d.ready && d.canConnect && (!c || c.status === "needs_reconnect") && (
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={async () => {
+                    setBusy("connect");
+                    const r = await googleConnectUrlFn();
+                    if (r.ok) window.location.href = r.url;
+                    else {
+                      setBusy(null);
+                      toast.error(r.error);
+                    }
+                  }}
+                  className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 font-semibold disabled:opacity-50"
+                >
+                  {busy === "connect" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : c ? (
+                    "Connect again"
+                  ) : (
+                    "Connect Google"
+                  )}
+                </button>
+              )}
+              {c?.status === "connected" && (
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() =>
+                    void run("sync", () => refreshGoogleReviewsFn(), "Reviews checked")
                   }
-                }}
-                className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 font-semibold disabled:opacity-50"
-              >
-                {busy === "connect" ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : c ? (
-                  "Connect again"
-                ) : (
-                  "Connect Google"
-                )}
-              </button>
-            )}
-            {c?.status === "connected" && (
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => void run("sync", () => refreshGoogleReviewsFn(), "Reviews checked")}
-                className="inline-flex items-center gap-1 font-semibold text-primary disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${busy === "sync" ? "animate-spin" : ""}`} />{" "}
-                Check now
-              </button>
-            )}
-            {c && d.canConnect && (
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "Disconnect Google? Your saved Google reviews are removed from here and posts stop until you connect again.",
+                  className="inline-flex items-center gap-1 font-semibold text-primary disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${busy === "sync" ? "animate-spin" : ""}`} />{" "}
+                  Check now
+                </button>
+              )}
+              {c && d.canConnect && (
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Disconnect Google? Your saved Google reviews are removed from here and posts stop until you connect again.",
+                      )
                     )
-                  )
-                    void run("off", () => disconnectGoogleFn(), "Google disconnected");
-                }}
-                className="font-semibold text-muted-foreground disabled:opacity-50"
-              >
-                Disconnect
-              </button>
-            )}
+                      void run("off", () => disconnectGoogleFn(), "Google disconnected");
+                  }}
+                  className="font-semibold text-muted-foreground disabled:opacity-50"
+                >
+                  Disconnect
+                </button>
+              )}
+            </div>
           </div>
-        </div>
-        {c?.status === "choose_location" && d.canConnect && <ChoosePlace onDone={load} />}
-      </section>
+          {c?.status === "choose_location" && d.canConnect && <ChoosePlace onDone={load} />}
+        </section>
+      )}
 
-      {c?.status === "connected" && (
+      {connected && tab === "results" && (
         <>
           <PerformanceCard />
           <RankingCard />
-          <ReportSettingsCard s={d.reportSettings} canEdit={d.canConnect} onSaved={load} />
-          <ReplySettingsCard s={d.replySettings} canEdit={d.canConnect} onSaved={load} />
-          <section className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <h2 className="text-sm font-bold">
-              Google reviews{" "}
-              {needReply.length > 0 && (
-                <span className="text-amber-700">({needReply.length} without a reply)</span>
-              )}
-            </h2>
-            {d.reviews.length === 0 && (
-              <p className="text-xs text-muted-foreground">No Google reviews yet.</p>
-            )}
-            {[...needReply, ...d.reviews.filter((r) => r.reply)].map((r) => (
-              <GoogleReview key={r.id} r={r} onChanged={load} />
-            ))}
-          </section>
-          <GooglePosts posts={d.posts} onChanged={load} />
         </>
+      )}
+      {connected && tab === "settings" && (
+        <>
+          <ReplySettingsCard s={d.replySettings} canEdit={d.canConnect} onSaved={load} />
+          <ReportSettingsCard s={d.reportSettings} canEdit={d.canConnect} onSaved={load} />
+        </>
+      )}
+      {connected && tab === "posts" && <GooglePosts posts={d.posts} onChanged={load} />}
+      {connected && tab === "reviews" && (
+        <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="inline-flex rounded-lg border border-border p-0.5 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setOnlyOpen(true)}
+                className={`rounded-md px-3 py-1.5 ${onlyOpen ? "bg-primary text-primary-foreground" : ""}`}
+              >
+                Needs a reply ({needReply.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setOnlyOpen(false)}
+                className={`rounded-md px-3 py-1.5 ${!onlyOpen ? "bg-primary text-primary-foreground" : ""}`}
+              >
+                All ({d.reviews.length})
+              </button>
+            </div>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => void run("sync", () => refreshGoogleReviewsFn(), "Reviews checked")}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${busy === "sync" ? "animate-spin" : ""}`} /> Check
+              now
+            </button>
+          </div>
+          {d.reviews.length === 0 && (
+            <p className="text-xs text-muted-foreground">No Google reviews yet.</p>
+          )}
+          {onlyOpen && needReply.length === 0 && d.reviews.length > 0 && (
+            <p className="text-xs text-muted-foreground">Every review has a reply. Nice work.</p>
+          )}
+          {list.slice(0, shown).map((r) => (
+            <GoogleReview key={r.id} r={r} onChanged={load} />
+          ))}
+          {list.length > shown && (
+            <button
+              type="button"
+              onClick={() => setShown((n) => n + 10)}
+              className="w-full rounded-lg border border-border py-2 text-sm font-semibold"
+            >
+              Show more ({list.length - shown} left)
+            </button>
+          )}
+        </section>
       )}
     </div>
   );

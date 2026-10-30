@@ -18,6 +18,15 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
+const TABS = [
+  { id: "reviews", label: "Reviews" },
+  { id: "results", label: "Results" },
+  { id: "posts", label: "Posts" },
+  { id: "qr", label: "QR & links" },
+  { id: "settings", label: "Settings" },
+] as const;
+type TabId = (typeof TABS)[number]["id"];
+
 function Dashboard() {
   const s = Route.useLoaderData();
   const navigate = useNavigate();
@@ -25,6 +34,17 @@ function Dashboard() {
   const out = useServerFn(signOut);
   const choose = useServerFn(selectTenant);
   const [picking, setPicking] = useState(false);
+  const [tab, setTabState] = useState<TabId>(() => {
+    if (typeof window === "undefined") return "reviews";
+    const h = window.location.hash.slice(1);
+    return TABS.some((t) => t.id === h) ? (h as TabId) : "reviews";
+  });
+  const setTab = (t: TabId) => {
+    setTabState(t);
+    window.history.replaceState(null, "", `#${t}`);
+    window.scrollTo({ top: 0 });
+  };
+  const [inbox, setInbox] = useState<"google" | "private">("google");
   const [q, setQ] = useState("");
 
   const list = s.ok ? s.businesses : [];
@@ -131,23 +151,70 @@ function Dashboard() {
         </div>
       )}
 
-      <main className="max-w-4xl mx-auto p-4 sm:p-6 space-y-5">
+      {active && (
+        <nav className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+          <div className="max-w-4xl mx-auto px-2 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`shrink-0 px-3 py-3 text-sm font-semibold border-b-2 ${
+                  tab === t.id
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
+
+      <main className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
         <div>
-          <h1 className="text-2xl font-bold">{active?.name ?? "Welcome back"}</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold">{active?.name ?? "Welcome back"}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Signed in as {s.email}
             {s.agency ? " (Accelur8 team)" : ""}
           </p>
         </div>
-        {active ? (
+        {!active && <p className="text-muted-foreground">Choose a business to get started.</p>}
+        {active && tab === "reviews" && (
           <>
-            <GooglePanel key={active.id} />
-            <QrCodesCard key={`qr-${active.id}`} />
-            <ReviewLinksCard key={`links-${active.id}`} />
+            <div className="inline-flex rounded-lg border border-border p-0.5 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setInbox("google")}
+                className={`rounded-md px-3 py-1.5 ${inbox === "google" ? "bg-muted" : ""}`}
+              >
+                Google reviews
+              </button>
+              <button
+                type="button"
+                onClick={() => setInbox("private")}
+                className={`rounded-md px-3 py-1.5 ${inbox === "private" ? "bg-muted" : ""}`}
+              >
+                Private messages
+              </button>
+            </div>
+            {inbox === "google" ? (
+              <GooglePanel key={`r-${active.id}`} tab="reviews" />
+            ) : (
+              <ReviewLinksCard key={`f-${active.id}`} part="feedback" />
+            )}
           </>
-        ) : (
-          <p className="text-muted-foreground">Choose a business to get started.</p>
         )}
+        {active && tab === "results" && <GooglePanel key={`g-${active.id}`} tab="results" />}
+        {active && tab === "posts" && <GooglePanel key={`p-${active.id}`} tab="posts" />}
+        {active && tab === "qr" && (
+          <>
+            <QrCodesCard key={`qr-${active.id}`} />
+            <ReviewLinksCard key={`l-${active.id}`} part="links" />
+          </>
+        )}
+        {active && tab === "settings" && <GooglePanel key={`s-${active.id}`} tab="settings" />}
       </main>
     </div>
   );
