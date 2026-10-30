@@ -64,21 +64,19 @@ async function askClaude(prompt: string): Promise<{ text: string } | { error: st
   }
 }
 
-export async function buildInsights(
-  tenantId: string,
-  business: string,
-  periodDays = 90,
-): Promise<StoredInsights> {
-  const since = new Date(Date.now() - 2 * periodDays * 86400000).toISOString();
+export async function buildInsights(tenantId: string, business: string): Promise<StoredInsights> {
+  // Look back a year (and the year before, for comparison); the period used is
+  // 90 days when there is enough to say, otherwise up to 12 months.
+  const since = new Date(Date.now() - 730 * 86400000).toISOString();
   const [rv, fb] = await Promise.all([
     serviceRead<
       { stars: number; comment: string | null; created_at_google: string; reply: string | null }[]
     >(
-      `google_reviews?select=stars,comment,created_at_google,reply&tenant_id=eq.${tenantId}&created_at_google=gte.${since}&order=created_at_google.desc&limit=400`,
+      `google_reviews?select=stars,comment,created_at_google,reply&tenant_id=eq.${tenantId}&created_at_google=gte.${since}&order=created_at_google.desc&limit=500`,
       "",
     ),
     serviceRead<{ message: string; created_at: string }[]>(
-      `private_feedback?select=message,created_at&tenant_id=eq.${tenantId}&created_at=gte.${since}&order=created_at.desc&limit=200`,
+      `private_feedback?select=message,created_at&tenant_id=eq.${tenantId}&created_at=gte.${since}&order=created_at.desc&limit=300`,
       "",
     ),
   ]);
@@ -89,7 +87,14 @@ export async function buildInsights(
     replied: !!r.reply,
   }));
   const feedback = (fb.data ?? []).map((f) => ({ message: f.message, at: f.created_at }));
-  const facts = insightFacts(reviews, feedback, new Date(), periodDays);
+  const now = new Date();
+  let periodDays = 90;
+  let facts = insightFacts(reviews, feedback, now, periodDays);
+  for (const d of [180, 365]) {
+    if (facts.withText >= 8) break;
+    periodDays = d;
+    facts = insightFacts(reviews, feedback, now, periodDays);
+  }
 
   let summary: InsightSummary | null = null;
   let error: string | null = null;
@@ -97,7 +102,7 @@ export async function buildInsights(
     error =
       "Not enough written feedback yet. A summary needs at least 2 reviews or messages with words in them.";
   } else {
-    const start = Date.now() - periodDays * 86400000;
+    const start = now.getTime() - periodDays * 86400000;
     const recentR = reviews.filter((r) => Date.parse(r.at) >= start);
     const recentF = feedback.filter((f) => Date.parse(f.at) >= start);
     const out = await askClaude(insightsPrompt(business, facts, recentR, recentF));

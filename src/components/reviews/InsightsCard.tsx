@@ -62,7 +62,7 @@ export function InsightsCard() {
           <h3 className="font-bold">What your customers are saying</h3>
           <p className="text-xs text-muted-foreground">
             {data
-              ? `From reviews and private messages in the last ${f?.periodDays ?? 90} days. Updated ${when(data.createdAt)}.`
+              ? `From reviews and private messages in the last ${(f?.periodDays ?? 90) >= 365 ? "12 months" : `${f?.periodDays ?? 90} days`}. Updated ${when(data.createdAt)}.`
               : "A plain-English summary of your reviews and private messages."}
           </p>
         </div>
