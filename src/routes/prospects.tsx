@@ -68,9 +68,14 @@ function scoreClass(n: number | null) {
       : "bg-red-100 text-red-800";
 }
 
-function shareText(p: { name: string; contactName?: string }, link: string) {
+function shareText(
+  p: { name: string; contactName?: string; topFix?: string | null },
+  link: string,
+) {
   const hi = p.contactName ? `Hi ${p.contactName.split(" ")[0]}` : "Hi";
-  return `${hi}, I put together a free report on how ${p.name} shows up on Google and Google Maps, compared with the businesses nearest to you. It takes 2 minutes to read and shows what to fix first: ${link}`;
+  // The report's most important finding makes the message personal.
+  const hook = p.topFix ? ` The first thing I noticed: ${p.topFix.replace(/\.$/, "")}.` : "";
+  return `${hi}, I put together a free report on how ${p.name} shows up on Google Maps, compared with the businesses nearest to you.${hook} It takes 2 minutes to read: ${link}`;
 }
 
 function today(offsetDays = 0) {
