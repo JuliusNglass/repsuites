@@ -69,3 +69,39 @@ export function cleanKeyword(raw: string): string | null {
     .toLowerCase();
   return k.length >= 2 && k.length <= 80 && /[a-z]/.test(k) ? k : null;
 }
+
+// How far apart the 25 search spots are, by how far customers usually come.
+// "small": city centre, half a mile apart (furthest spot 1 mile away).
+// "medium": shops, cafes and restaurants in a town, 1 mile apart (2 miles).
+// "large": businesses that travel to the customer (cleaners, plumbers),
+// 2 miles apart (4 miles). Kilometre countries use 0.75, 1.5 and 3 km.
+export type AreaSize = "small" | "medium" | "large";
+
+export function areaSpacingKm(size: AreaSize, miles: boolean): number {
+  if (miles) return size === "small" ? 0.8 : size === "medium" ? 1.6 : 3.2;
+  return size === "small" ? 0.75 : size === "medium" ? 1.5 : 3;
+}
+
+// Businesses that go to the customer cover a wider area than ones the
+// customer walks into.
+const TRAVELS = [
+  "plumber",
+  "electrician",
+  "roofing_contractor",
+  "general_contractor",
+  "painter",
+  "locksmith",
+  "moving_company",
+  "house_cleaning_service",
+  "cleaning_service",
+  "pest_control_service",
+  "landscaper",
+  "gardener",
+  "hvac_contractor",
+  "carpenter",
+];
+
+export function autoAreaSize(types: string[], serviceAreaOnly: boolean): AreaSize {
+  if (serviceAreaOnly || types.some((t) => TRAVELS.includes(t))) return "large";
+  return "medium";
+}

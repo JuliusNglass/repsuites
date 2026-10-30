@@ -143,8 +143,22 @@ function heatMap(r: Report, extra: RenderExtra | null): string {
   const miles = usesMiles(center?.lat, center?.lng);
   const spacingKm = grids[0]!.spacingKm ?? (miles ? 0.8 : 1);
   const legend = `<p class="small" style="text-align:center;margin:10px 0 0"><span style="color:#059669">&#9679;</span> top 3 &nbsp; <span style="color:#f59e0b">&#9679;</span> 4 to 10 &nbsp; <span style="color:#ef4444">&#9679;</span> 11 to 20 &nbsp; <span style="color:#dc2626">&#9679;</span> not in the top 20</p>`;
-  const summaryOf = (g: (typeof grids)[number]) =>
-    `In <b>${g.top3} of the 25 spots</b> you are in the top 3 for "${esc(g.keyword)}".${g.found < 25 ? ` In ${25 - g.found} spots you are not in the top 20 at all.` : ""} Most people tap one of the top 3, so every red or amber pin is customers going somewhere else.`;
+  // Plain words: "in the top 3 in 6 of the 25 places", "not in the top 3
+  // anywhere", "in the top 3 everywhere".
+  const summaryOf = (g: (typeof grids)[number]) => {
+    const k = `"${esc(g.keyword)}"`;
+    const where =
+      g.top3 === 0
+        ? `you are <b>not in the top 3 anywhere</b> we checked`
+        : g.top3 >= 25
+          ? `you are <b>in the top 3 everywhere</b> we checked. Well done`
+          : `you are in the top 3 in <b>${g.top3} of the 25 places</b> we checked`;
+    const missing =
+      g.found < 25
+        ? ` In ${25 - g.found} of them you do not show up at all (red pins marked 20+).`
+        : "";
+    return `When people near you search ${k}, ${where}.${missing} Most people pick one of the top 3, so every amber or red pin is customers who may go somewhere else.`;
+  };
   const dots = (g: (typeof grids)[number]) =>
     `<div style="display:grid;grid-template-columns:repeat(${g.size},1fr);gap:8px;max-width:340px;margin:0 auto">${g.ranks
       .map((v) => {
@@ -156,7 +170,8 @@ function heatMap(r: Report, extra: RenderExtra | null): string {
     grids.length > 1
       ? `<div class="kw noprint">${grids.map((g, i) => `<button type="button" data-i="${i}"${i === 0 ? ' class="on"' : ""}>${esc(g.keyword)}</button>`).join("")}</div>`
       : "";
-  const intro = `<p style="margin:0 0 12px">We searched Google Maps from 25 spots around you, ${esc(grids[0]!.spacing)} apart, like a customer standing there. Each pin shows where you came in the list. The house is you. Zoom in to see the businesses around you.</p>`;
+  const furthest = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
+  const intro = `<p style="margin:0 0 12px">We searched Google Maps from 25 places around you, up to ${esc(furthest)} away, just like a customer standing there would. Each pin shows where you came in the list from that place. The house is you. Pinch or use + and − to zoom in and see the businesses around you.</p>`;
   if (!center || !extra)
     return `<h2>Where you show up across your area</h2><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div>`;
   const spots = gridSpots(center, 5, spacingKm).map((p) => [
@@ -187,7 +202,7 @@ ${legend}${rivalKey}<p id="rmap-sum" style="margin:14px 0 0">${summaryOf(grids[0
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>(function(){var D=${json};if(!window.L)return;var el=document.getElementById("rmap");document.getElementById("rmap-fallback").remove();
 var m=L.map(el,{scrollWheelZoom:false,zoomSnap:0.5});L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(m);
-m.fitBounds(L.latLngBounds(D.spots),{padding:[24,24]});var layer=L.layerGroup().addTo(m);
+m.fitBounds(L.latLngBounds(D.spots),{padding:[24,24]});el.addEventListener("wheel",function(e){if(e.ctrlKey){e.preventDefault();m.setZoom(m.getZoom()-e.deltaY*0.02);}},{passive:false});var layer=L.layerGroup().addTo(m);
 var house='<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>';
 function draw(i){layer.clearLayers();var g=D.grids[i];D.spots.forEach(function(p,j){var d=g.pins[j];var html=j===12?'<div class="pin home">'+house+'<span class="rank" style="background:'+d.bg+';color:'+d.fg+'">'+d.t+'</span></div>':'<div class="pin" style="background:'+d.bg+';color:'+d.fg+'">'+d.t+'</div>';
 L.marker(p,{icon:L.divIcon({className:"",html:html,iconSize:[0,0]}),zIndexOffset:j===12?1000:0}).bindTooltip(j===12?D.name+": "+d.t:"From here: "+d.t).addTo(layer);});

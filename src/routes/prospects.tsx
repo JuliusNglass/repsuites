@@ -97,6 +97,7 @@ function Prospects() {
       data: {
         placeId: h.placeId,
         ...(words.trim() ? { keyword: words.trim() } : {}),
+        ...(area ? { area } : {}),
         niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
       },
     }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
@@ -144,6 +145,7 @@ function Prospects() {
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [words, setWords] = useState("");
+  const [area, setArea] = useState<"" | "small" | "medium" | "large">("");
   const [hits, setHits] = useState<Hit[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [building, setBuilding] = useState<string | null>(null);
@@ -261,6 +263,19 @@ function Prospects() {
               placeholder="Optional: up to 3 search phrases, with commas: burger, fast food, takeaway"
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
             />
+            <select
+              value={area}
+              onChange={(e) => setArea(e.target.value as typeof area)}
+              aria-label="How far customers come from"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Area to check: automatic (best for most)</option>
+              <option value="small">City centre: up to 1 mile away</option>
+              <option value="medium">Town shop, cafe or restaurant: up to 2 miles away</option>
+              <option value="large">
+                They travel to customers (cleaners, trades): up to 4 miles away
+              </option>
+            </select>
             <p className="text-xs text-muted-foreground">
               Each report checks the business against its nearest rivals and its Google Maps
               position. About 5p to 10p per report, plus about 8p for each extra search phrase.

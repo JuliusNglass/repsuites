@@ -138,7 +138,7 @@ export interface Report {
 }
 
 const DETAIL_MASK =
-  "id,displayName,formattedAddress,addressComponents,location,rating,userRatingCount,nationalPhoneNumber,internationalPhoneNumber,websiteUri,regularOpeningHours,editorialSummary,photos,primaryTypeDisplayName,primaryType,types,googleMapsUri,reviews";
+  "id,displayName,formattedAddress,addressComponents,location,rating,userRatingCount,nationalPhoneNumber,internationalPhoneNumber,websiteUri,regularOpeningHours,editorialSummary,photos,primaryTypeDisplayName,primaryType,types,pureServiceAreaBusiness,googleMapsUri,reviews";
 
 // Types too general to tell a burger bar from a curry house.
 const GENERAL_TYPES = new Set([
@@ -248,6 +248,7 @@ async function runGrid(
   at: { lat: number; lng: number },
   placeId: string,
   name: string,
+  spacingKm: number,
 ): Promise<{
   middle: number | null | undefined;
   error: string;
@@ -257,7 +258,6 @@ async function runGrid(
   const { gridPoints, summarisePoints, rankIn } = await import("./rank-grid");
   const { usesMiles, distanceLabel } = await import("./units");
   const miles = usesMiles(at.lat, at.lng);
-  const spacingKm = miles ? 0.8 : 1;
   const pts = gridPoints(at, 5, spacingKm);
   const ranks: (number | null | undefined)[] = new Array(pts.length).fill(undefined);
   let failed = 0;
@@ -300,6 +300,7 @@ export async function buildReport(
   placeId: string,
   keywordOverride?: string,
   extraKeywords: string[] = [],
+  areaOverride?: import("./rank-grid").AreaSize,
 ): Promise<{
   report: Report;
   meta: {
@@ -351,11 +352,17 @@ export async function buildReport(
     const { creds } = await import("./rank-tracking.server");
     const auth = creds();
     if (auth) {
+      const { areaSpacingKm, autoAreaSize } = await import("./rank-grid");
+      const { usesMiles } = await import("./units");
+      const size =
+        areaOverride ??
+        autoAreaSize((p.types ?? []).map(String), p.pureServiceAreaBusiness === true);
+      const spacingKm = areaSpacingKm(size, usesMiles(lat, lng));
       const phrases = [keyword, ...extraKeywords.map((k) => k.toLowerCase().trim().slice(0, 80))]
         .filter((k, i, a) => k && a.indexOf(k) === i)
         .slice(0, 3);
       const results = await Promise.all(
-        phrases.map((k) => runGrid(auth, k, { lat, lng }, p.id, name)),
+        phrases.map((k) => runGrid(auth, k, { lat, lng }, p.id, name, spacingKm)),
       );
       const first = results[0]!;
       if (first.middle !== undefined) {
@@ -525,11 +532,12 @@ export async function saveProspectReport(
     createdBy?: string | null;
     keyword?: string;
     keywords?: string[];
+    area?: import("./rank-grid").AreaSize;
   } = {},
 ) {
   // Extra phrases run as separate requests (addProspectGrid): each grid is 25
   // outside calls and a request may make at most 50.
-  const built = await buildReport(placeId, extra.keyword);
+  const built = await buildReport(placeId, extra.keyword, [], extra.area);
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
   const existing = await serviceRead<{ id: string; report_token: string | null }[]>(
@@ -586,7 +594,12 @@ export async function addProspectGrid(placeId: string, keyword: string) {
   const { creds } = await import("./rank-tracking.server");
   const auth = creds();
   if (!auth) return { ok: false as const, error: "DataForSEO login not set" };
-  const res = await runGrid(auth, k, { lat: row.lat, lng: row.lng }, placeId, row.name);
+  const { usesMiles } = await import("./units");
+  const spacingKm =
+    row.report.grids?.[0]?.spacingKm ??
+    row.report.grid?.spacingKm ??
+    (usesMiles(row.lat, row.lng) ? 0.8 : 1);
+  const res = await runGrid(auth, k, { lat: row.lat, lng: row.lng }, placeId, row.name, spacingKm);
   if (!res.grid) return { ok: false as const, error: res.error || "Google Maps check failed." };
   const report = row.report;
   const grids = (

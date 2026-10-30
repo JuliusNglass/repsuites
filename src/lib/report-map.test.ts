@@ -45,3 +45,16 @@ describe("rivals", () => {
     expect(d).toBeLessThan(25);
   });
 });
+
+describe("area size", async () => {
+  const { areaSpacingKm, autoAreaSize } = await import("./rank-grid");
+  it("cleaners and trades cover a wider area", () => {
+    expect(autoAreaSize(["house_cleaning_service"], false)).toBe("large");
+    expect(autoAreaSize(["restaurant"], true)).toBe("large");
+    expect(autoAreaSize(["hamburger_restaurant", "restaurant"], false)).toBe("medium");
+  });
+  it("uses clean distances", () => {
+    expect(areaSpacingKm("medium", true)).toBe(1.6);
+    expect(areaSpacingKm("large", false)).toBe(3);
+  });
+});

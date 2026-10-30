@@ -42,13 +42,14 @@ function phrases(raw?: string): { keyword?: string; keywords?: string[] } {
 }
 
 export const buildProspectReport = createServerFn({ method: "POST" })
-  .validator((d: { placeId: string; keyword?: string; niche?: boolean }) =>
+  .validator((d: { placeId: string; keyword?: string; niche?: boolean; area?: string }) =>
     z
       .object({
         placeId: z.string().regex(PLACE_RE),
         // Up to 3 search phrases, separated by commas. The first is the main one.
         keyword: z.string().trim().max(250).optional(),
         niche: z.boolean().optional(),
+        area: z.enum(["small", "medium", "large"]).optional(),
       })
       .parse(d),
   )
@@ -58,6 +59,7 @@ export const buildProspectReport = createServerFn({ method: "POST" })
     return saveProspectReport(data.placeId, data.niche ? "niche" : "search", {
       createdBy: g.userId,
       ...phrases(data.keyword),
+      ...(data.area ? { area: data.area } : {}),
     });
   });
 
