@@ -104,11 +104,17 @@ export interface Report {
     newestReviewDays: number | null;
   };
   rivals: { name: string; rating: number | null; reviews: number }[];
-  maps: { keyword: string; position: number | null; checked: boolean };
+  maps: { keyword: string; position: number | null; checked: boolean; error?: string };
   score: number;
   parts: { label: string; got: number; max: number }[];
   fixes: { title: string; why: string; priority: "high" | "medium" }[];
-  reviewGap: { leader: string; leaderReviews: number; need: number; weeksAt5: number } | null;
+  reviewGap: {
+    leader: string;
+    leaderReviews: number;
+    need: number;
+    perWeekIn6Months: number;
+    perWeekIn12Months: number;
+  } | null;
 }
 
 const DETAIL_MASK =
@@ -194,6 +200,7 @@ export async function buildReport(
   const keyword = (keywordOverride || category || "").toLowerCase().slice(0, 80);
   let position: number | null = null;
   let checked = false;
+  let mapsError = "";
   if (keyword && lat !== null && lng !== null) {
     const { creds, mapsResults } = await import("./rank-tracking.server");
     const { rankIn } = await import("./rank-grid");
@@ -203,33 +210,35 @@ export async function buildReport(
       if (r.ok) {
         checked = true;
         position = rankIn(r.items, p.id, name);
-      }
-    }
+      } else mapsError = String(r.error).slice(0, 200);
+    } else mapsError = "DataForSEO login not set";
   }
 
   const hasHours = !!p.regularOpeningHours;
-  const hasDescription = !!p.editorialSummary?.text;
-  const photos = Array.isArray(p.photos) ? p.photos.length : 0;
   const website = String(p.websiteUri ?? "").slice(0, 300);
   // International format, so WhatsApp and text links work from anywhere.
   const phone = String(p.internationalPhoneNumber ?? p.nationalPhoneNumber ?? "").slice(0, 40);
 
-  const leader = rivals[0];
-  const reviewPoints = leader
-    ? Math.round(Math.min(1, reviews / Math.max(1, leader.reviews)) * 25)
+  // Compare with the next business up (fewest reviews above this one) so the
+  // goal is reachable; score against the middle rival, not a big chain.
+  const above = rivals.filter((r) => r.reviews > reviews).sort((a, b) => a.reviews - b.reviews);
+  const target = above[0] ?? null;
+  const middle = rivals.length
+    ? [...rivals].sort((a, b) => a.reviews - b.reviews)[Math.floor(rivals.length / 2)]!.reviews
+    : 0;
+  const reviewPoints = rivals.length
+    ? Math.round(Math.min(1, reviews / Math.max(1, middle)) * 25)
     : reviews >= 100
       ? 25
       : Math.round((reviews / 100) * 25);
-  const profilePoints =
-    (website ? 5 : 0) +
-    (phone ? 5 : 0) +
-    (hasHours ? 5 : 0) +
-    (hasDescription ? 5 : 0) +
-    (photos >= 10 ? 5 : Math.round(photos / 2));
+  // Only what Google reliably tells us: website, phone and opening hours.
+  const profilePoints = Math.round(
+    ((website ? 1 : 0) + (phone ? 1 : 0) + (hasHours ? 1 : 0)) * (25 / 3),
+  );
   const parts: Report["parts"] = [
     { label: "Star rating", got: ratingPoints(rating), max: 25 },
-    { label: "Number of reviews against your busiest rival", got: reviewPoints, max: 25 },
-    { label: "Google profile complete", got: profilePoints, max: 25 },
+    { label: "Number of reviews against your rivals", got: reviewPoints, max: 25 },
+    { label: "Google profile basics (website, phone, hours)", got: profilePoints, max: 25 },
   ];
   if (checked) parts.push({ label: "Position on Google Maps", got: mapsPoints(position), max: 25 });
   const got = parts.reduce((t, x) => t + x.got, 0);
@@ -246,9 +255,9 @@ export async function buildReport(
       why: "People nearby tap one of the first 3 businesses on the map. Getting into those 3 is the fastest way to more calls.",
       priority: "high",
     });
-  if (leader && reviews < leader.reviews)
+  if (target)
     fixes.push({
-      title: `${leader.name} has ${leader.reviews} Google reviews. You have ${reviews}.`,
+      title: `${target.name} has ${target.reviews} Google reviews. You have ${reviews}.`,
       why: "Google and customers both favour businesses with more, and more recent, reviews.",
       priority: "high",
     });
@@ -268,6 +277,12 @@ export async function buildReport(
         priority: "medium",
       });
   }
+  if (!phone)
+    fixes.push({
+      title: "No phone number on your Google profile",
+      why: "People searching on a phone often just want to call.",
+      priority: "high",
+    });
   if (!website)
     fixes.push({
       title: "No website on your Google profile",
@@ -280,34 +295,16 @@ export async function buildReport(
       why: "Without hours, Google shows you less often to people searching right now.",
       priority: "medium",
     });
-  if (!hasDescription)
-    fixes.push({
-      title: "No business description on your Google profile",
-      why: "A clear description with what you do and where helps you show for the right searches.",
-      priority: "medium",
-    });
-  if (photos < 10)
-    fixes.push({
-      title: `Only ${photos} photo${photos === 1 ? "" : "s"} on your Google profile`,
-      why: "Profiles with plenty of recent photos get more views and clicks.",
-      priority: "medium",
-    });
-  if (!phone)
-    fixes.push({
-      title: "No phone number on your Google profile",
-      why: "People searching on a phone often just want to call.",
-      priority: "high",
-    });
 
-  const reviewGap =
-    leader && leader.reviews > reviews
-      ? {
-          leader: leader.name,
-          leaderReviews: leader.reviews,
-          need: leader.reviews - reviews,
-          weeksAt5: Math.ceil((leader.reviews - reviews) / 5),
-        }
-      : null;
+  const reviewGap = target
+    ? {
+        leader: target.name,
+        leaderReviews: target.reviews,
+        need: target.reviews - reviews,
+        perWeekIn6Months: Math.ceil((target.reviews - reviews) / 26),
+        perWeekIn12Months: Math.ceil((target.reviews - reviews) / 52),
+      }
+    : null;
 
   return {
     report: {
@@ -328,7 +325,7 @@ export async function buildReport(
         newestReviewDays,
       },
       rivals,
-      maps: { keyword, position, checked },
+      maps: { keyword, position, checked, ...(mapsError ? { error: mapsError } : {}) },
       score,
       parts,
       fixes: fixes

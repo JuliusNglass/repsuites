@@ -52,9 +52,10 @@ export function renderReport(r: Report): string {
     : r.maps.position === null
       ? `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>not in the first 20</b> results on Google Maps.</p>`
       : `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>number ${r.maps.position}</b> on Google Maps.${r.maps.position <= 3 ? " That is the top 3. Well done." : " The first 3 are the ones most people tap."}</p>`;
-  const gap = r.reviewGap
-    ? `<div class="card"><b>Closing the review gap</b><p style="margin:6px 0 0">${esc(r.reviewGap.leader)} has ${r.reviewGap.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${r.reviewGap.need}.</p>
-<p class="muted" style="margin:6px 0 0">Worked out simply: ${r.reviewGap.need} reviews needed, divided by 5 new reviews a week, is about <b>${r.reviewGap.weeksAt5} weeks</b>. Asking every customer, every day, is how businesses get there.</p></div>`
+  const g = r.reviewGap;
+  const gap = g
+    ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
+<p class="muted" style="margin:6px 0 0">Worked out simply: ${g.need} reviews divided by 52 weeks is about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b> to catch them within a year, or ${g.perWeekIn6Months} a week to do it in 6 months. Asking every customer, every day, is how businesses get there.</p></div>`
     : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
