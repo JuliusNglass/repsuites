@@ -33,7 +33,7 @@ export const startCardCheckout = createServerFn({ method: "POST" })
           stands: z.string().max(20).nullable(),
           businessName: z.string().trim().min(2).max(120),
           placeId: z.string().regex(PLACE_RE).optional(),
-          message: z.string().trim().max(60).optional(),
+          message: z.string().trim().max(120).optional(),
         })
         .parse(d),
   )
