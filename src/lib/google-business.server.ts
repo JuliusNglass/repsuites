@@ -1015,10 +1015,23 @@ async function sendReport(tenantId: string, email: string, today: Date) {
     searchTerms: perf.searchTerms,
   };
   const { sendEmail } = await import("./email.server");
+  // Customer Insights section: rebuilt for the report when there is enough
+  // written feedback; left out quietly otherwise.
+  let insightsSection = "";
+  try {
+    const { buildInsights } = await import("./insights.server");
+    const { insightsHtml } = await import("./insights");
+    const ins = await buildInsights(tenantId, data.business);
+    if (ins.summary) insightsSection = insightsHtml(ins.summary);
+  } catch {
+    insightsSection = "";
+  }
   const r = await sendEmail({
     to: email,
     subject: reportSubject(data),
-    html: reportHtml(data),
+    html: insightsSection
+      ? reportHtml(data).replace(/<\/div>$/, `${insightsSection}</div>`)
+      : reportHtml(data),
     text: reportText(data),
   });
   return r.ok
@@ -1092,4 +1105,26 @@ export async function profileBasics(tenantId: string): Promise<{
     lng: Number.isFinite(lng) && r.data?.latlng ? lng : null,
     title: String(r.data?.title ?? conn.location_title ?? ""),
   };
+}
+
+// ---------- customer insights ----------
+
+export async function readInsights() {
+  const g = await guard(false);
+  if (!g.ok) return { ok: false as const, error: g.error };
+  const { latestInsights } = await import("./insights.server");
+  return { ok: true as const, insights: await latestInsights(g.tenantId) };
+}
+
+// At most once an hour per business, so a click-happy owner cannot run up
+// AI costs.
+export async function refreshInsights() {
+  const g = await guard(true);
+  if (!g.ok) return { ok: false as const, error: g.error };
+  const { latestInsights, buildInsights } = await import("./insights.server");
+  const last = await latestInsights(g.tenantId);
+  if (last && Date.now() - Date.parse(last.createdAt) < 3600_000 && last.summary)
+    return { ok: true as const, insights: last };
+  const insights = await buildInsights(g.tenantId, await businessName(g.tenantId));
+  return { ok: true as const, insights };
 }

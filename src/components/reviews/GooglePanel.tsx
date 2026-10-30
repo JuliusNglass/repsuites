@@ -21,6 +21,7 @@ import {
 } from "../../lib/google-business.functions";
 import { change } from "../../lib/google-performance";
 import { RankingCard } from "./RankingCard";
+import { InsightsCard } from "./InsightsCard";
 
 type Data = Extract<Awaited<ReturnType<typeof getGoogleFn>>, { ok: true }>;
 type Review = Data["reviews"][number];
@@ -181,6 +182,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
 
       {connected && tab === "results" && (
         <>
+          <InsightsCard />
           <PerformanceCard />
           <RankingCard />
         </>

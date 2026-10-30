@@ -11,6 +11,8 @@ import {
   listGooglePlaces,
   postGoogleReply,
   readGoogle,
+  readInsights,
+  refreshInsights,
   refreshGoogleReviews,
   saveGoogleReplySettings,
 } from "./google-business.server";
@@ -111,3 +113,8 @@ export const sendTestGoogleReportFn = createServerFn({ method: "POST" }).handler
   const { sendTestGoogleReport } = await import("./google-business.server");
   return sendTestGoogleReport();
 });
+
+export const getInsightsFn = createServerFn({ method: "GET" }).handler(async () => readInsights());
+export const refreshInsightsFn = createServerFn({ method: "POST" }).handler(async () =>
+  refreshInsights(),
+);
