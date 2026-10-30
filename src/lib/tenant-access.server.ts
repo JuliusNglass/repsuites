@@ -78,7 +78,10 @@ export async function featureBlockedFor(
 }
 
 // Public pages (apply form, hiring banner) have no signed-in user.
-export async function tenantHasFeatureService(tenantId: string, feature: Feature): Promise<boolean> {
+export async function tenantHasFeatureService(
+  tenantId: string,
+  feature: Feature,
+): Promise<boolean> {
   const access = await readTenantAccess("", tenantId);
   return hasFeature(access, feature);
 }

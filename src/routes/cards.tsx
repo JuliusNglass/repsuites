@@ -16,7 +16,10 @@ export const Route = createFileRoute("/cards")({
           Already have RepSuites cards? They keep working. To order more, request your free
           visibility check and mention cards, and we will be in touch.
         </p>
-        <a href="/#check" className="inline-block rounded-xl bg-primary text-primary-foreground font-bold px-5 py-3">
+        <a
+          href="/#check"
+          className="inline-block rounded-xl bg-primary text-primary-foreground font-bold px-5 py-3"
+        >
           Get in touch
         </a>
       </section>

@@ -12,7 +12,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             <img src="/logo-full.png" alt="RepSuites" className="h-8 w-auto" />
           </Link>
           <nav className="flex items-center gap-2 sm:gap-4 text-sm">
-            <Link to="/privacy" className="hidden sm:inline text-muted-foreground hover:text-foreground">
+            <Link
+              to="/privacy"
+              className="hidden sm:inline text-muted-foreground hover:text-foreground"
+            >
               Privacy
             </Link>
             <Link to="/login" className="text-muted-foreground hover:text-foreground px-2">
@@ -30,11 +33,19 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
       <footer className="border-t border-border py-8 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <span>© {new Date().getFullYear()} Accelur8 Ltd. RepSuites is a product by Accelur8.</span>
+          <span>
+            © {new Date().getFullYear()} Accelur8 Ltd. RepSuites is a product by Accelur8.
+          </span>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-            <Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link>
-            <Link to="/google-business-profile" className="hover:text-foreground">Google connection</Link>
-            <Link to="/terms" className="hover:text-foreground">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-foreground">
+              Privacy Policy
+            </Link>
+            <Link to="/google-business-profile" className="hover:text-foreground">
+              Google connection
+            </Link>
+            <Link to="/terms" className="hover:text-foreground">
+              Terms of Service
+            </Link>
           </div>
         </div>
       </footer>

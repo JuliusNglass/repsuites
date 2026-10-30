@@ -75,7 +75,9 @@ export function SignInCard({
             </span>
             RepSuites
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">Local visibility for local businesses</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Local visibility for local businesses
+          </p>
         </div>
       )}
 

@@ -8,7 +8,11 @@ import {
   performSignOut,
   requireProtectedRequest,
 } from "./auth.server";
-import { checkRecoveryToken, resetPasswordWithToken, sendResetEmail } from "./password-reset.server";
+import {
+  checkRecoveryToken,
+  resetPasswordWithToken,
+  sendResetEmail,
+} from "./password-reset.server";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -41,13 +45,19 @@ export const getSessionInfo = createServerFn({ method: "GET" }).handler(async ()
 
 export const forgotPassword = createServerFn({ method: "POST" })
   .validator((data: { email: string }) =>
-    z.object({ email: z.string().min(1).max(320) }).strict().parse(data),
+    z
+      .object({ email: z.string().min(1).max(320) })
+      .strict()
+      .parse(data),
   )
   .handler(async ({ data }) => sendResetEmail(data.email));
 
 export const verifyRecoveryToken = createServerFn({ method: "GET" })
   .validator((data: { accessToken: string }) =>
-    z.object({ accessToken: z.string().min(1) }).strict().parse(data),
+    z
+      .object({ accessToken: z.string().min(1) })
+      .strict()
+      .parse(data),
   )
   .handler(async ({ data }) => checkRecoveryToken(data.accessToken));
 
