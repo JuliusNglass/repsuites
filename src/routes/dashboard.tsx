@@ -7,7 +7,7 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Building2, ChevronDown, Search } from "lucide-react";
+import { Building2, ChevronDown, Plus, Search } from "lucide-react";
 import { selectTenant, signOut } from "../lib/auth.functions";
 import { listMyBusinesses } from "../lib/businesses.functions";
 import { GooglePanel } from "../components/reviews/GooglePanel";
@@ -17,6 +17,7 @@ import { WelcomeCard } from "../components/reviews/WelcomeCard";
 import { EmailCheckBar } from "../components/reviews/EmailCheckBar";
 import { BillingCard } from "../components/reviews/BillingCard";
 import { AccessHelpCard } from "../components/reviews/AccessHelpCard";
+import { AddBusinessForm } from "../components/agency/AddBusinessForm";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -41,6 +42,7 @@ function Dashboard() {
   const out = useServerFn(signOut);
   const choose = useServerFn(selectTenant);
   const [picking, setPicking] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [tab, setTabState] = useState<TabId>(() => {
     if (typeof window === "undefined") return "reviews";
     const h = window.location.hash.slice(1);
@@ -80,7 +82,7 @@ function Dashboard() {
   }
 
   const active = list.find((b) => b.id === s.activeId) ?? null;
-  const many = list.length > 1;
+  const many = list.length > 1 || s.agency;
 
   const switchTo = async (id: string) => {
     const r = await choose({ data: { tenant_id: id } });
@@ -134,6 +136,25 @@ function Dashboard() {
       {picking && (
         <div className="border-b border-border bg-muted/30 px-4 py-4">
           <div className="max-w-3xl mx-auto space-y-3">
+            {s.agency &&
+              (adding ? (
+                <AddBusinessForm
+                  onCancel={() => setAdding(false)}
+                  onDone={async (id) => {
+                    setAdding(false);
+                    await switchTo(id);
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAdding(true)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add a business
+                </button>
+              ))}
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
               <input

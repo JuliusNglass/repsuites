@@ -11,7 +11,7 @@ import type { SignupInput } from "./signup";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-async function adminAuth(path: string, method: string, body?: unknown) {
+export async function adminAuth(path: string, method: string, body?: unknown) {
   const cfg = getSupabaseConfig();
   const key = getServiceKey();
   const headers: Record<string, string> = { apikey: key, "Content-Type": "application/json" };
