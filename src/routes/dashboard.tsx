@@ -211,7 +211,7 @@ function Dashboard() {
         {active && tab === "posts" && <GooglePanel key={`p-${active.id}`} tab="posts" />}
         {active && tab === "qr" && (
           <>
-            <QrCodesCard key={`qr-${active.id}`} />
+            <QrCodesCard key={`qr-${active.id}`} business={active.name} />
             <ReviewLinksCard key={`l-${active.id}`} part="links" />
           </>
         )}

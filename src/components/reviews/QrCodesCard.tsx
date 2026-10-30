@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeCanvas } from "qrcode.react";
-import { Download, QrCode } from "lucide-react";
+import { Download, Printer, QrCode } from "lucide-react";
+import { PrintDesigner } from "./PrintDesigner";
 import { getMyQrCodes } from "../../lib/qr.functions";
 
 type Code = Extract<Awaited<ReturnType<typeof getMyQrCodes>>, { ok: true }>["codes"][number];
 
-function OneCode({ c }: { c: Code }) {
+function OneCode({ c, business }: { c: Code; business: string }) {
+  const [designing, setDesigning] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const download = () => {
     const canvas = wrap.current?.querySelector("canvas");
@@ -19,7 +21,7 @@ function OneCode({ c }: { c: Code }) {
     a.click();
   };
   return (
-    <li className="flex items-center gap-4 py-3">
+    <li className="flex flex-wrap items-center gap-3 py-3">
       <div ref={wrap} className="shrink-0 rounded-lg border border-border bg-white p-1.5">
         <QRCodeCanvas value={c.url} size={512} style={{ width: 72, height: 72 }} marginSize={2} />
       </div>
@@ -33,6 +35,20 @@ function OneCode({ c }: { c: Code }) {
       </div>
       <button
         type="button"
+        onClick={() => setDesigning(true)}
+        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold"
+      >
+        <Printer className="w-4 h-4" /> Design print
+      </button>
+      {designing && (
+        <PrintDesigner
+          url={c.url}
+          business={c.label === "Main code" ? business : `${business} ${c.label}`}
+          onClose={() => setDesigning(false)}
+        />
+      )}
+      <button
+        type="button"
         onClick={download}
         className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm"
       >
@@ -42,7 +58,7 @@ function OneCode({ c }: { c: Code }) {
   );
 }
 
-export function QrCodesCard() {
+export function QrCodesCard({ business }: { business: string }) {
   const read = useServerFn(getMyQrCodes);
   const [codes, setCodes] = useState<Code[] | null>(null);
   useEffect(() => {
@@ -65,7 +81,7 @@ export function QrCodesCard() {
       ) : (
         <ul className="divide-y divide-border">
           {codes.map((c) => (
-            <OneCode key={c.id} c={c} />
+            <OneCode key={c.id} c={c} business={business} />
           ))}
         </ul>
       )}
