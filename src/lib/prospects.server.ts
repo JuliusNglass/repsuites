@@ -98,8 +98,6 @@ export interface Report {
     phone: string;
     website: string;
     hasHours: boolean;
-    hasDescription: boolean;
-    photos: number;
     mapsUrl: string;
     newestReviewDays: number | null;
   };
@@ -319,8 +317,6 @@ export async function buildReport(
         phone,
         website,
         hasHours,
-        hasDescription,
-        photos,
         mapsUrl: String(p.googleMapsUri ?? "").slice(0, 500),
         newestReviewDays,
       },
