@@ -612,13 +612,51 @@ function ReplySettingsCard({
   );
 }
 
+// Words that say little about which business it is.
+const FILLER = new Set([
+  "the",
+  "and",
+  "ltd",
+  "limited",
+  "&",
+  "hotel",
+  "hotels",
+  "suites",
+  "restaurant",
+]);
+function words(s: string): Set<string> {
+  return new Set(
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]+/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 1 && !FILLER.has(w)),
+  );
+}
+// How alike two business names are (0 to 1), by shared words.
+function likeness(a: string, b: string): number {
+  const x = words(a);
+  const y = words(b);
+  if (!x.size || !y.size) return 0;
+  let shared = 0;
+  for (const w of x) if (y.has(w)) shared++;
+  return shared / Math.max(x.size, y.size);
+}
+
+type Place = { account: string; location: string; title: string; address: string };
+
 function ChoosePlace({ onDone }: { onDone: () => Promise<void> }) {
-  const [places, setPlaces] = useState<
-    { account: string; location: string; title: string; address: string }[] | null
-  >(null);
+  const [places, setPlaces] = useState<Place[] | null>(null);
+  const [business, setBusiness] = useState("");
+  const [q, setQ] = useState("");
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
-    void listGooglePlacesFn().then((r) => (r.ok ? setPlaces(r.places) : setErr(r.error)));
+    void listGooglePlacesFn().then((r) => {
+      if (r.ok) {
+        setPlaces(r.places);
+        setBusiness(r.business ?? "");
+      } else setErr(r.error);
+    });
   }, []);
   if (err) return <p className="text-xs text-destructive">{err}</p>;
   if (!places) return <Loader2 className="w-4 h-4 animate-spin" />;
@@ -629,26 +667,61 @@ function ChoosePlace({ onDone }: { onDone: () => Promise<void> }) {
         profile.
       </p>
     );
+  const best =
+    places
+      .map((p) => ({ p, score: likeness(p.title, business) }))
+      .filter((x) => x.score >= 0.5)
+      .sort((a, b) => b.score - a.score)[0]?.p ?? null;
+  const t = q.trim().toLowerCase();
+  const shown = places.filter(
+    (p) =>
+      p !== best &&
+      (!t || p.title.toLowerCase().includes(t) || p.address.toLowerCase().includes(t)),
+  );
+  const pick = async (p: Place) => {
+    const r = await chooseGooglePlaceFn({ data: { account: p.account, location: p.location } });
+    if (r.ok) toast.success(`Connected to ${p.title}`);
+    else toast.error(r.error);
+    await onDone();
+  };
+  const row = (p: Place, highlight = false) => (
+    <button
+      key={p.location}
+      type="button"
+      onClick={() => void pick(p)}
+      className={`w-full text-left rounded-lg border px-3 py-2 text-sm hover:bg-muted/50 ${
+        highlight ? "border-emerald-400 bg-emerald-50" : "border-border"
+      }`}
+    >
+      <span className="font-semibold">{p.title}</span>
+      {highlight && (
+        <span className="ml-2 text-[11px] font-semibold text-emerald-800">Best match</span>
+      )}
+      {p.address && <span className="block text-xs text-muted-foreground">{p.address}</span>}
+    </button>
+  );
   return (
-    <div className="space-y-1.5">
-      {places.map((p) => (
-        <button
-          key={p.location}
-          type="button"
-          onClick={async () => {
-            const r = await chooseGooglePlaceFn({
-              data: { account: p.account, location: p.location },
-            });
-            if (r.ok) toast.success(`Connected to ${p.title}`);
-            else toast.error(r.error);
-            await onDone();
-          }}
-          className="w-full text-left rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted/50"
-        >
-          <span className="font-semibold">{p.title}</span>
-          {p.address && <span className="block text-xs text-muted-foreground">{p.address}</span>}
-        </button>
-      ))}
+    <div className="space-y-2">
+      {best && !t && row(best, true)}
+      {places.length > 6 && (
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={`Search ${places.length} profiles by name or address`}
+          className={field}
+        />
+      )}
+      <div className="space-y-1.5 max-h-[28rem] overflow-y-auto">
+        {(t &&
+        best &&
+        (best.title.toLowerCase().includes(t) || best.address.toLowerCase().includes(t))
+          ? [best, ...shown]
+          : shown
+        ).map((p) => row(p))}
+        {shown.length === 0 && t && (
+          <p className="text-xs text-muted-foreground">No profile matches that.</p>
+        )}
+      </div>
     </div>
   );
 }

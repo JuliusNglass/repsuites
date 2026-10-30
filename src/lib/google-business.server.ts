@@ -175,29 +175,38 @@ async function listPlaces(token: string): Promise<Place[] | { error: string }> {
   );
   if (!acc.ok) return { error: googleError(acc) };
   const out: Place[] = [];
-  for (const a of (acc.data?.accounts ?? []).slice(0, 5)) {
+  // Agencies can manage hundreds of profiles: read every page (100 a page),
+  // within Cloudflare's limit on outgoing requests per run.
+  let calls = 1;
+  for (const a of (acc.data?.accounts ?? []).slice(0, 10)) {
     const name = String(a.name ?? "");
     if (!/^accounts\/[0-9]+$/.test(name)) continue;
-    const loc = await google(
-      token,
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${name}/locations?pageSize=50&readMask=name,title,storefrontAddress`,
-    );
-    if (!loc.ok) continue;
-    for (const l of loc.data?.locations ?? []) {
-      const ln = String(l.name ?? "");
-      if (!/^locations\/[0-9]+$/.test(ln)) continue;
-      const ad = l.storefrontAddress ?? {};
-      out.push({
-        account: name,
-        location: ln,
-        title: String(l.title ?? "Business").slice(0, 200),
-        address: [...(ad.addressLines ?? []), ad.locality, ad.postalCode]
-          .filter(Boolean)
-          .join(", "),
-      });
-    }
+    let pageToken = "";
+    do {
+      if (calls >= 40) break;
+      calls++;
+      const loc = await google(
+        token,
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${name}/locations?pageSize=100&readMask=name,title,storefrontAddress${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ""}`,
+      );
+      if (!loc.ok) break;
+      pageToken = typeof loc.data?.nextPageToken === "string" ? loc.data.nextPageToken : "";
+      for (const l of loc.data?.locations ?? []) {
+        const ln = String(l.name ?? "");
+        if (!/^locations\/[0-9]+$/.test(ln)) continue;
+        const ad = l.storefrontAddress ?? {};
+        out.push({
+          account: name,
+          location: ln,
+          title: String(l.title ?? "Business").slice(0, 200),
+          address: [...(ad.addressLines ?? []), ad.locality, ad.postalCode]
+            .filter(Boolean)
+            .join(", "),
+        });
+      }
+    } while (pageToken);
   }
-  return out;
+  return out.sort((x, y) => x.title.localeCompare(y.title, "en", { sensitivity: "base" }));
 }
 
 // ---------- connecting ----------
@@ -363,7 +372,7 @@ export async function listGooglePlaces() {
   if (!token) return { ok: false as const, error: "Connect Google again." };
   const p = await listPlaces(token);
   if (!Array.isArray(p)) return { ok: false as const, error: p.error };
-  return { ok: true as const, places: p };
+  return { ok: true as const, places: p, business: await businessName(g.tenantId) };
 }
 
 export async function chooseGooglePlace(input: { account: string; location: string }) {
