@@ -36,6 +36,9 @@ export const listMyBusinesses = createServerFn({ method: "GET" }).handler(async 
       ),
     ]);
     plan = p.data?.[0]?.plan ?? "free";
+    // "Last seen" for follow-up emails (at most one write an hour).
+    const { touchActivity } = await import("./lifecycle.server");
+    await touchActivity(activeId, g.session.user_id);
     googleConnected = c.data?.[0]?.status === "connected";
   }
   return {

@@ -21,6 +21,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiProspectConnectRouteImport } from './routes/api.prospect-connect'
+import { Route as ApiUnsubscribeRouteImport } from './routes/api.unsubscribe'
 import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
 import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
@@ -30,6 +31,7 @@ import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as ApiBillingBackRouteImport } from './routes/api.billing.back'
 import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
+import { Route as ApiInternalLifecycleRouteImport } from './routes/api.internal.lifecycle'
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
 import { Route as ApiInternalReviewRequestsRouteImport } from './routes/api.internal.review-requests'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
@@ -95,6 +97,11 @@ const ApiProspectConnectRoute = ApiProspectConnectRouteImport.update({
   path: '/api/prospect-connect',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUnsubscribeRoute = ApiUnsubscribeRouteImport.update({
+  id: '/api/unsubscribe',
+  path: '/api/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CardsIndexRoute = CardsIndexRouteImport.update({
   id: '/cards/',
   path: '/cards/',
@@ -140,6 +147,11 @@ const ApiInternalGoogleReportRoute = ApiInternalGoogleReportRouteImport.update({
   path: '/api/internal/google-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalLifecycleRoute = ApiInternalLifecycleRouteImport.update({
+  id: '/api/internal/lifecycle',
+  path: '/api/internal/lifecycle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalRankChecksRoute = ApiInternalRankChecksRouteImport.update({
   id: '/api/internal/rank-checks',
   path: '/api/internal/rank-checks',
@@ -175,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
+  '/api/unsubscribe': typeof ApiUnsubscribeRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -184,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -202,6 +216,7 @@ export interface FileRoutesByTo {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
+  '/api/unsubscribe': typeof ApiUnsubscribeRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -211,6 +226,7 @@ export interface FileRoutesByTo {
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -230,6 +246,7 @@ export interface FileRoutesById {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
+  '/api/unsubscribe': typeof ApiUnsubscribeRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
@@ -239,6 +256,7 @@ export interface FileRoutesById {
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -259,6 +277,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/prospect-connect'
+    | '/api/unsubscribe'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -268,6 +287,7 @@ export interface FileRouteTypes {
     | '/api/billing/back'
     | '/api/internal/google'
     | '/api/internal/google-report'
+    | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
     | '/api/stripe/webhook'
@@ -286,6 +306,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/prospect-connect'
+    | '/api/unsubscribe'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -295,6 +316,7 @@ export interface FileRouteTypes {
     | '/api/billing/back'
     | '/api/internal/google'
     | '/api/internal/google-report'
+    | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
     | '/api/stripe/webhook'
@@ -313,6 +335,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/prospect-connect'
+    | '/api/unsubscribe'
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
@@ -322,6 +345,7 @@ export interface FileRouteTypes {
     | '/api/billing/back'
     | '/api/internal/google'
     | '/api/internal/google-report'
+    | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
     | '/api/stripe/webhook'
@@ -341,6 +365,7 @@ export interface RootRouteChildren {
   StartRoute: typeof StartRoute
   TermsRoute: typeof TermsRoute
   ApiProspectConnectRoute: typeof ApiProspectConnectRoute
+  ApiUnsubscribeRoute: typeof ApiUnsubscribeRoute
   CardsOrderRoute: typeof CardsOrderRoute
   CardsThanksRoute: typeof CardsThanksRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
@@ -350,6 +375,7 @@ export interface RootRouteChildren {
   ApiBillingBackRoute: typeof ApiBillingBackRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
+  ApiInternalLifecycleRoute: typeof ApiInternalLifecycleRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
   ApiInternalReviewRequestsRoute: typeof ApiInternalReviewRequestsRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -442,6 +468,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProspectConnectRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/unsubscribe': {
+      id: '/api/unsubscribe'
+      path: '/api/unsubscribe'
+      fullPath: '/api/unsubscribe'
+      preLoaderRoute: typeof ApiUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cards/': {
       id: '/cards/'
       path: '/cards'
@@ -505,6 +538,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalGoogleReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/lifecycle': {
+      id: '/api/internal/lifecycle'
+      path: '/api/internal/lifecycle'
+      fullPath: '/api/internal/lifecycle'
+      preLoaderRoute: typeof ApiInternalLifecycleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/rank-checks': {
       id: '/api/internal/rank-checks'
       path: '/api/internal/rank-checks'
@@ -549,6 +589,7 @@ const rootRouteChildren: RootRouteChildren = {
   StartRoute: StartRoute,
   TermsRoute: TermsRoute,
   ApiProspectConnectRoute: ApiProspectConnectRoute,
+  ApiUnsubscribeRoute: ApiUnsubscribeRoute,
   CardsOrderRoute: CardsOrderRoute,
   CardsThanksRoute: CardsThanksRoute,
   FeedbackIdRoute: FeedbackIdRoute,
@@ -558,6 +599,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBillingBackRoute: ApiBillingBackRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
+  ApiInternalLifecycleRoute: ApiInternalLifecycleRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
   ApiInternalReviewRequestsRoute: ApiInternalReviewRequestsRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
