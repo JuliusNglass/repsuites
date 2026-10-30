@@ -1,5 +1,6 @@
 // Header and footer for the public RepSuites pages.
 // No em dashes in this copy (AGENTS.md).
+import { Logo } from "./Logo";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
@@ -9,7 +10,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <Link to="/" className="flex items-center" aria-label="RepSuites home">
-            <img src="/logo-full.png" alt="RepSuites" className="h-8 w-auto" />
+            <Logo />
           </Link>
           <nav className="flex items-center gap-2 sm:gap-4 text-sm">
             <Link

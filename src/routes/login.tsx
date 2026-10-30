@@ -1,3 +1,4 @@
+import { Logo } from "../components/site/Logo";
 import { createFileRoute } from "@tanstack/react-router";
 import { SignInCard } from "../components/SignInCard";
 import { getSystemStatus } from "../lib/system.functions";
@@ -13,7 +14,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6">
       <a href="/" className="mb-6">
-        <img src="/logo-full.png" alt="RepSuites" className="h-9 w-auto" />
+        <Logo />
       </a>
       <SignInCard isConfigured={status.isConfigured} missingMessage={status.missingMessage} />
       <p className="mt-6 text-xs text-muted-foreground">

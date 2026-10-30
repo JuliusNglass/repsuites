@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, X } from "lucide-react";
+import { distanceLabel, gridChoices, usesMiles } from "../../lib/units";
 import {
   addRankKeywordFn,
   checkRankNowFn,
@@ -55,6 +56,7 @@ export function RankingCard() {
   }, [load]);
   if (!d || (!d.ready && d.keywords.length === 0)) return null;
   const s = d.settings;
+  const miles = usesMiles(s.lat, s.lng);
   const run = async (
     key: string,
     fn: () => Promise<{ ok: boolean; error?: string }>,
@@ -75,7 +77,7 @@ export function RankingCard() {
           <h2 className="text-sm font-bold">Where you show on Google Maps</h2>
           <p className="text-xs text-muted-foreground">
             {s.enabled
-              ? `Each search is checked once a week from a ${s.gridSize} by ${s.gridSize} grid of points ${s.spacingKm} km apart around your business.`
+              ? `Each search is checked once a week from a ${s.gridSize} by ${s.gridSize} grid of points ${distanceLabel(s.spacingKm, miles)} apart around your business.`
               : "Switch on to see where you appear on Google Maps for the searches that matter, across your area."}
           </p>
           {s.lastError && <p className="text-xs text-destructive">{s.lastError}</p>}
@@ -92,10 +94,16 @@ export function RankingCard() {
               }}
               className="rounded-lg border border-input bg-background px-2 py-1"
             >
-              <option value="5|1.5">5 by 5, 1.5 km apart (town)</option>
-              <option value="5|3">5 by 5, 3 km apart (wider area)</option>
-              <option value="5|0.8">5 by 5, 0.8 km apart (city centre)</option>
-              <option value="3|2">3 by 3, 2 km apart (cheapest)</option>
+              {!gridChoices(miles).some((c) => c.grid === s.gridSize && c.km === s.spacingKm) && (
+                <option value={`${s.gridSize}|${s.spacingKm}`}>
+                  {s.gridSize} by {s.gridSize}, {distanceLabel(s.spacingKm, miles)} apart
+                </option>
+              )}
+              {gridChoices(miles).map((c) => (
+                <option key={`${c.grid}|${c.km}`} value={`${c.grid}|${c.km}`}>
+                  {c.label}
+                </option>
+              ))}
             </select>
             <label className="inline-flex items-center gap-1.5 font-semibold">
               <input

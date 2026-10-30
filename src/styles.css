@@ -181,5 +181,9 @@
 }
 
 /* Horizontal tab bars on phones: scroll without a visible bar. */
-.no-scrollbar{scrollbar-width:none}
-.no-scrollbar::-webkit-scrollbar{display:none}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

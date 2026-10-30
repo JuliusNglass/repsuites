@@ -20,7 +20,7 @@ export const MAX_KEYWORDS = 5;
 const WEEK = 7 * 86400000;
 const ENDPOINT = "https://api.dataforseo.com/v3/serp/google/maps/live/advanced";
 
-function creds(): string | null {
+export function creds(): string | null {
   const login = (process.env["REPSUITES_DATAFORSEO_LOGIN"] ?? "").trim();
   const password = (process.env["REPSUITES_DATAFORSEO_PASSWORD"] ?? "").trim();
   return login && password ? btoa(`${login}:${password}`) : null;
@@ -78,6 +78,8 @@ export async function readRanking() {
       gridSize: Number(st?.grid_size ?? 5),
       spacingKm: Number(st?.spacing_km ?? 1.5),
       hasCentre: st?.center_lat != null,
+      lat: st?.center_lat == null ? null : Number(st.center_lat),
+      lng: st?.center_lng == null ? null : Number(st.center_lng),
       lastError: (st?.last_error as string | null) ?? null,
     },
     keywords: (k.data ?? []).map((kw) => {
@@ -191,7 +193,7 @@ export async function checkRankNow(input: { id: string }) {
 
 // ---------- the checks (every 30 minutes, one search per run) ----------
 
-async function mapsResults(auth: string, keyword: string, lat: number, lng: number) {
+export async function mapsResults(auth: string, keyword: string, lat: number, lng: number) {
   try {
     const r = await fetch(ENDPOINT, {
       method: "POST",

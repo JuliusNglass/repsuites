@@ -1,6 +1,7 @@
 // Signed-in home: pick the business (agency staff can open any of them),
 // then its Google profile, reviews, posts and performance.
 // No em dashes in this copy (AGENTS.md).
+import { Logo } from "../components/site/Logo";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -87,7 +88,7 @@ function Dashboard() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border px-4 h-16 flex items-center justify-between gap-3">
         <a href="/" className="shrink-0">
-          <img src="/logo-full.png" alt="RepSuites" className="h-8 w-auto" />
+          <Logo />
         </a>
         <div className="flex items-center gap-3 min-w-0">
           {many && (
