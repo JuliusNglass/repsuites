@@ -50,3 +50,17 @@ export const CARD_STYLES = (s: SavedLook) => [
   { id: "brand", name: "My brand colours" },
   ...THEMES.map((t) => ({ id: t.id, name: t.name })),
 ];
+
+// After the background photo changes: the card style to save, or undefined
+// to leave it alone. A new photo switches "brand" (or nothing chosen yet) to
+// the QR stand look; removing the photo stops pointing at a stand look that
+// no longer exists.
+export function styleAfterBackground(
+  current: string | null,
+  hasBackground: boolean,
+  standTheme: string | null,
+): string | undefined {
+  if (hasBackground) return !current || current === "brand" ? "stand" : undefined;
+  if (current === "stand" && !standTheme) return "brand";
+  return undefined;
+}

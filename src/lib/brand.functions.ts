@@ -174,36 +174,13 @@ export const saveBrandBackground = createServerFn({ method: "POST" })
       const bytes = Uint8Array.from(atob(m[1]!), (c) => c.charCodeAt(0));
       if (bytes.length < 500 || bytes.length > 3_000_000)
         return { ok: false as const, error: "That photo is the wrong size." };
-      const cfg = getSupabaseConfig();
-      const key = getServiceKey();
-      if (!cfg.isConfigured || !key) return { ok: false as const, error: "Storage is not set up." };
-      const path = `${g.tenantId}/background-${Date.now()}.jpg`;
-      const up = await fetch(`${cfg.url}/storage/v1/object/post-images/${path}`, {
-        method: "POST",
-        headers: {
-          ...(key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {}),
-          apikey: key,
-          "Content-Type": "image/jpeg",
-          "x-upsert": "true",
-        },
-        body: bytes,
-        signal: AbortSignal.timeout(20000),
-      }).catch(() => null);
-      if (!up?.ok) return { ok: false as const, error: "Could not save the photo. Try again." };
-      url = `${cfg.url}/storage/v1/object/public/post-images/${path}`;
+      const { storeBackground } = await import("./brand-background.server");
+      url = await storeBackground(g.tenantId, bytes, "image/jpeg");
+      if (!url) return { ok: false as const, error: "Could not save the photo. Try again." };
     }
-    const w = await serviceWrite("business_branding?on_conflict=tenant_id", "", {
-      method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates" },
-      body: {
-        tenant_id: g.tenantId,
-        background_url: url,
-        updated_by: g.userId,
-        updated_at: new Date().toISOString(),
-      },
-    });
-    if (w.error) return { ok: false as const, error: "Could not save the photo. Try again." };
-    await redrawCards(g.tenantId);
+    const { setBackground } = await import("./brand-background.server");
+    if (!(await setBackground(g.tenantId, g.userId, url)))
+      return { ok: false as const, error: "Could not save the photo. Try again." };
     return { ok: true as const, url };
   });
 

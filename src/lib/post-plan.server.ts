@@ -437,3 +437,43 @@ export async function saveCardPicture(input: { id: string; png: string }) {
   const res = await setPicture(g.tenantId, post.id, { image_url: url });
   return res.ok ? { ok: true as const, url } : res;
 }
+
+// ---------- background chooser (Posts tab) ----------
+
+// The business's Google photos (its own first, then customers') to pick a
+// background from.
+export async function listBackgroundPhotos() {
+  const g = await guard();
+  if (!g.ok) return g;
+  const conn = await connectionFor(g.tenantId);
+  const token = conn ? await accessToken(g.tenantId) : null;
+  if (!conn || !token) return { ok: true as const, photos: [] as GooglePhoto[] };
+  const photos = await googlePhotos(token, conn.path);
+  return { ok: true as const, photos: photos.slice(0, 40) };
+}
+
+// Copies one of those Google photos into our storage (so the browser can
+// draw it on a card) and makes it the business background.
+export async function pickGooglePhotoBackground(input: { url: string }) {
+  const g = await guard();
+  if (!g.ok) return g;
+  const conn = await connectionFor(g.tenantId);
+  const token = conn ? await accessToken(g.tenantId) : null;
+  if (!conn || !token) return { ok: false as const, error: "Connect your Google profile first." };
+  // Only photos from this business's own Google profile can be used.
+  const photos = await googlePhotos(token, conn.path);
+  const pick = photos.find((p) => p.url === input.url);
+  if (!pick) return { ok: false as const, error: "That photo is no longer on Google." };
+  const res = await fetch(pick.url, { signal: AbortSignal.timeout(20000) }).catch(() => null);
+  const type = (res?.headers.get("content-type") ?? "").split(";")[0]!.trim();
+  if (!res?.ok || (type !== "image/jpeg" && type !== "image/png"))
+    return { ok: false as const, error: "That photo could not be copied. Try another one." };
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  if (bytes.length < 500 || bytes.length > 4_500_000)
+    return { ok: false as const, error: "That photo is too big. Try another one." };
+  const { storeBackground, setBackground } = await import("./brand-background.server");
+  const url = await storeBackground(g.tenantId, bytes, type);
+  if (!url || !(await setBackground(g.tenantId, g.userId, url)))
+    return { ok: false as const, error: "Could not save the photo. Try again." };
+  return { ok: true as const, url };
+}

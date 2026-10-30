@@ -1,8 +1,8 @@
 // "Plan my month": 4 AI-written Google posts, one a week, that the owner
 // checks and approves. No em dashes in this copy (AGENTS.md).
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, ImageOff, Images, Loader2, Sparkles } from "lucide-react";
+import { CalendarDays, ImageOff, ImagePlus, Images, Loader2, Sparkles, X } from "lucide-react";
 import {
   approveGooglePostsFn,
   changePostPictureFn,
@@ -10,8 +10,10 @@ import {
   planGooglePostsFn,
   removePostPictureFn,
   saveCardPictureFn,
+  listBackgroundPhotosFn,
+  pickGooglePhotoBackgroundFn,
 } from "../../lib/post-plan.functions";
-import { getBranding, saveBrandLook } from "../../lib/brand.functions";
+import { getBranding, saveBrandBackground, saveBrandLook } from "../../lib/brand.functions";
 import { CARD_STYLES, cardLook, chosenStyle, type SavedLook } from "../../lib/card-style";
 import { loadPicture, drawReviewCard } from "../../lib/review-card";
 import { cancelGooglePostFn } from "../../lib/google-business.functions";
@@ -52,22 +54,50 @@ export function PostPlanCard({
   // The business's saved look (logo, QR stand photo and colours, card style).
   const [look, setLook] = useState<SavedLook | null>(null);
   const [styleBusy, setStyleBusy] = useState(false);
-  useEffect(() => {
-    void getBranding()
-      .then((b) =>
-        setLook(
-          b.ok
-            ? {
-                background: b.background,
-                standTheme: b.standTheme,
-                primary: b.primary,
-                cardStyle: b.cardStyle,
-              }
-            : { background: null, standTheme: null, primary: null, cardStyle: null },
-        ),
-      )
-      .catch(() => null);
+  const [background, setBackgroundUrl] = useState<string | null>(null);
+  const loadLook = useCallback(async () => {
+    const b = await getBranding().catch(() => null);
+    setLook(
+      b && b.ok
+        ? {
+            background: b.background,
+            standTheme: b.standTheme,
+            primary: b.primary,
+            cardStyle: b.cardStyle,
+          }
+        : { background: null, standTheme: null, primary: null, cardStyle: null },
+    );
+    setBackgroundUrl(b && b.ok ? b.background : null);
   }, []);
+  // Read the saved look when this opens, when the page gets focus again, and
+  // when the QR designer closes (it can change the logo and background).
+  useEffect(() => {
+    void loadLook();
+    const again = () => void loadLook();
+    window.addEventListener("focus", again);
+    window.addEventListener("repsuites:branding", again);
+    return () => {
+      window.removeEventListener("focus", again);
+      window.removeEventListener("repsuites:branding", again);
+    };
+  }, [loadLook]);
+  // "Change background" chooser.
+  const [choosing, setChoosing] = useState(false);
+  const [photos, setPhotos] = useState<
+    { url: string; thumb: string; byCustomer?: boolean }[] | null
+  >(null);
+  const [bgBusy, setBgBusy] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const afterBackground = async (ok: boolean, error?: string) => {
+    if (ok) {
+      toast.success("Background changed. Your cards are being redrawn.");
+      drawing.current.clear();
+      await loadLook();
+      await onChanged();
+      setChoosing(false);
+    } else toast.error(error ?? "Could not change the background. Try again.");
+    setBgBusy(false);
+  };
   const hasCards = drafts.some((d) => d.imageKind === "card");
 
   // Review cards are drawn here, on the owner's screen, then saved where
@@ -150,6 +180,126 @@ export function PostPlanCard({
           </button>
         </div>
       )}
+      {choosing && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Change background"
+          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          onClick={() => !bgBusy && setChoosing(false)}
+        >
+          <div
+            className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-xl bg-card p-4 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold">Change background</h3>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setChoosing(false)}
+                className="p-1 rounded hover:bg-muted"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Used behind your review cards and on your QR stand. We darken it a little so the words
+              are easy to read.
+            </p>
+            {background && (
+              <div className="flex items-center gap-3">
+                <img
+                  src={background}
+                  alt="Your background now"
+                  className="w-20 h-20 rounded-lg object-cover border border-border"
+                />
+                <span className="text-xs text-muted-foreground">Your background now</span>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  setBgBusy(true);
+                  const jpeg = await photoToJpeg(f).catch(() => null);
+                  if (!jpeg) return afterBackground(false, "That photo could not be read.");
+                  const r = await saveBrandBackground({ data: { jpeg } }).catch(() => null);
+                  await afterBackground(!!r?.ok, r && !r.ok ? r.error : undefined);
+                }}
+              />
+              <button
+                type="button"
+                disabled={bgBusy}
+                onClick={() => fileInput.current?.click()}
+                className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <ImagePlus className="w-3.5 h-3.5" /> Upload a photo
+              </button>
+              {background && (
+                <button
+                  type="button"
+                  disabled={bgBusy}
+                  onClick={async () => {
+                    setBgBusy(true);
+                    const r = await saveBrandBackground({ data: { jpeg: null } }).catch(() => null);
+                    await afterBackground(!!r?.ok, r && !r.ok ? r.error : undefined);
+                  }}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                >
+                  Remove background
+                </button>
+              )}
+              {bgBusy && <Loader2 className="w-4 h-4 animate-spin self-center" />}
+            </div>
+            <div>
+              <p className="text-xs font-semibold mb-1.5">Or pick one of your Google photos</p>
+              {photos === null ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : photos.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No Google photos found. Connect Google, or upload a photo.
+                </p>
+              ) : (
+                <div className="grid grid-cols-4 gap-2">
+                  {photos.map((p) => (
+                    <button
+                      key={p.url}
+                      type="button"
+                      disabled={bgBusy}
+                      onClick={async () => {
+                        setBgBusy(true);
+                        const r = await pickGooglePhotoBackgroundFn({ data: { url: p.url } }).catch(
+                          () => null,
+                        );
+                        await afterBackground(!!r?.ok, r && !r.ok ? r.error : undefined);
+                      }}
+                      className="relative aspect-square rounded-lg overflow-hidden border border-border hover:ring-2 hover:ring-primary disabled:opacity-50"
+                    >
+                      <img src={p.thumb} alt="" className="w-full h-full object-cover" />
+                      {p.byCustomer && (
+                        <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] py-0.5">
+                          Customer photo
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                Customer photos belong to the customer who took them. Only use one if you are happy
+                to.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-sm font-bold flex items-center gap-1.5">
@@ -181,6 +331,24 @@ export function PostPlanCard({
                 ))}
               </select>
               {styleBusy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <button
+                type="button"
+                onClick={() => {
+                  setChoosing(true);
+                  if (!photos)
+                    void listBackgroundPhotosFn()
+                      .then((r) => setPhotos(r.ok ? r.photos : []))
+                      .catch(() => setPhotos([]));
+                }}
+                className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 font-semibold"
+              >
+                {background ? (
+                  <img src={background} alt="" className="w-5 h-5 rounded object-cover" />
+                ) : (
+                  <ImagePlus className="w-3.5 h-3.5" />
+                )}
+                Change background
+              </button>
               <span className="text-muted-foreground">
                 Review cards use your logo and this look.
               </span>
@@ -334,4 +502,25 @@ export function PostPlanCard({
       )}
     </section>
   );
+}
+
+// A phone photo made smaller (at most 1600px wide) and saved as a JPEG.
+async function photoToJpeg(file: File): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((ok, bad) => {
+      const i = new Image();
+      i.onload = () => ok(i);
+      i.onerror = bad;
+      i.src = url;
+    });
+    const k = Math.min(1, 1600 / img.width);
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.width * k);
+    c.height = Math.round(img.height * k);
+    c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }

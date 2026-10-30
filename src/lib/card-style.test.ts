@@ -28,3 +28,17 @@ describe("card style", () => {
     expect(CARD_STYLES({ ...none, standTheme: "coral" })[0]!.id).toBe("stand");
   });
 });
+
+describe("styleAfterBackground", async () => {
+  const { styleAfterBackground } = await import("./card-style");
+  it("a new photo switches brand or nothing to the stand look", () => {
+    expect(styleAfterBackground(null, true, null)).toBe("stand");
+    expect(styleAfterBackground("brand", true, null)).toBe("stand");
+    expect(styleAfterBackground("forest", true, null)).toBeUndefined();
+  });
+  it("removing the photo stops pointing at a missing stand look", () => {
+    expect(styleAfterBackground("stand", false, null)).toBe("brand");
+    expect(styleAfterBackground("stand", false, "navy")).toBeUndefined();
+    expect(styleAfterBackground("brand", false, null)).toBeUndefined();
+  });
+});

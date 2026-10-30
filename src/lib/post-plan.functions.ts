@@ -8,6 +8,8 @@ import {
   planGooglePosts,
   removePostPicture,
   saveCardPicture,
+  listBackgroundPhotos,
+  pickGooglePhotoBackground,
 } from "./post-plan.server";
 
 export const planGooglePostsFn = createServerFn({ method: "POST" }).handler(async () =>
@@ -37,3 +39,11 @@ export const saveCardPictureFn = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), png: z.string().max(6_000_000) }).parse(d),
   )
   .handler(async ({ data }) => saveCardPicture(data));
+
+export const listBackgroundPhotosFn = createServerFn({ method: "POST" }).handler(async () =>
+  listBackgroundPhotos(),
+);
+
+export const pickGooglePhotoBackgroundFn = createServerFn({ method: "POST" })
+  .validator((d: { url: string }) => z.object({ url: z.string().url().max(2000) }).parse(d))
+  .handler(async ({ data }) => pickGooglePhotoBackground(data));

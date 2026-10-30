@@ -44,7 +44,11 @@ function OneCode({ c, business }: { c: Code; business: string }) {
         <PrintDesigner
           url={c.url}
           business={c.label === "Main code" ? business : `${business} ${c.label}`}
-          onClose={() => setDesigning(false)}
+          onClose={() => {
+            setDesigning(false);
+            // Posts redraw their review cards with any new logo or background.
+            window.dispatchEvent(new Event("repsuites:branding"));
+          }}
         />
       )}
       <button
