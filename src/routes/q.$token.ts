@@ -5,7 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { openRequest } from "../lib/review-requests.server";
 
 const page = (title: string, text: string) =>
-  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title}</title>` +
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title}</title>` +
   `<style>body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0f172a}main{max-width:28rem;margin:0 auto;padding:56px 20px;text-align:center}p{color:#475569;line-height:1.5}</style>` +
   `</head><body><main><h1>${title}</h1><p>${text}</p></main></body></html>`;
 
@@ -38,7 +38,7 @@ export const Route = createFileRoute("/q/$token")({
             );
           const next = JSON.stringify(`/q/${token}?go=1`);
           return new Response(
-            `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Leave a review</title>` +
+            `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Leave a review</title>` +
               `<meta property="og:title" content="Leave a quick review"><meta property="og:description" content="It takes about 30 seconds. Thank you!">` +
               `<noscript><meta http-equiv="refresh" content="0;url=${r.redirect}"></noscript></head>` +
               `<body style="font-family:system-ui,sans-serif;text-align:center;padding:60px 20px;color:#475569">Opening the review page...` +

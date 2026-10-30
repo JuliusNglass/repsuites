@@ -130,11 +130,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "RepSuites helps local businesses get found on Google and in AI search, win more reviews and turn searches into customers.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://www.repsuites.com/og-image.png" },
+      { property: "og:site_name", content: "RepSuites" },
+      { property: "og:url", content: "https://repsuites.com/" },
+      // Versioned so WhatsApp, Facebook and LinkedIn fetch the new image.
+      { property: "og:image", content: "https://repsuites.com/og-image.png?v=2" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      {
+        property: "og:image:alt",
+        content: "RepSuites: more local customers finding you and choosing you",
+      },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://repsuites.com/og-image.png?v=2" },
+      { name: "theme-color", content: "#001938" },
     ],
     links: [
-      { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "icon", href: "/favicon.ico?v=2", sizes: "any" },
+      { rel: "icon", href: "/favicon.png?v=2", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png?v=2" },
+      { rel: "manifest", href: "/site.webmanifest" },
       {
         rel: "stylesheet",
         href: appCss,

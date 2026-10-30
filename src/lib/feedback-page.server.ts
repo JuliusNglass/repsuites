@@ -149,9 +149,9 @@ export function renderFeedbackPage(t: FeedbackTarget, note?: "sent" | "error"): 
       : note === "error"
         ? `<div class="ok" style="background:#fef2f2;border-color:#fca5a5;color:#991b1b">Sorry, that did not send. Please try again.</div>`
         : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Review ${name}</title><meta name="robots" content="noindex">
+<title>Review ${name}</title><meta property="og:title" content="Leave ${name} a quick review"><meta property="og:description" content="It takes about 30 seconds. Thank you!"><meta property="og:image" content="https://repsuites.com/og-image.png?v=2"><meta name="robots" content="noindex">
 <style>${STYLE}</style></head><body>${bar}<main>
 ${banner}
 <h1>Thanks for visiting ${name}</h1>
@@ -172,7 +172,7 @@ ${primary}${others}
 }
 
 export function notFoundPage(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main style="text-align:center"><h1>Thanks for scanning</h1><p>This review code is not active at the moment. Please ask the business for their review link.</p><footer><a href="https://repsuites.com">RepSuites</a></footer></main></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main style="text-align:center"><h1>Thanks for scanning</h1><p>This review code is not active at the moment. Please ask the business for their review link.</p><footer><a href="https://repsuites.com">RepSuites</a></footer></main></body></html>`;
 }
 
 // Save private feedback and tell the owners. Returns false on bad input.

@@ -57,9 +57,9 @@ export function renderReport(r: Report): string {
     ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
 <p class="muted" style="margin:6px 0 0">Worked out simply: ${g.need} reviews divided by 52 weeks is about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b> to catch them within a year, or ${g.perWeekIn6Months} a week to do it in 6 months. Asking every customer, every day, is how businesses get there.</p></div>`
     : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>${esc(b.name)}: how you show up on Google</title><style>${STYLE}</style></head><body><main>
+<title>${esc(b.name)}: how you show up on Google</title><meta property="og:title" content="${esc(b.name)}: how you show up on Google"><meta property="og:description" content="Your local visibility score, your nearest rivals and what to fix first."><meta property="og:image" content="https://repsuites.com/og-image.png?v=2"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>${STYLE}</style></head><body><main>
 <div class="brand"><img src="/logo-mark.png" alt=""> RepSuites</div>
 <h1>${esc(b.name)}: how you show up on Google</h1>
 <p class="muted">${esc(b.address)}<br>Prepared ${date}</p>
@@ -95,5 +95,5 @@ ${r.fixes.length ? r.fixes.map((f) => `<div class="fix ${f.priority}"><b>${esc(f
 }
 
 export function reportNotFound(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main style="text-align:center"><h1>Report not found</h1><p class="muted">This link may have been replaced. Ask the person who sent it for a fresh one.</p></main></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main style="text-align:center"><h1>Report not found</h1><p class="muted">This link may have been replaced. Ask the person who sent it for a fresh one.</p></main></body></html>`;
 }
