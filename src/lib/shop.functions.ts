@@ -8,7 +8,14 @@ import {
 } from "./auth.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { stripe, stripeReady } from "./stripe.server";
-import { findCardPack, findStandPack, PLAN_OFFERS, type PaidPlan } from "./shop";
+import {
+  findCardPack,
+  findStandPack,
+  GROWTH,
+  planPence,
+  type BillingInterval,
+  type PaidPlan,
+} from "./shop";
 
 const ORIGIN = "https://repsuites.com";
 const PLACE_RE = /^[A-Za-z0-9_-]{10,300}$/;
@@ -169,13 +176,17 @@ async function billingGuard() {
 }
 
 export const startPlanCheckout = createServerFn({ method: "POST" })
-  .validator((d: { plan: PaidPlan }) =>
-    z.object({ plan: z.enum(["starter", "pro", "gold"]) }).parse(d),
+  .validator((d: { plan: PaidPlan; interval?: BillingInterval }) =>
+    z
+      .object({
+        plan: z.literal("gold"),
+        interval: z.enum(["month", "year"]).default("month"),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const g = await billingGuard();
     if (!g.ok) return g;
-    const offer = PLAN_OFFERS.find((p) => p.id === data.plan)!;
     const b = await serviceRead<{ stripe_customer_id: string | null; status: string | null }[]>(
       `tenant_billing?select=stripe_customer_id,status&tenant_id=eq.${g.tenantId}`,
       "",
@@ -196,9 +207,9 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
           quantity: 1,
           price_data: {
             currency: "gbp",
-            unit_amount: offer.pence,
-            recurring: { interval: "month" },
-            product_data: { name: `RepSuites ${offer.name}` },
+            unit_amount: planPence(data.interval),
+            recurring: { interval: data.interval },
+            product_data: { name: GROWTH.name },
           },
         },
       ],

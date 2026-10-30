@@ -285,7 +285,9 @@ ${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
 <h2>What to fix first</h2>
 ${r.fixes.length ? r.fixes.map((f) => `<div class="fix ${f.priority}"><b>${esc(f.title)}</b><span>${esc(f.why)}</span></div>`).join("") : `<div class="card">Your Google profile is in good shape. The next step is a steady flow of new reviews.</div>`}
 
-<a class="cta" href="${esc(bookingLink(b.name))}">Book a free 15-minute call to fix this</a>
+<div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
+<p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
+<p class="small" style="text-align:center;margin:6px 0 0"><a href="${esc(bookingLink(b.name))}" style="color:#64748b">Or book a free 15-minute call</a></p></div>
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#64748b">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time. The Maps position is one search from your business's own location.</p>
 </main>${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;

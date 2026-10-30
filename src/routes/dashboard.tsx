@@ -13,6 +13,7 @@ import { listMyBusinesses } from "../lib/businesses.functions";
 import { GooglePanel } from "../components/reviews/GooglePanel";
 import { QrCodesCard } from "../components/reviews/QrCodesCard";
 import { ReviewLinksCard } from "../components/reviews/ReviewLinksCard";
+import { WelcomeCard } from "../components/reviews/WelcomeCard";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -48,6 +49,9 @@ function Dashboard() {
     window.scrollTo({ top: 0 });
   };
   const [inbox, setInbox] = useState<"google" | "private">("google");
+  const [welcome] = useState(
+    () => typeof window !== "undefined" && window.location.search.includes("welcome=1"),
+  );
   const [q, setQ] = useState("");
 
   const list = s.ok ? s.businesses : [];
@@ -189,6 +193,9 @@ function Dashboard() {
           </p>
         </div>
         {!active && <p className="text-muted-foreground">Choose a business to get started.</p>}
+        {active && s.plan === "free" && !s.agency && (tab === "reviews" || welcome) && (
+          <WelcomeCard googleConnected={s.googleConnected} welcome={welcome} onTab={setTab} />
+        )}
         {active && tab === "reviews" && (
           <>
             <div className="inline-flex rounded-lg border border-border p-0.5 text-xs font-semibold">

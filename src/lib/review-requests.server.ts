@@ -49,7 +49,12 @@ async function guard(write: boolean) {
     return { ok: false as const, error: "Access denied." };
   if (write && !(await verifyRequestOriginAsync()))
     return { ok: false as const, error: "Please refresh the page and try again." };
-  return { ok: true as const, tenantId: g.session.active_tenant_id!, userId: g.session.user_id };
+  return {
+    ok: true as const,
+    tenantId: g.session.active_tenant_id!,
+    userId: g.session.user_id,
+    jwt: g.session.access_token,
+  };
 }
 
 export async function settingsFor(tenantId: string): Promise<RequestSettings> {
@@ -113,6 +118,11 @@ export async function addRequests(input: {
 }) {
   const g = await guard(true);
   if (!g.ok) return g;
+  {
+    const { featureBlockedFor } = await import("./tenant-access.server");
+    const paid = await featureBlockedFor(g.jwt, g.tenantId, "growth");
+    if (paid) return { ok: false as const, error: paid };
+  }
   const s = await settingsFor(g.tenantId);
   const due = new Date(
     Date.now() + (input.sendNow ? 0 : s.firstDelayHours * 3600000),

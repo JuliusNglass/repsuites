@@ -5,7 +5,7 @@
 // the same rules apply on the server (blocking changes) and in the browser
 // (banners, hidden menu items).
 
-export type Feature = "ranking" | "ai_visibility" | "nfc";
+export type Feature = "ranking" | "ai_visibility" | "nfc" | "growth";
 export type Plan = "free" | "starter" | "pro" | "gold";
 export type PaymentStatus = "active" | "overdue" | "read_only" | "on_hold" | "cancelled";
 
@@ -27,20 +27,21 @@ export interface TenantAccess {
 }
 
 export const PLANS: Plan[] = ["free", "starter", "pro", "gold"];
-export const FEATURES: Feature[] = ["ranking", "ai_visibility", "nfc"];
+export const FEATURES: Feature[] = ["ranking", "ai_visibility", "nfc", "growth"];
 const STATUSES: PaymentStatus[] = ["active", "overdue", "read_only", "on_hold", "cancelled"];
 
 export const PLAN_LABELS: Record<Plan, string> = {
   free: "Free",
   starter: "Starter",
   pro: "Pro",
-  gold: "Gold",
+  gold: "Growth",
 };
 
 export const FEATURE_LABELS: Record<Feature, string> = {
   ranking: "Google Maps ranking grid",
   ai_visibility: "AI search checks",
   nfc: "NFC review cards",
+  growth: "This",
 };
 
 export const STATUS_LABELS: Record<PaymentStatus, string> = {
@@ -130,7 +131,7 @@ export function blockedMessage(access: TenantAccess, who: AccessAudience): strin
 }
 
 export function notInPlanMessage(feature: Feature): string {
-  return `${FEATURE_LABELS[feature]} is not included in your plan. Contact Accelur8 to add it.`;
+  return `${FEATURE_LABELS[feature]} is part of RepSuites Growth. Upgrade for £49 a month at repsuites.com/pricing.`;
 }
 
 export function formatPence(pence: number | null): string {

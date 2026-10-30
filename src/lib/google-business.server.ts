@@ -59,7 +59,19 @@ async function guard(write: boolean, owners = false) {
   const tenantId = g.session.active_tenant_id!;
   if (write && !(await verifyRequestOriginAsync()))
     return { ok: false as const, error: "Invalid request origin" };
-  return { ok: true as const, tenantId, userId: g.session.user_id, role };
+  return {
+    ok: true as const,
+    tenantId,
+    userId: g.session.user_id,
+    role,
+    jwt: g.session.access_token,
+  };
+}
+
+// Paid tools (RepSuites Growth). Agency operators always pass.
+async function growthBlocked(g: { jwt: string; tenantId: string }): Promise<string | null> {
+  const { featureBlockedFor } = await import("./tenant-access.server");
+  return featureBlockedFor(g.jwt, g.tenantId, "growth");
 }
 
 // ---------- Google calls ----------
@@ -586,6 +598,10 @@ export async function saveGoogleReplySettings(input: {
 }) {
   const g = await guard(true, true);
   if (!g.ok) return { ok: false as const, error: g.error };
+  if (input.mode !== "off") {
+    const paid = await growthBlocked(g);
+    if (paid) return { ok: false as const, error: paid };
+  }
   const bad = validateReplySettings(input);
   if (bad) return { ok: false as const, error: bad };
   const before = await replySettings(g.tenantId);
@@ -666,6 +682,9 @@ async function postReply(
 export async function handleNewReviews(tenantId: string, limit = 3) {
   const settings = await replySettings(tenantId);
   if (settings.mode === "off") return { drafted: 0, replied: 0 };
+  // AI drafts and automatic replies are part of RepSuites Growth.
+  const { tenantHasFeatureService } = await import("./tenant-access.server");
+  if (!(await tenantHasFeatureService(tenantId, "growth"))) return { drafted: 0, replied: 0 };
   const r = await serviceRead<any[]>(
     `google_reviews?select=id,review_name,reviewer,stars,comment&tenant_id=eq.${tenantId}` +
       `&reply=is.null&draft=is.null&created_at_google=gte.${settings.modeSince}&order=created_at_google.asc&limit=${limit}`,
@@ -694,6 +713,8 @@ export async function handleNewReviews(tenantId: string, limit = 3) {
 export async function draftGoogleReply(input: { id: string }) {
   const g = await guard(true);
   if (!g.ok) return { ok: false as const, error: g.error };
+  const paid = await growthBlocked(g);
+  if (paid) return { ok: false as const, error: paid };
   const rev = await reviewFor(g.tenantId, input.id);
   if (!rev) return { ok: false as const, error: "Unknown review." };
   const [settings, business] = await Promise.all([
@@ -715,6 +736,8 @@ export async function draftGoogleReply(input: { id: string }) {
 export async function postGoogleReply(input: { id: string; text: string }) {
   const g = await guard(true);
   if (!g.ok) return { ok: false as const, error: g.error };
+  const paid = await growthBlocked(g);
+  if (paid) return { ok: false as const, error: paid };
   const text = String(input.text ?? "").trim();
   if (text.length < 2 || text.length > 4000)
     return { ok: false as const, error: "Write a reply of up to 4,000 characters." };
@@ -756,6 +779,8 @@ export async function createGooglePost(input: {
 }) {
   const g = await guard(true);
   if (!g.ok) return { ok: false as const, error: g.error };
+  const paid = await growthBlocked(g);
+  if (paid) return { ok: false as const, error: paid };
   const bad = validatePost(input);
   if (bad) return { ok: false as const, error: bad };
   if (!(await connectionFor(g.tenantId)))
@@ -1007,6 +1032,10 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 export async function saveGoogleReportSettings(input: { enabled: boolean; email: string }) {
   const g = await guard(true, true);
   if (!g.ok) return { ok: false as const, error: g.error };
+  if (input.enabled) {
+    const paid = await growthBlocked(g);
+    if (paid) return { ok: false as const, error: paid };
+  }
   const email = String(input.email ?? "")
     .trim()
     .toLowerCase();
@@ -1071,6 +1100,8 @@ async function sendReport(tenantId: string, email: string, today: Date) {
 export async function sendTestGoogleReport() {
   const g = await guard(true, true);
   if (!g.ok) return { ok: false as const, error: g.error };
+  const paid = await growthBlocked(g);
+  if (paid) return { ok: false as const, error: paid };
   const s = await reportSettings(g.tenantId);
   if (!EMAIL_RE.test(s.email)) return { ok: false as const, error: "Save an email address first." };
   const r = await sendReport(g.tenantId, s.email, new Date());
@@ -1141,6 +1172,8 @@ export async function profileBasics(tenantId: string): Promise<{
 export async function readInsights() {
   const g = await guard(false);
   if (!g.ok) return { ok: false as const, error: g.error };
+  const paid = await growthBlocked(g);
+  if (paid) return { ok: false as const, error: paid };
   const { latestInsights } = await import("./insights.server");
   return { ok: true as const, insights: await latestInsights(g.tenantId) };
 }
@@ -1150,6 +1183,8 @@ export async function readInsights() {
 export async function refreshInsights() {
   const g = await guard(true);
   if (!g.ok) return { ok: false as const, error: g.error };
+  const paid = await growthBlocked(g);
+  if (paid) return { ok: false as const, error: paid };
   const { latestInsights, buildInsights } = await import("./insights.server");
   const last = await latestInsights(g.tenantId);
   if (last && Date.now() - Date.parse(last.createdAt) < 3600_000 && last.summary)

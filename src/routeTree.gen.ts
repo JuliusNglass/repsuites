@@ -18,6 +18,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiProspectConnectRouteImport } from './routes/api.prospect-connect'
 import { Route as CardsIndexRouteImport } from './routes/cards.index'
@@ -76,6 +77,11 @@ const ProspectsRoute = ProspectsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/cards/order': typeof CardsOrderRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/cards/order': typeof CardsOrderRoute
@@ -211,6 +219,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/cards/order': typeof CardsOrderRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/prospects'
     | '/reset-password'
+    | '/start'
     | '/terms'
     | '/api/prospect-connect'
     | '/cards/order'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/prospects'
     | '/reset-password'
+    | '/start'
     | '/terms'
     | '/api/prospect-connect'
     | '/cards/order'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/prospects'
     | '/reset-password'
+    | '/start'
     | '/terms'
     | '/api/prospect-connect'
     | '/cards/order'
@@ -314,6 +326,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ProspectsRoute: typeof ProspectsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  StartRoute: typeof StartRoute
   TermsRoute: typeof TermsRoute
   ApiProspectConnectRoute: typeof ApiProspectConnectRoute
   CardsOrderRoute: typeof CardsOrderRoute
@@ -393,6 +406,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -506,6 +526,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ProspectsRoute: ProspectsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  StartRoute: StartRoute,
   TermsRoute: TermsRoute,
   ApiProspectConnectRoute: ApiProspectConnectRoute,
   CardsOrderRoute: CardsOrderRoute,

@@ -23,10 +23,27 @@ export const listMyBusinesses = createServerFn({ method: "GET" }).handler(async 
   const businesses = ids
     .map((id) => ({ id, name: names.get(id) ?? "Business" }))
     .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+  // The open business's plan and Google link, for the welcome and upgrade cards.
+  const activeId = g.session.active_tenant_id ?? null;
+  let plan = "free";
+  let googleConnected = false;
+  if (activeId) {
+    const [p, c] = await Promise.all([
+      serviceRead<{ plan: string }[]>(`tenant_plans?select=plan&tenant_id=eq.${activeId}`, ""),
+      serviceRead<{ status: string }[]>(
+        `google_connections?select=status&tenant_id=eq.${activeId}`,
+        "",
+      ),
+    ]);
+    plan = p.data?.[0]?.plan ?? "free";
+    googleConnected = c.data?.[0]?.status === "connected";
+  }
   return {
     ok: true as const,
     email: g.user?.email ?? null,
-    activeId: g.session.active_tenant_id ?? null,
+    activeId,
+    plan,
+    googleConnected,
     agency: m.memberships.some((x) => x.role === "super_admin"),
     businesses,
   };

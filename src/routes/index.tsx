@@ -108,20 +108,20 @@ function Home() {
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <a
-              href="#check"
+              href="/start"
               className="rounded-xl bg-primary text-primary-foreground font-bold px-6 py-3 text-base"
             >
-              Get my free visibility check
+              Start free
             </a>
             <a
-              href="#how"
+              href="#check"
               className="rounded-xl border border-border px-6 py-3 text-base font-semibold"
             >
-              How it works
+              Get a free visibility check
             </a>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            No card needed. Results within 2 working days.
+            Free review page and QR code in 2 minutes. No card needed.
           </p>
         </div>
       </section>

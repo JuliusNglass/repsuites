@@ -26,11 +26,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               Log in
             </Link>
             <a
-              href="/#check"
+              href="/start"
               className="rounded-lg bg-primary text-primary-foreground font-semibold px-3 sm:px-4 py-2"
             >
-              <span className="sm:hidden">Free check</span>
-              <span className="hidden sm:inline">Free visibility check</span>
+              Start free
             </a>
           </nav>
         </div>

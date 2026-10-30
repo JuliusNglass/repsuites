@@ -32,61 +32,48 @@ export function each(p: Pack): string {
 
 export type PaidPlan = "starter" | "pro" | "gold";
 
-export const PLAN_OFFERS: {
-  id: PaidPlan;
-  name: string;
-  pence: number;
-  tagline: string;
-  popular?: boolean;
-  features: string[];
-}[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    pence: 4900,
-    tagline: "Win more reviews and answer every one.",
-    features: [
-      "Google reviews inbox with suggested replies",
-      "Review page behind every QR code and NFC card",
-      "Your choice of review sites: Google, Facebook, Tripadvisor and more",
-      "Private feedback straight to your inbox",
-      "Print-ready QR coasters and table stands",
-      "Monthly report by email",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    pence: 9900,
-    tagline: "Climb into the top 3 on Google Maps.",
-    popular: true,
-    features: [
-      "Everything in Starter",
-      "Google Maps ranking grid across your area",
-      "Automatic or suggested replies to new reviews",
-      "Google posts from your dashboard",
-      "Calls, directions and website clicks tracked",
-    ],
-  },
-  {
-    id: "gold",
-    name: "Gold",
-    pence: 19900,
-    tagline: "We do the work for you.",
-    features: [
-      "Everything in Pro",
-      "AI search checks: are ChatGPT, Gemini and others naming you?",
-      "We reply to reviews and post updates for you",
-      "3 NFC review cards included",
-      "Priority support",
-    ],
-  },
+export type BillingInterval = "month" | "year";
+
+// One paid plan: RepSuites Growth. Internal id "gold" (older plan ids are
+// still understood for anyone who subscribed before).
+export const GROWTH = {
+  id: "gold" as const,
+  name: "RepSuites Growth",
+  monthPence: 4900,
+  yearPence: 49700,
+  tagline: "Everything you need to get more reviews and more customers.",
+  features: [
+    "AI writes a reply to every Google review for you",
+    "Ask customers for reviews by email, WhatsApp or text",
+    "A plain-English summary of what customers say, every month",
+    "See where you show up on Google Maps across your area",
+    "Check if AI assistants like ChatGPT recommend you",
+    "Post updates to your Google profile",
+    "A monthly report by email",
+  ],
+};
+
+export const FREE_FEATURES = [
+  "Your own review page",
+  "QR codes to print for tables, counters and receipts",
+  "Unhappy customers message you privately, not on Google",
+  "Connect Google and see your real numbers: views, calls and directions",
 ];
 
+export function planPence(interval: BillingInterval): number {
+  return interval === "year" ? GROWTH.yearPence : GROWTH.monthPence;
+}
+
+// How much a year saves against paying monthly.
+// Worked example: £49 x 12 = £588. £588 - £497 = £91 saved.
+export function yearSaving(): number {
+  return GROWTH.monthPence * 12 - GROWTH.yearPence;
+}
+
 export const PLAN_FEATURES: Record<PaidPlan, string[]> = {
-  starter: [],
-  pro: ["ranking"],
-  gold: ["ranking", "ai_visibility", "nfc"],
+  starter: ["growth"],
+  pro: ["ranking", "growth"],
+  gold: ["ranking", "ai_visibility", "nfc", "growth"],
 };
 
 // Daily cost in plain words: £99 a month is about £3.25 a day (99 x 12 / 365).
