@@ -23,6 +23,7 @@ import {
   Trash2,
   Upload,
   Video,
+  MapPin,
 } from "lucide-react";
 import { Logo } from "../components/site/Logo";
 import {
@@ -930,6 +931,17 @@ function ProspectRow({
           >
             <FileDown className="w-3.5 h-3.5" /> PDF
           </a>
+          {p.mapsUrl && (
+            <a
+              href={p.mapsUrl}
+              target="_blank"
+              rel="noopener"
+              title="Their Google Business Profile on Google Maps"
+              className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+            >
+              <MapPin className="w-3.5 h-3.5" /> Google
+            </a>
+          )}
           <button
             type="button"
             onClick={async () => {

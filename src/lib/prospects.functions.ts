@@ -255,6 +255,8 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       score: p.report?.score ?? null,
       topFix: p.report?.fixes?.[0]?.title ?? null,
       link: p.report_token ? `https://repsuites.com/r/${p.report_token}` : null,
+      // Their Google Business Profile on Google Maps.
+      mapsUrl: p.report?.business?.mapsUrl ?? null,
       opens: p.opens,
       lastOpenedAt: p.last_opened_at,
       googleConnected: !!p.gbp_connected_at,

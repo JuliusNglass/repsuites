@@ -26,7 +26,7 @@ const STYLE = `
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0f172a;line-height:1.5}
 main{max-width:44rem;margin:0 auto;padding:28px 18px 40px}
 .brand{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:20px}.brand img{width:28px;height:28px;border-radius:6px}
-h1{font-size:1.55rem;line-height:1.2;margin:0 0 4px}h2{font-size:1.1rem;margin:28px 0 10px}
+h1{font-size:1.55rem;line-height:1.2;margin:0 0 4px}.kicker{margin:0 0 2px;font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#b7791f}.biz{font-size:2rem;font-weight:800;line-height:1.15;margin:0 0 6px;color:#0b1d3a;border-left:6px solid #f5b324;padding-left:12px}h2{font-size:1.1rem;margin:28px 0 10px}
 .muted{color:#64748b;font-size:.9rem}
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;margin:12px 0}
 .score{display:flex;align-items:center;gap:16px}.dial{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:#fff;flex-shrink:0}
@@ -373,6 +373,13 @@ const VIDEO_STYLE = `
 .wa{display:block;text-align:center;border:2px solid #25d366;color:#fff;text-decoration:none;border-radius:14px;padding:13px;font-weight:700;margin-top:16px}
 `;
 
+// Tells us when the prospect taps the WhatsApp chat or booking link, so the
+// pipeline moves them to Replied and Julius gets an alert.
+function actionTracker(token: string): string {
+  const t = JSON.stringify(token);
+  return `<script>(function(){var T=${t};function send(e){var b=JSON.stringify({t:T,e:e});if(navigator.sendBeacon&&navigator.sendBeacon("/api/report-video",new Blob([b],{type:"text/plain"})))return;fetch("/api/report-video",{method:"POST",body:b,keepalive:true}).catch(function(){});}document.querySelectorAll("a.wa").forEach(function(a){a.addEventListener("click",function(){send("chat")});});document.querySelectorAll("a.book").forEach(function(a){a.addEventListener("click",function(){send("call")});});})();</script>`;
+}
+
 // Sends plays and 25, 50, 75 and 100 percent marks to /api/report-video.
 // Files and YouTube report progress; Vimeo too, through its message API.
 // Loom only tells us it was tapped (Loom shows its own view figures).
@@ -494,8 +501,9 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
 <title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}"><style>${STYLE}${video ? VIDEO_STYLE : ""}</style></head><body><main>
 <div class="brand"><img src="/logo-mark.png" alt=""> RepSuites</div>
 ${video}
-${video ? `<h2 style="font-size:1.3rem">${esc(b.name)}: how you show up on Google</h2>` : `<h1>${esc(b.name)}: how you show up on Google</h1>`}
-<p class="muted">${esc(b.address)}<br>Prepared ${date}</p>
+<p class="kicker">How you show up on Google</p>
+${video ? `<h2 class="biz">${esc(b.name)}</h2>` : `<h1 class="biz">${esc(b.name)}</h1>`}
+<p class="muted">${esc(b.address)}<br>Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#64748b">See your Google profile</a>` : ""}</p>
 
 ${headline}
 
@@ -518,7 +526,7 @@ ${view.fixes.length ? view.fixes.map((f) => `<div class="fix ${f.priority}"><b>$
 
 <div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
 <p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
-<p class="small" style="text-align:center;margin:6px 0 0"><a href="${esc(bookingLink(b.name))}" style="color:#64748b">Or book a free 15-minute call</a></p></div>
+<p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}" style="color:#64748b">Or book a free 15-minute call</a></p></div>
 <h2 id="score">How we worked out your score</h2>
 <div class="card score"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
@@ -530,7 +538,7 @@ ${view.fixes.length ? view.fixes.map((f) => `<div class="fix ${f.priority}"><b>$
     .join("")}</div>
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#64748b">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time.</p>
-</main>${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
+</main>${extra ? actionTracker(extra.token) : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
 }
 
 export function reportNotFound(): string {

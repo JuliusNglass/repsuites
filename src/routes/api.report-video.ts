@@ -1,8 +1,9 @@
 // The report page (/r/<token>) tells us when its video plays and how far
 // people watch. POST {t: token, e: "play" | "progress", p: 0 to 100}.
+// Also "chat" (tapped WhatsApp) and "call" (tapped book a call).
 // Our own team watching (signed in) is not counted.
 import { createFileRoute } from "@tanstack/react-router";
-import { trackVideo } from "../lib/prospect-video.server";
+import { trackAction, trackVideo } from "../lib/prospect-video.server";
 
 const done = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 
@@ -17,6 +18,10 @@ export const Route = createFileRoute("/api/report-video")({
         try {
           j = JSON.parse(raw) as typeof j;
         } catch {
+          return done();
+        }
+        if ((j.e === "chat" || j.e === "call") && typeof j.t === "string") {
+          await trackAction(j.t, j.e).catch(() => null);
           return done();
         }
         const e = j.e === "play" || j.e === "progress" ? j.e : null;

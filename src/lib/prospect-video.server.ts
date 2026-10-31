@@ -252,3 +252,34 @@ export async function trackVideo(token: string, event: "play" | "progress", perc
 <p><a href="${SHARED_ORIGIN}/r/${token}">Open their report</a> &middot; <a href="${SHARED_ORIGIN}/prospects">Prospects</a></p>`,
   }).catch(() => null);
 }
+
+// The prospect tapped "Message me on WhatsApp" or "Book a call" on their
+// report: move them to Replied (unless further along) and tell Julius once.
+export async function trackAction(token: string, action: "chat" | "call") {
+  if (!TOKEN_RE.test(token)) return;
+  const moved = await serviceWrite<{ id: string; name: string; phone: string | null }[]>(
+    `prospects?report_token=eq.${token}&stage=in.(new,sent,opened)`,
+    "",
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: {
+        stage: "replied",
+        follow_up_on: new Date().toISOString().slice(0, 10),
+        updated_at: new Date().toISOString(),
+      },
+    },
+  ).catch(() => null);
+  const p = moved?.data?.[0];
+  if (!p) return;
+  const to = (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
+  const what =
+    action === "chat" ? "tapped Message me on WhatsApp" : "tapped Book a free 15-minute call";
+  await sendEmail({
+    to,
+    subject: `${p.name} ${what}`,
+    html: `<p><b>${esc(p.name)}</b> ${what} on their report. Check WhatsApp${action === "call" ? " and your bookings" : ""}, and reply quickly.</p>
+<p>${p.phone ? `Phone: <a href="tel:${esc(p.phone.replace(/[^\d+]/g, ""))}">${esc(p.phone)}</a>` : ""}</p>
+<p><a href="${SHARED_ORIGIN}/r/${token}">Open their report</a> &middot; <a href="${SHARED_ORIGIN}/prospects">Prospects</a></p>`,
+  }).catch(() => null);
+}
