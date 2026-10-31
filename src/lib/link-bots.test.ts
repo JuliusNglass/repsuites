@@ -52,6 +52,35 @@ describe("isLinkBot", () => {
       expect(isLinkBot("GET", ua), ua).toBe(true);
   });
 
+  it("skips email link scanners", () => {
+    for (const ua of [
+      "Microsoft Office/16.0 (Windows NT 10.0; Microsoft Outlook 16.0.17126; Pro)",
+      "Mozilla/5.0 (compatible; MSOffice 16) SafeLinks",
+      "Mimecast URL Protect",
+      "Proofpoint URL Defense",
+      "Barracuda Sentinel (EE)",
+      "Symantec Email Security",
+      "MessageLabs link checker",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) ZScaler/1.0",
+    ])
+      expect(isLinkBot("GET", ua), ua).toBe(true);
+  });
+
+  it("skips SEO and search crawlers, with 'bot' at the end of a word", () => {
+    for (const ua of [
+      "Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)",
+      "Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)",
+      "Mozilla/5.0 (compatible; MJ12bot/v1.4.8; http://mj12bot.com/)",
+      "Mozilla/5.0 (compatible; DotBot/1.2; +https://opensiteexplorer.org/dotbot)",
+      "Mozilla/5.0 (Linux; Android 7.0;) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36 (compatible; PetalBot;+https://webmaster.petalsearch.com/site/petalbot)",
+      "Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)",
+      "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)",
+      "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)",
+      "Mozilla/5.0 (compatible; SomeNewCheckerBot/1.0)",
+    ])
+      expect(isLinkBot("GET", ua), ua).toBe(true);
+  });
+
   it("does not match 'bot' inside another word", () => {
     expect(isLinkBot("GET", `${IPHONE} Robotics/1.0`)).toBe(false);
   });

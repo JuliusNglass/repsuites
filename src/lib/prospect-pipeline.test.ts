@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   inQueue,
+  londonDate,
   matchesSearch,
   openedSinceSent,
   opensLine,
   queueCounts,
   sendStatus,
+  savedPhrases,
   sentTime,
   sortQueue,
   type PipelineItem,
@@ -117,5 +119,33 @@ describe("queues", () => {
     expect(matchesSearch(base, "shine")).toBe(true);
     expect(matchesSearch(base, "NEWPORT")).toBe(true);
     expect(matchesSearch(base, "cardiff")).toBe(false);
+  });
+});
+
+describe("savedPhrases", () => {
+  it("keeps the main phrase first, then the other grids, without repeats", () => {
+    expect(savedPhrases({ prev_kw: "Car Wash", g0: "car wash", g1: "valeting", g2: null })).toEqual(
+      ["car wash", "valeting"],
+    );
+  });
+  it("uses the first grid when the Maps keyword is missing", () => {
+    expect(savedPhrases({ prev_kw: null, g0: "dentist", g1: "emergency dentist" })).toEqual([
+      "dentist",
+      "emergency dentist",
+    ]);
+  });
+  it("gives nothing for a new business", () => {
+    expect(savedPhrases(null)).toEqual([]);
+    expect(savedPhrases({ prev_kw: null })).toEqual([]);
+  });
+});
+
+describe("londonDate", () => {
+  it("uses the UK date, not UTC, in summer time", () => {
+    // 23:30 UTC on 30 June is 00:30 on 1 July in London.
+    expect(londonDate(new Date("2026-06-30T23:30:00Z"))).toBe("2026-07-01");
+  });
+  it("adds days", () => {
+    expect(londonDate(new Date("2026-10-31T12:00:00Z"), 3)).toBe("2026-11-03");
   });
 });

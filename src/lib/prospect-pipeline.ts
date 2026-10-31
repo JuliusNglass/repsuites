@@ -138,3 +138,34 @@ export function queueCounts(list: PipelineItem[]): Record<QueueId, number> {
   for (const q of QUEUES) c[q.id] = list.filter((p) => inQueue(p, q.id)).length;
   return c;
 }
+
+// The search phrases a saved report checked, main one first: the Maps
+// keyword (or the first grid's), then the other grids. No repeats, at most 3.
+// Worked example: maps "car wash", grids "car wash" and "valeting" gives
+// ["car wash", "valeting"].
+export function savedPhrases(
+  row:
+    | { prev_kw?: string | null; g0?: string | null; g1?: string | null; g2?: string | null }
+    | null
+    | undefined,
+): string[] {
+  if (!row) return [];
+  const list = [row.prev_kw || row.g0, row.g0, row.g1, row.g2]
+    .map((k) => (k ?? "").trim().toLowerCase())
+    .filter(Boolean);
+  return list.filter((k, i) => list.indexOf(k) === i).slice(0, 3);
+}
+
+// Today's date in the UK ("2026-10-31"), for follow-ups. UTC would show
+// yesterday's list between midnight and 1am in summer.
+export function londonDate(now: Date = new Date(), offsetDays = 0): string {
+  const d = new Date(now.getTime() + offsetDays * 86400000);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}

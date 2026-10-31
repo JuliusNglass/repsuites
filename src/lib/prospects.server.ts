@@ -15,6 +15,7 @@ import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { addressCountry, phoneType, searchRegion } from "./prospect-contact";
 import { cachedContacts } from "./prospect-contact.server";
 import { ownerFresh } from "./prospect-owner";
+import { savedPhrases } from "./prospect-pipeline";
 
 const PLACE_RE = /^[A-Za-z0-9_-]{10,300}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -609,9 +610,12 @@ export async function saveProspectReport(
         report_at: string | null;
         owner_looked_up_at: string | null;
         prev_kw: string | null;
+        g0: string | null;
+        g1: string | null;
+        g2: string | null;
       }[]
     >(
-      `prospects?select=id,report_token,email,report_at,owner_looked_up_at,prev_kw:report->maps->>keyword&place_id=eq.${encodeURIComponent(placeId)}`,
+      `prospects?select=id,report_token,email,report_at,owner_looked_up_at,prev_kw:report->maps->>keyword,g0:report->grids->0->>keyword,g1:report->grids->1->>keyword,g2:report->grids->2->>keyword&place_id=eq.${encodeURIComponent(placeId)}`,
       "",
     ),
     cachedContacts([placeId]),
@@ -627,16 +631,14 @@ export async function saveProspectReport(
         error: `This business already has a report from ${new Date(row.report_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" })}. Confirm the rebuild to replace it.`,
       };
   }
-  // Extra phrases run as separate requests (addProspectGrid): each grid is 25
-  // outside calls and a request may make at most 50.
-  // A rebuild without a niche keeps the search phrase the last report used.
-  const built = await buildReport(
-    placeId,
-    extra.keyword,
-    [],
-    extra.area,
-    extra.topic || row?.prev_kw || undefined,
-  );
+  // A rebuild with no phrase typed keeps the phrases the last report used:
+  // its main phrase runs here, and the others come back in `addPhrases` for
+  // the page to add one at a time (addProspectGrid): each grid is 25 outside
+  // calls and a request may make at most 50.
+  const saved = savedPhrases(row);
+  const keyword = extra.keyword || saved[0] || undefined;
+  const addPhrases = extra.keyword ? [] : saved.slice(1);
+  const built = await buildReport(placeId, keyword, [], extra.area, extra.topic || undefined);
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
   // Who owns it, from Companies House (UK only, 2 outside calls, kept 90 days).
@@ -683,7 +685,13 @@ export async function saveProspectReport(
         body: { ...body, source, created_by: extra.createdBy ?? null },
       });
   if (w.error) return { ok: false as const, error: "Could not save the report." };
-  return { ok: true as const, token, score: built.report.score, name: built.meta.name };
+  return {
+    ok: true as const,
+    token,
+    score: built.report.score,
+    name: built.meta.name,
+    addPhrases,
+  };
 }
 
 export function validStage(s: string): s is Stage {

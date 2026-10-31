@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { addressCountry, phoneType, waNumber, type PhoneType } from "./prospect-contact";
-import { SENT_VIA } from "./prospect-pipeline";
+import { londonDate, SENT_VIA } from "./prospect-pipeline";
 import { rankingHook } from "./prospect-video";
 import { isUkAddress, ownerFresh, type Officer } from "./prospect-owner";
 import { saleCurrency, saleDefault, type SalePeriod } from "./sale-value";
@@ -197,141 +197,204 @@ export const findProspectOwner = createServerFn({ method: "POST" })
     return f.ok ? { ...f, cached: false } : f;
   });
 
+// One pipeline row, with only the parts of the report the page needs (the
+// whole report has rivals, fixes and grids for every phrase; reading it for
+// hundreds of rows was slow). PostgREST picks the JSON fields out.
+type ProspectRowDb = {
+  id: string;
+  place_id: string;
+  name: string;
+  town: string | null;
+  phone: string | null;
+  email: string | null;
+  contact_name: string | null;
+  stage: string;
+  follow_up_on: string | null;
+  notes: string | null;
+  r_at: string | null;
+  r_score: number | null;
+  r_fix: string | null;
+  r_kw: string | null;
+  r_grid: Report["grid"] | null;
+  r_grids: Report["grids"] | null;
+  r_maps_url: string | null;
+  r_category: string | null;
+  r_address: string | null;
+  report_token: string | null;
+  opens: number;
+  last_opened_at: string | null;
+  gbp_connected_at: string | null;
+  source: string;
+  created_at: string;
+  video_url: string | null;
+  video_kind: string | null;
+  video_first_played_at: string | null;
+  video_max_percent: number;
+  og_image_url: string | null;
+  phone_type: string | null;
+  address: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
+  report_at: string | null;
+  company_number: string | null;
+  company_name: string | null;
+  owners: Officer[] | null;
+  owner_source: string | null;
+  owner_match: string | null;
+  owner_looked_up_at: string | null;
+  website_owner_name: string | null;
+  sent_at: string | null;
+  sent_via: string | null;
+  min_sale_pence: number | null;
+  sale_period: string | null;
+};
+
+const PROSPECT_SELECT = [
+  "id,place_id,name,town,phone,email,contact_name,stage,follow_up_on,notes",
+  "r_at:report->>createdAt,r_score:report->score,r_fix:report->fixes->0->>title",
+  "r_kw:report->maps->>keyword,r_grid:report->grid,r_grids:report->grids",
+  "r_maps_url:report->business->>mapsUrl,r_category:report->business->>category",
+  "r_address:report->business->>address",
+  "report_token,opens,last_opened_at,gbp_connected_at,source,created_at",
+  "video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type",
+  "address,facebook_url,instagram_url,report_at,company_number,company_name,owners",
+  "owner_source,owner_match,owner_looked_up_at,website_owner_name,sent_at,sent_via",
+  "min_sale_pence,sale_period",
+].join(",");
+
+// The pipeline shows up to this many, newest change first, plus every
+// follow-up that is due (read on its own so none is ever hidden).
+const LIST_LIMIT = 1000;
+
+function toItem(p: ProspectRowDb) {
+  const hasReport = !!p.r_at || p.r_score !== null;
+  const grids = (Array.isArray(p.r_grids) ? p.r_grids : []).filter(
+    (g) => g && typeof g.keyword === "string",
+  );
+  const keywords = grids.length ? grids.map((g) => g.keyword) : p.r_kw ? [p.r_kw] : [];
+  const currency = saleCurrency(p.address ?? p.r_address ?? "");
+  return {
+    id: p.id,
+    placeId: p.place_id,
+    // The search phrases the report checked, for a rebuild from the pipeline.
+    phrases: keywords.join(", "),
+    // A report with no Google Maps grid (often no Google category).
+    noMap: hasReport && !grids.length && !p.r_grid,
+    name: p.name,
+    town: p.town ?? "",
+    phone: p.phone ?? "",
+    email: p.email ?? "",
+    contactName: p.contact_name ?? "",
+    stage: p.stage,
+    followUpOn: p.follow_up_on,
+    notes: p.notes ?? "",
+    score: typeof p.r_score === "number" ? p.r_score : null,
+    topFix: p.r_fix ?? null,
+    hook: hasReport
+      ? rankingHook(grids.length ? grids : p.r_grid ? [{ keyword: p.r_kw ?? "", ...p.r_grid }] : [])
+      : null,
+    link: p.report_token ? `https://repsuites.com/r/${p.report_token}` : null,
+    // Their Google Business Profile on Google Maps.
+    mapsUrl: p.r_maps_url || null,
+    opens: p.opens,
+    lastOpenedAt: p.last_opened_at,
+    googleConnected: !!p.gbp_connected_at,
+    source: p.source,
+    createdAt: p.created_at,
+    videoUrl: p.video_url,
+    videoKind: p.video_kind,
+    videoFirstPlayedAt: p.video_first_played_at,
+    videoMaxPercent: p.video_max_percent ?? 0,
+    ogImage: p.og_image_url,
+    // Older prospects were saved before we stored this; work it out.
+    phoneType:
+      (p.phone_type as PhoneType | null) ?? phoneType(p.phone, addressCountry(p.address ?? "")),
+    facebook: p.facebook_url ?? "",
+    instagram: p.instagram_url ?? "",
+    reportAt: p.report_at,
+    uk: isUkAddress(p.address ?? ""),
+    companyNumber: p.company_number,
+    companyName: p.company_name,
+    owners: Array.isArray(p.owners) ? p.owners : [],
+    ownerSource: p.owner_source,
+    ownerMatch: p.owner_match,
+    ownerLookedUpAt: p.owner_looked_up_at,
+    websiteOwnerName: p.website_owner_name ?? "",
+    // When the message really went out, and how (null: not sent yet).
+    sentAt: p.sent_at,
+    sentVia: p.sent_via,
+    // Digits for a wa.me link, with the country code ("447700900123").
+    waDigits: waNumber(p.phone ?? "", addressCountry(p.address ?? "")),
+    // "What 1 more customer is worth": the saved lowest sale (null: use
+    // the default for the niche, worked out from the report).
+    minSalePence: p.min_sale_pence,
+    salePeriod:
+      p.sale_period === "day" || p.sale_period === "week" ? (p.sale_period as SalePeriod) : null,
+    saleCurrency: currency,
+    saleDefault: saleDefault(
+      {
+        category: p.r_category ?? "",
+        keywords: keywords.length ? keywords : [""],
+        name: p.name,
+      },
+      currency,
+    ),
+  };
+}
+
 export const listProspects = createServerFn({ method: "GET" }).handler(async () => {
   const g = await agencyGuard(false);
   if (!g.ok) return g;
-  const r = await serviceRead<
-    {
-      id: string;
-      place_id: string;
-      name: string;
-      town: string | null;
-      phone: string | null;
-      email: string | null;
-      contact_name: string | null;
-      stage: string;
-      follow_up_on: string | null;
-      notes: string | null;
-      report: Report | null;
-      report_token: string | null;
-      opens: number;
-      last_opened_at: string | null;
-      gbp_connected_at: string | null;
-      source: string;
-      created_at: string;
-      video_url: string | null;
-      video_kind: string | null;
-      video_first_played_at: string | null;
-      video_max_percent: number;
-      og_image_url: string | null;
-      phone_type: string | null;
-      address: string | null;
-      facebook_url: string | null;
-      instagram_url: string | null;
-      report_at: string | null;
-      company_number: string | null;
-      company_name: string | null;
-      owners: Officer[] | null;
-      owner_source: string | null;
-      owner_match: string | null;
-      owner_looked_up_at: string | null;
-      website_owner_name: string | null;
-      sent_at: string | null;
-      sent_via: string | null;
-      min_sale_pence: number | null;
-      sale_period: string | null;
-    }[]
-  >(
-    "prospects?select=id,place_id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url,report_at,company_number,company_name,owners,owner_source,owner_match,owner_looked_up_at,website_owner_name,sent_at,sent_via,min_sale_pence,sale_period&order=updated_at.desc&limit=300",
-    "",
-  );
+  const today = londonDate();
+  const [recent, due] = await Promise.all([
+    serviceRead<ProspectRowDb[]>(
+      `prospects?select=${PROSPECT_SELECT}&order=updated_at.desc&limit=${LIST_LIMIT}`,
+      "",
+    ),
+    serviceRead<ProspectRowDb[]>(
+      `prospects?select=${PROSPECT_SELECT}&follow_up_on=lte.${today}&stage=not.in.(won,lost)&order=follow_up_on.asc`,
+      "",
+    ),
+  ]);
+  if (recent.error || !recent.data)
+    return { ok: false as const, error: "Could not load prospects. Try again." };
+  const rows = [...recent.data];
+  const seen = new Set(rows.map((r) => r.id));
+  for (const r of due.data ?? []) {
+    if (seen.has(r.id)) continue;
+    rows.push(r);
+    seen.add(r.id);
+  }
+  // Only when the list is full: count them all, so the tab shows the real total.
+  let total = rows.length;
+  if (recent.data.length >= LIST_LIMIT) {
+    const all = await serviceRead<{ id: string }[]>("prospects?select=id", "");
+    total = Math.max(total, all.data?.length ?? 0);
+  }
   const { chKey } = await import("./prospect-owner.server");
   return {
     ok: true as const,
     // Companies House look-ups need the key (a Cloudflare secret).
     chEnabled: !!chKey(),
-    prospects: (r.data ?? []).map((p) => ({
-      id: p.id,
-      placeId: p.place_id,
-      // The search phrases the report checked, for a rebuild from the pipeline.
-      phrases: (p.report?.grids?.length
-        ? p.report.grids.map((g) => g.keyword)
-        : p.report?.maps?.keyword
-          ? [p.report.maps.keyword]
-          : []
-      ).join(", "),
-      // A report with no Google Maps grid (often no Google category).
-      noMap: !!p.report && !p.report.grids?.length && !p.report.grid,
-      name: p.name,
-      town: p.town ?? "",
-      phone: p.phone ?? "",
-      email: p.email ?? "",
-      contactName: p.contact_name ?? "",
-      stage: p.stage,
-      followUpOn: p.follow_up_on,
-      notes: p.notes ?? "",
-      score: p.report?.score ?? null,
-      topFix: p.report?.fixes?.[0]?.title ?? null,
-      hook: p.report
-        ? rankingHook(
-            p.report.grids?.length
-              ? p.report.grids
-              : p.report.grid
-                ? [{ keyword: p.report.maps?.keyword ?? "", ...p.report.grid }]
-                : [],
-          )
-        : null,
-      link: p.report_token ? `https://repsuites.com/r/${p.report_token}` : null,
-      // Their Google Business Profile on Google Maps.
-      mapsUrl: p.report?.business?.mapsUrl ?? null,
-      opens: p.opens,
-      lastOpenedAt: p.last_opened_at,
-      googleConnected: !!p.gbp_connected_at,
-      source: p.source,
-      createdAt: p.created_at,
-      videoUrl: p.video_url,
-      videoKind: p.video_kind,
-      videoFirstPlayedAt: p.video_first_played_at,
-      videoMaxPercent: p.video_max_percent ?? 0,
-      ogImage: p.og_image_url,
-      // Older prospects were saved before we stored this; work it out.
-      phoneType:
-        (p.phone_type as PhoneType | null) ?? phoneType(p.phone, addressCountry(p.address ?? "")),
-      facebook: p.facebook_url ?? "",
-      instagram: p.instagram_url ?? "",
-      reportAt: p.report_at,
-      uk: isUkAddress(p.address ?? ""),
-      companyNumber: p.company_number,
-      companyName: p.company_name,
-      owners: Array.isArray(p.owners) ? p.owners : [],
-      ownerSource: p.owner_source,
-      ownerMatch: p.owner_match,
-      ownerLookedUpAt: p.owner_looked_up_at,
-      websiteOwnerName: p.website_owner_name ?? "",
-      // When the message really went out, and how (null: not sent yet).
-      sentAt: p.sent_at,
-      sentVia: p.sent_via,
-      // Digits for a wa.me link, with the country code ("447700900123").
-      waDigits: waNumber(p.phone ?? "", addressCountry(p.address ?? "")),
-      // "What 1 more customer is worth": the saved lowest sale (null: use
-      // the default for the niche, worked out from the report).
-      minSalePence: p.min_sale_pence,
-      salePeriod:
-        p.sale_period === "day" || p.sale_period === "week" ? (p.sale_period as SalePeriod) : null,
-      saleCurrency: saleCurrency(p.address ?? p.report?.business?.address ?? ""),
-      saleDefault: saleDefault(
-        {
-          category: p.report?.business?.category ?? "",
-          keywords: p.report?.grids?.length
-            ? p.report.grids.map((g) => g.keyword)
-            : [p.report?.maps?.keyword ?? ""],
-          name: p.name,
-        },
-        saleCurrency(p.address ?? p.report?.business?.address ?? ""),
-      ),
-    })),
+    total,
+    prospects: rows.map(toItem),
   };
 });
+
+// One prospect, after an action on it, so the page need not reload the list.
+export const getProspect = createServerFn({ method: "POST" })
+  .validator((d: { id: string }) => z.object({ id: z.string().regex(UUID_RE) }).parse(d))
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(false);
+    if (!g.ok) return g;
+    const r = await serviceRead<ProspectRowDb[]>(
+      `prospects?select=${PROSPECT_SELECT}&id=eq.${data.id}`,
+      "",
+    );
+    const row = r.data?.[0];
+    if (!row) return { ok: false as const, error: "Prospect not found." };
+    return { ok: true as const, prospect: toItem(row) };
+  });
 
 export const updateProspect = createServerFn({ method: "POST" })
   .validator(
@@ -383,12 +446,19 @@ export const updateProspect = createServerFn({ method: "POST" })
       body,
     });
     if (w.error) return { ok: false as const, error: "Could not save." };
-    // Moving to Sent by hand records it as sent now (if not already).
-    if (data.stage === "sent")
+    // Moving to Sent by hand records it as sent now (if not already), and
+    // sets a follow-up in 3 days if there is none.
+    if (data.stage === "sent") {
       await serviceWrite<unknown>(`prospects?id=eq.${data.id}&sent_at=is.null`, "", {
         method: "PATCH",
         body: { sent_at: new Date().toISOString(), sent_via: "manual" },
       });
+      if (data.followUpOn === undefined)
+        await serviceWrite<unknown>(`prospects?id=eq.${data.id}&follow_up_on=is.null`, "", {
+          method: "PATCH",
+          body: { follow_up_on: londonDate(new Date(), 3) },
+        });
+    }
     return { ok: true as const };
   });
 
@@ -417,7 +487,7 @@ export const markSent = createServerFn({ method: "POST" })
     };
     if (row.stage === "new") {
       body["stage"] = "sent";
-      body["follow_up_on"] = new Date(now.getTime() + 3 * 86400000).toISOString().slice(0, 10);
+      body["follow_up_on"] = londonDate(now, 3);
     }
     const w = await serviceWrite<unknown>(`prospects?id=eq.${data.id}&sent_at=is.null`, "", {
       method: "PATCH",

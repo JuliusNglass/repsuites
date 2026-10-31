@@ -3,7 +3,7 @@
 // No em dashes in this copy (AGENTS.md).
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Check,
@@ -35,6 +35,7 @@ import {
   addProspectPhrase,
   findProspectContacts,
   findProspectOwner,
+  getProspect,
   listProspects,
   prospectVideoThumb,
   removeProspectVideo,
@@ -49,6 +50,7 @@ import {
 import {
   QUEUES,
   inQueue,
+  londonDate,
   matchesSearch,
   opensLine,
   queueCounts,
@@ -111,8 +113,14 @@ const STAGES: { id: (typeof STAGE_IDS)[number]; label: string }[] = [
   { id: "lost", label: "Lost" },
 ];
 
+// 16px text on phones: iOS Safari zooms in on smaller inputs.
 const field =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+  "w-full rounded-lg border border-input bg-background px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+const fieldPlain =
+  "w-full rounded-lg border border-input bg-background px-3 py-2 text-base sm:text-sm";
+const FAILED = "Something went wrong. Check your connection and try again.";
+// A rough check so a typo is caught here, not as a silent server error.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function scoreClass(n: number | null) {
   if (n === null) return "bg-muted text-muted-foreground";
@@ -142,6 +150,9 @@ function shortDate(iso: string | null | undefined) {
     : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+// "Rebuild all" for reports with no map: at most this many per run.
+const FIX_CAP = 10;
+
 // About what one report costs: 5p to 10p, plus about 8p per extra phrase.
 function reportCost(words: string) {
   const extra = Math.min(
@@ -157,9 +168,9 @@ function reportCost(words: string) {
   return 10 + extra * 8;
 }
 
-function today(offsetDays = 0) {
-  const d = new Date(Date.now() + offsetDays * 86400000);
-  return d.toISOString().slice(0, 10);
+// Today in the UK, for follow-ups.
+function today() {
+  return londonDate();
 }
 
 function Prospects() {
@@ -177,57 +188,75 @@ function Prospects() {
   ): Promise<boolean> {
     setBuilding(h.placeId);
     setConfirm(null);
-    const r = await build({
-      data: {
-        placeId: h.placeId,
-        ...(force ? { force: true } : {}),
-        ...(words.trim() ? { keyword: words.trim() } : {}),
-        ...(area ? { area } : {}),
-        niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
-        ...(nicheTopic(q, h.name) ? { topic: nicheTopic(q, h.name) } : {}),
-      },
-    }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
-    // Extra search phrases: one at a time (each is 25 map searches).
-    const extra = words
-      .split(",")
-      .map((w) => w.trim())
-      .filter(Boolean)
-      .slice(1, 3);
-    if (r.ok)
-      for (const w of extra) {
-        const a = await addPhrase({ data: { placeId: h.placeId, keyword: w } });
-        if (!a.ok && !quiet) toast.error(`"${w}": ${a.error}`);
+    try {
+      // The search that found these results, not whatever is in the box now.
+      const query = lastQ || q;
+      const r = await build({
+        data: {
+          placeId: h.placeId,
+          ...(force ? { force: true } : {}),
+          ...(words.trim() ? { keyword: words.trim() } : {}),
+          ...(area ? { area } : {}),
+          niche: !query.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
+          ...(nicheTopic(query, h.name) ? { topic: nicheTopic(query, h.name) } : {}),
+        },
+      }).catch(() => ({ ok: false as const, error: FAILED }));
+      if (r.ok) {
+        // Extra search phrases: the typed ones, or (on a rebuild with none
+        // typed) the ones the last report had. One at a time: 25 map
+        // searches each.
+        const typed = words
+          .split(",")
+          .map((w) => w.trim())
+          .filter(Boolean)
+          .slice(1, 3);
+        const failed = await addExtraPhrases(
+          h.placeId,
+          words.trim() ? typed : (r.addPhrases ?? []),
+        );
+        if (failed.length && !quiet)
+          toast.error(`Report built, but these phrases failed: ${failed.join(", ")}`);
+        if (!quiet) toast.success(`Report ready for ${r.name}: score ${r.score}`);
+        setHits(
+          (cur) =>
+            cur?.map((x) =>
+              x.placeId === h.placeId
+                ? {
+                    ...x,
+                    saved: true,
+                    reportAt: new Date().toISOString(),
+                    reportLink: `https://repsuites.com/r/${r.token}`,
+                  }
+                : x,
+            ) ?? null,
+        );
+        if (!quiet) await load();
+        return true;
       }
-    setBuilding(null);
-    if (r.ok) {
-      if (!quiet) toast.success(`Report ready for ${r.name}: score ${r.score}`);
-      setHits(
-        (cur) =>
-          cur?.map((x) =>
-            x.placeId === h.placeId
-              ? {
-                  ...x,
-                  saved: true,
-                  reportAt: new Date().toISOString(),
-                  reportLink: `https://repsuites.com/r/${r.token}`,
-                }
-              : x,
-          ) ?? null,
-      );
-      if (!quiet) await load();
-      return true;
-    }
-    // Built in the last 24 hours (maybe from another tab): ask first.
-    if ("recent" in r && r.recent) {
-      setHits(
-        (cur) =>
-          cur?.map((x) => (x.placeId === h.placeId ? { ...x, reportAt: r.reportAt } : x)) ?? null,
-      );
-      if (!quiet) setConfirm({ placeId: h.placeId, reportAt: r.reportAt });
+      // Built in the last 24 hours (maybe from another tab): ask first.
+      if ("recent" in r && r.recent) {
+        setHits(
+          (cur) =>
+            cur?.map((x) => (x.placeId === h.placeId ? { ...x, reportAt: r.reportAt } : x)) ?? null,
+        );
+        if (!quiet) setConfirm({ placeId: h.placeId, reportAt: r.reportAt });
+        return false;
+      }
+      if (!quiet) toast.error(r.error);
       return false;
+    } finally {
+      setBuilding(null);
     }
-    if (!quiet) toast.error(r.error);
-    return false;
+  }
+
+  // Adds each extra phrase grid in turn. Returns the phrases that failed.
+  async function addExtraPhrases(placeId: string, list: string[]): Promise<string[]> {
+    const failed: string[] = [];
+    for (const w of list) {
+      const a = await addPhrase({ data: { placeId, keyword: w } }).catch(() => null);
+      if (!a?.ok) failed.push(w);
+    }
+    return failed;
   }
 
   // "Build all": up to 10 businesses shown (after the filter) without a
@@ -238,21 +267,29 @@ function Prospects() {
     if (builtCount) toast.message(`Skipping ${builtCount} already built`);
     let ok = 0;
     setBatch({ done: 0, total: todo.length });
-    for (let i = 0; i < todo.length; i++) {
-      if (await buildOne(todo[i]!, true)) ok++;
-      setBatch({ done: i + 1, total: todo.length });
+    try {
+      for (let i = 0; i < todo.length; i++) {
+        if (await buildOne(todo[i]!, true)) ok++;
+        setBatch({ done: i + 1, total: todo.length });
+      }
+    } finally {
+      setBatch(null);
     }
-    setBatch(null);
     await load();
     toast.success(`${ok} of ${todo.length} reports ready. They are in your Pipeline.`);
   }
   const update = useServerFn(updateProspect);
   const [tab, setTab] = useState<"find" | "pipeline" | "due">("find");
   const [items, setItems] = useState<List | null>(null);
+  const [total, setTotal] = useState(0);
   const [fixPhrase, setFixPhrase] = useState("");
   const [fixing, setFixing] = useState<{ done: number; total: number } | null>(null);
+  // "Rebuild all" asks first: which ones (ticked) and what it costs.
+  const [fixAsk, setFixAsk] = useState<string[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  // The query behind the results on screen.
+  const [lastQ, setLastQ] = useState("");
   const [words, setWords] = useState("");
   const [area, setArea] = useState<"" | "small" | "medium" | "large">("");
   const [hits, setHits] = useState<Hit[] | null>(null);
@@ -332,13 +369,32 @@ function Prospects() {
   const newCount = Math.min(10, visible.filter((h) => !h.reportLink).length);
   const builtCount = visible.filter((h) => h.reportLink).length;
 
+  const loaded = useRef(false);
   const load = useCallback(async () => {
-    const r = await list();
-    if (r.ok) {
-      setItems(r.prospects);
-      setChEnabled(r.chEnabled);
-    } else setErr(r.error);
+    try {
+      const r = await list();
+      if (r.ok) {
+        loaded.current = true;
+        setItems(r.prospects);
+        setTotal(r.total);
+        setChEnabled(r.chEnabled);
+      } else setErr(r.error);
+    } catch {
+      // Keep what is on screen; a first load shows the error page.
+      if (!loaded.current) setErr("Could not load prospects. Check your connection and reload.");
+      else toast.error("Could not refresh the list. Try again.");
+    }
   }, [list]);
+  const one = useServerFn(getProspect);
+  // After an action on one prospect: fetch just that one and swap it in.
+  const refreshOne = useCallback(
+    async (id: string) => {
+      const r = await one({ data: { id } }).catch(() => null);
+      if (r?.ok) setItems((cur) => cur?.map((x) => (x.id === id ? r.prospect : x)) ?? cur);
+      else await load();
+    },
+    [one, load],
+  );
   useEffect(() => {
     void load();
   }, [load]);
@@ -357,11 +413,19 @@ function Prospects() {
     return sortQueue(list, queue);
   }, [tab, due, items, queue, term]);
 
-  const save = async (id: string, patch: Patch) => {
-    const r = await update({ data: { id, ...patch } });
-    if (!r.ok) toast.error(r.error);
-    await load();
-  };
+  // Returns true when it saved.
+  const save = useCallback(
+    async (id: string, patch: Patch): Promise<boolean> => {
+      const r = await update({ data: { id, ...patch } }).catch(() => null);
+      if (!r?.ok) {
+        toast.error(r && !r.ok ? r.error : FAILED);
+        return false;
+      }
+      await refreshOne(id);
+      return true;
+    },
+    [update, refreshOne],
+  );
 
   if (err)
     return (
@@ -390,7 +454,7 @@ function Prospects() {
           {(
             [
               ["find", "Find prospects"],
-              ["pipeline", `Pipeline (${items?.length ?? 0})`],
+              ["pipeline", `Pipeline (${total || items?.length || 0})`],
               ["due", `Follow up today (${due.length})`],
             ] as const
           ).map(([id, label]) => (
@@ -398,6 +462,7 @@ function Prospects() {
               key={id}
               type="button"
               onClick={() => setTab(id)}
+              aria-current={tab === id ? "page" : undefined}
               className={`shrink-0 px-3 py-3 text-sm font-semibold border-b-2 ${
                 tab === id ? "border-primary" : "border-transparent text-muted-foreground"
               }`}
@@ -420,24 +485,30 @@ function Prospects() {
                 const id = ++searchId.current;
                 setFinding(new Set());
                 setNextPage("");
-                const r = await search({ data: { q } });
-                setSearching(false);
-                if (r.ok) {
-                  setHits(r.hits);
-                  setNextPage(r.next);
-                  void findEmails(r.hits, id);
-                } else toast.error(r.error);
+                try {
+                  const r = await search({ data: { q } }).catch(() => null);
+                  if (r?.ok) {
+                    setHits(r.hits);
+                    setLastQ(q);
+                    setNextPage(r.next);
+                    void findEmails(r.hits, id);
+                  } else toast.error(r && !r.ok ? r.error : FAILED);
+                } finally {
+                  setSearching(false);
+                }
               }}
             >
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="A business name, or a niche and town: dentists in Newport"
+                aria-label="Search for a business, or a niche and town"
                 className={field}
               />
               <button
                 type="submit"
                 disabled={searching}
+                aria-label="Search"
                 className="rounded-lg bg-primary text-primary-foreground px-4 font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
               >
                 {searching ? (
@@ -452,13 +523,14 @@ function Prospects() {
               value={words}
               onChange={(e) => setWords(e.target.value)}
               placeholder="Optional: up to 3 search phrases, with commas: burger, fast food, takeaway"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              aria-label="Search phrases, up to 3, with commas"
+              className={fieldPlain}
             />
             <select
               value={area}
               onChange={(e) => setArea(e.target.value as typeof area)}
               aria-label="How far customers come from"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              className={fieldPlain}
             >
               <option value="">Area to check: automatic (best for most)</option>
               <option value="small">City centre: up to 1 mile away</option>
@@ -498,7 +570,11 @@ function Prospects() {
                   </button>
                 ))}
                 {finding.size > 0 && (
-                  <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    className="text-xs text-muted-foreground inline-flex items-center gap-1"
+                  >
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> Looking for emails on{" "}
                     {finding.size} website{finding.size === 1 ? "" : "s"}
                   </span>
@@ -512,16 +588,16 @@ function Prospects() {
             )}
             {newCount > 1 && (
               <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 flex flex-wrap items-center gap-3">
-                <p className="text-sm flex-1 min-w-0">
+                <p role="status" aria-live="polite" className="text-sm flex-1 min-w-0">
                   {batch
                     ? `Building ${batch.done + 1 > batch.total ? batch.total : batch.done + 1} of ${batch.total}. Keep this page open.`
-                    : `Build reports for ${reach === "all" ? "all " : ""}${newCount} new businesses ${reach === "all" ? "here" : "shown"} in one go (about ${newCount * 10}p).${builtCount ? ` Skipping ${builtCount} already built.` : ""}`}
+                    : `Build reports for ${reach === "all" ? "all " : ""}${newCount} new businesses ${reach === "all" ? "here" : "shown"} in one go (about ${newCount * reportCost(words)}p).${builtCount ? ` Skipping ${builtCount} already built.` : ""}`}
                 </p>
                 <button
                   type="button"
                   disabled={building !== null || batch !== null}
                   onClick={() => void buildAll()}
-                  className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-bold inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-bold inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {batch && <Loader2 className="w-4 h-4 animate-spin" />}
                   Build all
@@ -628,54 +704,129 @@ function Prospects() {
               (() => {
                 const missing = (items ?? []).filter((p) => p.noMap);
                 if (!missing.length && !fixing) return null;
-                const total = fixing?.total ?? missing.length;
+                // Ticked businesses to rebuild, at most FIX_CAP per run.
+                const ticked = fixAsk
+                  ? missing.filter((p) => fixAsk.includes(p.id)).slice(0, FIX_CAP)
+                  : [];
+                const runFix = async () => {
+                  const todo = ticked;
+                  const phrase = fixPhrase.trim();
+                  setFixAsk(null);
+                  let ok = 0;
+                  try {
+                    for (let i = 0; i < todo.length; i++) {
+                      setFixing({ done: i, total: todo.length });
+                      const r = await build({
+                        data: { placeId: todo[i]!.placeId, force: true, keyword: phrase },
+                      }).catch(() => null);
+                      if (r?.ok) ok++;
+                    }
+                  } finally {
+                    setFixing(null);
+                  }
+                  setFixPhrase("");
+                  if (ok === todo.length)
+                    toast.success(`Added maps to ${ok} of ${todo.length} reports`);
+                  else
+                    toast.error(
+                      `Added maps to ${ok} of ${todo.length} reports. Try the rest again.`,
+                    );
+                  await load();
+                };
                 return (
                   <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
-                    <p>
+                    <p role="status" aria-live="polite">
                       {fixing
                         ? `Adding maps: ${Math.min(fixing.done + 1, fixing.total)} of ${fixing.total}. Keep this page open.`
-                        : `${missing.length} report${missing.length === 1 ? " has" : "s have"} no Google Maps grid, usually because Google gives no business category. Type what customers search for and rebuild ${missing.length === 1 ? "it" : "them all"} in one go (about ${missing.length * 10}p).`}
+                        : `${missing.length} report${missing.length === 1 ? " has" : "s have"} no Google Maps grid, usually because Google gives no business category. Type what customers search for, then choose which to rebuild with that phrase (up to ${FIX_CAP} at a time).`}
                     </p>
-                    {!fixing && (
+                    {!fixing && !fixAsk && (
                       <div className="flex gap-2">
                         <input
                           value={fixPhrase}
                           onChange={(e) => setFixPhrase(e.target.value)}
                           placeholder="e.g. car detailing"
-                          className="flex-1 min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                          aria-label="Search phrase for the reports with no map"
+                          className="flex-1 min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-base sm:text-sm"
                         />
                         <button
                           type="button"
                           disabled={fixPhrase.trim().length < 3}
-                          onClick={async () => {
-                            const todo = missing;
-                            let ok = 0;
-                            for (let i = 0; i < todo.length; i++) {
-                              setFixing({ done: i, total });
-                              const r = await build({
-                                data: {
-                                  placeId: todo[i]!.placeId,
-                                  force: true,
-                                  keyword: fixPhrase.trim(),
-                                },
-                              }).catch(() => null);
-                              if (r?.ok) ok++;
-                            }
-                            setFixing(null);
-                            setFixPhrase("");
-                            toast.success(`Added maps to ${ok} of ${todo.length} reports`);
-                            await load();
-                          }}
-                          className="rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm font-semibold disabled:opacity-50"
+                          onClick={() => setFixAsk(missing.slice(0, FIX_CAP).map((p) => p.id))}
+                          className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm font-semibold disabled:opacity-50"
                         >
                           Rebuild {missing.length === 1 ? "it" : "all"}
                         </button>
                       </div>
                     )}
-                    {!fixing && (
+                    {!fixing && !fixAsk && (
                       <p className="text-xs text-muted-foreground">
                         {missing.map((p) => p.name).join(", ")}
                       </p>
+                    )}
+                    {!fixing && fixAsk && (
+                      <div
+                        role="alertdialog"
+                        aria-label="Rebuild these reports?"
+                        className="rounded-lg border border-amber-300 bg-background p-3 space-y-2"
+                      >
+                        <p>
+                          Rebuild these with the search phrase <b>&quot;{fixPhrase.trim()}&quot;</b>{" "}
+                          for every business ticked. Untick any that do not fit that phrase.
+                        </p>
+                        <ul className="space-y-1">
+                          {missing.slice(0, FIX_CAP).map((p) => (
+                            <li key={p.id}>
+                              <label className="flex items-center gap-2 min-h-10">
+                                <input
+                                  type="checkbox"
+                                  checked={fixAsk.includes(p.id)}
+                                  onChange={(e) =>
+                                    setFixAsk((cur) =>
+                                      cur
+                                        ? e.target.checked
+                                          ? [...cur, p.id]
+                                          : cur.filter((x) => x !== p.id)
+                                        : cur,
+                                    )
+                                  }
+                                  className="w-4 h-4"
+                                />
+                                <span className="min-w-0 truncate">
+                                  {p.name}
+                                  {p.town ? `, ${p.town}` : ""}
+                                </span>
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                        {missing.length > FIX_CAP && (
+                          <p className="text-xs text-muted-foreground">
+                            {missing.length - FIX_CAP} more after these. Run it again for the rest.
+                          </p>
+                        )}
+                        <p className="font-semibold">
+                          {ticked.length} report{ticked.length === 1 ? "" : "s"}, about{" "}
+                          {ticked.length * reportCost(fixPhrase)}p in all.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={!ticked.length}
+                            onClick={() => void runFix()}
+                            className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm font-semibold disabled:opacity-50"
+                          >
+                            Rebuild {ticked.length}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFixAsk(null)}
+                            className="min-h-10 rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 );
@@ -709,7 +860,7 @@ function Prospects() {
                     onChange={(e) => setTerm(e.target.value)}
                     placeholder="Search name or town"
                     aria-label="Search name or town"
-                    className="w-full rounded-lg border border-input bg-background pl-8 pr-3 py-1.5 text-sm"
+                    className="w-full rounded-lg border border-input bg-background pl-8 pr-3 py-1.5 text-base sm:text-sm"
                   />
                 </div>
               </div>
@@ -726,10 +877,22 @@ function Prospects() {
                       : "Nothing here right now."}
               </p>
             )}
+            {items && tab === "pipeline" && total > items.length && (
+              <p className="text-xs text-muted-foreground">
+                Showing the {items.length} most recently changed of {total}, plus every follow-up
+                due.
+              </p>
+            )}
             {items && !chEnabled && <ChKeyNote />}
             <ul className="space-y-2">
               {shown.map((p) => (
-                <ProspectRow key={p.id} p={p} onSave={save} onReload={load} chEnabled={chEnabled} />
+                <ProspectRow
+                  key={p.id}
+                  p={p}
+                  onSave={save}
+                  onRefresh={refreshOne}
+                  chEnabled={chEnabled}
+                />
               ))}
             </ul>
           </>
@@ -864,11 +1027,11 @@ function ChKeyNote() {
 function OwnerInfo({
   p,
   chEnabled,
-  onReload,
+  onRefresh,
 }: {
   p: P;
   chEnabled: boolean;
-  onReload: () => Promise<void>;
+  onRefresh: (id: string) => Promise<void>;
 }) {
   const findOwner = useServerFn(findProspectOwner);
   const [busy, setBusy] = useState(false);
@@ -908,16 +1071,19 @@ function OwnerInfo({
           disabled={busy}
           onClick={async () => {
             setBusy(true);
-            const r = await findOwner({ data: { id: p.id } }).catch(() => null);
-            setBusy(false);
-            if (!r?.ok) {
-              toast.error(r && !r.ok ? r.error : "Something went wrong. Try again.");
-              return;
+            try {
+              const r = await findOwner({ data: { id: p.id } }).catch(() => null);
+              if (!r?.ok) {
+                toast.error(r && !r.ok ? r.error : FAILED);
+                return;
+              }
+              if (!r.found) toast.message("No matching company on Companies House");
+              await onRefresh(p.id);
+            } finally {
+              setBusy(false);
             }
-            if (!r.found) toast.message("No matching company on Companies House");
-            await onReload();
           }}
-          className="rounded-lg border border-border px-2 py-0.5 inline-flex items-center gap-1 disabled:opacity-50"
+          className="min-h-8 rounded-lg border border-border px-2 py-0.5 inline-flex items-center gap-1 disabled:opacity-50"
         >
           {busy && <Loader2 className="w-3 h-3 animate-spin" />} Find owner
         </button>
@@ -926,15 +1092,15 @@ function OwnerInfo({
   );
 }
 
-function ProspectRow({
+const ProspectRow = memo(function ProspectRow({
   p,
   onSave,
-  onReload,
+  onRefresh,
   chEnabled,
 }: {
   p: P;
-  onSave: (id: string, patch: Patch) => Promise<void>;
-  onReload: () => Promise<void>;
+  onSave: (id: string, patch: Patch) => Promise<boolean>;
+  onRefresh: (id: string) => Promise<void>;
   chEnabled: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -946,29 +1112,40 @@ function ProspectRow({
   const addPhrase = useServerFn(addProspectPhrase);
   // Rebuild from the pipeline: no new search needed. The first phrase runs
   // with the report; any others are added one at a time (25 map checks each).
+  // With the box cleared, the server keeps the last report's phrases and
+  // hands back the extra ones to add.
   const runRebuild = async () => {
     setRebuilding(true);
-    const list = phrases
-      .split(",")
-      .map((w) => w.trim())
-      .filter(Boolean)
-      .slice(0, 3);
-    const r = await build({
-      data: {
-        placeId: p.placeId,
-        force: true,
-        ...(list[0] ? { keyword: list[0] } : {}),
-      },
-    }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
-    if (r.ok)
-      for (const w of list.slice(1))
-        await addPhrase({ data: { placeId: p.placeId, keyword: w } }).catch(() => null);
-    setRebuilding(false);
-    if (r.ok) {
+    try {
+      const list = phrases
+        .split(",")
+        .map((w) => w.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+      const r = await build({
+        data: {
+          placeId: p.placeId,
+          force: true,
+          ...(list[0] ? { keyword: list[0] } : {}),
+        },
+      }).catch(() => ({ ok: false as const, error: FAILED }));
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      const failed: string[] = [];
+      for (const w of list.length ? list.slice(1) : (r.addPhrases ?? [])) {
+        const a = await addPhrase({ data: { placeId: p.placeId, keyword: w } }).catch(() => null);
+        if (!a?.ok) failed.push(w);
+      }
       setRebuild(false);
-      toast.success(`Rebuilt the report for ${p.name}`);
-      await onReload();
-    } else toast.error("error" in r ? r.error : "Could not rebuild. Try again.");
+      if (failed.length)
+        toast.error(`Rebuilt ${p.name}, but these phrases failed: ${failed.join(", ")}`);
+      else toast.success(`Rebuilt the report for ${p.name}`);
+      await onRefresh(p.id);
+    } finally {
+      setRebuilding(false);
+    }
   };
   const [notes, setNotes] = useState(p.notes);
   const [email, setEmail] = useState(p.email);
@@ -999,15 +1176,34 @@ function ProspectRow({
   const mark = useServerFn(markSent);
   const undo = useServerFn(undoSent);
   const [copied, setCopied] = useState(false);
-  const moreRef = useRef<HTMLDetailsElement>(null);
-  const closeMore = () => moreRef.current?.removeAttribute("open");
+  const [saving, setSaving] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [undoAsk, setUndoAsk] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const closeMore = () => setMoreOpen(false);
+  // The More menu closes on a tap outside it or Escape.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const down = (e: PointerEvent) => {
+      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMoreOpen(false);
+    };
+    document.addEventListener("pointerdown", down);
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("pointerdown", down);
+      document.removeEventListener("keydown", key);
+    };
+  }, [moreOpen]);
   // Makes the link-preview picture if there is none yet.
   const ensureOg = () => {
     if (!p.ogImage)
       void makeOg(
         p,
         p.videoUrl && p.videoKind ? { kind: p.videoKind, url: p.videoUrl } : null,
-      ).then((ok) => (ok ? onReload() : undefined));
+      ).then((ok) => (ok ? onRefresh(p.id) : undefined));
   };
   // The message really went out: records how and when, moves a new prospect
   // to Sent and sets a follow-up in 3 days.
@@ -1020,16 +1216,17 @@ function ProspectRow({
       error: "Could not save. Try again.",
     }));
     if (!r.ok) toast.error(r.error);
-    await onReload();
+    await onRefresh(p.id);
   };
   const undoSend = async () => {
+    setUndoAsk(false);
     const r = await undo({ data: { id: p.id } }).catch(() => ({
       ok: false as const,
       error: "Could not save. Try again.",
     }));
     if (!r.ok) toast.error(r.error);
     else toast.success("Marked as not sent");
-    await onReload();
+    await onRefresh(p.id);
   };
   const status = sendStatus(p);
   const opensText = opensLine(p);
@@ -1042,7 +1239,14 @@ function ProspectRow({
       : p.phoneType === "landline"
         ? "This looks like a landline"
         : "Could not read this number for WhatsApp";
-  const btn = "rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1";
+  // 40px tall: easy to tap on a phone.
+  const btn =
+    "min-h-10 rounded-lg border border-border px-3 py-1.5 inline-flex items-center gap-1.5";
+  const off = `${btn} opacity-40 cursor-not-allowed`;
+  const item =
+    "min-h-10 rounded-md px-2.5 py-2 inline-flex items-center gap-1.5 hover:bg-muted text-left";
+  const noEmail = !p.email;
+  const noText = !phone;
   return (
     <li className="rounded-xl border border-border bg-card p-3 space-y-2">
       <div className="flex items-start gap-3">
@@ -1063,12 +1267,12 @@ function ProspectRow({
             >
               {status.text}
             </span>
-            {status.sent && (
+            {status.sent && !undoAsk && (
               <button
                 type="button"
-                onClick={() => void undoSend()}
+                onClick={() => setUndoAsk(true)}
                 title="It was not really sent. Clears the send and any opens."
-                className="underline text-muted-foreground"
+                className="underline text-muted-foreground py-1"
               >
                 Undo
               </button>
@@ -1085,6 +1289,29 @@ function ProspectRow({
               </span>
             )}
           </p>
+          {undoAsk && (
+            <div
+              role="alertdialog"
+              aria-label="Undo sent?"
+              className="mt-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs flex flex-wrap items-center gap-2"
+            >
+              <span>This clears the sent time and opens. Undo?</span>
+              <button
+                type="button"
+                onClick={() => void undoSend()}
+                className="min-h-8 rounded-lg bg-primary text-primary-foreground px-2.5 font-semibold"
+              >
+                Undo sent
+              </button>
+              <button
+                type="button"
+                onClick={() => setUndoAsk(false)}
+                className="min-h-8 underline text-muted-foreground"
+              >
+                Keep it
+              </button>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground truncate mt-0.5">
             {p.town}
             {p.followUpOn
@@ -1099,7 +1326,7 @@ function ProspectRow({
             </p>
           )}
           {p.topFix && <p className="text-xs mt-0.5 truncate">{p.topFix}</p>}
-          <OwnerInfo p={p} chEnabled={chEnabled} onReload={onReload} />
+          <OwnerInfo p={p} chEnabled={chEnabled} onRefresh={onRefresh} />
           <ReachBadges
             h={{
               phoneType: p.phoneType,
@@ -1112,10 +1339,11 @@ function ProspectRow({
         </div>
         <select
           value={p.stage}
+          aria-label={`Stage for ${p.name}`}
           onChange={(e) =>
             void onSave(p.id, { stage: e.target.value as (typeof STAGE_IDS)[number] })
           }
-          className="shrink-0 rounded-lg border border-input bg-background px-2 py-1 text-xs"
+          className="shrink-0 min-h-10 rounded-lg border border-input bg-background px-2 py-1 text-base sm:text-xs"
         >
           {STAGES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -1125,146 +1353,184 @@ function ProspectRow({
         </select>
       </div>
       {p.link && (
-        <div className="flex flex-wrap gap-1.5 text-xs">
-          <a
-            href={p.link}
-            target="_blank"
-            rel="noopener"
-            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
-          >
-            <ExternalLink className="w-3.5 h-3.5" /> Open
-          </a>
-          {p.mapsUrl && (
-            <a
-              href={p.mapsUrl}
-              target="_blank"
-              rel="noopener"
-              title="Their Google Business Profile on Google Maps"
-              className={btn}
-            >
-              <MapPin className="w-3.5 h-3.5" /> Google
-            </a>
-          )}
+        <div className="flex flex-wrap gap-1.5 text-sm sm:text-xs">
           {noWhatsApp ? (
-            <span
-              title={noWaTitle}
-              className={`${btn} opacity-40 cursor-not-allowed`}
-              aria-disabled="true"
-            >
-              <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+            <span title={noWaTitle} className={off} aria-disabled="true">
+              <MessageCircle className="w-4 h-4" /> WhatsApp
+              <span className="sr-only">: {noWaTitle}</span>
             </span>
           ) : (
-            <>
-              <a
-                href={`https://wa.me/${wa}`}
-                target="_blank"
-                rel="noopener"
-                title="Open their WhatsApp chat without a message, to see if the number is on WhatsApp"
-                className={btn}
-              >
-                <PhoneCall className="w-3.5 h-3.5" /> Check
-              </a>
-              <a
-                href={`https://wa.me/${wa}?text=${encodeURIComponent(text)}`}
-                target="_blank"
-                rel="noopener"
-                onClick={() => void sent("whatsapp")}
-                title={
-                  p.phoneType === "mobile"
-                    ? "Mobile number: very likely on WhatsApp. Opens the message and marks it as sent."
-                    : "Opens the message in WhatsApp and marks it as sent"
-                }
-                className={`rounded-lg border px-2.5 py-1.5 inline-flex items-center gap-1 font-semibold ${
-                  p.phoneType === "mobile" ? "border-emerald-600 text-emerald-700" : "border-border"
-                }`}
-              >
-                <MessageCircle className="w-3.5 h-3.5" /> Send on WhatsApp
-              </a>
-            </>
+            <a
+              href={`https://wa.me/${wa}?text=${encodeURIComponent(text)}`}
+              target="_blank"
+              rel="noopener"
+              onClick={() => void sent("whatsapp")}
+              title={
+                p.phoneType === "mobile"
+                  ? "Mobile number: very likely on WhatsApp. Opens the message and marks it as sent."
+                  : "Opens the message in WhatsApp and marks it as sent"
+              }
+              className="min-h-10 rounded-lg bg-emerald-600 text-white px-3 py-1.5 inline-flex items-center gap-1.5 font-semibold"
+            >
+              <MessageCircle className="w-4 h-4" /> Send on WhatsApp
+            </a>
           )}
-          <a
-            title={p.email ? `Email ${p.email}` : "No email yet. Add one in Details."}
-            href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`}
-            onClick={() => void sent("email")}
-            className={btn}
-          >
-            <Mail className="w-3.5 h-3.5" /> Email
-          </a>
-          <a
-            href={`sms:${phone}?&body=${encodeURIComponent(text)}`}
-            onClick={() => void sent("text")}
-            className={btn}
-          >
-            <Smartphone className="w-3.5 h-3.5" /> Text
+          {noEmail ? (
+            <span title="No email saved. Add one in Details." className={off} aria-disabled="true">
+              <Mail className="w-4 h-4" /> Email
+              <span className="sr-only">: No email saved. Add one in Details.</span>
+            </span>
+          ) : (
+            <a
+              title={`Email ${p.email}`}
+              href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`}
+              onClick={() => void sent("email")}
+              className={btn}
+            >
+              <Mail className="w-4 h-4" /> Email
+            </a>
+          )}
+          {noText ? (
+            <span title="No phone number" className={off} aria-disabled="true">
+              <Smartphone className="w-4 h-4" /> Text
+              <span className="sr-only">: No phone number</span>
+            </span>
+          ) : (
+            <a
+              href={`sms:${phone}?&body=${encodeURIComponent(text)}`}
+              onClick={() => void sent("text")}
+              className={btn}
+            >
+              <Smartphone className="w-4 h-4" /> Text
+            </a>
+          )}
+          <a href={p.link} target="_blank" rel="noopener" className={btn}>
+            <ExternalLink className="w-4 h-4" /> Open
           </a>
           <button
             type="button"
             onClick={() => setVideoOpen((v) => !v)}
-            className={`rounded-lg border px-2.5 py-1.5 inline-flex items-center gap-1 ${
-              hasVideo ? "border-emerald-600 text-emerald-700" : "border-border"
-            }`}
+            aria-expanded={videoOpen}
+            className={`${btn} ${hasVideo ? "border-emerald-600 text-emerald-700" : ""}`}
           >
-            <Video className="w-3.5 h-3.5" /> {hasVideo ? "Video added" : "Add video"}
+            <Video className="w-4 h-4" /> {hasVideo ? "Video added" : "Add video"}
           </button>
-          <button
-            type="button"
-            onClick={() => setRebuild((v) => !v)}
-            title="Run the report again with fresh Google figures"
-            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
-          >
-            <RefreshCw className="w-3.5 h-3.5" /> Rebuild
-          </button>
-          <details ref={moreRef} className="relative">
-            <summary
-              className={`${btn} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+          <div ref={moreRef} className="relative">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={moreOpen}
+              onClick={() => setMoreOpen((v) => !v)}
+              className={btn}
             >
-              <MoreHorizontal className="w-3.5 h-3.5" /> More
-            </summary>
-            <div className="absolute z-20 mt-1 right-0 min-w-40 rounded-lg border border-border bg-card shadow-lg p-1 flex flex-col">
-              <a
-                href={`${p.link}?print=1`}
-                target="_blank"
-                rel="noopener"
-                onClick={closeMore}
-                title="Opens the report ready to save as a PDF"
-                className="rounded-md px-2.5 py-2 inline-flex items-center gap-1.5 hover:bg-muted"
+              <MoreHorizontal className="w-4 h-4" /> More
+            </button>
+            {moreOpen && (
+              <div
+                role="menu"
+                className="absolute z-20 mt-1 right-0 min-w-48 rounded-lg border border-border bg-card shadow-lg p-1 flex flex-col"
               >
-                <FileDown className="w-3.5 h-3.5" /> PDF
-              </a>
-              <button
-                type="button"
-                onClick={async () => {
-                  closeMore();
-                  await navigator.clipboard.writeText(text);
-                  toast.success("Message and link copied");
-                  ensureOg();
-                  if (!p.sentAt) setCopied(true);
-                }}
-                className="rounded-md px-2.5 py-2 inline-flex items-center gap-1.5 hover:bg-muted text-left"
-              >
-                <Copy className="w-3.5 h-3.5" /> Copy message
-              </button>
-              {!p.sentAt && (
+                {!noWhatsApp && (
+                  <a
+                    role="menuitem"
+                    href={`https://wa.me/${wa}`}
+                    target="_blank"
+                    rel="noopener"
+                    onClick={closeMore}
+                    title="Open their WhatsApp chat without a message, to see if the number is on WhatsApp"
+                    className={item}
+                  >
+                    <PhoneCall className="w-4 h-4" /> Check WhatsApp
+                  </a>
+                )}
+                {p.mapsUrl && (
+                  <a
+                    role="menuitem"
+                    href={p.mapsUrl}
+                    target="_blank"
+                    rel="noopener"
+                    onClick={closeMore}
+                    title="Their Google Business Profile on Google Maps"
+                    className={item}
+                  >
+                    <MapPin className="w-4 h-4" /> Google profile
+                  </a>
+                )}
+                <a
+                  role="menuitem"
+                  href={`${p.link}?print=1`}
+                  target="_blank"
+                  rel="noopener"
+                  onClick={closeMore}
+                  title="Opens the report ready to save as a PDF"
+                  className={item}
+                >
+                  <FileDown className="w-4 h-4" /> PDF
+                </a>
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={() => {
                     closeMore();
-                    void sent("manual");
+                    // Start from the phrases the report has now.
+                    if (!rebuild) setPhrases(p.phrases);
+                    setRebuild((v) => !v);
                   }}
-                  className="rounded-md px-2.5 py-2 inline-flex items-center gap-1.5 hover:bg-muted text-left"
+                  title="Run the report again with fresh Google figures"
+                  className={item}
                 >
-                  <Check className="w-3.5 h-3.5" /> Mark as sent
+                  <RefreshCw className="w-4 h-4" /> Rebuild report
                 </button>
-              )}
-            </div>
-          </details>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={async () => {
+                    closeMore();
+                    try {
+                      await navigator.clipboard.writeText(text);
+                    } catch {
+                      toast.error("Could not copy. Try again.");
+                      return;
+                    }
+                    toast.success("Message and link copied");
+                    ensureOg();
+                    if (!p.sentAt) setCopied(true);
+                  }}
+                  className={item}
+                >
+                  <Copy className="w-4 h-4" /> Copy message
+                </button>
+                {!p.sentAt && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      closeMore();
+                      void sent("manual");
+                    }}
+                    className={item}
+                  >
+                    <Check className="w-4 h-4" /> Mark as sent
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="ml-auto px-2 py-1.5 inline-flex items-center gap-1 text-muted-foreground"
+            onClick={() => {
+              // Opening shows what is saved now (the list may have changed).
+              if (!open) {
+                setNotes(p.notes);
+                setEmail(p.email);
+                setContact(p.contactName);
+              }
+              setOpen((v) => !v);
+            }}
+            aria-expanded={open}
+            className="min-h-10 ml-auto px-2 py-1.5 inline-flex items-center gap-1 text-muted-foreground"
           >
-            Details{" "}
-            {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            Details {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
       )}
@@ -1274,14 +1540,14 @@ function ProspectRow({
           <button
             type="button"
             onClick={() => void sent("copy")}
-            className="rounded-lg bg-primary text-primary-foreground px-2.5 py-1 font-semibold inline-flex items-center gap-1"
+            className="min-h-8 rounded-lg bg-primary text-primary-foreground px-2.5 py-1 font-semibold inline-flex items-center gap-1"
           >
             <Check className="w-3.5 h-3.5" /> Mark as sent
           </button>
           <button
             type="button"
             onClick={() => setCopied(false)}
-            className="underline text-muted-foreground"
+            className="min-h-8 underline text-muted-foreground"
           >
             Not yet
           </button>
@@ -1292,20 +1558,22 @@ function ProspectRow({
           <p>
             Rebuild the report for <b>{p.name}</b> with fresh Google figures
             {p.reportAt ? ` (last built ${shortDate(p.reportAt)})` : ""}. It costs about{" "}
-            {reportCost(phrases)}p and replaces the current one, at the same link.
+            {reportCost(phrases || p.phrases)}p and replaces the current one, at the same link.
+            Leave the phrases empty to keep the ones it has.
           </p>
           <input
             value={phrases}
             onChange={(e) => setPhrases(e.target.value)}
             placeholder="Search phrases, with commas: car valeting, car wash"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            aria-label="Search phrases for the rebuild, with commas"
+            className={fieldPlain}
           />
           <div className="flex gap-2">
             <button
               type="button"
               disabled={rebuilding}
               onClick={() => void runRebuild()}
-              className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+              className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
             >
               {rebuilding && <Loader2 className="w-4 h-4 animate-spin" />}
               {rebuilding ? "Rebuilding (about a minute)" : "Rebuild"}
@@ -1314,28 +1582,38 @@ function ProspectRow({
               type="button"
               disabled={rebuilding}
               onClick={() => setRebuild(false)}
-              className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold"
+              className="min-h-10 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold"
             >
               Cancel
             </button>
           </div>
         </div>
       )}
-      {videoOpen && p.link && <VideoPanel p={p} makeOg={makeOg} onReload={onReload} />}
+      {videoOpen && p.link && <VideoPanel p={p} makeOg={makeOg} onRefresh={onRefresh} />}
       {open && (
         <div className="grid sm:grid-cols-2 gap-2 pt-1">
-          <input
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            placeholder="Contact name"
-            className={field}
-          />
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            className={field}
-          />
+          <label className="text-xs space-y-1">
+            <span className="sr-only">Contact name</span>
+            <input
+              value={contact}
+              onChange={(e) => setContact(e.target.value)}
+              placeholder="Contact name"
+              autoComplete="off"
+              className={field}
+            />
+          </label>
+          <label className="text-xs space-y-1">
+            <span className="sr-only">Email</span>
+            <input
+              type="email"
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              autoComplete="off"
+              className={field}
+            />
+          </label>
           <label className="text-xs space-y-1 sm:col-span-2">
             <span className="font-semibold">Follow up on</span>
             <input
@@ -1345,13 +1623,16 @@ function ProspectRow({
               className={field}
             />
           </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
-            placeholder="Notes"
-            className={`${field} sm:col-span-2`}
-          />
+          <label className="text-xs space-y-1 sm:col-span-2">
+            <span className="sr-only">Notes</span>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Notes"
+              className={field}
+            />
+          </label>
           <MinSaleField
             p={p}
             value={minSale}
@@ -1361,16 +1642,28 @@ function ProspectRow({
           />
           <button
             type="button"
-            onClick={() =>
-              void onSave(p.id, {
-                notes,
-                email,
-                contactName: contact,
-                ...saleSave(minSale, salePeriod, p.saleDefault.period),
-              }).then(() => toast.success("Saved"))
-            }
-            className="rounded-lg bg-primary text-primary-foreground font-semibold px-3 py-2 text-sm sm:col-span-2"
+            disabled={saving}
+            onClick={async () => {
+              if (email.trim() && !EMAIL_RE.test(email.trim())) {
+                toast.error("That email does not look right. Check it and try again.");
+                return;
+              }
+              setSaving(true);
+              try {
+                const ok = await onSave(p.id, {
+                  notes,
+                  email: email.trim(),
+                  contactName: contact,
+                  ...saleSave(minSale, salePeriod, p.saleDefault.period),
+                });
+                if (ok) toast.success("Saved");
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className="min-h-10 rounded-lg bg-primary text-primary-foreground font-semibold px-3 py-2 text-sm sm:col-span-2 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Save details
           </button>
           {p.phone && (
@@ -1380,7 +1673,7 @@ function ProspectRow({
       )}
     </li>
   );
-}
+});
 
 // Whole pounds typed in, saved as pence. Blank and the default period means
 // "use the default for the niche".
@@ -1457,11 +1750,11 @@ function MinSaleField({
 function VideoPanel({
   p,
   makeOg,
-  onReload,
+  onRefresh,
 }: {
   p: P;
   makeOg: ReturnType<typeof useOgMaker>;
-  onReload: () => Promise<void>;
+  onRefresh: (id: string) => Promise<void>;
 }) {
   const save = useServerFn(saveProspectVideo);
   const remove = useServerFn(removeProspectVideo);
@@ -1472,12 +1765,15 @@ function VideoPanel({
 
   async function finish(video: { kind: string; url: string }, file?: File) {
     setBusy("Making the link preview picture");
-    const ok = await makeOg(p, video, file);
-    if (!ok) toast.message("Video saved. The preview picture will be made when you share.");
-    else toast.success("Video saved. It now shows at the top of the report.");
-    setBusy(null);
+    try {
+      const ok = await makeOg(p, video, file);
+      if (!ok) toast.message("Video saved. The preview picture will be made when you share.");
+      else toast.success("Video saved. It now shows at the top of the report.");
+    } finally {
+      setBusy(null);
+    }
     setLink("");
-    await onReload();
+    await onRefresh(p.id);
   }
 
   async function saveLink() {
@@ -1546,16 +1842,19 @@ function VideoPanel({
             disabled={busy !== null}
             onClick={async () => {
               setBusy("Removing");
-              const r = await remove({ data: { id: p.id } }).catch(() => null);
-              setBusy(null);
-              if (!r?.ok) {
-                toast.error(r?.error ?? "Could not remove the video.");
-                return;
+              try {
+                const r = await remove({ data: { id: p.id } }).catch(() => null);
+                if (!r?.ok) {
+                  toast.error(r?.error ?? "Could not remove the video.");
+                  return;
+                }
+                toast.success("Video removed");
+              } finally {
+                setBusy(null);
               }
-              toast.success("Video removed");
-              await onReload();
+              await onRefresh(p.id);
             }}
-            className="ml-auto rounded-lg border border-border px-2 py-1 text-xs inline-flex items-center gap-1 disabled:opacity-50"
+            className="ml-auto min-h-10 rounded-lg border border-border px-3 py-1 text-xs inline-flex items-center gap-1 disabled:opacity-50"
           >
             <Trash2 className="w-3.5 h-3.5" /> Remove
           </button>
@@ -1571,19 +1870,20 @@ function VideoPanel({
           value={link}
           onChange={(e) => setLink(e.target.value)}
           placeholder="Paste a Loom, YouTube or Vimeo link"
+          aria-label="Video link: Loom, YouTube or Vimeo"
           className={field}
         />
         <button
           type="button"
           disabled={busy !== null || !link.trim()}
           onClick={() => void saveLink()}
-          className="rounded-lg bg-primary text-primary-foreground px-3 font-semibold disabled:opacity-50"
+          className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 font-semibold disabled:opacity-50"
         >
           {p.videoUrl ? "Replace" : "Save"}
         </button>
       </div>
       <label
-        className={`rounded-lg border border-dashed border-border px-3 py-2 flex items-center gap-2 cursor-pointer ${
+        className={`min-h-10 rounded-lg border border-dashed border-border px-3 py-2 flex items-center gap-2 cursor-pointer focus-within:ring-2 focus-within:ring-primary/40 ${
           busy ? "opacity-50 pointer-events-none" : ""
         }`}
       >
@@ -1592,7 +1892,8 @@ function VideoPanel({
         <input
           type="file"
           accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
-          className="hidden"
+          disabled={busy !== null}
+          className="sr-only"
           onChange={(e) => {
             const f = e.target.files?.[0];
             e.target.value = "";
@@ -1601,7 +1902,7 @@ function VideoPanel({
         />
       </label>
       {busy && (
-        <div className="space-y-1">
+        <div role="status" aria-live="polite" className="space-y-1">
           <p className="text-xs inline-flex items-center gap-1.5">
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> {busy}
             {pct !== null ? ` ${pct}%` : ""}. Keep this page open.
