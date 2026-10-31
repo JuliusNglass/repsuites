@@ -260,6 +260,8 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
           ? [p.report.maps.keyword]
           : []
       ).join(", "),
+      // A report with no Google Maps grid (often no Google category).
+      noMap: !!p.report && !p.report.grids?.length && !p.report.grid,
       name: p.name,
       town: p.town ?? "",
       phone: p.phone ?? "",

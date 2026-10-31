@@ -249,6 +249,8 @@ function Prospects() {
   const update = useServerFn(updateProspect);
   const [tab, setTab] = useState<"find" | "pipeline" | "due">("find");
   const [items, setItems] = useState<List | null>(null);
+  const [fixPhrase, setFixPhrase] = useState("");
+  const [fixing, setFixing] = useState<{ done: number; total: number } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [words, setWords] = useState("");
@@ -622,6 +624,62 @@ function Prospects() {
 
         {tab !== "find" && (
           <>
+            {tab === "pipeline" &&
+              (() => {
+                const missing = (items ?? []).filter((p) => p.noMap);
+                if (!missing.length && !fixing) return null;
+                const total = fixing?.total ?? missing.length;
+                return (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
+                    <p>
+                      {fixing
+                        ? `Adding maps: ${Math.min(fixing.done + 1, fixing.total)} of ${fixing.total}. Keep this page open.`
+                        : `${missing.length} report${missing.length === 1 ? " has" : "s have"} no Google Maps grid, usually because Google gives no business category. Type what customers search for and rebuild ${missing.length === 1 ? "it" : "them all"} in one go (about ${missing.length * 10}p).`}
+                    </p>
+                    {!fixing && (
+                      <div className="flex gap-2">
+                        <input
+                          value={fixPhrase}
+                          onChange={(e) => setFixPhrase(e.target.value)}
+                          placeholder="e.g. car detailing"
+                          className="flex-1 min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                        />
+                        <button
+                          type="button"
+                          disabled={fixPhrase.trim().length < 3}
+                          onClick={async () => {
+                            const todo = missing;
+                            let ok = 0;
+                            for (let i = 0; i < todo.length; i++) {
+                              setFixing({ done: i, total });
+                              const r = await build({
+                                data: {
+                                  placeId: todo[i]!.placeId,
+                                  force: true,
+                                  keyword: fixPhrase.trim(),
+                                },
+                              }).catch(() => null);
+                              if (r?.ok) ok++;
+                            }
+                            setFixing(null);
+                            setFixPhrase("");
+                            toast.success(`Added maps to ${ok} of ${todo.length} reports`);
+                            await load();
+                          }}
+                          className="rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm font-semibold disabled:opacity-50"
+                        >
+                          Rebuild {missing.length === 1 ? "it" : "all"}
+                        </button>
+                      </div>
+                    )}
+                    {!fixing && (
+                      <p className="text-xs text-muted-foreground">
+                        {missing.map((p) => p.name).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             {tab === "pipeline" && (
               <div className="flex flex-col sm:flex-row sm:items-start gap-2">
                 <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
