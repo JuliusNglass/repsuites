@@ -68,6 +68,7 @@ import {
 import { makeOgCard, videoFrame } from "../lib/og-card";
 import { matchesReach, PHONE_TYPE_LABEL, type ReachFilter } from "../lib/prospect-contact";
 import { ownerFirstName, ownerFresh, ownerLine } from "../lib/prospect-owner";
+import { money, saleOneLine, saleSymbol, type SalePeriod } from "../lib/sale-value";
 
 export const Route = createFileRoute("/prospects")({
   head: () => ({
@@ -84,6 +85,8 @@ type Patch = {
   notes?: string;
   email?: string;
   contactName?: string;
+  minSalePence?: number | null;
+  salePeriod?: SalePeriod | null;
 };
 // The niche part of a search like "auto detailing in Newport" ("auto
 // detailing"), unless the search was for this business by name.
@@ -912,6 +915,11 @@ function ProspectRow({
   const [notes, setNotes] = useState(p.notes);
   const [email, setEmail] = useState(p.email);
   const [contact, setContact] = useState(p.contactName);
+  // "What 1 more customer is worth" on the report: blank uses the default.
+  const [minSale, setMinSale] = useState(
+    p.minSalePence ? String(Math.round(p.minSalePence / 100)) : "",
+  );
+  const [salePeriod, setSalePeriod] = useState<SalePeriod>(p.salePeriod ?? p.saleDefault.period);
   const makeOg = useOgMaker();
   const hasVideo = !!p.videoUrl;
   // Greet the owner by first name when we know it and no contact is typed in.
@@ -1286,12 +1294,22 @@ function ProspectRow({
             placeholder="Notes"
             className={`${field} sm:col-span-2`}
           />
+          <MinSaleField
+            p={p}
+            value={minSale}
+            period={salePeriod}
+            onValue={setMinSale}
+            onPeriod={setSalePeriod}
+          />
           <button
             type="button"
             onClick={() =>
-              void onSave(p.id, { notes, email, contactName: contact }).then(() =>
-                toast.success("Saved"),
-              )
+              void onSave(p.id, {
+                notes,
+                email,
+                contactName: contact,
+                ...saleSave(minSale, salePeriod, p.saleDefault.period),
+              }).then(() => toast.success("Saved"))
             }
             className="rounded-lg bg-primary text-primary-foreground font-semibold px-3 py-2 text-sm sm:col-span-2"
           >
@@ -1303,6 +1321,77 @@ function ProspectRow({
         </div>
       )}
     </li>
+  );
+}
+
+// Whole pounds typed in, saved as pence. Blank and the default period means
+// "use the default for the niche".
+function saleSave(
+  typed: string,
+  period: SalePeriod,
+  defaultPeriod: SalePeriod,
+): { minSalePence: number | null; salePeriod: SalePeriod | null } {
+  const n = Math.round(Number(typed));
+  const amount = typed.trim() && n > 0 ? n : null;
+  return {
+    minSalePence: amount === null ? null : amount * 100,
+    salePeriod: amount === null && period === defaultPeriod ? null : period,
+  };
+}
+
+// "Minimum sale" for the "What 1 more customer is worth" part of the report.
+function MinSaleField({
+  p,
+  value,
+  period,
+  onValue,
+  onPeriod,
+}: {
+  p: P;
+  value: string;
+  period: SalePeriod;
+  onValue: (v: string) => void;
+  onPeriod: (v: SalePeriod) => void;
+}) {
+  const cur = p.saleCurrency;
+  const def = p.saleDefault;
+  const n = Math.round(Number(value));
+  const amount = value.trim() && n > 0 ? n : def.amount;
+  return (
+    <div className="text-xs space-y-1 sm:col-span-2">
+      <span className="font-semibold">Minimum sale</span>
+      <div className="flex gap-2">
+        <div className="flex flex-1 items-center rounded-lg border border-input bg-background px-3">
+          <span className="text-sm text-muted-foreground">{saleSymbol(cur)}</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={1}
+            step={1}
+            value={value}
+            onChange={(e) => onValue(e.target.value.replace(/[^\d]/g, ""))}
+            placeholder={String(def.amount)}
+            aria-label="Minimum sale"
+            className="w-full bg-transparent px-1 py-2 text-sm outline-none"
+          />
+        </div>
+        <select
+          value={period}
+          onChange={(e) => onPeriod(e.target.value as SalePeriod)}
+          aria-label="Per day or per week"
+          className="rounded-lg border border-input bg-background px-2 py-2 text-sm"
+        >
+          <option value="day">per day</option>
+          <option value="week">per week</option>
+        </select>
+      </div>
+      <p className="text-muted-foreground">
+        {value.trim()
+          ? `The default for ${def.niche} is ${money(def.amount, cur)} a ${def.period}. Clear the box to use it.`
+          : `Using ${money(def.amount, cur)} a ${period} for ${def.niche}.`}
+      </p>
+      <p className="font-semibold">{saleOneLine(amount, period, cur)}</p>
+    </div>
   );
 }
 

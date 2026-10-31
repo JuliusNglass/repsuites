@@ -6,6 +6,15 @@ import type { ProspectSnapshot } from "./prospect-connect.server";
 import { gridInsight, joinSides, sideOf, gridSpots } from "./report-map";
 import { usesMiles } from "./units";
 import { embedUrl, type VideoKind } from "./prospect-video";
+import {
+  money,
+  saleFor,
+  saleRange,
+  saleSumLines,
+  saleSymbol,
+  showsGrowthPrice,
+  yearlyValue,
+} from "./sale-value";
 
 function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -45,6 +54,11 @@ tr.you td{font-weight:700;background:#fffbeb}
 .pin.home .rank{position:absolute;right:-10px;top:-10px;min-width:22px;height:22px;padding:0 4px;border-radius:11px;font-size:.68rem;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
 .rpin{position:absolute;transform:translate(-50%,-110%) rotate(-45deg);width:24px;height:24px;border-radius:50% 50% 50% 0;background:#475569;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}.rpin span{transform:rotate(45deg);color:#fff;font-weight:800;font-size:.7rem}
 .rkey{display:inline-block;width:16px;height:16px;border-radius:50%;background:#475569;color:#fff;text-align:center;font-size:.65rem;line-height:16px}
+.worth .ctl{display:flex;align-items:center;gap:10px;margin:12px 0 8px}.worth input[type=range]{flex:1;min-width:0;accent-color:#0f172a;height:28px}
+.worth .num{display:flex;align-items:center;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:0 8px;flex-shrink:0}.worth .num input{width:5.5em;border:0;font:inherit;font-weight:700;font-size:1.05rem;padding:8px 2px;background:transparent}.worth .num input:focus{outline:none}
+.seg{display:inline-flex;border:1px solid #cbd5e1;border-radius:999px;overflow:hidden}.seg button{border:0;background:#fff;font:inherit;font-size:.9rem;padding:7px 16px;cursor:pointer}.seg button.on{background:#0f172a;color:#fff}
+.sum{list-style:none;margin:14px 0 0;padding:0;font-size:1rem}.sum li{padding:8px 0;border-bottom:1px dashed #e2e8f0}.sum li b{white-space:nowrap}
+.total{margin:14px 0 0;background:#fffbeb;border:2px solid #f5b324;border-radius:14px;padding:14px;text-align:center}.total .big{font-size:2rem;font-weight:800;line-height:1.1;color:#0b1d3a}
 @media print{.cta,.noprint{display:none}body{background:#fff}.card{break-inside:avoid}}
 `;
 
@@ -308,6 +322,7 @@ function findings(
   view: ReturnType<typeof scoreView>,
   extra: RenderExtra | null,
   rows: { name: string; reviews: number; you: boolean; away: string }[],
+  sale: Sale,
 ): string {
   const items: { icon: string; text: string }[] = [];
   const grids = gridsOf(r);
@@ -322,6 +337,12 @@ function findings(
             ? `When people near you search <b>"${esc(worst.keyword)}"</b>, you are <b>in the top 3 everywhere</b>. Great work.`
             : `When people near you search <b>"${esc(worst.keyword)}"</b>, you are in the top 3 in only <b>${worst.top3} of 25 places</b>. In the rest, they see other businesses first.`,
     });
+    // Worked example: 1 more a day at £40 is £40 x 312 = £12,480 a year.
+    if (worst.top3 < 20)
+      items.push({
+        icon: "&#128176;",
+        text: `Just <b>1 more customer a ${sale.period}</b> at ${esc(money(sale.amount, sale.currency))} would add about <b>${esc(money(yearlyValue(sale.amount, sale.period), sale.currency))} a year</b>.`,
+      });
   }
   if (r.business.reviews === 0)
     items.push({
@@ -357,6 +378,53 @@ ${items.map((i) => `<div class="finding"><span class="fi">${i.icon}</span><p>${i
 <div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px" href="${start}">Fix this: start free</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></div></div>`;
 }
 
+type Sale = ReturnType<typeof saleFor>;
+
+// "What 1 more customer is worth": the yearly value of one extra customer
+// at the owner's lowest price, with the sum shown step by step. The slider
+// and the A day / A week buttons update the sum in the page (no framework).
+function worthSection(r: Report, sale: Sale, extra: RenderExtra | null): string {
+  const cur = sale.currency;
+  const sym = saleSymbol(cur);
+  const range = saleRange(cur);
+  const max = Math.max(range.max, sale.amount);
+  const lines = saleSumLines(sale.amount, sale.period, cur);
+  const total = money(yearlyValue(sale.amount, sale.period), cur);
+  const growth = showsGrowthPrice(r.business.address)
+    ? `<p style="margin:12px 0 0">RepSuites Growth is £49 a month (£588 a year).</p>`
+    : "";
+  const print = extra?.flash === "print";
+  const start = extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start";
+  const controls = print
+    ? `<p class="muted" style="margin:10px 0 0">At ${esc(money(sale.amount, cur))} ${sale.period === "week" ? "a week" : "a day"}:</p>`
+    : `<div class="noprint"><label for="ws-range" style="display:block;font-weight:700;margin-top:12px">Your lowest price</label>
+<div class="ctl"><input id="ws-range" type="range" min="${range.min}" max="${max}" step="${range.step}" value="${sale.amount}" aria-label="Your lowest price">
+<span class="num">${sym}<input id="ws-num" type="number" inputmode="numeric" min="1" max="${max * 100}" step="1" value="${sale.amount}" aria-label="Your lowest price in ${cur === "NGN" ? "naira" : "pounds"}"></span></div>
+<div class="seg" role="group" aria-label="How often"><button type="button" data-p="day"${sale.period === "day" ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"'}>A day</button><button type="button" data-p="week"${sale.period === "week" ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"'}>A week</button></div></div>`;
+  const script = print
+    ? ""
+    : `<script>(function(){var S=${JSON.stringify(sym)},a=${sale.amount},p=${JSON.stringify(sale.period)};var rg=document.getElementById("ws-range"),nm=document.getElementById("ws-num");
+function m(n){return S+Math.round(n).toLocaleString("en-GB");}
+function draw(){var y=p==="week"?52:312,L=document.querySelectorAll("#ws-sum li");
+L[0].innerHTML="1 extra customer a "+p+" &times; <b>"+m(a)+"</b> = <b>"+m(a)+"</b> a "+p;
+L[1].innerHTML=p==="week"?"52 weeks a year":"Open 6 days a week: 6 &times; 52 = <b>312</b> days a year";
+L[2].innerHTML="<b>"+m(a)+"</b> &times; "+y+" = <b>"+m(a*y)+"</b> a year in extra sales";
+document.getElementById("ws-total").textContent=m(a*y);}
+rg.addEventListener("input",function(){a=+rg.value;nm.value=a;draw();});
+nm.addEventListener("input",function(){var v=Math.round(+nm.value);if(!(v>0))return;a=v;rg.value=Math.min(v,+rg.max);draw();});
+document.querySelectorAll(".worth .seg button").forEach(function(b){b.addEventListener("click",function(){p=b.getAttribute("data-p");document.querySelectorAll(".worth .seg button").forEach(function(x){var on=x===b;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on?"true":"false");});draw();});});})();</script>`;
+  // Bold the money in the server-drawn lines, as the script does.
+  const bold = (t: string) => esc(t).replace(/([£₦][\d,]+|\b312\b(?= days))/g, "<b>$1</b>");
+  return `<h2 id="worth">What 1 more customer is worth</h2>
+<div class="card worth"><p style="margin:0">You do not need lots more customers. Here is what just one more is worth, at your lowest price.</p>
+${controls}
+<ol id="ws-sum" class="sum" aria-live="polite">${lines.map((l) => `<li>${bold(l)}</li>`).join("")}</ol>
+<div class="total"><div class="big" id="ws-total">${total}</div><div>a year in extra sales, from 1 more customer</div></div>
+${growth}
+<p class="small" style="margin:12px 0 0">This is not a forecast. It shows what one extra customer would add at the price you set. Change the price to match yours.</p>
+<a class="cta noprint" href="${start}">Start free</a></div>${script}`;
+}
+
 export interface RenderExtra {
   token: string;
   snapshot: ProspectSnapshot | null;
@@ -365,6 +433,8 @@ export interface RenderExtra {
   video?: { kind: VideoKind; url: string } | null;
   contactName?: string | null;
   ogImage?: string | null;
+  minSalePence?: number | null;
+  salePeriod?: string | null;
 }
 
 // Julius's WhatsApp, used when REPSUITES_SALES_WHATSAPP is not set.
@@ -509,7 +579,11 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
 <p class="muted" style="margin:6px 0 0">To catch them in a year, you need about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b>. The easy way: ask every customer, every day.</p></div>`
     : "";
   const view = scoreView(r);
-  const headline = findings(r, view, extra, rows);
+  const sale = saleFor(r, {
+    minSalePence: extra?.minSalePence ?? null,
+    salePeriod: extra?.salePeriod ?? null,
+  });
+  const headline = findings(r, view, extra, rows, sale);
   const preview = previewText(r);
   const ogImage =
     extra?.ogImage && /^https:\/\//.test(extra.ogImage)
@@ -528,6 +602,8 @@ ${video ? `<h2 class="biz">${esc(b.name)}</h2>` : `<h1 class="biz">${esc(b.name)
 ${headline}
 
 ${heat || (mapsLine ? `<h2>Where you show up on Google Maps</h2><div class="card">${mapsLine}</div>` : "")}
+
+${worthSection(r, sale, extra)}
 
 <h2>You and your nearest rivals</h2>
 <div class="card"><table><tr><th>Business</th><th>Rating</th><th>Google reviews</th></tr>

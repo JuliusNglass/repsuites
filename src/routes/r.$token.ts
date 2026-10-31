@@ -32,9 +32,11 @@ export const Route = createFileRoute("/r/$token")({
             video_url: string | null;
             video_kind: VideoKind | null;
             og_image_url: string | null;
+            min_sale_pence: number | null;
+            sale_period: string | null;
           }[]
         >(
-          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url&report_token=eq.${token}`,
+          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period&report_token=eq.${token}`,
           "",
         );
         const row = r.data?.[0];
@@ -62,6 +64,8 @@ export const Route = createFileRoute("/r/$token")({
                 : null,
             contactName: row?.contact_name ?? null,
             ogImage: row?.og_image_url ?? null,
+            minSalePence: row?.min_sale_pence ?? null,
+            salePeriod: row?.sale_period ?? null,
           }),
           { status: 200, headers: HTML },
         );

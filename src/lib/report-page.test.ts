@@ -112,3 +112,57 @@ describe("personal video at the top", () => {
     expect(h).toContain('og:image" content="https://x.supabase.co/og/a.jpg"');
   });
 });
+
+describe("what 1 more customer is worth", () => {
+  const base = { token: "a".repeat(24), snapshot: null, flash: "" };
+  const wash: any = {
+    ...report,
+    business: {
+      ...report.business,
+      name: "Sparkle",
+      address: "1 High St, Newport NP20 1AA, UK",
+      category: "Car wash",
+    },
+    grids: [{ keyword: "car wash", ranks: Array(25).fill(null), top3: 4, found: 4, size: 5 }],
+  };
+  it("shows the default sum after the map, with the Growth price for the UK", () => {
+    const h = renderReport(wash, base);
+    expect(h).toContain("What 1 more customer is worth");
+    expect(h).toContain("312</b> days a year");
+    expect(h).toContain("£4,680");
+    expect(h).toContain("RepSuites Growth is £49 a month (£588 a year).");
+    expect(h).toContain('id="ws-range"');
+    expect(h.indexOf("What 1 more customer is worth")).toBeGreaterThan(
+      h.indexOf("Where you show up across your area"),
+    );
+    expect(h.indexOf("What 1 more customer is worth")).toBeLessThan(
+      h.indexOf("You and your nearest rivals"),
+    );
+    expect(h).toContain(
+      "Just <b>1 more customer a day</b> at £15 would add about <b>£4,680 a year</b>",
+    );
+    expect(h).not.toContain("—");
+  });
+  it("uses the saved value, per week, and shows static numbers when printing", () => {
+    const h = renderReport(wash, {
+      ...base,
+      flash: "print",
+      minSalePence: 15000,
+      salePeriod: "week",
+    });
+    expect(h).toContain("£7,800");
+    expect(h).toContain("52 weeks a year");
+    expect(h).not.toContain('id="ws-range"');
+  });
+  it("leaves out the Growth price and the finding where they do not apply", () => {
+    const ng: any = {
+      ...wash,
+      business: { ...wash.business, address: "12 Allen Ave, Ikeja, Lagos, Nigeria" },
+      grids: [{ ...wash.grids[0], top3: 22 }],
+    };
+    const h = renderReport(ng, base);
+    expect(h).toContain("₦5,000");
+    expect(h).not.toContain("RepSuites Growth is");
+    expect(h).not.toContain("would add about");
+  });
+});

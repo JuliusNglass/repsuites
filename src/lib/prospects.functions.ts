@@ -5,6 +5,7 @@ import { addressCountry, phoneType, waNumber, type PhoneType } from "./prospect-
 import { SENT_VIA } from "./prospect-pipeline";
 import { rankingHook } from "./prospect-video";
 import { isUkAddress, ownerFresh, type Officer } from "./prospect-owner";
+import { saleCurrency, saleDefault, type SalePeriod } from "./sale-value";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import {
   agencyGuard,
@@ -237,9 +238,11 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       website_owner_name: string | null;
       sent_at: string | null;
       sent_via: string | null;
+      min_sale_pence: number | null;
+      sale_period: string | null;
     }[]
   >(
-    "prospects?select=id,place_id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url,report_at,company_number,company_name,owners,owner_source,owner_match,owner_looked_up_at,website_owner_name,sent_at,sent_via&order=updated_at.desc&limit=300",
+    "prospects?select=id,place_id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url,report_at,company_number,company_name,owners,owner_source,owner_match,owner_looked_up_at,website_owner_name,sent_at,sent_via,min_sale_pence,sale_period&order=updated_at.desc&limit=300",
     "",
   );
   const { chKey } = await import("./prospect-owner.server");
@@ -308,6 +311,22 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       sentVia: p.sent_via,
       // Digits for a wa.me link, with the country code ("447700900123").
       waDigits: waNumber(p.phone ?? "", addressCountry(p.address ?? "")),
+      // "What 1 more customer is worth": the saved lowest sale (null: use
+      // the default for the niche, worked out from the report).
+      minSalePence: p.min_sale_pence,
+      salePeriod:
+        p.sale_period === "day" || p.sale_period === "week" ? (p.sale_period as SalePeriod) : null,
+      saleCurrency: saleCurrency(p.address ?? p.report?.business?.address ?? ""),
+      saleDefault: saleDefault(
+        {
+          category: p.report?.business?.category ?? "",
+          keywords: p.report?.grids?.length
+            ? p.report.grids.map((g) => g.keyword)
+            : [p.report?.maps?.keyword ?? ""],
+          name: p.name,
+        },
+        saleCurrency(p.address ?? p.report?.business?.address ?? ""),
+      ),
     })),
   };
 });
@@ -321,6 +340,8 @@ export const updateProspect = createServerFn({ method: "POST" })
       notes?: string;
       email?: string;
       contactName?: string;
+      minSalePence?: number | null;
+      salePeriod?: "day" | "week" | null;
     }) =>
       z
         .object({
@@ -334,6 +355,8 @@ export const updateProspect = createServerFn({ method: "POST" })
           notes: z.string().max(4000).optional(),
           email: z.union([z.literal(""), z.string().trim().email().max(320)]).optional(),
           contactName: z.string().trim().max(120).optional(),
+          minSalePence: z.number().int().min(0).max(1_000_000_000).nullable().optional(),
+          salePeriod: z.enum(["day", "week"]).nullable().optional(),
         })
         .parse(d),
   )
@@ -351,6 +374,8 @@ export const updateProspect = createServerFn({ method: "POST" })
     if (data.notes !== undefined) body["notes"] = data.notes || null;
     if (data.email !== undefined) body["email"] = data.email || null;
     if (data.contactName !== undefined) body["contact_name"] = data.contactName || null;
+    if (data.minSalePence !== undefined) body["min_sale_pence"] = data.minSalePence || null;
+    if (data.salePeriod !== undefined) body["sale_period"] = data.salePeriod;
     const w = await serviceWrite<unknown>(`prospects?id=eq.${data.id}`, "", {
       method: "PATCH",
       body,
