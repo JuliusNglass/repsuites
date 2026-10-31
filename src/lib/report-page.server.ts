@@ -342,6 +342,7 @@ function findings(
   extra: RenderExtra | null,
   rows: { name: string; reviews: number; you: boolean; away: string }[],
   sale: Sale,
+  hasVideo = false,
 ): string {
   const items: { icon: string; text: string }[] = [];
   const grids = gridsOf(r);
@@ -387,7 +388,13 @@ function findings(
   if (!items.length) return "";
   return `<div class="card found"><h2 style="margin:0 0 10px">What we found</h2>
 ${items.map((i) => `<div class="finding"><span class="fi">${i.icon}</span><p>${i.text}</p></div>`).join("")}
-<div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px;background:#0b1d3a;color:#fff" href="#map">See where you show up</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></div></div>`;
+${
+  hasVideo
+    ? `<div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px;background:#0b1d3a;color:#fff" href="#map">See where you show up</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></div>`
+    : `<div class="noprint" style="margin-top:14px"><a class="cta" style="margin:0" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free: get your review QR card</a>
+<p class="small" style="text-align:center;margin:8px 0 0">No card needed. Print it today.</p>
+<p style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:12px 0 0;font-size:.95rem"><a href="#map" style="color:#0b1d3a;font-weight:700">See where you show up &#8595;</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></p></div>`
+}</div>`;
 }
 
 type Sale = ReturnType<typeof saleFor>;
@@ -602,13 +609,13 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     minSalePence: extra?.minSalePence ?? null,
     salePeriod: extra?.salePeriod ?? null,
   });
-  const headline = findings(r, view, extra, rows, sale);
+  const video = extra ? videoSection(b, extra) : "";
+  const headline = findings(r, view, extra, rows, sale, !!video);
   const preview = previewText(r);
   const ogImage =
     extra?.ogImage && /^https:\/\//.test(extra.ogImage)
       ? extra.ogImage
       : "https://repsuites.com/og-image.png?v=2";
-  const video = extra ? videoSection(b, extra) : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}"><style>${STYLE}${video ? VIDEO_STYLE : ""}</style></head><body><main>

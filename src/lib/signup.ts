@@ -31,3 +31,13 @@ export function stageAfterSignup(stage: string): string {
   void stage;
   return "won";
 }
+
+// The name to put in "Your name" when someone arrives from their report: the
+// contact name we saved, else the owner's first name. Worked example: no
+// contact name and director "SMITH, John" gives "John".
+export function prefillName(contactName: string | null | undefined, ownerFirst: string): string {
+  const c = (contactName ?? "").replace(/\s+/g, " ").trim();
+  if (c.length >= 2 && c.length <= 120) return c;
+  const o = ownerFirst.trim();
+  return o.length >= 2 ? o : "";
+}

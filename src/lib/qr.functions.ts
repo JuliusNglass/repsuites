@@ -2,7 +2,7 @@
 // each was scanned, for the dashboard.
 import { createServerFn } from "@tanstack/react-start";
 import { applyNoStoreHeaders, requireProtectedRequest } from "./auth.server";
-import { serviceRead } from "./supabase-service.server";
+import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { tenantKind } from "./business-type";
 
 export const getMyQrCodes = createServerFn({ method: "GET" }).handler(async () => {
@@ -48,4 +48,27 @@ export const getMyQrCodes = createServerFn({ method: "GET" }).handler(async () =
       scans30: counts.get(l.id) ?? 0,
     })),
   };
+});
+
+// Records that the business downloaded a print design (PDF or image), so the
+// "Print your QR code" step on the welcome card ticks itself. The first
+// download time is kept.
+export const markQrDownloadedFn = createServerFn({ method: "POST" }).handler(async () => {
+  applyNoStoreHeaders();
+  const g = await requireProtectedRequest({ requireTenant: true });
+  if (!g.ok) return { ok: false as const };
+  const tenantId = g.session.active_tenant_id!;
+  const t = await serviceRead<{ settings: Record<string, unknown> | null }[]>(
+    `tenants?select=settings&id=eq.${tenantId}`,
+    "",
+  );
+  const row = t.data?.[0];
+  if (!row) return { ok: false as const };
+  const settings = row.settings ?? {};
+  if (typeof settings["qr_downloaded_at"] === "string") return { ok: true as const };
+  const w = await serviceWrite<unknown>(`tenants?id=eq.${tenantId}`, "", {
+    method: "PATCH",
+    body: { settings: { ...settings, qr_downloaded_at: new Date().toISOString() } },
+  });
+  return { ok: !w.error };
 });

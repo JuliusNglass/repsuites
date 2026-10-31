@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reviewUrl, signupProblem, stageAfterSignup } from "./signup";
+import { prefillName, reviewUrl, signupProblem, stageAfterSignup } from "./signup";
 import { GROWTH, planPence, yearSaving } from "./shop";
 import { notInPlanMessage } from "./plan-access";
 
@@ -22,6 +22,11 @@ describe("free sign-up", () => {
     expect(reviewUrl("ChIJabc123xyz")).toBe(
       "https://search.google.com/local/writereview?placeid=ChIJabc123xyz",
     ));
+  it("prefills the name from the contact, else the owner", () => {
+    expect(prefillName(" Dave  Jones ", "John")).toBe("Dave Jones");
+    expect(prefillName(null, "John")).toBe("John");
+    expect(prefillName("", "J")).toBe("");
+  });
   it("marks a prospect who signs up as won", () => {
     expect(stageAfterSignup("sent")).toBe("won");
     expect(stageAfterSignup("booked")).toBe("won");

@@ -31,8 +31,12 @@ export function EmailCheckBar() {
         <MailCheck className="w-4 h-4" /> Confirm your email
       </p>
       <p className="text-sm">
-        We sent a 6-digit code to <b>{email}</b>. Type it here. You need this before you can
-        upgrade, ask customers for reviews or get feedback by email.
+        We sent a 6-digit code to <b>{email}</b>. Type it here.{" "}
+        <b>You can print your QR card now.</b>
+      </p>
+      <p className="text-sm">
+        Private feedback from customers starts coming to your email once you confirm. You also need
+        this before you can upgrade or ask customers for reviews.
       </p>
       <form
         className="flex flex-wrap gap-2"

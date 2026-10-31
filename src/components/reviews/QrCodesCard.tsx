@@ -1,11 +1,11 @@
 // The business's QR codes: what each one points to, scans in the last 30
 // days, and a PNG to download for printing. No em dashes in this copy.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { QRCodeCanvas } from "qrcode.react";
 import { AlertTriangle, Download, Printer, QrCode } from "lucide-react";
 import { PrintDesigner } from "./PrintDesigner";
-import { getMyQrCodes } from "../../lib/qr.functions";
+import { getMyQrCodes, markQrDownloadedFn } from "../../lib/qr.functions";
 
 type Code = Extract<Awaited<ReturnType<typeof getMyQrCodes>>, { ok: true }>["codes"][number];
 
@@ -20,6 +20,7 @@ function OneCode({
 }) {
   const [designing, setDesigning] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+  const markDownloaded = useServerFn(markQrDownloadedFn);
   const download = () => {
     const canvas = wrap.current?.querySelector("canvas");
     if (!canvas) return;
@@ -27,6 +28,7 @@ function OneCode({
     a.href = canvas.toDataURL("image/png");
     a.download = `repsuites-qr-${c.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
     a.click();
+    void markDownloaded().catch(() => null);
   };
   return (
     <li className="flex flex-wrap items-center gap-3 py-3">
@@ -76,7 +78,7 @@ function OneCode({
         onClick={download}
         className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm"
       >
-        <Download className="w-4 h-4" /> PNG
+        <Download className="w-4 h-4" /> QR only (image)
       </button>
     </li>
   );
@@ -117,9 +119,10 @@ export function QrCodesCard({ business }: { business: string }) {
   );
 }
 
-// A small link on the Posts tab: make a printable review card for the main
-// code without leaving the tab.
-export function PrintCardButton({ business }: { business: string }) {
+// Opens the print designer straight on the business's main QR code (from
+// the Posts tab and the welcome card). If there is no code yet, it falls
+// back to the QR card tab.
+export function useMainQrDesigner(business: string, onDownloaded?: () => void) {
   const read = useServerFn(getMyQrCodes);
   const [open, setOpen] = useState(false);
   const [main, setMain] = useState<{ url: string; hospitality: boolean } | null>(null);
@@ -138,6 +141,26 @@ export function PrintCardButton({ business }: { business: string }) {
     setMain({ url: code.url, hospitality: r.hospitality });
     setOpen(true);
   };
+  const designer: ReactNode =
+    open && main ? (
+      <PrintDesigner
+        url={main.url}
+        business={business}
+        hospitality={main.hospitality}
+        {...(onDownloaded ? { onDownloaded } : {})}
+        onClose={() => {
+          setOpen(false);
+          window.dispatchEvent(new Event("repsuites:branding"));
+        }}
+      />
+    ) : null;
+  return { start, loading, designer };
+}
+
+// A small link on the Posts tab: make a printable review card for the main
+// code without leaving the tab.
+export function PrintCardButton({ business }: { business: string }) {
+  const { start, loading, designer } = useMainQrDesigner(business);
   return (
     <div className="rounded-xl border border-border bg-card px-4 py-3 flex flex-wrap items-center justify-between gap-2">
       <p className="text-sm text-muted-foreground">
@@ -151,17 +174,7 @@ export function PrintCardButton({ business }: { business: string }) {
       >
         <Printer className="w-4 h-4" /> Make a printable review card
       </button>
-      {open && main && (
-        <PrintDesigner
-          url={main.url}
-          business={business}
-          hospitality={main.hospitality}
-          onClose={() => {
-            setOpen(false);
-            window.dispatchEvent(new Event("repsuites:branding"));
-          }}
-        />
-      )}
+      {designer}
     </div>
   );
 }

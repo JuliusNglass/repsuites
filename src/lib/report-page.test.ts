@@ -99,6 +99,25 @@ describe("personal video at the top", () => {
     expect(h).toContain('<video id="pv"');
     expect(h).toContain("playsinline");
   });
+  it("offers the free QR card first in What we found, without a video", () => {
+    const h = renderReport({ ...report, business: { ...report.business, reviews: 0 } }, base);
+    const found = h.indexOf("What we found");
+    const free = h.indexOf("Start free: get your review QR card");
+    expect(free).toBeGreaterThan(found);
+    expect(free).toBeLessThan(h.indexOf("See where you show up"));
+    expect(h).toContain('href="#map"');
+  });
+  it("does not repeat Start free in What we found when the video has it", () => {
+    const h = renderReport(
+      { ...report, business: { ...report.business, reviews: 0 } },
+      {
+        ...base,
+        video: { kind: "loom", url: "https://www.loom.com/share/0123456789abcdef0123456789abcdef" },
+      },
+    );
+    expect(h).not.toContain("Start free: get your review QR card");
+    expect(h).toContain("See where you show up");
+  });
   it("has no video section without a video", () => {
     expect(renderReport(report, base)).not.toContain("I recorded this");
   });

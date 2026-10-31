@@ -41,7 +41,11 @@ function Start() {
   const signUp = useServerFn(signUpFreeFn);
   const [business, setBusiness] = useState("");
   const [biz, setBiz] = useState<BusinessDetails | null>(null);
-  const [fromReport, setFromReport] = useState<{ business: string; placeId: string } | null>(null);
+  const [fromReport, setFromReport] = useState<{
+    business: string;
+    placeId: string;
+    name: string;
+  } | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,6 +61,7 @@ function Start() {
         if (p) {
           setFromReport(p);
           setBusiness(p.business);
+          if (p.name) setName((cur) => cur || p.name);
         }
       })
       .catch(() => null);
@@ -94,9 +99,9 @@ function Start() {
 
   return (
     <PublicLayout>
-      <section className="px-4 py-12 md:py-16">
+      <section className="px-4 py-6 md:py-16">
         <div className="max-w-5xl mx-auto grid md:grid-cols-[1fr_1.1fr] gap-10 items-start">
-          <div className="md:pt-6">
+          <div className="order-2 md:order-1 md:pt-6">
             <p className="text-sm font-semibold text-primary uppercase tracking-wide">
               Free for ever
             </p>
@@ -127,9 +132,12 @@ function Start() {
 
           <form
             onSubmit={submit}
-            className="rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm space-y-4"
+            className="order-1 md:order-2 rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm space-y-4"
           >
             <h2 className="text-xl font-bold">Create your free account</h2>
+            <p className="-mt-2 text-sm text-muted-foreground">
+              Then print your review QR card. Free, no card needed.
+            </p>
             <div>
               <label className="text-sm font-semibold block mb-1.5">Your business</label>
               {fromReport ? (
@@ -184,8 +192,11 @@ function Start() {
                 onChange={(e) => setPassword(e.target.value)}
                 className={field}
                 autoComplete="new-password"
-                placeholder="At least 10 characters"
+                aria-describedby="s-pass-hint"
               />
+              <p id="s-pass-hint" className="mt-1.5 text-sm text-muted-foreground">
+                At least 10 characters
+              </p>
             </div>
             <input
               tabIndex={-1}

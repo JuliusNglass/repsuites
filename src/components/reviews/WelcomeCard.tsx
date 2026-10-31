@@ -1,18 +1,46 @@
 // For businesses on the free plan: three easy first steps and the
-// RepSuites Growth upgrade. No em dashes in this copy (AGENTS.md).
-import { ArrowRight, CheckCircle2, Circle, Sparkles } from "lucide-react";
+// RepSuites Growth upgrade. Step 1 opens the print designer straight away,
+// so a new owner goes from sign-up to a printed QR card in one tap. The
+// upgrade box waits until the QR card is done, and never shows on the very
+// first visit. No em dashes in this copy (AGENTS.md).
+import { useState } from "react";
+import { ArrowRight, CheckCircle2, Circle, Loader2, Printer, Sparkles } from "lucide-react";
 import { GROWTH, money } from "../../lib/shop";
+import { useMainQrDesigner } from "./QrCodesCard";
 
 export function WelcomeCard({
+  business,
   googleConnected,
+  qrDownloaded,
   welcome,
   onTab,
 }: {
+  business: string;
   googleConnected: boolean;
+  qrDownloaded: boolean;
   welcome: boolean;
   onTab: (t: "settings" | "qr") => void;
 }) {
+  const [qrDone, setQrDone] = useState(qrDownloaded);
+  const { start, loading, designer } = useMainQrDesigner(business, () => setQrDone(true));
   const steps = [
+    {
+      done: qrDone,
+      title: "Get my QR card",
+      text: "Print it and put it by the till, on tables or hand it over after a job. Customers scan it to leave a review.",
+      action: null,
+      button: (
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => void start()}
+          className="mt-2 w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold px-5 py-3 text-base disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-5 h-5" />}
+          Get my QR card
+        </button>
+      ),
+    },
     {
       done: googleConnected,
       title: "Connect your Google profile",
@@ -43,16 +71,7 @@ export function WelcomeCard({
           </button>
         </>
       ),
-    },
-    {
-      done: false,
-      title: "Print your QR code",
-      text: "Put it by the till, on tables or on receipts. Customers scan it to leave a review.",
-      action: (
-        <button type="button" onClick={() => onTab("qr")} className="font-semibold underline">
-          Get my QR code
-        </button>
-      ),
+      button: null,
     },
     {
       done: false,
@@ -63,8 +82,10 @@ export function WelcomeCard({
           See stands and cards
         </a>
       ),
+      button: null,
     },
   ];
+  const showUpgrade = !welcome && qrDone;
   return (
     <div className="space-y-3">
       <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
@@ -90,28 +111,41 @@ export function WelcomeCard({
                     {s.text} {s.action}
                   </p>
                 )}
+                {s.done && s.button && (
+                  <button
+                    type="button"
+                    onClick={() => void start()}
+                    className="text-xs font-semibold underline text-muted-foreground"
+                  >
+                    Print another
+                  </button>
+                )}
+                {!s.done && s.button}
               </div>
             </li>
           ))}
         </ol>
       </section>
-      <section className="rounded-2xl bg-primary/10 border border-primary/30 p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center">
-        <div className="flex-1">
-          <h2 className="font-bold flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4" /> Let RepSuites do the work
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            With Growth, AI writes your review replies, we ask customers for reviews, and you see
-            where you show up on Google Maps. {money(GROWTH.monthPence)} a month. Cancel any time.
-          </p>
-        </div>
-        <a
-          href="/pricing"
-          className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary text-primary-foreground font-bold px-4 py-3"
-        >
-          Upgrade to Growth <ArrowRight className="w-4 h-4" />
-        </a>
-      </section>
+      {designer}
+      {showUpgrade && (
+        <section className="rounded-2xl bg-primary/10 border border-primary/30 p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center">
+          <div className="flex-1">
+            <h2 className="font-bold flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4" /> Let RepSuites do the work
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              With Growth, AI writes your review replies, we ask customers for reviews, and you see
+              where you show up on Google Maps. {money(GROWTH.monthPence)} a month. Cancel any time.
+            </p>
+          </div>
+          <a
+            href="/pricing"
+            className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary text-primary-foreground font-bold px-4 py-3"
+          >
+            Upgrade to Growth <ArrowRight className="w-4 h-4" />
+          </a>
+        </section>
+      )}
     </div>
   );
 }

@@ -27,14 +27,20 @@ export const listMyBusinesses = createServerFn({ method: "GET" }).handler(async 
   const activeId = g.session.active_tenant_id ?? null;
   let plan = "free";
   let googleConnected = false;
+  let qrDownloaded = false;
   if (activeId) {
-    const [p, c] = await Promise.all([
+    const [p, c, t] = await Promise.all([
       serviceRead<{ plan: string }[]>(`tenant_plans?select=plan&tenant_id=eq.${activeId}`, ""),
       serviceRead<{ status: string }[]>(
         `google_connections?select=status&tenant_id=eq.${activeId}`,
         "",
       ),
+      serviceRead<{ qr: string | null }[]>(
+        `tenants?select=qr:settings->>qr_downloaded_at&id=eq.${activeId}`,
+        "",
+      ),
     ]);
+    qrDownloaded = !!t.data?.[0]?.qr;
     plan = p.data?.[0]?.plan ?? "free";
     // "Last seen" for follow-up emails (at most one write an hour).
     const { touchActivity } = await import("./lifecycle.server");
@@ -47,6 +53,7 @@ export const listMyBusinesses = createServerFn({ method: "GET" }).handler(async 
     activeId,
     plan,
     googleConnected,
+    qrDownloaded,
     agency: m.memberships.some((x) => x.role === "super_admin"),
     businesses,
   };

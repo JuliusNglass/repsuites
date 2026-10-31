@@ -6,7 +6,15 @@ import { performSignIn } from "./auth.server";
 import { getSupabaseConfig } from "./config.server";
 import { sendEmail } from "./email.server";
 import { getServiceKey, serviceRead, serviceWrite } from "./supabase-service.server";
-import { PLACE_RE, REPORT_RE, reviewUrl, signupProblem, stageAfterSignup } from "./signup";
+import {
+  PLACE_RE,
+  REPORT_RE,
+  prefillName,
+  reviewUrl,
+  signupProblem,
+  stageAfterSignup,
+} from "./signup";
+import { ownerFirstName, type Officer } from "./prospect-owner";
 import type { SignupInput } from "./signup";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -33,12 +41,26 @@ export async function adminAuth(path: string, method: string, body?: unknown) {
 // What the /start page shows from a prospect report link.
 export async function signupPrefill(r: string) {
   if (!REPORT_RE.test(r)) return null;
-  const p = await serviceRead<{ name: string; place_id: string | null }[]>(
-    `prospects?select=name,place_id&report_token=eq.${r}`,
+  const p = await serviceRead<
+    {
+      name: string;
+      place_id: string | null;
+      contact_name: string | null;
+      owners: Officer[] | null;
+      website_owner_name: string | null;
+    }[]
+  >(
+    `prospects?select=name,place_id,contact_name,owners,website_owner_name&report_token=eq.${r}`,
     "",
   );
   const row = p.data?.[0];
-  return row ? { business: row.name, placeId: row.place_id ?? "" } : null;
+  if (!row) return null;
+  const owners = Array.isArray(row.owners) ? row.owners : [];
+  return {
+    business: row.name,
+    placeId: row.place_id ?? "",
+    name: prefillName(row.contact_name, ownerFirstName(owners, row.website_owner_name)),
+  };
 }
 
 export async function signUpFree(
@@ -155,6 +177,7 @@ export async function signUpFree(
       id: crypto.randomUUID(),
       tenant_id: tenantId,
       kind: "business",
+      active: true,
       business_name: business,
       google_place_id: placeId || null,
       target_url: placeId ? reviewUrl(placeId) : null,

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  a4Sheet,
+  A4,
   BLEED_MM,
   canvasSize,
   defaultFormat,
@@ -9,6 +11,7 @@ import {
   isDigital,
   MESSAGES,
   messageOrder,
+  sheetText,
   sizeText,
   type PrintFormat,
 } from "./print-design";
@@ -148,5 +151,58 @@ describe("linking QR codes to Google", () => {
     ).toEqual({ name: "Marketing consultant", id: "gcid:marketing_consultant" });
     expect(primaryCategory({})).toBeNull();
     expect(primaryCategory(null)).toBeNull();
+  });
+});
+
+describe("A4 sheet to print at home", () => {
+  const inside = (l: ReturnType<typeof a4Sheet>) => {
+    const pw = l.landscape ? A4.h : A4.w;
+    const ph = l.landscape ? A4.w : A4.h;
+    return l.slots.every(
+      (s) => s.x >= -0.001 && s.y >= -0.001 && s.x + s.w <= pw + 0.001 && s.y + s.h <= ph + 0.001,
+    );
+  };
+  const overlap = (l: ReturnType<typeof a4Sheet>) =>
+    l.slots.some((a, i) =>
+      l.slots.some(
+        (b, j) => i < j && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h,
+      ),
+    );
+
+  it("fits 9 business cards with margins, turned to fit more", () => {
+    const l = a4Sheet(85, 55);
+    expect(l.count).toBe(9);
+    expect(l.rotated).toBe(true);
+    expect(l.tight).toBe(false);
+    expect(l.slots[0]!.x).toBeGreaterThanOrEqual(6);
+  });
+  it("fits 4 square cards and 4 coasters", () => {
+    expect(a4Sheet(95, 95).count).toBe(4);
+    expect(sheetText("coaster")).toBe("4 coasters");
+  });
+  it("fits 2 A5 stands edge to edge on a sideways sheet", () => {
+    const l = a4Sheet(148, 210);
+    expect(l.count).toBe(2);
+    expect(l.tight).toBe(true);
+  });
+  it("fits 2 A6 cards with margins", () => {
+    const l = a4Sheet(105, 148);
+    expect(l.count).toBe(2);
+    expect(l.tight).toBe(false);
+  });
+  it("keeps every piece on the page and apart", () => {
+    for (const f of Object.keys(FORMATS) as PrintFormat[]) {
+      if (isDigital(f)) continue;
+      const l = a4Sheet(FORMATS[f].wMm, FORMATS[f].hMm);
+      expect(l.count).toBeGreaterThan(0);
+      expect(l.slots).toHaveLength(l.count);
+      expect(inside(l)).toBe(true);
+      expect(overlap(l)).toBe(false);
+    }
+  });
+  it("says what is on the sheet in plain words", () => {
+    expect(sheetText("card")).toBe("9 business cards");
+    expect(sheetText("a5")).toBe("2 table stands");
+    expect(sheetText("email")).toBe("");
   });
 });

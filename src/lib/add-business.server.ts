@@ -71,6 +71,7 @@ export async function addBusiness(d: AddBusinessData, addedBy: string) {
       id: crypto.randomUUID(),
       tenant_id: tenantId,
       kind: "business",
+      active: true,
       business_name: name,
       google_place_id: placeId || null,
       target_url: placeId ? reviewUrl(placeId) : null,

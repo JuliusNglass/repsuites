@@ -5,9 +5,9 @@ import { RequestsPanel } from "../components/reviews/RequestsPanel";
 import { Logo } from "../components/site/Logo";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Building2, ChevronDown, Plus, Search } from "lucide-react";
+import { Building2, ChevronDown, ChevronRight, Plus, Search } from "lucide-react";
 import { selectTenant, signOut } from "../lib/auth.functions";
 import { listMyBusinesses } from "../lib/businesses.functions";
 import { GooglePanel } from "../components/reviews/GooglePanel";
@@ -27,10 +27,10 @@ export const Route = createFileRoute("/dashboard")({
 
 const TABS = [
   { id: "reviews", label: "Reviews" },
+  { id: "qr", label: "QR card" },
   { id: "ask", label: "Ask" },
   { id: "results", label: "Results" },
   { id: "posts", label: "Posts" },
-  { id: "qr", label: "QR & links" },
   { id: "settings", label: "Settings" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -58,6 +58,19 @@ function Dashboard() {
     () => typeof window !== "undefined" && window.location.search.includes("welcome=1"),
   );
   const [q, setQ] = useState("");
+  // Phones: the tab bar scrolls sideways; a fade and arrow on the right show
+  // there is more until the end is reached.
+  const tabBar = useRef<HTMLDivElement>(null);
+  const [moreTabs, setMoreTabs] = useState(false);
+  const checkTabs = () => {
+    const el = tabBar.current;
+    if (el) setMoreTabs(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  };
+  useEffect(() => {
+    checkTabs();
+    window.addEventListener("resize", checkTabs);
+    return () => window.removeEventListener("resize", checkTabs);
+  });
 
   const list = s.ok ? s.businesses : [];
   const filtered = useMemo(() => {
@@ -189,21 +202,38 @@ function Dashboard() {
 
       {active && (
         <nav className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-          <div className="max-w-4xl mx-auto px-2 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar">
-            {TABS.map((t) => (
+          <div className="relative max-w-4xl mx-auto">
+            <div
+              ref={tabBar}
+              onScroll={checkTabs}
+              className="px-2 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar scroll-smooth"
+            >
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className={`shrink-0 px-3 py-3 text-sm font-semibold border-b-2 ${
+                    tab === t.id
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+              <span className="shrink-0 w-6" aria-hidden="true" />
+            </div>
+            {moreTabs && (
               <button
-                key={t.id}
                 type="button"
-                onClick={() => setTab(t.id)}
-                className={`shrink-0 px-3 py-3 text-sm font-semibold border-b-2 ${
-                  tab === t.id
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground"
-                }`}
+                aria-label="More tabs"
+                onClick={() => tabBar.current?.scrollBy({ left: 160 })}
+                className="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-end pr-1 bg-gradient-to-l from-background via-background/90 to-transparent text-muted-foreground"
               >
-                {t.label}
+                <ChevronRight className="w-5 h-5" />
               </button>
-            ))}
+            )}
           </div>
         </nav>
       )}
@@ -219,7 +249,14 @@ function Dashboard() {
         {!s.agency && <EmailCheckBar />}
         {!active && <p className="text-muted-foreground">Choose a business to get started.</p>}
         {active && s.plan === "free" && !s.agency && (tab === "reviews" || welcome) && (
-          <WelcomeCard googleConnected={s.googleConnected} welcome={welcome} onTab={setTab} />
+          <WelcomeCard
+            key={`w-${active.id}`}
+            business={active.name}
+            googleConnected={s.googleConnected}
+            qrDownloaded={s.qrDownloaded}
+            welcome={welcome}
+            onTab={setTab}
+          />
         )}
         {active && tab === "reviews" && (
           <>

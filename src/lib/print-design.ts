@@ -111,6 +111,102 @@ export function sizeText(format: PrintFormat): string {
   return `${f.wMm} x ${f.hMm} mm`;
 }
 
+// ---------- an A4 sheet to print at home ----------
+
+export const A4 = { w: 210, h: 297 };
+
+export interface SheetSlot {
+  x: number; // mm from the left of the page
+  y: number; // mm from the top
+  w: number; // as placed on the page (swapped when turned)
+  h: number;
+}
+
+export interface SheetLayout {
+  landscape: boolean; // A4 turned sideways
+  rotated: boolean; // each piece turned a quarter turn
+  cols: number;
+  rows: number;
+  count: number;
+  // true when the pieces only fit edge to edge with no margin (2 A5 stands
+  // on one A4): a home printer may leave a thin white edge to trim off.
+  tight: boolean;
+  slots: SheetSlot[];
+}
+
+// How many copies of a piece fit on one A4 sheet at real size, and where.
+// Home printers cannot print right to the edge, so we keep a 6 mm margin and
+// a 4 mm gap between pieces, and try the page and the piece both ways round.
+// Worked example, business cards (85 x 55 mm) on an upright A4 with room of
+// 210 - 12 = 198 mm across and 297 - 12 = 285 mm down:
+//   as they are: 2 across (2 x 85 + 4 = 174) and 4 down (4 x 55 + 3 x 4 = 232)
+//   gives 8;
+//   turned: 3 across (3 x 55 + 2 x 4 = 173) and 3 down (3 x 85 + 2 x 4 = 263)
+//   gives 9, so we use 9.
+// Only when nothing fits twice with margins do we try edge to edge (2 A5
+// stands fill an A4 exactly).
+export function a4Sheet(wMm: number, hMm: number): SheetLayout {
+  const best = (margin: number, gap: number, tight: boolean): SheetLayout | null => {
+    let out: SheetLayout | null = null;
+    for (const landscape of [false, true])
+      for (const rotated of [false, true]) {
+        const pw = landscape ? A4.h : A4.w;
+        const ph = landscape ? A4.w : A4.h;
+        const iw = rotated ? hMm : wMm;
+        const ih = rotated ? wMm : hMm;
+        const fits = (room: number, size: number) =>
+          Math.max(0, Math.floor((room - 2 * margin + gap + 0.01) / (size + gap)));
+        const cols = fits(pw, iw);
+        const rows = fits(ph, ih);
+        const count = cols * rows;
+        if (!count || (out && count <= out.count)) continue;
+        const gridW = cols * iw + (cols - 1) * gap;
+        const gridH = rows * ih + (rows - 1) * gap;
+        const x0 = (pw - gridW) / 2;
+        const y0 = (ph - gridH) / 2;
+        const slots: SheetSlot[] = [];
+        for (let r = 0; r < rows; r++)
+          for (let c = 0; c < cols; c++)
+            slots.push({ x: x0 + c * (iw + gap), y: y0 + r * (ih + gap), w: iw, h: ih });
+        out = { landscape, rotated, cols, rows, count, tight, slots };
+      }
+    return out;
+  };
+  const loose = best(6, 4, false);
+  if (loose && loose.count >= 2) return loose;
+  const edge = best(0, 0, true);
+  if (edge && edge.count > (loose?.count ?? 0)) return edge;
+  return (
+    loose ??
+    edge ?? {
+      landscape: false,
+      rotated: false,
+      cols: 0,
+      rows: 0,
+      count: 0,
+      tight: false,
+      slots: [],
+    }
+  );
+}
+
+// "8 business cards", "2 table stands", for the button and tip.
+export function sheetText(format: PrintFormat): string {
+  const f = FORMATS[format];
+  if (f.px) return "";
+  const n = a4Sheet(f.wMm, f.hMm).count;
+  const names: Record<PrintFormat, [string, string]> = {
+    a5: ["table stand", "table stands"],
+    square: ["square card", "square cards"],
+    coaster: ["coaster", "coasters"],
+    card: ["business card", "business cards"],
+    a6: ["thank-you card", "thank-you cards"],
+    sticker: ["round sticker", "round stickers"],
+    email: ["picture", "pictures"],
+  };
+  return `${n} ${names[format][n === 1 ? 0 : 1]}`;
+}
+
 export function isDigital(format: PrintFormat): boolean {
   return !!FORMATS[format].px;
 }
@@ -985,4 +1081,62 @@ export function downloadPng(d: Design): void {
   a.href = renderDesign(d).toDataURL("image/png");
   a.download = fileName(d, "png");
   a.click();
+}
+
+// The finished piece without its bleed, turned if the sheet needs it. Round
+// pieces are cut to a circle on white so the cut line is easy to follow.
+function trimmed(d: Design, rotate: boolean): HTMLCanvasElement {
+  const f = FORMATS[d.format];
+  const full = renderDesign(d);
+  const b = px(BLEED_MM);
+  const w = full.width - b * 2;
+  const h = full.height - b * 2;
+  const c = document.createElement("canvas");
+  c.width = rotate ? h : w;
+  c.height = rotate ? w : h;
+  const ctx = c.getContext("2d")!;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, c.width, c.height);
+  if (f.round) {
+    ctx.beginPath();
+    ctx.arc(c.width / 2, c.height / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
+    ctx.clip();
+  }
+  if (rotate) {
+    ctx.translate(c.width, 0);
+    ctx.rotate(Math.PI / 2);
+  }
+  ctx.drawImage(full, b, b, w, h, 0, 0, w, h);
+  return c;
+}
+
+// An A4 PDF for a home printer: the design at real size, as many times as
+// fits, with thin grey cut lines. No bleed: cut on the lines.
+export async function downloadA4Sheet(d: Design): Promise<void> {
+  const f = FORMATS[d.format];
+  if (f.px) return downloadPng(d);
+  const lay = a4Sheet(f.wMm, f.hMm);
+  if (!lay.count) return downloadPdf(d);
+  const { jsPDF } = await import("jspdf");
+  const pdf = new jsPDF({
+    unit: "mm",
+    format: "a4",
+    orientation: lay.landscape ? "landscape" : "portrait",
+  });
+  const art = trimmed(d, lay.rotated).toDataURL(f.round ? "image/png" : "image/jpeg", 0.92);
+  for (const s of lay.slots)
+    pdf.addImage(art, f.round ? "PNG" : "JPEG", s.x, s.y, s.w, s.h, "piece", "FAST");
+  pdf.setDrawColor(150, 150, 150);
+  pdf.setLineWidth(0.2);
+  pdf.setLineDashPattern([1.5, 1.5], 0);
+  for (const s of lay.slots) {
+    if (f.round) pdf.circle(s.x + s.w / 2, s.y + s.h / 2, s.w / 2, "S");
+    else pdf.rect(s.x, s.y, s.w, s.h, "S");
+  }
+  pdf.setProperties({
+    title: `${d.business} review ${f.label.toLowerCase()}, A4 sheet`,
+    subject: `${lay.count} x ${sizeText(d.format)} on A4. Print at 100% (actual size), then cut on the grey lines.`,
+    creator: "RepSuites",
+  });
+  pdf.save(fileName(d, "pdf").replace(/\.pdf$/, "-a4-sheet.pdf"));
 }
