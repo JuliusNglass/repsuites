@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { addressCountry, phoneType, type PhoneType } from "./prospect-contact";
+import { rankingHook } from "./prospect-video";
 import { isUkAddress, ownerFresh, type Officer } from "./prospect-owner";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import {
@@ -254,6 +255,15 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       notes: p.notes ?? "",
       score: p.report?.score ?? null,
       topFix: p.report?.fixes?.[0]?.title ?? null,
+      hook: p.report
+        ? rankingHook(
+            p.report.grids?.length
+              ? p.report.grids
+              : p.report.grid
+                ? [{ keyword: p.report.maps?.keyword ?? "", ...p.report.grid }]
+                : [],
+          )
+        : null,
       link: p.report_token ? `https://repsuites.com/r/${p.report_token}` : null,
       // Their Google Business Profile on Google Maps.
       mapsUrl: p.report?.business?.mapsUrl ?? null,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { embedUrl, parseVideoLink, videoMessage, watchLabel } from "./prospect-video";
+import { embedUrl, parseVideoLink, videoMessage, watchLabel, rankingHook } from "./prospect-video";
 
 describe("video links", () => {
   it("reads Loom share links", () => {
@@ -43,5 +43,28 @@ describe("watch label and message", () => {
       "Hi Sam, I recorded a quick 90-second video about Test Cafe on Google. No phone number. Watch here: https://repsuites.com/r/x",
     );
     expect(videoMessage(p, "L", true)).toContain("Reply STOP and I won't message again.");
+  });
+});
+
+describe("rankingHook", () => {
+  const ranks = (top: number) => Array.from({ length: 25 }, (_v, i) => (i < top ? 2 : 15));
+  it("leads with the weakest map result", () => {
+    expect(
+      rankingHook([
+        { keyword: "car wash", top3: 9, ranks: ranks(9) },
+        { keyword: "car valeting", top3: 2, ranks: ranks(2) },
+      ]),
+    ).toBe(
+      'When people near you search "car valeting", you only show in Google\'s top 3 in 2 of the 25 spots we checked around you. Everywhere else, customers see other businesses first.',
+    );
+  });
+  it("says not in any spot when zero", () => {
+    expect(rankingHook([{ keyword: "car wash", top3: 0, ranks: ranks(0) }])).toContain(
+      "not in Google's top 3 in any of the 25 spots",
+    );
+  });
+  it("is null when strong or unchecked", () => {
+    expect(rankingHook([{ keyword: "car wash", top3: 22, ranks: ranks(22) }])).toBeNull();
+    expect(rankingHook([])).toBeNull();
   });
 });

@@ -105,16 +105,41 @@ export function watchLabel(firstPlayedAt: string | null, maxPercent: number): st
   return "Played the video";
 }
 
+// The lead line for outreach: where they show on Google Maps, which matters
+// to every owner (unlike review counts, which some shrug at). Uses the
+// weakest search phrase checked. Null when there is no map check, or they are
+// already in the top 3 in most places (then the report's top fix leads).
+// Worked example: top 3 in 2 of 25 spots for "car valeting" gives "When
+// people near you search "car valeting", you only show in Google's top 3 in
+// 2 of the 25 spots we checked around you. Everywhere else, customers see
+// other businesses first."
+export function rankingHook(
+  grids: { keyword: string; top3: number; ranks: (number | null)[] }[],
+): string | null {
+  const g = [...grids]
+    .filter((x) => x.keyword && x.ranks?.length)
+    .sort((a, b) => a.top3 - b.top3)[0];
+  if (!g) return null;
+  const n = g.ranks.length;
+  if (g.top3 >= Math.round(n * 0.8)) return null;
+  const where =
+    g.top3 === 0
+      ? `you are not in Google's top 3 in any of the ${n} spots we checked around you`
+      : `you only show in Google's top 3 in ${g.top3} of the ${n} spots we checked around you`;
+  return `When people near you search "${g.keyword}", ${where}. Everywhere else, customers see other businesses first.`;
+}
+
 // The short personal message to send with the link when there is a video.
 // Worked example: "Hi Sam, I recorded a quick 90-second video about Sam's
 // Cafe on Google. ... Watch here: https://repsuites.com/r/abc"
 export function videoMessage(
-  p: { name: string; contactName?: string; topFix?: string | null },
+  p: { name: string; contactName?: string; topFix?: string | null; hook?: string | null },
   link: string,
   forEmail = false,
 ): string {
   const hi = p.contactName ? `Hi ${p.contactName.split(" ")[0]}` : "Hi";
-  const finding = p.topFix ? ` ${p.topFix.replace(/\.$/, "")}.` : "";
+  const lead = p.hook || p.topFix;
+  const finding = lead ? ` ${lead.replace(/\.$/, "")}.` : "";
   const body = `${hi}, I recorded a quick 90-second video about ${p.name} on Google.${finding} Watch here: ${link}`;
   return forEmail ? `${body}\n\nReply STOP and I won't message again.` : body;
 }

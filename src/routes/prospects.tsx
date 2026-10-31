@@ -103,12 +103,13 @@ function scoreClass(n: number | null) {
 }
 
 function shareText(
-  p: { name: string; contactName?: string; topFix?: string | null },
+  p: { name: string; contactName?: string; topFix?: string | null; hook?: string | null },
   link: string,
 ) {
   const hi = p.contactName ? `Hi ${p.contactName.split(" ")[0]}` : "Hi";
-  // The report's most important finding makes the message personal.
-  const hook = p.topFix ? ` The first thing I noticed: ${p.topFix.replace(/\.$/, "")}.` : "";
+  // Where they show on Google Maps leads; otherwise the report's top fix.
+  const lead = p.hook || p.topFix;
+  const hook = lead ? ` The first thing I noticed: ${lead.replace(/\.$/, "")}.` : "";
   return `${hi}, I put together a free report on how ${p.name} shows up on Google Maps, compared with the businesses nearest to you.${hook} It takes 2 minutes to read: ${link}`;
 }
 
