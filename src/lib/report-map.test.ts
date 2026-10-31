@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gridSpots, pinAt, zoomFor } from "./report-map";
+import { gridInsight, gridSpots, joinSides, pinAt, sideOf, zoomFor } from "./report-map";
 import { kmBetween, rivalTypes } from "./prospects.server";
 
 const cwmbran = { lat: 51.654577, lng: -3.0195437 };
@@ -56,5 +56,50 @@ describe("area size", async () => {
   it("uses clean distances", () => {
     expect(areaSpacingKm("medium", true)).toBe(1.6);
     expect(areaSpacingKm("large", false)).toBe(3);
+  });
+});
+
+describe("gridInsight", () => {
+  it("reads home, rings and weak sides", () => {
+    // Top 3 on your street and next to it; nothing along the north row.
+    const ranks: (number | null)[] = [
+      null,
+      null,
+      null,
+      null,
+      null,
+      5,
+      2,
+      2,
+      2,
+      12,
+      8,
+      1,
+      1,
+      2,
+      15,
+      6,
+      2,
+      3,
+      2,
+      14,
+      4,
+      5,
+      6,
+      7,
+      9,
+    ];
+    const g = gridInsight(ranks);
+    expect(g.home).toBe(1);
+    expect(g.near).toEqual({ top3: 8, total: 8 });
+    expect(g.far.total).toBe(16);
+    expect(g.weak).toContain("north");
+    expect(g.weak).toContain("east");
+    expect(g.weak).not.toContain("south");
+  });
+  it("names sides and joins them", () => {
+    expect(sideOf({ lat: 51.5, lng: -3 }, { lat: 51.6, lng: -3 })).toBe("north");
+    expect(sideOf({ lat: 51.5, lng: -3 }, { lat: 51.5, lng: -2.8 })).toBe("east");
+    expect(joinSides(["north", "east", "south"])).toBe("north, east and south");
   });
 });

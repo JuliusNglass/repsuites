@@ -57,3 +57,56 @@ export function gridSpots(center: { lat: number; lng: number }, size: number, sp
       });
   return out;
 }
+
+// What the 5 by 5 map says beyond "X of 25": how you do on your own street,
+// one step out and two steps out, and which sides of you are weakest.
+// Ranks are row by row from the north-west; the middle (index 12) is you.
+export type Side = "north" | "south" | "east" | "west";
+
+export function gridInsight(ranks: (number | null)[], size = 5) {
+  const half = (size - 1) / 2;
+  const home = ranks[half * size + half] ?? null;
+  const ring = (step: number) => {
+    let top3 = 0;
+    let total = 0;
+    ranks.forEach((v, i) => {
+      const r = Math.floor(i / size) - half;
+      const c = (i % size) - half;
+      if (Math.max(Math.abs(r), Math.abs(c)) !== step) return;
+      total++;
+      if (v !== null && v <= 3) top3++;
+    });
+    return { top3, total };
+  };
+  // A side is weak when at least 3 in 5 of its outer spots are worse than 10th.
+  const weak: Side[] = [];
+  const bad = (v: number | null) => v === null || v > 10;
+  const sides: [Side, (r: number, c: number) => boolean][] = [
+    ["north", (r) => r === -half],
+    ["south", (r) => r === half],
+    ["west", (_r, c) => c === -half],
+    ["east", (_r, c) => c === half],
+  ];
+  for (const [side, on] of sides) {
+    const cells = ranks.filter((_v, i) => on(Math.floor(i / size) - half, (i % size) - half));
+    if (cells.length && cells.filter(bad).length / cells.length >= 0.6) weak.push(side);
+  }
+  return { home, near: ring(1), far: ring(2), weak };
+}
+
+// Which side of the centre a point is on (the bigger of the two differences).
+export function sideOf(
+  center: { lat: number; lng: number },
+  pt: { lat: number; lng: number },
+): Side {
+  const dy = pt.lat - center.lat;
+  const dx = (pt.lng - center.lng) * Math.cos((center.lat * Math.PI) / 180);
+  if (Math.abs(dy) >= Math.abs(dx)) return dy >= 0 ? "north" : "south";
+  return dx >= 0 ? "east" : "west";
+}
+
+// "north", "north and east", "north, east and south".
+export function joinSides(list: string[]): string {
+  if (list.length <= 1) return list[0] ?? "";
+  return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+}

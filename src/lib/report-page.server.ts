@@ -3,7 +3,7 @@
 // No em dashes in this copy (AGENTS.md).
 import type { Report } from "./prospects.server";
 import type { ProspectSnapshot } from "./prospect-connect.server";
-import { gridSpots } from "./report-map";
+import { gridInsight, joinSides, sideOf, gridSpots } from "./report-map";
 import { usesMiles } from "./units";
 import { embedUrl, type VideoKind } from "./prospect-video";
 
@@ -147,19 +147,33 @@ function heatMap(r: Report, extra: RenderExtra | null): string {
   const legend = `<p class="small" style="text-align:center;margin:10px 0 0"><span style="color:#059669">&#9679;</span> top 3 &nbsp; <span style="color:#f59e0b">&#9679;</span> 4 to 10 &nbsp; <span style="color:#ef4444">&#9679;</span> 11 to 20 &nbsp; <span style="color:#dc2626">&#9679;</span> not in the top 20</p>`;
   // Plain words: "in the top 3 in 6 of the 25 places", "not in the top 3
   // anywhere", "in the top 3 everywhere".
+  // The top card already says "X of 25"; this explains the shape: your own
+  // street, one and two steps out, and the sides (and rivals) you lose on.
+  const step = distanceText(Math.round(spacingKm * 10) / 10, miles);
+  const twoSteps = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
   const summaryOf = (g: (typeof grids)[number]) => {
     const k = `"${esc(g.keyword)}"`;
-    const where =
-      g.top3 === 0
-        ? `you are <b>not in the top 3 anywhere</b> we checked`
-        : g.top3 >= 25
-          ? `you are <b>in the top 3 everywhere</b> we checked. Well done`
-          : `you are in the top 3 in <b>${g.top3} of the 25 places</b> we checked`;
-    const missing =
-      g.found < 25
-        ? ` In ${25 - g.found} of them you do not show up at all (red pins marked 20+).`
-        : "";
-    return `When people near you search ${k}, ${where}.${missing} Most people pick one of the top 3, so every amber or red pin is customers who may go somewhere else.`;
+    if (g.top3 >= 25)
+      return `When people near you search ${k}, you are in the top 3 everywhere we checked, up to ${esc(twoSteps)} away. The job now is staying there: rivals catch up with fresh reviews.`;
+    const s = gridInsight(g.ranks, g.size);
+    const home =
+      s.home === null
+        ? `From your own street you are <b>not in the top 20</b> for ${k}.`
+        : s.home <= 3
+          ? `From your own street you are <b>number ${s.home}</b> for ${k}.`
+          : `Even from your own street you are only <b>number ${s.home}</b> for ${k}.`;
+    const rings = `About ${esc(step)} away you are in the top 3 in <b>${s.near.top3} of ${s.near.total}</b> spots; ${esc(twoSteps)} away, <b>${s.far.top3} of ${s.far.total}</b>.`;
+    let sides = "";
+    if (s.weak.length && s.weak.length < 4) {
+      const lost = center
+        ? r.rivals
+            .filter((x) => x.lat != null && x.lng != null)
+            .filter((x) => s.weak.includes(sideOf(center, { lat: x.lat!, lng: x.lng! })))
+            .map((x) => esc(x.name))
+        : [];
+      sides = ` You are weakest to the <b>${joinSides(s.weak)}</b>${lost.length ? `, where ${joinSides(lost)} ${lost.length === 1 ? "is" : "are"}` : ""}.`;
+    } else if (s.weak.length === 4) sides = " Beyond your own street you drop away on every side.";
+    return `${home} ${rings}${sides}`;
   };
   const dots = (g: (typeof grids)[number]) =>
     `<div style="display:grid;grid-template-columns:repeat(${g.size},1fr);gap:8px;max-width:340px;margin:0 auto">${g.ranks
