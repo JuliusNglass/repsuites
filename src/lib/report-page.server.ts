@@ -162,7 +162,13 @@ function heatMap(r: Report, extra: RenderExtra | null): string {
         : s.home <= 3
           ? `From your own street you are <b>number ${s.home}</b> for ${k}.`
           : `Even from your own street you are only <b>number ${s.home}</b> for ${k}.`;
-    const rings = `About ${esc(step)} away you are in the top 3 in <b>${s.near.top3} of ${s.near.total}</b> spots; ${esc(twoSteps)} away, <b>${s.far.top3} of ${s.far.total}</b>.`;
+    const ringText = (top3: number, total: number) =>
+      top3 === 0
+        ? `you are <b>not in the top 3 in any of the ${total} spots</b>`
+        : top3 === total
+          ? `you are <b>in the top 3 in all ${total} spots</b>`
+          : `you are in the top 3 in <b>${top3} of the ${total} spots</b>`;
+    const rings = `About ${esc(step)} away, ${ringText(s.near.top3, s.near.total)}. About ${esc(twoSteps)} away, ${ringText(s.far.top3, s.far.total)}.`;
     let sides = "";
     if (s.weak.length && s.weak.length < 4) {
       const lost = center
