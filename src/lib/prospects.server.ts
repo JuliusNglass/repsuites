@@ -386,6 +386,7 @@ export async function buildReport(
   const fallback = (
     category ||
     rivalTypes(String(p.primaryType ?? ""), (p.types ?? []).map(String))[0]?.replace(/_/g, " ") ||
+    (keywordOverride ?? "").trim() ||
     (topic ?? "").trim()
   ).slice(0, 80);
   const rivals = lat !== null && lng !== null ? await nearestRivals(p, lat, lng, fallback) : [];
