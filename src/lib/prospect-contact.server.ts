@@ -89,7 +89,7 @@ export function safeSiteUrl(raw: string): string {
 
 // Fetches one page as text, following up to 3 redirects by hand so each hop
 // is counted against the budget.
-async function getPage(
+export async function getPage(
   url: string,
   budget: { left: number },
 ): Promise<{ html: string; url: string } | null> {

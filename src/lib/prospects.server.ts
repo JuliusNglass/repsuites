@@ -172,6 +172,9 @@ export interface Report {
     perWeekIn6Months: number;
     perWeekIn12Months: number;
   } | null;
+  // SparkOps only: problems mentioned in reviews, online booking, hiring and
+  // team size. Missing on RepSuites and older reports.
+  ops?: import("./sparkops").OpsSignals;
 }
 
 const DETAIL_MASK =
@@ -355,6 +358,8 @@ export async function buildReport(
     category: string;
     lat: number | null;
     lng: number | null;
+    // The review texts Google gave (up to 5), for the SparkOps checks.
+    reviewTexts: string[];
   };
 } | null> {
   if (!PLACE_RE.test(placeId)) return null;
@@ -568,6 +573,10 @@ export async function buildReport(
       category,
       lat,
       lng,
+      reviewTexts: (p.reviews ?? [])
+        .map((r: any) => String(r?.text?.text ?? r?.originalText?.text ?? "").slice(0, 2000))
+        .filter(Boolean)
+        .slice(0, 5),
     },
   };
 }
@@ -599,6 +608,8 @@ export async function saveProspectReport(
     topic?: string;
     guardRecent?: boolean;
     force?: boolean;
+    // Which pipeline it belongs to. Left out: unchanged (new rows: RepSuites).
+    product?: import("./sparkops").Product;
   } = {},
 ) {
   const [existing, found] = await Promise.all([
@@ -641,6 +652,22 @@ export async function saveProspectReport(
   const built = await buildReport(placeId, keyword, [], extra.area, extra.topic || undefined);
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
+  // SparkOps: review problems (free, from the reviews we already have) and
+  // one look at the website (at most 6 fetches). Fails quietly.
+  if (extra.product === "sparkops") {
+    try {
+      const { scanReviews } = await import("./sparkops");
+      const { opsSignals } = await import("./sparkops-site.server");
+      const texts = built.meta.reviewTexts;
+      built.report.ops = await opsSignals(
+        built.meta.website,
+        texts.length ? scanReviews(texts) : null,
+        texts,
+      );
+    } catch {
+      // The report works without it.
+    }
+  }
   // Who owns it, from Companies House (UK only, 2 outside calls, kept 90 days).
   let owner: Record<string, unknown> = {};
   if (!ownerFresh(row?.owner_looked_up_at)) {
@@ -671,6 +698,7 @@ export async function saveProspectReport(
     ...(c?.instagram ? { instagram_url: c.instagram } : {}),
     ...(c?.ownerName ? { website_owner_name: c.ownerName } : {}),
     ...(extra.contactName ? { contact_name: extra.contactName } : {}),
+    ...(extra.product ? { product: extra.product } : {}),
     ...owner,
   };
   // A rebuilt report may have a new score, so the link-preview picture is

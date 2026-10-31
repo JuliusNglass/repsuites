@@ -71,6 +71,16 @@ import { makeOgCard, videoFrame } from "../lib/og-card";
 import { matchesReach, PHONE_TYPE_LABEL, type ReachFilter } from "../lib/prospect-contact";
 import { ownerFirstName, ownerFresh, ownerLine } from "../lib/prospect-owner";
 import { money, saleOneLine, saleSymbol, type SalePeriod } from "../lib/sale-value";
+import {
+  nicheQuery,
+  PRODUCT_LABEL,
+  PRODUCTS,
+  SPARKOPS_NICHES,
+  sparkMessage,
+  sparkSubject,
+  type Product,
+} from "../lib/sparkops";
+import { isUkAddress } from "../lib/prospect-owner";
 
 export const Route = createFileRoute("/prospects")({
   head: () => ({
@@ -195,6 +205,7 @@ function Prospects() {
         data: {
           placeId: h.placeId,
           ...(force ? { force: true } : {}),
+          product,
           ...(words.trim() ? { keyword: words.trim() } : {}),
           ...(area ? { area } : {}),
           niche: !query.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
@@ -224,6 +235,7 @@ function Prospects() {
                 ? {
                     ...x,
                     saved: true,
+                    product,
                     reportAt: new Date().toISOString(),
                     reportLink: `https://repsuites.com/r/${r.token}`,
                   }
@@ -279,6 +291,25 @@ function Prospects() {
     toast.success(`${ok} of ${todo.length} reports ready. They are in your Pipeline.`);
   }
   const update = useServerFn(updateProspect);
+  // Which product we are selling: each has its own search, pipeline and counts.
+  const [product, setProductState] = useState<Product>("repsuites");
+  useEffect(() => {
+    const saved = localStorage.getItem("rs-prospect-product");
+    if (saved === "sparkops") {
+      setProductState("sparkops");
+      setUkOnly(true);
+    }
+  }, []);
+  const setProduct = (v: Product) => {
+    setProductState(v);
+    localStorage.setItem("rs-prospect-product", v);
+    setUkOnly(v === "sparkops");
+    setConfirm(null);
+    setFixAsk(null);
+  };
+  // SparkOps is for UK cleaning businesses: hide results outside the UK.
+  const [ukOnly, setUkOnly] = useState(false);
+  const [totals, setTotals] = useState<Record<Product, number>>({ repsuites: 0, sparkops: 0 });
   const [tab, setTab] = useState<"find" | "pipeline" | "due">("find");
   const [items, setItems] = useState<List | null>(null);
   const [total, setTotal] = useState(0);
@@ -365,7 +396,14 @@ function Prospects() {
       either: all.filter((h) => matchesReach(h, "either")).length,
     };
   }, [hits]);
-  const visible = useMemo(() => (hits ?? []).filter((h) => matchesReach(h, reach)), [hits, reach]);
+  const visible = useMemo(
+    () => (hits ?? []).filter((h) => matchesReach(h, reach) && (!ukOnly || isUkAddress(h.address))),
+    [hits, reach, ukOnly],
+  );
+  // Built for this product. One built for the other product is left out of
+  // "Build all": building it here would move it to this pipeline.
+  const builtHere = (h: Hit) => !!h.reportLink && h.product === product;
+  const otherProduct = (h: Hit) => !!h.reportLink && h.product !== null && h.product !== product;
   const newCount = Math.min(10, visible.filter((h) => !h.reportLink).length);
   const builtCount = visible.filter((h) => h.reportLink).length;
 
@@ -377,6 +415,7 @@ function Prospects() {
         loaded.current = true;
         setItems(r.prospects);
         setTotal(r.total);
+        setTotals(r.totals);
         setChEnabled(r.chEnabled);
       } else setErr(r.error);
     } catch {
@@ -399,19 +438,25 @@ function Prospects() {
     void load();
   }, [load]);
 
+  // Only this product's prospects, everywhere below.
+  const mine = useMemo(
+    () => (items === null ? null : items.filter((p) => p.product === product)),
+    [items, product],
+  );
   const due = useMemo(
     () =>
-      (items ?? []).filter(
+      (mine ?? []).filter(
         (p) => p.followUpOn && p.followUpOn <= today() && !["won", "lost"].includes(p.stage),
       ),
-    [items],
+    [mine],
   );
-  const counts2 = useMemo(() => queueCounts(items ?? []), [items]);
+  const counts2 = useMemo(() => queueCounts(mine ?? []), [mine]);
   const shown = useMemo(() => {
     if (tab === "due") return due;
-    const list = (items ?? []).filter((p) => inQueue(p, queue) && matchesSearch(p, term));
+    const list = (mine ?? []).filter((p) => inQueue(p, queue) && matchesSearch(p, term));
     return sortQueue(list, queue);
-  }, [tab, due, items, queue, term]);
+  }, [tab, due, mine, queue, term]);
+  const pipelineTotal = Math.max(totals[product], mine?.length ?? 0);
 
   // Returns true when it saved.
   const save = useCallback(
@@ -449,12 +494,40 @@ function Prospects() {
           Dashboard
         </a>
       </header>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-3 flex items-center gap-2">
+        <span id="selling" className="text-sm font-semibold">
+          Selling:
+        </span>
+        <div
+          role="group"
+          aria-labelledby="selling"
+          className="inline-flex rounded-full border border-border p-0.5"
+        >
+          {PRODUCTS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={product === id}
+              onClick={() => setProduct(id)}
+              className={`min-h-10 rounded-full px-4 text-sm font-bold ${
+                product === id
+                  ? id === "sparkops"
+                    ? "bg-teal-700 text-white"
+                    : "bg-primary text-primary-foreground"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {PRODUCT_LABEL[id]}
+            </button>
+          ))}
+        </div>
+      </div>
       <nav className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="max-w-4xl mx-auto px-2 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar">
           {(
             [
               ["find", "Find prospects"],
-              ["pipeline", `Pipeline (${total || items?.length || 0})`],
+              ["pipeline", `Pipeline (${pipelineTotal})`],
               ["due", `Follow up today (${due.length})`],
             ] as const
           ).map(([id, label]) => (
@@ -501,7 +574,12 @@ function Prospects() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="A business name, or a niche and town: dentists in Newport"
+                placeholder={
+                  product === "sparkops"
+                    ? "A cleaning business, or a niche and town: cleaning company in Cardiff"
+                    : "A business name, or a niche and town: dentists in Newport"
+                }
+                id="prospect-q"
                 aria-label="Search for a business, or a niche and town"
                 className={field}
               />
@@ -519,6 +597,23 @@ function Prospects() {
                 <span className="hidden sm:inline">Search</span>
               </button>
             </form>
+            {product === "sparkops" && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {SPARKOPS_NICHES.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => {
+                      setQ(nicheQuery(n, q));
+                      document.getElementById("prospect-q")?.focus();
+                    }}
+                    className="min-h-8 rounded-full border border-border px-3 py-1 text-xs font-semibold"
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            )}
             <input
               value={words}
               onChange={(e) => setWords(e.target.value)}
@@ -569,6 +664,16 @@ function Prospects() {
                     {label} ({n})
                   </button>
                 ))}
+                <button
+                  type="button"
+                  aria-pressed={ukOnly}
+                  onClick={() => setUkOnly((v) => !v)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                    ukOnly ? "bg-primary text-primary-foreground border-primary" : "border-border"
+                  }`}
+                >
+                  UK only ({(hits ?? []).filter((h) => isUkAddress(h.address)).length})
+                </button>
                 {finding.size > 0 && (
                   <span
                     role="status"
@@ -620,7 +725,24 @@ function Prospects() {
                     </p>
                     <ReachBadges h={h} finding={finding.has(h.placeId)} />
                   </div>
-                  {h.reportLink ? (
+                  {otherProduct(h) ? (
+                    <div className="flex flex-col items-end gap-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        In your {PRODUCT_LABEL[h.product ?? "repsuites"]} pipeline
+                      </p>
+                      <button
+                        type="button"
+                        disabled={building !== null || batch !== null}
+                        onClick={() => setConfirm({ placeId: h.placeId, reportAt: h.reportAt })}
+                        className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        {building === h.placeId ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : null}
+                        Build {PRODUCT_LABEL[product]} report
+                      </button>
+                    </div>
+                  ) : builtHere(h) || h.reportLink ? (
                     <div className="flex flex-col items-end gap-1.5">
                       <p className="text-xs font-semibold text-emerald-700">
                         Report built{h.reportAt ? ` ${shortDate(h.reportAt)}` : ""}
@@ -662,6 +784,11 @@ function Prospects() {
                     <RebuildConfirm
                       reportAt={confirm.reportAt}
                       cost={reportCost(words)}
+                      move={
+                        otherProduct(h)
+                          ? { from: PRODUCT_LABEL[h.product!], to: PRODUCT_LABEL[product] }
+                          : null
+                      }
                       onYes={() => void buildOne(h, false, true)}
                       onNo={() => setConfirm(null)}
                     />
@@ -702,7 +829,7 @@ function Prospects() {
           <>
             {tab === "pipeline" &&
               (() => {
-                const missing = (items ?? []).filter((p) => p.noMap);
+                const missing = (mine ?? []).filter((p) => p.noMap);
                 if (!missing.length && !fixing) return null;
                 // Ticked businesses to rebuild, at most FIX_CAP per run.
                 const ticked = fixAsk
@@ -717,7 +844,12 @@ function Prospects() {
                     for (let i = 0; i < todo.length; i++) {
                       setFixing({ done: i, total: todo.length });
                       const r = await build({
-                        data: { placeId: todo[i]!.placeId, force: true, keyword: phrase },
+                        data: {
+                          placeId: todo[i]!.placeId,
+                          force: true,
+                          keyword: phrase,
+                          product,
+                        },
                       }).catch(() => null);
                       if (r?.ok) ok++;
                     }
@@ -865,22 +997,22 @@ function Prospects() {
                 </div>
               </div>
             )}
-            {items === null && <Loader2 className="w-4 h-4 animate-spin" />}
-            {items && shown.length === 0 && (
+            {mine === null && <Loader2 className="w-4 h-4 animate-spin" />}
+            {mine && shown.length === 0 && (
               <p className="text-sm text-muted-foreground">
                 {tab === "due"
                   ? "No follow-ups due. Nice."
-                  : items.length === 0
-                    ? "No prospects here yet. Find some first."
+                  : mine.length === 0
+                    ? `No ${PRODUCT_LABEL[product]} prospects yet. Find some first.`
                     : term.trim()
                       ? "No prospects here match your search."
                       : "Nothing here right now."}
               </p>
             )}
-            {items && tab === "pipeline" && total > items.length && (
+            {items && mine && tab === "pipeline" && total > items.length && (
               <p className="text-xs text-muted-foreground">
-                Showing the {items.length} most recently changed of {total}, plus every follow-up
-                due.
+                Showing the {mine.length} most recently changed of {pipelineTotal}, plus every
+                follow-up due.
               </p>
             )}
             {items && !chEnabled && <ChKeyNote />}
@@ -962,11 +1094,14 @@ function useOgMaker() {
 function RebuildConfirm({
   reportAt,
   cost,
+  move,
   onYes,
   onNo,
 }: {
   reportAt: string;
   cost: number;
+  // Building for the other product moves the prospect to that pipeline.
+  move?: { from: string; to: string } | null;
   onYes: () => void;
   onNo: () => void;
 }) {
@@ -977,15 +1112,16 @@ function RebuildConfirm({
       className="basis-full rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm flex flex-wrap items-center gap-2"
     >
       <p className="flex-1 min-w-0">
-        This business already has a report{reportAt ? ` from ${shortDate(reportAt)}` : ""}.
-        Rebuilding costs about {cost}p and replaces it. Rebuild?
+        {move
+          ? `This business is in your ${move.from} pipeline. A ${move.to} report costs about ${cost}p, replaces its ${move.from} report at the same link and moves it to ${move.to}. Build it?`
+          : `This business already has a report${reportAt ? ` from ${shortDate(reportAt)}` : ""}. Rebuilding costs about ${cost}p and replaces it. Rebuild?`}
       </p>
       <button
         type="button"
         onClick={onYes}
         className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold"
       >
-        Rebuild
+        {move ? "Build" : "Rebuild"}
       </button>
       <button
         type="button"
@@ -1126,6 +1262,7 @@ const ProspectRow = memo(function ProspectRow({
         data: {
           placeId: p.placeId,
           force: true,
+          product: p.product,
           ...(list[0] ? { keyword: list[0] } : {}),
         },
       }).catch(() => ({ ok: false as const, error: FAILED }));
@@ -1162,16 +1299,26 @@ const ProspectRow = memo(function ProspectRow({
     ...p,
     contactName: p.contactName || ownerFirstName(p.owners, p.websiteOwnerName),
   };
-  const text = p.link ? (hasVideo ? videoMessage(greet, p.link) : shareText(greet, p.link)) : "";
-  const emailText =
-    p.link && hasVideo
-      ? videoMessage(greet, p.link, true)
-      : text
-        ? `${text}\n\nReply STOP and I won't message again.`
-        : "";
-  const emailSubject = hasVideo
-    ? `A quick video about ${p.name} on Google`
-    : `How ${p.name} shows up on Google`;
+  const spark = p.product === "sparkops";
+  const text = !p.link
+    ? ""
+    : spark
+      ? sparkMessage(greet, p.link, { video: hasVideo })
+      : hasVideo
+        ? videoMessage(greet, p.link)
+        : shareText(greet, p.link);
+  const emailText = !p.link
+    ? ""
+    : spark
+      ? sparkMessage(greet, p.link, { video: hasVideo, email: true })
+      : hasVideo
+        ? videoMessage(greet, p.link, true)
+        : `${text}\n\nReply STOP and I won't message again.`;
+  const emailSubject = spark
+    ? sparkSubject(p.name, hasVideo)
+    : hasVideo
+      ? `A quick video about ${p.name} on Google`
+      : `How ${p.name} shows up on Google`;
   const watched = watchLabel(p.videoFirstPlayedAt, p.videoMaxPercent);
   const mark = useServerFn(markSent);
   const undo = useServerFn(undoSent);
@@ -1198,8 +1345,9 @@ const ProspectRow = memo(function ProspectRow({
     };
   }, [moreOpen]);
   // Makes the link-preview picture if there is none yet.
+  // The picture is RepSuites-branded, so SparkOps reports go without one.
   const ensureOg = () => {
-    if (!p.ogImage)
+    if (!p.ogImage && !spark)
       void makeOg(
         p,
         p.videoUrl && p.videoKind ? { kind: p.videoKind, url: p.videoUrl } : null,
@@ -1633,13 +1781,15 @@ const ProspectRow = memo(function ProspectRow({
               className={field}
             />
           </label>
-          <MinSaleField
-            p={p}
-            value={minSale}
-            period={salePeriod}
-            onValue={setMinSale}
-            onPeriod={setSalePeriod}
-          />
+          {!spark && (
+            <MinSaleField
+              p={p}
+              value={minSale}
+              period={salePeriod}
+              onValue={setMinSale}
+              onPeriod={setSalePeriod}
+            />
+          )}
           <button
             type="button"
             disabled={saving}
@@ -1654,7 +1804,7 @@ const ProspectRow = memo(function ProspectRow({
                   notes,
                   email: email.trim(),
                   contactName: contact,
-                  ...saleSave(minSale, salePeriod, p.saleDefault.period),
+                  ...(spark ? {} : saleSave(minSale, salePeriod, p.saleDefault.period)),
                 });
                 if (ok) toast.success("Saved");
               } finally {
@@ -1764,6 +1914,12 @@ function VideoPanel({
   const [pct, setPct] = useState<number | null>(null);
 
   async function finish(video: { kind: string; url: string }, file?: File) {
+    if (p.product === "sparkops") {
+      toast.success("Video saved. It now shows at the top of the report.");
+      setLink("");
+      await onRefresh(p.id);
+      return;
+    }
     setBusy("Making the link preview picture");
     try {
       const ok = await makeOg(p, video, file);
@@ -1862,7 +2018,8 @@ function VideoPanel({
       ) : (
         <p className="text-xs text-muted-foreground">
           Record a short screen video walking through their report. It shows at the top of their
-          report link, with a Start free button under it.
+          report link, with a {p.product === "sparkops" ? "Book a 15-minute demo" : "Start free"}{" "}
+          button under it.
         </p>
       )}
       <div className="flex gap-2">

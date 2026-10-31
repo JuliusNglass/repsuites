@@ -6,6 +6,7 @@ import { londonDate, SENT_VIA } from "./prospect-pipeline";
 import { rankingHook } from "./prospect-video";
 import { isUkAddress, ownerFresh, type Officer } from "./prospect-owner";
 import { saleCurrency, saleDefault, type SalePeriod } from "./sale-value";
+import { asProduct, PRODUCTS } from "./sparkops";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import {
   agencyGuard,
@@ -48,9 +49,10 @@ export const searchProspects = createServerFn({ method: "POST" })
               instagram_url: string | null;
               report_at: string | null;
               report_token: string | null;
+              product: string | null;
             }[]
           >(
-            `prospects?select=place_id,email,facebook_url,instagram_url,report_at,report_token&place_id=in.(${ids})`,
+            `prospects?select=place_id,email,facebook_url,instagram_url,report_at,report_token,product&place_id=in.(${ids})`,
             "",
           )
         : Promise.resolve({ data: [] as never[] }),
@@ -66,6 +68,8 @@ export const searchProspects = createServerFn({ method: "POST" })
         return {
           ...h,
           saved: !!s,
+          // The pipeline it is in (RepSuites or SparkOps), when saved.
+          product: s ? asProduct(s.product) : null,
           savedEmail: !!s?.email,
           // Already has a report: the page offers Open, and asks before a rebuild.
           reportAt: s?.report_token ? (s.report_at ?? "") : "",
@@ -138,6 +142,7 @@ export const buildProspectReport = createServerFn({ method: "POST" })
       area?: string;
       force?: boolean;
       topic?: string;
+      product?: "repsuites" | "sparkops";
     }) =>
       z
         .object({
@@ -151,6 +156,8 @@ export const buildProspectReport = createServerFn({ method: "POST" })
           // The niche searched for ("auto detailing"), used only when the
           // business has no Google category.
           topic: z.string().trim().max(80).optional(),
+          // Which pipeline: left out keeps the prospect's own (new: RepSuites).
+          product: z.enum(PRODUCTS).optional(),
         })
         .parse(d),
   )
@@ -164,6 +171,7 @@ export const buildProspectReport = createServerFn({ method: "POST" })
       ...(data.topic ? { topic: data.topic } : {}),
       guardRecent: true,
       force: data.force === true,
+      ...(data.product ? { product: data.product } : {}),
     });
   });
 
@@ -247,6 +255,11 @@ type ProspectRowDb = {
   sent_via: string | null;
   min_sale_pence: number | null;
   sale_period: string | null;
+  product: string | null;
+  r_reviews: number | null;
+  r_gap_leader: string | null;
+  r_gap_reviews: number | null;
+  r_scan: { count: number; total: number; quote: string } | null;
 };
 
 const PROSPECT_SELECT = [
@@ -259,7 +272,9 @@ const PROSPECT_SELECT = [
   "video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type",
   "address,facebook_url,instagram_url,report_at,company_number,company_name,owners",
   "owner_source,owner_match,owner_looked_up_at,website_owner_name,sent_at,sent_via",
-  "min_sale_pence,sale_period",
+  "min_sale_pence,sale_period,product,r_reviews:report->business->reviews",
+  "r_gap_leader:report->reviewGap->>leader,r_gap_reviews:report->reviewGap->leaderReviews",
+  "r_scan:report->ops->reviews",
 ].join(",");
 
 // The pipeline shows up to this many, newest change first, plus every
@@ -276,6 +291,26 @@ function toItem(p: ProspectRowDb) {
   return {
     id: p.id,
     placeId: p.place_id,
+    // Which pipeline: RepSuites or SparkOps.
+    product: asProduct(p.product),
+    // The next business up on reviews, for the SparkOps message.
+    gap:
+      p.r_gap_leader && typeof p.r_gap_reviews === "number"
+        ? {
+            leader: p.r_gap_leader,
+            leaderReviews: p.r_gap_reviews,
+            reviews: typeof p.r_reviews === "number" ? p.r_reviews : 0,
+          }
+        : null,
+    // SparkOps: reviews that mention a late, missed or rushed clean.
+    scan:
+      p.r_scan && typeof p.r_scan.count === "number" && p.r_scan.count > 0
+        ? {
+            count: p.r_scan.count,
+            total: Number(p.r_scan.total) || 0,
+            quote: String(p.r_scan.quote ?? "").slice(0, 120),
+          }
+        : null,
     // The search phrases the report checked, for a rebuild from the pipeline.
     phrases: keywords.join(", "),
     // A report with no Google Maps grid (often no Google category).
@@ -367,9 +402,20 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
   }
   // Only when the list is full: count them all, so the tab shows the real total.
   let total = rows.length;
+  // Per product, so each pipeline tab shows its own real total.
+  const totals = { repsuites: 0, sparkops: 0 };
+  for (const r of rows) totals[asProduct(r.product)]++;
   if (recent.data.length >= LIST_LIMIT) {
-    const all = await serviceRead<{ id: string }[]>("prospects?select=id", "");
+    const all = await serviceRead<{ id: string; product: string | null }[]>(
+      "prospects?select=id,product",
+      "",
+    );
     total = Math.max(total, all.data?.length ?? 0);
+    if (all.data?.length) {
+      totals.repsuites = 0;
+      totals.sparkops = 0;
+      for (const r of all.data) totals[asProduct(r.product)]++;
+    }
   }
   const { chKey } = await import("./prospect-owner.server");
   return {
@@ -377,6 +423,7 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
     // Companies House look-ups need the key (a Cloudflare secret).
     chEnabled: !!chKey(),
     total,
+    totals,
     prospects: rows.map(toItem),
   };
 });

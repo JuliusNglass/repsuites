@@ -4,6 +4,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { serviceRead, serviceWrite } from "../lib/supabase-service.server";
 import { renderReport, reportNotFound } from "../lib/report-page.server";
+import { renderSparkReport } from "../lib/sparkops-report.server";
 import type { Report } from "../lib/prospects.server";
 import type { ProspectSnapshot } from "../lib/prospect-connect.server";
 import type { VideoKind } from "../lib/prospect-video";
@@ -34,9 +35,10 @@ export const Route = createFileRoute("/r/$token")({
             og_image_url: string | null;
             min_sale_pence: number | null;
             sale_period: string | null;
+            product: string | null;
           }[]
         >(
-          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period&report_token=eq.${token}`,
+          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product&report_token=eq.${token}`,
           "",
         );
         const row = r.data?.[0];
@@ -52,8 +54,10 @@ export const Route = createFileRoute("/r/$token")({
           }).catch(() => null);
         const q = new URL(request.url).searchParams;
         const flash = q.get("print") ? "print" : (q.get("google") ?? "");
+        // Each product has its own report at the same kind of link.
+        const render = row?.product === "sparkops" ? renderSparkReport : renderReport;
         return new Response(
-          renderReport(report, {
+          render(report, {
             token,
             snapshot: row?.gbp_snapshot ?? null,
             flash: flash.slice(0, 20),

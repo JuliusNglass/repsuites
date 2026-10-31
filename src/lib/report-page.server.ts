@@ -16,7 +16,7 @@ import {
   yearlyValue,
 } from "./sale-value";
 
-function esc(s: string): string {
+export function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
@@ -31,7 +31,7 @@ function scoreColour(n: number): string {
   return n >= 75 ? "#059669" : n >= 50 ? "#d97706" : "#dc2626";
 }
 
-const STYLE = `
+export const STYLE = `
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0f172a;line-height:1.5}
 main{max-width:44rem;margin:0 auto;padding:28px 18px 40px}
 .brand{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:20px}.brand img{width:28px;height:28px;border-radius:6px}
@@ -94,7 +94,7 @@ const FLASH: Record<string, string> = {
 };
 
 // "0.4 miles" or "1.2 km". Worked example: 1.6 km divided by 1.609 is about 1 mile.
-function distanceText(km: number, miles: boolean): string {
+export function distanceText(km: number, miles: boolean): string {
   if (!miles) return `${km.toFixed(1)} km`;
   const m = Math.round((km / 1.609344) * 10) / 10;
   return `${m} mile${m === 1 ? "" : "s"}`;
@@ -169,7 +169,7 @@ function rankColour(v: number | null) {
           : { bg: "#ef4444", fg: "#fff", t: String(v) };
 }
 
-function heatMap(r: Report, extra: RenderExtra | null): string {
+export function heatMap(r: Report, extra: RenderExtra | null): string {
   const b = r.business;
   const grids =
     r.grids && r.grids.length ? r.grids : r.grid ? [{ keyword: r.maps.keyword, ...r.grid }] : [];
@@ -496,7 +496,7 @@ const VIDEO_STYLE = `
 
 // Tells us when the prospect taps the WhatsApp chat or booking link, so the
 // pipeline moves them to Replied and Julius gets an alert.
-function actionTracker(token: string): string {
+export function actionTracker(token: string): string {
   const t = JSON.stringify(token);
   return `<script>(function(){var T=${t};function send(e){var b=JSON.stringify({t:T,e:e});if(navigator.sendBeacon&&navigator.sendBeacon("/api/report-video",new Blob([b],{type:"text/plain"})))return;fetch("/api/report-video",{method:"POST",body:b,keepalive:true}).catch(function(){});}document.querySelectorAll("a.wa").forEach(function(a){a.addEventListener("click",function(){send("chat")});});document.querySelectorAll("a.book").forEach(function(a){a.addEventListener("click",function(){send("call")});});})();</script>`;
 }
@@ -504,7 +504,7 @@ function actionTracker(token: string): string {
 // Sends plays and 25, 50, 75 and 100 percent marks to /api/report-video.
 // Files and YouTube report progress; Vimeo too, through its message API.
 // Loom only tells us it was tapped (Loom shows its own view figures).
-function videoTracker(token: string, kind: VideoKind): string {
+export function videoTracker(token: string, kind: VideoKind): string {
   const t = JSON.stringify(token);
   const common = `var T=${t},sent={},played=false;function send(e,p){var k=e+p;if(sent[k])return;sent[k]=1;var b=JSON.stringify({t:T,e:e,p:p});if(navigator.sendBeacon&&navigator.sendBeacon("/api/report-video",new Blob([b],{type:"text/plain"})))return;fetch("/api/report-video",{method:"POST",body:b,keepalive:true}).catch(function(){});}
 function play(){if(!played){played=true;send("play",0);}}function at(pct){[25,50,75,100].forEach(function(m){if(pct>=m-1)send("progress",m);});}`;
