@@ -40,7 +40,7 @@ describe("watch label and message", () => {
   it("writes a short personal message, with STOP for email", () => {
     const p = { name: "Test Cafe", contactName: "Sam Jones", topFix: "No phone number." };
     expect(videoMessage(p, "https://repsuites.com/r/x")).toBe(
-      "Hi Sam, I recorded a quick 90-second video about Test Cafe on Google. No phone number. Watch here: https://repsuites.com/r/x",
+      "Hi Sam, I made you a quick 90-second video about how Test Cafe shows up on Google for people searching nearby. No phone number. Watch here: https://repsuites.com/r/x\n\nIs most of your work from people nearby, or further afield?",
     );
     expect(videoMessage(p, "L", true)).toContain("Reply STOP and I won't message again.");
   });
@@ -55,7 +55,7 @@ describe("rankingHook", () => {
         { keyword: "car valeting", top3: 2, ranks: ranks(2) },
       ]),
     ).toBe(
-      'When people near you search "car valeting", you only show in Google\'s top 3 in 2 of the 25 spots we checked around you. Everywhere else, customers see other businesses first.',
+      "For \"car valeting\", you're in Google's top 3 in only 2 of the 25 spots I checked around you.",
     );
   });
   it("says not in any spot when zero", () => {

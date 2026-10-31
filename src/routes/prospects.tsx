@@ -41,6 +41,7 @@ import {
   updateProspect,
 } from "../lib/prospects.functions";
 import {
+  OPENING_QUESTION,
   VIDEO_MAX_BYTES,
   VIDEO_TYPES,
   videoExt,
@@ -109,8 +110,8 @@ function shareText(
   const hi = p.contactName ? `Hi ${p.contactName.split(" ")[0]}` : "Hi";
   // Where they show on Google Maps leads; otherwise the report's top fix.
   const lead = p.hook || p.topFix;
-  const hook = lead ? ` The first thing I noticed: ${lead.replace(/\.$/, "")}.` : "";
-  return `${hi}, I put together a free report on how ${p.name} shows up on Google Maps, compared with the businesses nearest to you.${hook} It takes 2 minutes to read: ${link}`;
+  const hook = lead ? ` ${lead.replace(/\.$/, "")}.` : "";
+  return `${hi}, I put together a free report on how ${p.name} shows up on Google for people searching nearby.${hook} It takes 2 minutes to read: ${link}\n\n${OPENING_QUESTION}`;
 }
 
 function shortDate(iso: string | null | undefined) {
@@ -848,7 +849,12 @@ function ProspectRow({
     contactName: p.contactName || ownerFirstName(p.owners, p.websiteOwnerName),
   };
   const text = p.link ? (hasVideo ? videoMessage(greet, p.link) : shareText(greet, p.link)) : "";
-  const emailText = p.link && hasVideo ? videoMessage(greet, p.link, true) : text;
+  const emailText =
+    p.link && hasVideo
+      ? videoMessage(greet, p.link, true)
+      : text
+        ? `${text}\n\nReply STOP and I won't message again.`
+        : "";
   const emailSubject = hasVideo
     ? `A quick video about ${p.name} on Google`
     : `How ${p.name} shows up on Google`;
