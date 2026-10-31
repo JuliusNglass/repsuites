@@ -8,7 +8,7 @@ export const Route = createFileRoute("/privacy")({
     <PublicLayout>
       <article className={textPageClass}>
         <h1>Privacy Policy</h1>
-        <p className="text-muted-foreground">Last updated: 29 October 2026</p>
+        <p className="text-muted-foreground">Last updated: 31 October 2026</p>
 
         <h2>1. Who We Are</h2>
         <p>
@@ -111,18 +111,53 @@ export const Route = createFileRoute("/privacy")({
           . See <a href="/google-business-profile">how the Google connection works</a>.
         </p>
 
-        <h2>5. Data Sharing</h2>
+        <h2>5. Facebook and Instagram data</h2>
+        <p>
+          If you choose to connect Facebook and Instagram, you sign in with Facebook Login for
+          Business and pick the Facebook Page and Instagram professional account RepSuites may use.
+          We then receive and keep only:
+        </p>
+        <ul>
+          <li>your Facebook user ID and name, to know who connected;</li>
+          <li>the chosen Page&apos;s ID, name and Page access token;</li>
+          <li>the linked Instagram account&apos;s ID and username.</li>
+        </ul>
+        <p>
+          We use these only to show you which Page and account are connected and to publish the
+          posts you have approved in RepSuites. We never post without your approval. We do not read
+          your messages, comments, followers or insights, and we do not use this data for
+          advertising. Access tokens are stored encrypted. When you click Disconnect in RepSuites,
+          or remove RepSuites in your Facebook settings, we delete the tokens and connection
+          details. You can also ask for deletion through Facebook, which calls our{" "}
+          <a href="/api/meta/data-deletion">data deletion endpoint</a>, or by emailing
+          support@repsuites.com.
+        </p>
+
+        <h2>6. Data Sharing</h2>
         <p>We do not sell your personal data. We may share data with:</p>
         <ul>
           <li>
             Service providers who assist in operating our platform (e.g., email delivery, payment
             processing).
           </li>
-          <li>Google, as required for API integration.</li>
-          <li>Law enforcement, if required by law.</li>
+          <li>Google and Meta, only as needed to publish what you ask us to publish.</li>
+          <li>Public authorities, only where the law requires it (see below).</li>
         </ul>
 
-        <h2>6. Data Retention</h2>
+        <h2>7. Requests from public authorities</h2>
+        <p>
+          We have not received any request from a public authority for our users&apos; data. If we
+          do, we will:
+        </p>
+        <ul>
+          <li>check that the request is lawful and valid before acting on it;</li>
+          <li>challenge any request we believe is unlawful, too broad or not properly made;</li>
+          <li>disclose only the minimum data the request legally requires;</li>
+          <li>keep a written record of each request, our response and the legal reasons for it.</li>
+        </ul>
+        <p>Where the law allows, we will tell the affected customer before we disclose anything.</p>
+
+        <h2>8. Data Retention</h2>
         <p>
           We retain your account data for as long as your account is active. Google data is kept
           only while your Google account is connected: when you disconnect, we delete your Google
@@ -131,19 +166,19 @@ export const Route = createFileRoute("/privacy")({
           within 30 days.
         </p>
 
-        <h2>7. Security</h2>
+        <h2>9. Security</h2>
         <p>
           We use industry-standard encryption and security measures to protect your data, including
           encrypted connections (TLS), secure token storage, and role-based access controls.
         </p>
 
-        <h2>8. Your Rights</h2>
+        <h2>10. Your Rights</h2>
         <p>
           You have the right to access, correct, or delete your personal data. You can revoke Google
           access at any time through your Google Account settings or our Settings page.
         </p>
 
-        <h2>9. Contact Us</h2>
+        <h2>11. Contact Us</h2>
         <p>
           For questions about this policy, contact us at{" "}
           <a href="mailto:support@repsuites.com">support@repsuites.com</a>.
