@@ -195,7 +195,9 @@ export async function signUpFree(
   await Promise.all([
     sendEmail({
       to,
-      subject: `New free sign-up: ${business}`,
+      subject: prospect
+        ? `${business} signed up from their report`
+        : `New free sign-up: ${business}`,
       html: `<p><b>${esc(business)}</b> signed up for a free account.</p>
 <p>${esc(name)}<br>${esc(email)}</p>
 <p>${prospect ? "They came from their prospect report." : "They signed up from the website."} ${placeId ? "Their Google review link is set up." : "No Google listing chosen yet."}</p>

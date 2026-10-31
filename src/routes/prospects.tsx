@@ -17,15 +17,31 @@ import {
   Search,
   Smartphone,
   Star,
+  Trash2,
+  Upload,
+  Video,
 } from "lucide-react";
 import { Logo } from "../components/site/Logo";
 import {
   buildProspectReport,
   addProspectPhrase,
   listProspects,
+  prospectVideoThumb,
+  removeProspectVideo,
+  saveProspectVideo,
   searchProspects,
+  setProspectOgImage,
+  startProspectUpload,
   updateProspect,
 } from "../lib/prospects.functions";
+import {
+  VIDEO_MAX_BYTES,
+  VIDEO_TYPES,
+  videoExt,
+  videoMessage,
+  watchLabel,
+} from "../lib/prospect-video";
+import { makeOgCard, videoFrame } from "../lib/og-card";
 
 export const Route = createFileRoute("/prospects")({
   head: () => ({
@@ -361,7 +377,7 @@ function Prospects() {
             )}
             <ul className="space-y-2">
               {shown.map((p) => (
-                <ProspectRow key={p.id} p={p} onSave={save} />
+                <ProspectRow key={p.id} p={p} onSave={save} onReload={load} />
               ))}
             </ul>
           </>
@@ -371,14 +387,91 @@ function Prospects() {
   );
 }
 
-function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) => Promise<void> }) {
+// Uploads a file straight to storage with a signed link, reporting progress.
+function putFile(
+  url: string,
+  body: Blob,
+  type: string,
+  onProgress?: (pct: number) => void,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const x = new XMLHttpRequest();
+    x.open("PUT", url);
+    x.setRequestHeader("Content-Type", type);
+    x.setRequestHeader("x-upsert", "false");
+    x.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    x.onload = () => resolve(x.status >= 200 && x.status < 300);
+    x.onerror = () => resolve(false);
+    x.send(body);
+  });
+}
+
+// Makes the personal link-preview picture (name, score, play button over a
+// still from the video) and saves it on the prospect.
+function useOgMaker() {
+  const thumb = useServerFn(prospectVideoThumb);
+  const start = useServerFn(startProspectUpload);
+  const setOg = useServerFn(setProspectOgImage);
+  return useCallback(
+    async (
+      p: { id: string; name: string; score: number | null },
+      video: { kind: string; url: string } | null,
+      localFile?: File,
+    ): Promise<boolean> => {
+      try {
+        let still: HTMLCanvasElement | string | null = null;
+        if (video?.kind === "file") still = await videoFrame(localFile ?? video.url);
+        else if (video) {
+          const t = await thumb({ data: { link: video.url } });
+          still = t.ok ? t.thumb : null;
+        }
+        const blob = await makeOgCard({ name: p.name, score: p.score, video: !!video, still });
+        if (!blob) return false;
+        const up = await start({ data: { what: "og", ext: "jpg" } });
+        if (!up.ok) return false;
+        if (!(await putFile(up.uploadUrl, blob, "image/jpeg"))) return false;
+        const r = await setOg({ data: { id: p.id, path: up.path } });
+        return r.ok;
+      } catch {
+        return false;
+      }
+    },
+    [thumb, start, setOg],
+  );
+}
+
+function ProspectRow({
+  p,
+  onSave,
+  onReload,
+}: {
+  p: P;
+  onSave: (id: string, patch: Patch) => Promise<void>;
+  onReload: () => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
   const [notes, setNotes] = useState(p.notes);
   const [email, setEmail] = useState(p.email);
   const [contact, setContact] = useState(p.contactName);
-  const text = p.link ? shareText(p, p.link) : "";
-  // Sharing a report moves a new prospect to "sent" and sets a follow-up in 3 days.
+  const makeOg = useOgMaker();
+  const hasVideo = !!p.videoUrl;
+  const text = p.link ? (hasVideo ? videoMessage(p, p.link) : shareText(p, p.link)) : "";
+  const emailText = p.link && hasVideo ? videoMessage(p, p.link, true) : text;
+  const emailSubject = hasVideo
+    ? `A quick video about ${p.name} on Google`
+    : `How ${p.name} shows up on Google`;
+  const watched = watchLabel(p.videoFirstPlayedAt, p.videoMaxPercent);
+  // Sharing a report moves a new prospect to "sent" and sets a follow-up in 3
+  // days. It also makes the link-preview picture if there is none yet.
   const shared = async () => {
+    if (!p.ogImage)
+      void makeOg(
+        p,
+        p.videoUrl && p.videoKind ? { kind: p.videoKind, url: p.videoUrl } : null,
+      ).then((ok) => (ok ? onReload() : undefined));
     if (p.stage === "new") await onSave(p.id, { stage: "sent", followUpOn: today(3) });
   };
   const phone = p.phone.replace(/[^\d+]/g, "");
@@ -399,6 +492,11 @@ function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) =
             {p.source === "inbound" ? " - asked for a check" : ""}
             {p.googleConnected ? " - connected Google" : ""}
           </p>
+          {watched && (
+            <p className="text-xs mt-0.5 font-semibold text-emerald-700 inline-flex items-center gap-1">
+              <Video className="w-3.5 h-3.5" /> {watched}
+            </p>
+          )}
           {p.topFix && <p className="text-xs mt-0.5 truncate">{p.topFix}</p>}
         </div>
         <select
@@ -455,7 +553,7 @@ function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) =
             <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
           </a>
           <a
-            href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(`How ${p.name} shows up on Google`)}&body=${encodeURIComponent(text)}`}
+            href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`}
             onClick={() => void shared()}
             className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
           >
@@ -470,6 +568,15 @@ function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) =
           </a>
           <button
             type="button"
+            onClick={() => setVideoOpen((v) => !v)}
+            className={`rounded-lg border px-2.5 py-1.5 inline-flex items-center gap-1 ${
+              hasVideo ? "border-emerald-600 text-emerald-700" : "border-border"
+            }`}
+          >
+            <Video className="w-3.5 h-3.5" /> {hasVideo ? "Video added" : "Add video"}
+          </button>
+          <button
+            type="button"
             onClick={() => setOpen((v) => !v)}
             className="ml-auto px-2 py-1.5 inline-flex items-center gap-1 text-muted-foreground"
           >
@@ -478,6 +585,7 @@ function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) =
           </button>
         </div>
       )}
+      {videoOpen && p.link && <VideoPanel p={p} makeOg={makeOg} onReload={onReload} />}
       {open && (
         <div className="grid sm:grid-cols-2 gap-2 pt-1">
           <input
@@ -525,5 +633,169 @@ function ProspectRow({ p, onSave }: { p: P; onSave: (id: string, patch: Patch) =
         </div>
       )}
     </li>
+  );
+}
+
+// Add, replace or remove the personal video shown at the top of the report.
+function VideoPanel({
+  p,
+  makeOg,
+  onReload,
+}: {
+  p: P;
+  makeOg: ReturnType<typeof useOgMaker>;
+  onReload: () => Promise<void>;
+}) {
+  const save = useServerFn(saveProspectVideo);
+  const remove = useServerFn(removeProspectVideo);
+  const start = useServerFn(startProspectUpload);
+  const [link, setLink] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [pct, setPct] = useState<number | null>(null);
+
+  async function finish(video: { kind: string; url: string }, file?: File) {
+    setBusy("Making the link preview picture");
+    const ok = await makeOg(p, video, file);
+    if (!ok) toast.message("Video saved. The preview picture will be made when you share.");
+    else toast.success("Video saved. It now shows at the top of the report.");
+    setBusy(null);
+    setLink("");
+    await onReload();
+  }
+
+  async function saveLink() {
+    if (!link.trim()) return;
+    setBusy("Saving");
+    const r = await save({ data: { id: p.id, link: link.trim() } }).catch(() => null);
+    if (!r?.ok) {
+      setBusy(null);
+      toast.error(r?.error ?? "Something went wrong. Try again.");
+      return;
+    }
+    await finish({ kind: r.kind, url: r.url });
+  }
+
+  async function upload(file: File) {
+    const ext = videoExt(file.name, file.type);
+    if (!ext) {
+      toast.error("Use an mp4, mov or webm video.");
+      return;
+    }
+    if (file.size > VIDEO_MAX_BYTES) {
+      toast.error("That video is over 200 MB. Record a shorter one, or use a Loom link.");
+      return;
+    }
+    setBusy("Uploading");
+    setPct(0);
+    const up = await start({ data: { what: "video", ext } }).catch(() => null);
+    if (!up?.ok) {
+      setBusy(null);
+      setPct(null);
+      toast.error(up?.error ?? "Could not start the upload. Try again.");
+      return;
+    }
+    const type = file.type || VIDEO_TYPES[ext]!;
+    const ok = await putFile(up.uploadUrl, file, type, setPct);
+    setPct(null);
+    if (!ok) {
+      setBusy(null);
+      toast.error("The upload failed. Check your connection and try again.");
+      return;
+    }
+    setBusy("Saving");
+    const r = await save({ data: { id: p.id, path: up.path } }).catch(() => null);
+    if (!r?.ok) {
+      setBusy(null);
+      toast.error(r?.error ?? "Something went wrong. Try again.");
+      return;
+    }
+    await finish({ kind: r.kind, url: r.url }, file);
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2 text-sm">
+      {p.videoUrl ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-semibold">
+            {p.videoKind === "file"
+              ? "Uploaded video"
+              : `${(p.videoKind ?? "").replace(/^./, (c) => c.toUpperCase())} video`}
+          </span>
+          <a href={p.videoUrl} target="_blank" rel="noopener" className="underline text-xs">
+            Watch
+          </a>
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={async () => {
+              setBusy("Removing");
+              const r = await remove({ data: { id: p.id } }).catch(() => null);
+              setBusy(null);
+              if (!r?.ok) {
+                toast.error(r?.error ?? "Could not remove the video.");
+                return;
+              }
+              toast.success("Video removed");
+              await onReload();
+            }}
+            className="ml-auto rounded-lg border border-border px-2 py-1 text-xs inline-flex items-center gap-1 disabled:opacity-50"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Remove
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Record a short screen video walking through their report. It shows at the top of their
+          report link, with a Start free button under it.
+        </p>
+      )}
+      <div className="flex gap-2">
+        <input
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="Paste a Loom, YouTube or Vimeo link"
+          className={field}
+        />
+        <button
+          type="button"
+          disabled={busy !== null || !link.trim()}
+          onClick={() => void saveLink()}
+          className="rounded-lg bg-primary text-primary-foreground px-3 font-semibold disabled:opacity-50"
+        >
+          {p.videoUrl ? "Replace" : "Save"}
+        </button>
+      </div>
+      <label
+        className={`rounded-lg border border-dashed border-border px-3 py-2 flex items-center gap-2 cursor-pointer ${
+          busy ? "opacity-50 pointer-events-none" : ""
+        }`}
+      >
+        <Upload className="w-4 h-4" />
+        <span>Or upload a video file (mp4, mov or webm, up to 200 MB)</span>
+        <input
+          type="file"
+          accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) void upload(f);
+          }}
+        />
+      </label>
+      {busy && (
+        <div className="space-y-1">
+          <p className="text-xs inline-flex items-center gap-1.5">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> {busy}
+            {pct !== null ? ` ${pct}%` : ""}. Keep this page open.
+          </p>
+          {pct !== null && (
+            <div className="h-2 rounded bg-muted overflow-hidden">
+              <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

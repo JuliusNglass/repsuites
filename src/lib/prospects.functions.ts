@@ -96,9 +96,14 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       gbp_connected_at: string | null;
       source: string;
       created_at: string;
+      video_url: string | null;
+      video_kind: string | null;
+      video_first_played_at: string | null;
+      video_max_percent: number;
+      og_image_url: string | null;
     }[]
   >(
-    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at&order=updated_at.desc&limit=300",
+    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url&order=updated_at.desc&limit=300",
     "",
   );
   return {
@@ -121,6 +126,11 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       googleConnected: !!p.gbp_connected_at,
       source: p.source,
       createdAt: p.created_at,
+      videoUrl: p.video_url,
+      videoKind: p.video_kind,
+      videoFirstPlayedAt: p.video_first_played_at,
+      videoMaxPercent: p.video_max_percent ?? 0,
+      ogImage: p.og_image_url,
     })),
   };
 });
@@ -164,4 +174,68 @@ export const updateProspect = createServerFn({ method: "POST" })
       body,
     });
     return w.error ? { ok: false as const, error: "Could not save." } : { ok: true as const };
+  });
+
+// ---------- the personal video on the report ----------
+
+export const startProspectUpload = createServerFn({ method: "POST" })
+  .validator((d: { what: "video" | "og"; ext: string }) =>
+    z
+      .object({ what: z.enum(["video", "og"]), ext: z.enum(["mp4", "mov", "webm", "jpg"]) })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const { signedUpload } = await import("./prospect-video.server");
+    return signedUpload(data.what, data.ext);
+  });
+
+export const saveProspectVideo = createServerFn({ method: "POST" })
+  .validator((d: { id: string; link?: string; path?: string }) =>
+    z
+      .object({
+        id: z.string().regex(UUID_RE),
+        link: z.string().trim().max(500).optional(),
+        path: z.string().max(120).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const { saveVideo } = await import("./prospect-video.server");
+    return saveVideo(data.id, {
+      ...(data.link ? { link: data.link } : {}),
+      ...(data.path ? { path: data.path } : {}),
+    });
+  });
+
+export const removeProspectVideo = createServerFn({ method: "POST" })
+  .validator((d: { id: string }) => z.object({ id: z.string().regex(UUID_RE) }).parse(d))
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const { removeVideo } = await import("./prospect-video.server");
+    return removeVideo(data.id);
+  });
+
+export const prospectVideoThumb = createServerFn({ method: "POST" })
+  .validator((d: { link: string }) => z.object({ link: z.string().max(500) }).parse(d))
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const { linkThumbnail } = await import("./prospect-video.server");
+    return { ok: true as const, thumb: await linkThumbnail(data.link) };
+  });
+
+export const setProspectOgImage = createServerFn({ method: "POST" })
+  .validator((d: { id: string; path: string }) =>
+    z.object({ id: z.string().regex(UUID_RE), path: z.string().max(120) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const { setOgImage } = await import("./prospect-video.server");
+    return setOgImage(data.id, data.path);
   });

@@ -26,7 +26,8 @@ export function signupProblem(i: SignupInput): string | null {
   return null;
 }
 
-// A prospect moves to "replied" when they sign up, unless they were further on.
+// A prospect who signs up from their report is won.
 export function stageAfterSignup(stage: string): string {
-  return ["new", "sent", "opened"].includes(stage) ? "replied" : stage;
+  void stage;
+  return "won";
 }

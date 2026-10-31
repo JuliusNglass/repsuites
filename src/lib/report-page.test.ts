@@ -72,3 +72,43 @@ describe("score uses the whole area", async () => {
     expect(h.indexOf("What we found")).toBeLessThan(h.indexOf("How we worked out your score"));
   });
 });
+
+describe("personal video at the top", () => {
+  const base = { token: "a".repeat(24), snapshot: null, flash: "" };
+  it("shows a Loom video first with Start free and the 3 steps", () => {
+    const h = renderReport(report, {
+      ...base,
+      contactName: "Sam Jones",
+      video: { kind: "loom", url: "https://www.loom.com/share/0123456789abcdef0123456789abcdef" },
+    });
+    expect(h).toContain("Sam, I recorded this for you");
+    expect(h).toContain("https://www.loom.com/embed/0123456789abcdef0123456789abcdef");
+    expect(h.indexOf("I recorded this")).toBeLessThan(h.indexOf("You and your nearest rivals"));
+    expect(h).toContain("Type your email and a password");
+    expect(h).toContain("Print your QR code");
+    expect(h).toContain(`/start?r=${"a".repeat(24)}`);
+    expect(h).toContain("https://wa.me/447512584332");
+    expect(h).not.toContain("—");
+  });
+  it("uses the business name without a contact, and a plain video tag for files", () => {
+    const h = renderReport(report, {
+      ...base,
+      video: { kind: "file", url: "https://x.supabase.co/storage/v1/object/public/v/a.mp4" },
+    });
+    expect(h).toContain("Test Cafe, I recorded this for you");
+    expect(h).toContain('<video id="pv"');
+    expect(h).toContain("playsinline");
+  });
+  it("has no video section without a video", () => {
+    expect(renderReport(report, base)).not.toContain("I recorded this");
+  });
+  it("sets a personal link preview", () => {
+    const h = renderReport(
+      { ...report, fixes: [{ title: "No phone number", why: "", priority: "high" }] },
+      { ...base, ogImage: "https://x.supabase.co/og/a.jpg" },
+    );
+    expect(h).toContain('og:title" content="Test Cafe, your Google report"');
+    expect(h).toContain('og:description" content="No phone number"');
+    expect(h).toContain('og:image" content="https://x.supabase.co/og/a.jpg"');
+  });
+});

@@ -22,9 +22,9 @@ describe("free sign-up", () => {
     expect(reviewUrl("ChIJabc123xyz")).toBe(
       "https://search.google.com/local/writereview?placeid=ChIJabc123xyz",
     ));
-  it("moves early prospects to replied only", () => {
-    expect(stageAfterSignup("sent")).toBe("replied");
-    expect(stageAfterSignup("booked")).toBe("booked");
+  it("marks a prospect who signs up as won", () => {
+    expect(stageAfterSignup("sent")).toBe("won");
+    expect(stageAfterSignup("booked")).toBe("won");
   });
 });
 

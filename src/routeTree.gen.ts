@@ -22,6 +22,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiProspectConnectRouteImport } from './routes/api.prospect-connect'
+import { Route as ApiReportVideoRouteImport } from './routes/api.report-video'
 import { Route as ApiUnsubscribeRouteImport } from './routes/api.unsubscribe'
 import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
@@ -103,6 +104,11 @@ const TermsRoute = TermsRouteImport.update({
 const ApiProspectConnectRoute = ApiProspectConnectRouteImport.update({
   id: '/api/prospect-connect',
   path: '/api/prospect-connect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReportVideoRoute = ApiReportVideoRouteImport.update({
+  id: '/api/report-video',
+  path: '/api/report-video',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUnsubscribeRoute = ApiUnsubscribeRouteImport.update({
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
+  '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
+  '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
+  '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
@@ -305,6 +314,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/prospect-connect'
+    | '/api/report-video'
     | '/api/unsubscribe'
     | '/cards/order'
     | '/cards/thanks'
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/prospect-connect'
+    | '/api/report-video'
     | '/api/unsubscribe'
     | '/cards/order'
     | '/cards/thanks'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/prospect-connect'
+    | '/api/report-video'
     | '/api/unsubscribe'
     | '/cards/order'
     | '/cards/thanks'
@@ -402,6 +414,7 @@ export interface RootRouteChildren {
   StartRoute: typeof StartRoute
   TermsRoute: typeof TermsRoute
   ApiProspectConnectRoute: typeof ApiProspectConnectRoute
+  ApiReportVideoRoute: typeof ApiReportVideoRoute
   ApiUnsubscribeRoute: typeof ApiUnsubscribeRoute
   CardsOrderRoute: typeof CardsOrderRoute
   CardsThanksRoute: typeof CardsThanksRoute
@@ -512,6 +525,13 @@ declare module '@tanstack/react-router' {
       path: '/api/prospect-connect'
       fullPath: '/api/prospect-connect'
       preLoaderRoute: typeof ApiProspectConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/report-video': {
+      id: '/api/report-video'
+      path: '/api/report-video'
+      fullPath: '/api/report-video'
+      preLoaderRoute: typeof ApiReportVideoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/unsubscribe': {
@@ -650,6 +670,7 @@ const rootRouteChildren: RootRouteChildren = {
   StartRoute: StartRoute,
   TermsRoute: TermsRoute,
   ApiProspectConnectRoute: ApiProspectConnectRoute,
+  ApiReportVideoRoute: ApiReportVideoRoute,
   ApiUnsubscribeRoute: ApiUnsubscribeRoute,
   CardsOrderRoute: CardsOrderRoute,
   CardsThanksRoute: CardsThanksRoute,

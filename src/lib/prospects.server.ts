@@ -563,8 +563,13 @@ export async function saveProspectReport(
     ...(extra.email ? { email: extra.email } : {}),
     ...(extra.contactName ? { contact_name: extra.contactName } : {}),
   };
+  // A rebuilt report may have a new score, so the link-preview picture is
+  // made again next time the report is shared.
   const w = row
-    ? await serviceWrite<unknown>(`prospects?id=eq.${row.id}`, "", { method: "PATCH", body })
+    ? await serviceWrite<unknown>(`prospects?id=eq.${row.id}`, "", {
+        method: "PATCH",
+        body: { ...body, og_image_url: null },
+      })
     : await serviceWrite<unknown>("prospects", "", {
         method: "POST",
         body: { ...body, source, created_by: extra.createdBy ?? null },

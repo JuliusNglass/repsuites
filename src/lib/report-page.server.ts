@@ -5,6 +5,7 @@ import type { Report } from "./prospects.server";
 import type { ProspectSnapshot } from "./prospect-connect.server";
 import { gridSpots } from "./report-map";
 import { usesMiles } from "./units";
+import { embedUrl, type VideoKind } from "./prospect-video";
 
 function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -316,6 +317,94 @@ export interface RenderExtra {
   snapshot: ProspectSnapshot | null;
   flash: string;
   center?: { lat: number; lng: number } | null;
+  video?: { kind: VideoKind; url: string } | null;
+  contactName?: string | null;
+  ogImage?: string | null;
+}
+
+// Julius's WhatsApp, used when REPSUITES_SALES_WHATSAPP is not set.
+const DEFAULT_SALES_WHATSAPP = "447512584332";
+
+// Digits only, for a wa.me link. Worked example: "+44 7512 584332" gives
+// "447512584332". Empty if it is too short or long to be a phone number.
+export function salesWhatsApp(
+  raw = (process.env["REPSUITES_SALES_WHATSAPP"] ?? "").trim() || DEFAULT_SALES_WHATSAPP,
+): string {
+  const d = raw.replace(/\D/g, "");
+  return d.length >= 8 && d.length <= 15 ? d : "";
+}
+
+const VIDEO_STYLE = `
+.vid{background:#0f172a;color:#fff;border-radius:20px;padding:18px 14px 20px;margin:0 -6px 18px}
+.vid h1{color:#fff;font-size:1.45rem;margin:0 0 12px}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}
+.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vid video{display:block;width:100%;max-height:75vh;border-radius:12px;background:#000}
+.vid .cta{margin-top:16px;font-size:1.2rem;padding:18px}
+.steps{list-style:none;margin:16px 0 0;padding:0}
+.steps li{display:flex;align-items:center;gap:12px;font-size:1.05rem;font-weight:600}
+.steps .n{flex-shrink:0;width:36px;height:36px;border-radius:50%;background:#f5b324;color:#0f172a;display:flex;align-items:center;justify-content:center;font-weight:800}
+.steps .arrow{color:#f5b324;font-size:1.2rem;line-height:1;padding:4px 0 4px 10px}
+.wa{display:block;text-align:center;border:2px solid #25d366;color:#fff;text-decoration:none;border-radius:14px;padding:13px;font-weight:700;margin-top:16px}
+`;
+
+// Sends plays and 25, 50, 75 and 100 percent marks to /api/report-video.
+// Files and YouTube report progress; Vimeo too, through its message API.
+// Loom only tells us it was tapped (Loom shows its own view figures).
+function videoTracker(token: string, kind: VideoKind): string {
+  const t = JSON.stringify(token);
+  const common = `var T=${t},sent={},played=false;function send(e,p){var k=e+p;if(sent[k])return;sent[k]=1;var b=JSON.stringify({t:T,e:e,p:p});if(navigator.sendBeacon&&navigator.sendBeacon("/api/report-video",new Blob([b],{type:"text/plain"})))return;fetch("/api/report-video",{method:"POST",body:b,keepalive:true}).catch(function(){});}
+function play(){if(!played){played=true;send("play",0);}}function at(pct){[25,50,75,100].forEach(function(m){if(pct>=m-1)send("progress",m);});}`;
+  if (kind === "file")
+    return `<script>(function(){${common}var v=document.getElementById("pv");if(!v)return;v.addEventListener("play",play);v.addEventListener("timeupdate",function(){if(v.duration)at(v.currentTime/v.duration*100);});v.addEventListener("ended",function(){at(100);});})();</script>`;
+  if (kind === "youtube")
+    return `<script>(function(){${common}var timer;window.onYouTubeIframeAPIReady=function(){var p=new YT.Player("pv",{events:{onStateChange:function(e){if(e.data===1){play();clearInterval(timer);timer=setInterval(function(){var d=p.getDuration();if(d)at(p.getCurrentTime()/d*100);},2000);}else{clearInterval(timer);}if(e.data===0)at(100);}}});};var s=document.createElement("script");s.src="https://www.youtube.com/iframe_api";document.head.appendChild(s);})();</script>`;
+  if (kind === "vimeo")
+    return `<script>(function(){${common}var f=document.getElementById("pv");function post(m,v){f.contentWindow.postMessage(JSON.stringify({method:m,value:v}),"*");}
+window.addEventListener("message",function(ev){if(!/vimeo\\.com$/.test(new URL(ev.origin).hostname))return;var d;try{d=typeof ev.data==="string"?JSON.parse(ev.data):ev.data;}catch(x){return;}if(!d)return;if(d.event==="ready"){post("addEventListener","play");post("addEventListener","playProgress");post("addEventListener","finish");}
+if(d.event==="play")play();if(d.event==="playProgress"&&d.data){play();at(d.data.percent*100);}if(d.event==="finish")at(100);});})();</script>`;
+  // Loom: the page loses focus to the player when it is tapped.
+  return `<script>(function(){${common}var f=document.getElementById("pv");window.addEventListener("blur",function(){setTimeout(function(){if(document.activeElement===f)play();},0);});})();</script>`;
+}
+
+// The personal video at the very top, with one clear next step under it.
+function videoSection(b: Report["business"], extra: RenderExtra): string {
+  const v = extra.video;
+  if (!v) return "";
+  const embed = embedUrl(v.kind, v.url);
+  if (v.kind !== "file" && !embed) return "";
+  const who = (extra.contactName ?? "").trim().split(/\s+/)[0] || b.name;
+  const player =
+    v.kind === "file"
+      ? `<video id="pv" src="${esc(v.url)}" controls playsinline preload="metadata"></video>`
+      : `<div class="frame"><iframe id="pv" src="${esc(embed!)}" title="A video for ${esc(b.name)}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen></iframe></div>`;
+  const wa = salesWhatsApp();
+  const waLink = wa
+    ? `<a class="wa" href="https://wa.me/${wa}?text=${encodeURIComponent(`Hi, I watched the video about ${b.name}. Can we have a quick chat?`)}" target="_blank" rel="noopener">Prefer a quick chat? Message me on WhatsApp</a>`
+    : "";
+  return `<section class="vid noprint">
+<h1>${esc(who)}, I recorded this for you</h1>
+${player}
+<a class="cta" href="/start?r=${encodeURIComponent(extra.token)}">Start free</a>
+<ol class="steps" aria-label="How to start">
+<li><span class="n">1</span>Tap Start free</li>
+<li class="arrow" aria-hidden="true">&#8595;</li>
+<li><span class="n">2</span>Type your email and a password</li>
+<li class="arrow" aria-hidden="true">&#8595;</li>
+<li><span class="n">3</span>Print your QR code</li>
+</ol>
+${waLink}
+<p class="small" style="color:#cbd5e1;text-align:center;margin:12px 0 0">Free. No card needed. Your full report is below.</p>
+</section>${videoTracker(extra.token, v.kind)}`;
+}
+
+// The words WhatsApp and email show under the link.
+export function previewText(r: Report): { title: string; description: string } {
+  const top = scoreView(r).fixes[0]?.title;
+  return {
+    title: `${r.business.name}, your Google report`,
+    description: top ?? "Your local visibility score, your nearest rivals and what to fix first.",
+  };
 }
 
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
@@ -369,11 +458,18 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     : "";
   const view = scoreView(r);
   const headline = findings(r, view, extra, rows);
+  const preview = previewText(r);
+  const ogImage =
+    extra?.ogImage && /^https:\/\//.test(extra.ogImage)
+      ? extra.ogImage
+      : "https://repsuites.com/og-image.png?v=2";
+  const video = extra ? videoSection(b, extra) : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>${esc(b.name)}: how you show up on Google</title><meta property="og:title" content="${esc(b.name)}: how you show up on Google"><meta property="og:description" content="Your local visibility score, your nearest rivals and what to fix first."><meta property="og:image" content="https://repsuites.com/og-image.png?v=2"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><style>${STYLE}</style></head><body><main>
+<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}"><style>${STYLE}${video ? VIDEO_STYLE : ""}</style></head><body><main>
 <div class="brand"><img src="/logo-mark.png" alt=""> RepSuites</div>
-<h1>${esc(b.name)}: how you show up on Google</h1>
+${video}
+${video ? `<h2 style="font-size:1.3rem">${esc(b.name)}: how you show up on Google</h2>` : `<h1>${esc(b.name)}: how you show up on Google</h1>`}
 <p class="muted">${esc(b.address)}<br>Prepared ${date}</p>
 
 ${headline}
