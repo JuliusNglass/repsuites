@@ -12,7 +12,7 @@ import {
   verifyRequestOriginAsync,
 } from "./auth.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
-import { addressCountry, phoneType } from "./prospect-contact";
+import { addressCountry, phoneType, searchRegion } from "./prospect-contact";
 import { cachedContacts } from "./prospect-contact.server";
 import { ownerFresh } from "./prospect-owner";
 
@@ -77,15 +77,26 @@ export async function searchBusinesses(
   query: string,
   pageToken = "",
 ): Promise<{ hits: SearchHit[]; next: string } | null> {
+  const region = searchRegion(query);
   const j = await places(
     "places:searchText",
     "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.primaryTypeDisplayName,places.internationalPhoneNumber,places.nationalPhoneNumber,places.websiteUri,nextPageToken",
-    { textQuery: query, pageSize: 20, languageCode: "en", ...(pageToken ? { pageToken } : {}) },
+    {
+      textQuery: query,
+      pageSize: 20,
+      languageCode: "en",
+      ...(region.code ? { regionCode: region.code } : {}),
+      ...(pageToken ? { pageToken } : {}),
+    },
   );
   if (!j) return null;
   const next = typeof j.nextPageToken === "string" ? j.nextPageToken.slice(0, 2000) : "";
   const hits: SearchHit[] = (j.places ?? [])
     .filter((p: any) => typeof p.id === "string" && PLACE_RE.test(p.id))
+    .filter(
+      (p: any) =>
+        !region.keep || region.keep.includes(addressCountry(String(p.formattedAddress ?? ""))),
+    )
     .map((p: any) => ({
       placeId: p.id,
       name: String(p.displayName?.text ?? "").slice(0, 200),

@@ -397,3 +397,18 @@ export function matchesReach(h: { phoneType: PhoneType; email: string }, f: Reac
   if (f === "either") return wa || em;
   return true;
 }
+
+// Which country a prospect search is about. Most are UK, so UK is the
+// default: Google is told to prefer UK results and anything abroad is dropped
+// ("Newport" also matches Newport, Oregon). Naming Nigeria or a big Nigerian
+// city searches there; naming another country turns the filter off.
+const NG_WORDS =
+  /\b(nigeria|lagos|abuja|ibadan|kano|enugu|port harcourt|benin city|owerri|uyo|calabar|abeokuta|ikeja|lekki|warri|jos|kaduna)\b/i;
+const OTHER_WORDS =
+  /\b(usa|united states|america|canada|ireland|dublin|south africa|ghana|accra|kenya|nairobi|australia|new zealand|india|france|spain|italy|germany|netherlands|oregon|rhode island|new york|california|texas)\b/i;
+
+export function searchRegion(query: string): { code: string | null; keep: string[] | null } {
+  if (NG_WORDS.test(query)) return { code: "NG", keep: ["Nigeria"] };
+  if (OTHER_WORDS.test(query)) return { code: null, keep: null };
+  return { code: "GB", keep: ["UK", "United Kingdom"] };
+}

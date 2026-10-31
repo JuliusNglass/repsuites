@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  searchRegion,
   addressCountry,
   contactsFresh,
   decodeCfEmail,
@@ -139,3 +140,18 @@ function cf(email: string, key = 0x5a): string {
   const hex = (n: number) => n.toString(16).padStart(2, "0");
   return hex(key) + [...email].map((ch) => hex(ch.charCodeAt(0) ^ key)).join("");
 }
+
+describe("searchRegion", () => {
+  it("defaults to the UK", () => {
+    expect(searchRegion("car detailing in Newport")).toEqual({
+      code: "GB",
+      keep: ["UK", "United Kingdom"],
+    });
+  });
+  it("searches Nigeria when named", () => {
+    expect(searchRegion("restaurants in Lekki").code).toBe("NG");
+  });
+  it("turns the filter off for other countries", () => {
+    expect(searchRegion("car detailing Newport Oregon").keep).toBeNull();
+  });
+});
