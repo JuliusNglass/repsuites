@@ -147,16 +147,34 @@ export function greeting(t: Pick<FeedbackTarget, "business" | "hospitality">): s
   return `${t.hospitality ? "Thanks for visiting" : "Thanks for choosing"} ${esc(t.business)}`;
 }
 
-export function renderFeedbackPage(t: FeedbackTarget, note?: "sent" | "error"): string {
+// A personal review-request token (from /q/<token>) carried on the page, so
+// a tap on a review site and private feedback can stop that customer's reminders.
+export function requestToken(v: unknown): string | null {
+  const s = String(v ?? "");
+  return /^[A-Za-z0-9_-]{10,40}$/.test(s) ? s : null;
+}
+
+export function renderFeedbackPage(
+  t: FeedbackTarget,
+  note?: "sent" | "error",
+  rq?: string | null,
+): string {
+  // With a request token, review buttons go through /q/<token>?click=<n> so
+  // the tap is recorded, then straight on to the review site.
+  const hrefFor = (i: number, url: string) =>
+    rq ? `/q/${rq}?click=${i}&amp;qr=${t.qrId}` : esc(url);
   const [first, ...rest] = t.links;
   const name = esc(t.business);
   const primary = first
-    ? `<a class="btn" style="background:${PLATFORMS[first.platform].colour};color:${PLATFORMS[first.platform].text}" href="${esc(first.url)}" rel="noopener">${esc(buttonText(first))}</a>`
+    ? `<a class="btn" style="background:${PLATFORMS[first.platform].colour};color:${PLATFORMS[first.platform].text}" href="${hrefFor(0, first.url)}" rel="noopener">${esc(buttonText(first))}</a>`
     : "";
   const others = rest.length
     ? `<p class="small" style="margin-top:16px">Or, if you prefer:</p>` +
       rest
-        .map((l) => `<a class="alt" href="${esc(l.url)}" rel="noopener">${esc(buttonText(l))}</a>`)
+        .map(
+          (l, i) =>
+            `<a class="alt" href="${hrefFor(i + 1, l.url)}" rel="noopener">${esc(buttonText(l))}</a>`,
+        )
         .join("")
     : "";
   // Brand colours: a bar with the business name and the private-message button.
@@ -186,7 +204,7 @@ ${primary}${others}
 <label for="m">Your message</label><textarea id="m" name="message" required minlength="2" maxlength="2000"></textarea>
 <label for="n">Your name (optional)</label><input id="n" name="name" maxlength="120" autocomplete="name">
 <label for="c">Email or phone, if you would like a reply (optional)</label><input id="c" name="contact" maxlength="200" autocomplete="email">
-<input class="hp" tabindex="-1" autocomplete="off" name="website" aria-hidden="true">
+<input class="hp" tabindex="-1" autocomplete="off" name="website" aria-hidden="true">${rq ? `<input type="hidden" name="rq" value="${rq}">` : ""}
 <button type="submit"${bc ? ` style="background:${bc};color:${bcText}"` : ""}>Send privately</button>
 </form></details>
 <footer><a href="https://repsuites.com">Powered by RepSuites</a></footer>
@@ -220,6 +238,11 @@ export async function savePrivateFeedback(t: FeedbackTarget, form: FormData): Pr
     body: { tenant_id: t.tenantId, qr_id: t.qrId, name, contact, message },
   });
   if (w.error) return false;
+  const rq = requestToken(form.get("rq"));
+  if (rq) {
+    const { recordRequestFeedback } = await import("./review-requests.server");
+    await recordRequestFeedback(rq, t.tenantId).catch(() => null);
+  }
   const owners = await serviceWrite<string[]>("rpc/repsuites_owner_emails", "", {
     method: "POST",
     body: { p_tenant: t.tenantId },

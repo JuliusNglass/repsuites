@@ -8,6 +8,7 @@ import {
   loadFeedbackTarget,
   notFoundPage,
   renderFeedbackPage,
+  requestToken,
   savePrivateFeedback,
 } from "../lib/feedback-page.server";
 
@@ -21,25 +22,28 @@ function sameSite(request: Request): boolean {
 export const Route = createFileRoute("/feedback/$id")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
         const id = String(params.id || "").toLowerCase();
         const t = await loadFeedbackTarget(id);
         if (!t) return new Response(notFoundPage(), { status: 404, headers: HTML });
         await serviceWrite("qr_scans", "", { method: "POST", body: { qr_id: id } }).catch(
           () => null,
         );
-        return new Response(renderFeedbackPage(t), { status: 200, headers: HTML });
+        const rq = requestToken(new URL(request.url).searchParams.get("rq"));
+        return new Response(renderFeedbackPage(t, undefined, rq), { status: 200, headers: HTML });
       },
       POST: async ({ params, request }) => {
         const id = String(params.id || "").toLowerCase();
         const t = await loadFeedbackTarget(id);
         if (!t) return new Response(notFoundPage(), { status: 404, headers: HTML });
         let ok = false;
+        let rq: string | null = null;
         if (sameSite(request)) {
           const form = await request.formData().catch(() => null);
+          rq = requestToken(form?.get("rq"));
           ok = form ? await savePrivateFeedback(t, form) : false;
         }
-        return new Response(renderFeedbackPage(t, ok ? "sent" : "error"), {
+        return new Response(renderFeedbackPage(t, ok ? "sent" : "error", rq), {
           status: ok ? 200 : 400,
           headers: HTML,
         });

@@ -7,6 +7,7 @@ export async function sendEmail(input: {
   html: string;
   text?: string;
   replyTo?: string;
+  headers?: Record<string, string>;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const key = (process.env["REPSUITES_RESEND_API_KEY"] ?? "").trim();
   if (!key) return { ok: false, error: "Email is not set up yet." };
@@ -22,6 +23,7 @@ export async function sendEmail(input: {
         html: input.html,
         ...(input.text ? { text: input.text } : {}),
         ...(input.replyTo ? { reply_to: input.replyTo } : {}),
+        ...(input.headers ? { headers: input.headers } : {}),
       }),
     });
     if (r.ok) return { ok: true };

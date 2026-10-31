@@ -37,6 +37,7 @@ import { Route as ApiInternalLifecycleRouteImport } from './routes/api.internal.
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
 import { Route as ApiInternalReviewRequestsRouteImport } from './routes/api.internal.review-requests'
 import { Route as ApiMetaDataDeletionRouteImport } from './routes/api.meta.data-deletion'
+import { Route as ApiReviewTriggerTokenRouteImport } from './routes/api.review-trigger.$token'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api.google.oauth.callback'
 import { Route as ApiMetaOauthCallbackRouteImport } from './routes/api.meta.oauth.callback'
@@ -182,6 +183,11 @@ const ApiMetaDataDeletionRoute = ApiMetaDataDeletionRouteImport.update({
   path: '/api/meta/data-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReviewTriggerTokenRoute = ApiReviewTriggerTokenRouteImport.update({
+  id: '/api/review-trigger/$token',
+  path: '/api/review-trigger/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
   '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
   '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
@@ -294,6 +302,7 @@ export interface FileRoutesById {
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
   '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
     | '/api/meta/data-deletion'
+    | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
     | '/api/meta/oauth/callback'
@@ -362,6 +372,7 @@ export interface FileRouteTypes {
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
     | '/api/meta/data-deletion'
+    | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
     | '/api/meta/oauth/callback'
@@ -395,6 +406,7 @@ export interface FileRouteTypes {
     | '/api/internal/rank-checks'
     | '/api/internal/review-requests'
     | '/api/meta/data-deletion'
+    | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
     | '/api/google/oauth/callback'
     | '/api/meta/oauth/callback'
@@ -429,6 +441,7 @@ export interface RootRouteChildren {
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
   ApiInternalReviewRequestsRoute: typeof ApiInternalReviewRequestsRoute
   ApiMetaDataDeletionRoute: typeof ApiMetaDataDeletionRoute
+  ApiReviewTriggerTokenRoute: typeof ApiReviewTriggerTokenRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiMetaOauthCallbackRoute: typeof ApiMetaOauthCallbackRoute
@@ -632,6 +645,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMetaDataDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/review-trigger/$token': {
+      id: '/api/review-trigger/$token'
+      path: '/api/review-trigger/$token'
+      fullPath: '/api/review-trigger/$token'
+      preLoaderRoute: typeof ApiReviewTriggerTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
@@ -685,6 +705,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
   ApiInternalReviewRequestsRoute: ApiInternalReviewRequestsRoute,
   ApiMetaDataDeletionRoute: ApiMetaDataDeletionRoute,
+  ApiReviewTriggerTokenRoute: ApiReviewTriggerTokenRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
   ApiMetaOauthCallbackRoute: ApiMetaOauthCallbackRoute,

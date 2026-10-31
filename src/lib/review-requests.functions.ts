@@ -5,6 +5,7 @@ import {
   addRequests,
   markRequestSent,
   readRequests,
+  rotateTriggerUrl,
   saveRequestSettings,
   stopRequest,
 } from "./review-requests.server";
@@ -70,7 +71,16 @@ export const saveRequestSettingsFn = createServerFn({ method: "POST" })
             message: "Keep {link} in the reminder",
           }),
         emailSubject: z.string().trim().min(3).max(150),
+        cooldownDays: z.union([z.literal(60), z.literal(90), z.literal(180)]),
+        reminder1Days: z.number().int().min(1).max(30),
+        reminder2Days: z.number().int().min(2).max(60),
+        quietStart: z.number().int().min(0).max(23),
+        quietEnd: z.number().int().min(0).max(23),
       })
       .parse(d),
   )
   .handler(async ({ data }) => saveRequestSettings(data));
+
+export const rotateTriggerUrlFn = createServerFn({ method: "POST" }).handler(async () =>
+  rotateTriggerUrl(),
+);
