@@ -363,12 +363,17 @@ function findings(
       icon: "&#11088;",
       text: `You have <b>no Google reviews yet</b>. Most people skip a business with no reviews and call the next one.`,
     });
-  const g = r.reviewGap;
-  if (g) {
-    const rival = rows.find((x) => !x.you && x.name === g.leader);
+  // The top card shows the nearby rival with the MOST reviews (the real
+  // threat); "Catching the next business up" further down keeps the
+  // reachable next target.
+  const leader = r.rivals
+    .filter((x) => x.reviews > r.business.reviews)
+    .sort((a, b) => b.reviews - a.reviews)[0];
+  if (leader) {
+    const rival = rows.find((x) => !x.you && x.name === leader.name);
     items.push({
       icon: "&#11088;",
-      text: `<b>${esc(g.leader)}</b>${rival?.away ? ` (${esc(rival.away)} away)` : ""} has <b>${g.need.toLocaleString("en-GB")} more Google reviews</b> than you. Google and customers both favour the business with more reviews.`,
+      text: `<b>${esc(leader.name)}</b>${rival?.away ? ` (${esc(rival.away)} away)` : ""} has <b>${leader.reviews.toLocaleString("en-GB")} Google reviews</b>. You have ${r.business.reviews.toLocaleString("en-GB")}. Google and customers both favour the business with more reviews.`,
     });
   }
   const snap = extra?.snapshot;
