@@ -1,6 +1,7 @@
 // Lead generator server functions (Accelur8 team only).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { addressCountry, phoneType, type PhoneType } from "./prospect-contact";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import {
   agencyGuard,
@@ -22,14 +23,79 @@ export const searchProspects = createServerFn({ method: "POST" })
     const hits = await searchBusinesses(data.q);
     if (!hits)
       return { ok: false as const, error: "Google search is not available. Check the Maps key." };
-    const known = hits.length
-      ? await serviceRead<{ place_id: string }[]>(
-          `prospects?select=place_id&place_id=in.(${hits.map((h) => `"${h.placeId}"`).join(",")})`,
-          "",
-        )
-      : { data: [] };
-    const have = new Set((known.data ?? []).map((k) => k.place_id));
-    return { ok: true as const, hits: hits.map((h) => ({ ...h, saved: have.has(h.placeId) })) };
+    const ids = hits.map((h) => `"${h.placeId}"`).join(",");
+    const { cachedContacts } = await import("./prospect-contact.server");
+    const { contactsFresh } = await import("./prospect-contact");
+    const [known, cache] = await Promise.all([
+      hits.length
+        ? serviceRead<
+            {
+              place_id: string;
+              email: string | null;
+              facebook_url: string | null;
+              instagram_url: string | null;
+            }[]
+          >(`prospects?select=place_id,email,facebook_url,instagram_url&place_id=in.(${ids})`, "")
+        : Promise.resolve({ data: [] as never[] }),
+      cachedContacts(hits.map((h) => h.placeId)),
+    ]);
+    const saved = new Map((known.data ?? []).map((k) => [k.place_id, k]));
+    return {
+      ok: true as const,
+      hits: hits.map((h) => {
+        const s = saved.get(h.placeId);
+        const c = cache.get(h.placeId);
+        return {
+          ...h,
+          saved: !!s,
+          savedEmail: !!s?.email,
+          // An email on a saved prospect (maybe typed by hand) wins.
+          email: s?.email || c?.email || "",
+          facebook: s?.facebook_url || c?.facebook || "",
+          instagram: s?.instagram_url || c?.instagram || "",
+          // No website means nothing to look at; a fresh cache means no need.
+          checked: !h.website || contactsFresh(c?.foundAt),
+        };
+      }),
+    };
+  });
+
+// The email finder: reads the websites of up to 8 search results for an
+// email and Facebook/Instagram links. Called from the page in batches so each
+// request stays inside the 50 outside calls the Worker may make.
+export const findProspectContacts = createServerFn({ method: "POST" })
+  .validator(
+    (d: { items: { placeId: string; website: string; saved?: boolean; hasEmail?: boolean }[] }) =>
+      z
+        .object({
+          items: z
+            .array(
+              z.object({
+                placeId: z.string().regex(PLACE_RE),
+                website: z.string().trim().url().max(300),
+                saved: z.boolean().optional(),
+                hasEmail: z.boolean().optional(),
+              }),
+            )
+            .min(1)
+            .max(8),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const { findContacts } = await import("./prospect-contact.server");
+    const found = await findContacts(data.items);
+    return {
+      ok: true as const,
+      found: found.map((f) => ({
+        placeId: f.placeId,
+        email: f.email,
+        facebook: f.facebook,
+        instagram: f.instagram,
+      })),
+    };
   });
 
 function phrases(raw?: string): { keyword?: string; keywords?: string[] } {
@@ -101,9 +167,13 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       video_first_played_at: string | null;
       video_max_percent: number;
       og_image_url: string | null;
+      phone_type: string | null;
+      address: string | null;
+      facebook_url: string | null;
+      instagram_url: string | null;
     }[]
   >(
-    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url&order=updated_at.desc&limit=300",
+    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url&order=updated_at.desc&limit=300",
     "",
   );
   return {
@@ -131,6 +201,11 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       videoFirstPlayedAt: p.video_first_played_at,
       videoMaxPercent: p.video_max_percent ?? 0,
       ogImage: p.og_image_url,
+      // Older prospects were saved before we stored this; work it out.
+      phoneType:
+        (p.phone_type as PhoneType | null) ?? phoneType(p.phone, addressCountry(p.address ?? "")),
+      facebook: p.facebook_url ?? "",
+      instagram: p.instagram_url ?? "",
     })),
   };
 });

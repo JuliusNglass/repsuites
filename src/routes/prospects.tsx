@@ -3,17 +3,20 @@
 // No em dashes in this copy (AGENTS.md).
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ChevronDown,
   ChevronUp,
   Copy,
   ExternalLink,
+  Facebook,
   FileDown,
+  Instagram,
   Loader2,
   Mail,
   MessageCircle,
+  Phone,
   Search,
   Smartphone,
   Star,
@@ -25,6 +28,7 @@ import { Logo } from "../components/site/Logo";
 import {
   buildProspectReport,
   addProspectPhrase,
+  findProspectContacts,
   listProspects,
   prospectVideoThumb,
   removeProspectVideo,
@@ -42,6 +46,7 @@ import {
   watchLabel,
 } from "../lib/prospect-video";
 import { makeOgCard, videoFrame } from "../lib/og-card";
+import { matchesReach, PHONE_TYPE_LABEL, type ReachFilter } from "../lib/prospect-contact";
 
 export const Route = createFileRoute("/prospects")({
   head: () => ({
@@ -141,9 +146,10 @@ function Prospects() {
     return false;
   }
 
-  // "Build all": up to 10 businesses without a report yet, one after another.
+  // "Build all": up to 10 businesses shown (after the filter) without a
+  // report yet, one after another.
   async function buildAll() {
-    const todo = (hits ?? []).filter((h) => !h.saved).slice(0, 10);
+    const todo = visible.filter((h) => !h.saved).slice(0, 10);
     if (!todo.length) return;
     let ok = 0;
     setBatch({ done: 0, total: todo.length });
@@ -166,6 +172,71 @@ function Prospects() {
   const [searching, setSearching] = useState(false);
   const [building, setBuilding] = useState<string | null>(null);
   const [stage, setStage] = useState<string>("all");
+  const [reach, setReach] = useState<ReachFilter>("all");
+  const [finding, setFinding] = useState<Set<string>>(new Set());
+  const find = useServerFn(findProspectContacts);
+  const searchId = useRef(0);
+
+  // After results show: read the websites for emails and Facebook/Instagram
+  // links, 8 businesses per request (the Worker may make 50 outside calls per
+  // request), 2 requests at a time.
+  async function findEmails(list: Hit[], id: number) {
+    const todo = list.filter((h) => !h.checked && h.website);
+    if (!todo.length) return;
+    setFinding(new Set(todo.map((h) => h.placeId)));
+    const batches: Hit[][] = [];
+    for (let i = 0; i < todo.length; i += 8) batches.push(todo.slice(i, i + 8));
+    const run = async () => {
+      while (batches.length) {
+        const b = batches.shift()!;
+        const r = await find({
+          data: {
+            items: b.map((h) => ({
+              placeId: h.placeId,
+              website: h.website,
+              saved: h.saved,
+              hasEmail: h.savedEmail,
+            })),
+          },
+        }).catch(() => null);
+        if (id !== searchId.current) return;
+        const got = new Map(r?.ok ? r.found.map((f) => [f.placeId, f]) : []);
+        setHits(
+          (cur) =>
+            cur?.map((x) => {
+              if (!b.some((y) => y.placeId === x.placeId)) return x;
+              const f = got.get(x.placeId);
+              return {
+                ...x,
+                checked: true,
+                email: x.email || f?.email || "",
+                facebook: x.facebook || f?.facebook || "",
+                instagram: x.instagram || f?.instagram || "",
+              };
+            }) ?? null,
+        );
+        setFinding((cur) => {
+          const n = new Set(cur);
+          b.forEach((y) => n.delete(y.placeId));
+          return n;
+        });
+      }
+    };
+    await Promise.all([run(), run()]);
+    // Saved prospects may have picked up an email.
+    if (id === searchId.current && todo.some((h) => h.saved)) await load();
+  }
+
+  const counts = useMemo(() => {
+    const all = hits ?? [];
+    return {
+      whatsapp: all.filter((h) => matchesReach(h, "whatsapp")).length,
+      email: all.filter((h) => matchesReach(h, "email")).length,
+      either: all.filter((h) => matchesReach(h, "either")).length,
+    };
+  }, [hits]);
+  const visible = useMemo(() => (hits ?? []).filter((h) => matchesReach(h, reach)), [hits, reach]);
+  const newCount = Math.min(10, visible.filter((h) => !h.saved).length);
 
   const load = useCallback(async () => {
     const r = await list();
@@ -248,10 +319,14 @@ function Prospects() {
                 e.preventDefault();
                 if (q.trim().length < 3) return;
                 setSearching(true);
+                const id = ++searchId.current;
+                setFinding(new Set());
                 const r = await search({ data: { q } });
                 setSearching(false);
-                if (r.ok) setHits(r.hits);
-                else toast.error(r.error);
+                if (r.ok) {
+                  setHits(r.hits);
+                  void findEmails(r.hits, id);
+                } else toast.error(r.error);
               }}
             >
               <input
@@ -299,12 +374,48 @@ function Prospects() {
             {hits && hits.length === 0 && (
               <p className="text-sm text-muted-foreground">Nothing found. Try another search.</p>
             )}
-            {(hits ?? []).filter((h) => !h.saved).length > 1 && (
+            {hits && hits.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(
+                  [
+                    ["whatsapp", "WhatsApp likely", counts.whatsapp],
+                    ["email", "Has email", counts.email],
+                    ["either", "WhatsApp or email", counts.either],
+                  ] as const
+                ).map(([id, label, n]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={reach === id}
+                    onClick={() => setReach((cur) => (cur === id ? "all" : id))}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                      reach === id
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border"
+                    }`}
+                  >
+                    {label} ({n})
+                  </button>
+                ))}
+                {finding.size > 0 && (
+                  <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Looking for emails on{" "}
+                    {finding.size} website{finding.size === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
+            )}
+            {hits && hits.length > 0 && visible.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                None of these match the filter. Tap it again to show all.
+              </p>
+            )}
+            {visible.filter((h) => !h.saved).length > 1 && (
               <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 flex flex-wrap items-center gap-3">
                 <p className="text-sm flex-1 min-w-0">
                   {batch
                     ? `Building ${batch.done + 1 > batch.total ? batch.total : batch.done + 1} of ${batch.total}. Keep this page open.`
-                    : `Build reports for all ${Math.min(10, (hits ?? []).filter((h) => !h.saved).length)} new businesses here in one go (about ${Math.min(10, (hits ?? []).filter((h) => !h.saved).length) * 10}p).`}
+                    : `Build reports for ${reach === "all" ? "all " : ""}${newCount} new businesses ${reach === "all" ? "here" : "shown"} in one go (about ${newCount * 10}p).`}
                 </p>
                 <button
                   type="button"
@@ -318,7 +429,7 @@ function Prospects() {
               </div>
             )}
             <ul className="space-y-2">
-              {(hits ?? []).map((h) => (
+              {visible.map((h) => (
                 <li
                   key={h.placeId}
                   className="rounded-xl border border-border bg-card p-3 flex flex-wrap items-center gap-3"
@@ -331,6 +442,7 @@ function Prospects() {
                       {h.rating?.toFixed(1) ?? "-"} ({h.reviews} reviews)
                       {h.category ? ` - ${h.category}` : ""}
                     </p>
+                    <ReachBadges h={h} finding={finding.has(h.placeId)} />
                   </div>
                   <button
                     type="button"
@@ -475,6 +587,7 @@ function ProspectRow({
     if (p.stage === "new") await onSave(p.id, { stage: "sent", followUpOn: today(3) });
   };
   const phone = p.phone.replace(/[^\d+]/g, "");
+  const noWhatsApp = p.phoneType === "landline" || p.phoneType === "none";
   return (
     <li className="rounded-xl border border-border bg-card p-3 space-y-2">
       <div className="flex items-start gap-3">
@@ -498,6 +611,15 @@ function ProspectRow({
             </p>
           )}
           {p.topFix && <p className="text-xs mt-0.5 truncate">{p.topFix}</p>}
+          <ReachBadges
+            h={{
+              phoneType: p.phoneType,
+              email: p.email,
+              facebook: p.facebook,
+              instagram: p.instagram,
+            }}
+            finding={false}
+          />
         </div>
         <select
           value={p.stage}
@@ -543,16 +665,32 @@ function ProspectRow({
           >
             <Copy className="w-3.5 h-3.5" /> Copy
           </button>
+          {noWhatsApp ? (
+            <span
+              title={p.phoneType === "none" ? "No phone number" : "This looks like a landline"}
+              className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1 opacity-40 cursor-not-allowed"
+              aria-disabled="true"
+            >
+              <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+            </span>
+          ) : (
+            <a
+              href={`https://wa.me/${phone.startsWith("+") ? phone.slice(1) : ""}?text=${encodeURIComponent(text)}`}
+              target="_blank"
+              rel="noopener"
+              onClick={() => void shared()}
+              title={
+                p.phoneType === "mobile" ? "Mobile number: very likely on WhatsApp" : undefined
+              }
+              className={`rounded-lg border px-2.5 py-1.5 inline-flex items-center gap-1 ${
+                p.phoneType === "mobile" ? "border-emerald-600 text-emerald-700" : "border-border"
+              }`}
+            >
+              <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+            </a>
+          )}
           <a
-            href={`https://wa.me/${phone.startsWith("+") ? phone.slice(1) : ""}?text=${encodeURIComponent(text)}`}
-            target="_blank"
-            rel="noopener"
-            onClick={() => void shared()}
-            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
-          >
-            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
-          </a>
-          <a
+            title={p.email ? `Email ${p.email}` : "No email yet. Add one in Details."}
             href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`}
             onClick={() => void shared()}
             className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
@@ -795,6 +933,89 @@ function VideoPanel({
             </div>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+// Small badges: mobile (WhatsApp likely) or landline, email found (the
+// address shows on hover or tap), and Facebook/Instagram links for a DM.
+function ReachBadges({
+  h,
+  finding,
+}: {
+  h: { phoneType: P["phoneType"]; email: string; facebook: string; instagram: string };
+  finding: boolean;
+}) {
+  const [showEmail, setShowEmail] = useState(false);
+  const pill = "rounded-full px-2 py-0.5 text-[11px] font-semibold inline-flex items-center gap-1";
+  return (
+    <div className="flex flex-wrap items-center gap-1 mt-1">
+      {h.phoneType === "mobile" && (
+        <span
+          className={`${pill} bg-emerald-100 text-emerald-800`}
+          title="A mobile number, so very likely on WhatsApp"
+        >
+          <MessageCircle className="w-3 h-3" /> WhatsApp likely
+        </span>
+      )}
+      {h.phoneType === "landline" && (
+        <span
+          className={`${pill} bg-muted text-muted-foreground`}
+          title="A landline, so not on WhatsApp"
+        >
+          <Phone className="w-3 h-3" /> Landline
+        </span>
+      )}
+      {h.phoneType === "unknown" && (
+        <span
+          className={`${pill} bg-muted text-muted-foreground`}
+          title="We cannot tell mobiles from landlines in this country"
+        >
+          <Phone className="w-3 h-3" /> {PHONE_TYPE_LABEL.unknown}
+        </span>
+      )}
+      {h.phoneType === "none" && (
+        <span className={`${pill} bg-muted text-muted-foreground`}>{PHONE_TYPE_LABEL.none}</span>
+      )}
+      {h.email && (
+        <button
+          type="button"
+          title={h.email}
+          onClick={() => setShowEmail((v) => !v)}
+          className={`${pill} bg-sky-100 text-sky-800`}
+        >
+          <Mail className="w-3 h-3" /> {showEmail ? h.email : "Email found"}
+        </button>
+      )}
+      {finding && (
+        <span className={`${pill} text-muted-foreground`}>
+          <Loader2 className="w-3 h-3 animate-spin" /> Looking for email
+        </span>
+      )}
+      {h.facebook && (
+        <a
+          href={h.facebook}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Facebook page"
+          aria-label="Facebook page"
+          className="text-[#1877F2]"
+        >
+          <Facebook className="w-4 h-4" />
+        </a>
+      )}
+      {h.instagram && (
+        <a
+          href={h.instagram}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Instagram"
+          aria-label="Instagram"
+          className="text-[#C13584]"
+        >
+          <Instagram className="w-4 h-4" />
+        </a>
       )}
     </div>
   );

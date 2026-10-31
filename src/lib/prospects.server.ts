@@ -12,6 +12,8 @@ import {
   verifyRequestOriginAsync,
 } from "./auth.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
+import { addressCountry, phoneType } from "./prospect-contact";
+import { cachedContacts } from "./prospect-contact.server";
 
 const PLACE_RE = /^[A-Za-z0-9_-]{10,300}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -63,12 +65,15 @@ export interface SearchHit {
   rating: number | null;
   reviews: number;
   category: string;
+  phone: string;
+  website: string;
+  phoneType: import("./prospect-contact").PhoneType;
 }
 
 export async function searchBusinesses(query: string): Promise<SearchHit[] | null> {
   const j = await places(
     "places:searchText",
-    "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.primaryTypeDisplayName",
+    "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.primaryTypeDisplayName,places.internationalPhoneNumber,places.nationalPhoneNumber,places.websiteUri",
     { textQuery: query, pageSize: 20, languageCode: "en" },
   );
   if (!j) return null;
@@ -81,7 +86,19 @@ export async function searchBusinesses(query: string): Promise<SearchHit[] | nul
       rating: typeof p.rating === "number" ? p.rating : null,
       reviews: Number(p.userRatingCount ?? 0),
       category: String(p.primaryTypeDisplayName?.text ?? ""),
+      ...reach(p),
     }));
+}
+
+// Phone (international format where Google has it), website and whether the
+// phone is a mobile (very likely on WhatsApp) or a landline.
+function reach(p: any) {
+  const phone = String(p.internationalPhoneNumber ?? p.nationalPhoneNumber ?? "").slice(0, 40);
+  return {
+    phone,
+    website: String(p.websiteUri ?? "").slice(0, 300),
+    phoneType: phoneType(phone, addressCountry(String(p.formattedAddress ?? ""))),
+  };
 }
 
 // ---------- the report ----------
@@ -540,11 +557,17 @@ export async function saveProspectReport(
   const built = await buildReport(placeId, extra.keyword, [], extra.area);
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
-  const existing = await serviceRead<{ id: string; report_token: string | null }[]>(
-    `prospects?select=id,report_token&place_id=eq.${encodeURIComponent(placeId)}`,
-    "",
-  );
+  const [existing, found] = await Promise.all([
+    serviceRead<{ id: string; report_token: string | null; email: string | null }[]>(
+      `prospects?select=id,report_token,email&place_id=eq.${encodeURIComponent(placeId)}`,
+      "",
+    ),
+    cachedContacts([placeId]),
+  ]);
   const row = existing.data?.[0];
+  // The email finder's result, unless an email was already typed in by hand.
+  const c = found.get(placeId);
+  const foundEmail = !extra.email && !row?.email && c?.email ? c.email : "";
   const token = row?.report_token ?? newToken();
   const body = {
     place_id: placeId,
@@ -560,7 +583,10 @@ export async function saveProspectReport(
     report_at: new Date().toISOString(),
     report_token: token,
     updated_at: new Date().toISOString(),
-    ...(extra.email ? { email: extra.email } : {}),
+    phone_type: phoneType(built.meta.phone, addressCountry(built.meta.address)),
+    ...(extra.email ? { email: extra.email } : foundEmail ? { email: foundEmail } : {}),
+    ...(c?.facebook ? { facebook_url: c.facebook } : {}),
+    ...(c?.instagram ? { instagram_url: c.instagram } : {}),
     ...(extra.contactName ? { contact_name: extra.contactName } : {}),
   };
   // A rebuilt report may have a new score, so the link-preview picture is
