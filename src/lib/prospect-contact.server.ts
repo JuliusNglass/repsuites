@@ -9,6 +9,7 @@
 // one cache read, one cache write and up to 8 updates to saved prospects.
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { contactsFresh, extractContacts, rankEmails, siteDomain } from "./prospect-contact";
+import { extractOwnerName } from "./prospect-owner";
 
 export const FINDER_BATCH = 8;
 const PAGE_BUDGET = 24;
@@ -23,6 +24,8 @@ export interface FoundContacts {
   emails: string[];
   facebook: string;
   instagram: string;
+  // A likely owner name from the website ("Hi, I'm Dave"), or "".
+  ownerName: string;
   foundAt: string;
 }
 
@@ -32,6 +35,7 @@ export interface CacheRow {
   emails: string[] | null;
   facebook_url: string | null;
   instagram_url: string | null;
+  owner_name?: string | null;
   found_at: string;
 }
 
@@ -42,6 +46,7 @@ export function fromRow(r: CacheRow): FoundContacts {
     emails: r.emails ?? [],
     facebook: r.facebook_url ?? "",
     instagram: r.instagram_url ?? "",
+    ownerName: r.owner_name ?? "",
     foundAt: r.found_at,
   };
 }
@@ -51,7 +56,7 @@ export async function cachedContacts(placeIds: string[]): Promise<Map<string, Fo
   const out = new Map<string, FoundContacts>();
   if (!placeIds.length) return out;
   const r = await serviceRead<CacheRow[]>(
-    `prospect_contacts?select=place_id,email,emails,facebook_url,instagram_url,found_at&place_id=in.(${placeIds
+    `prospect_contacts?select=place_id,email,emails,facebook_url,instagram_url,owner_name,found_at&place_id=in.(${placeIds
       .map((p) => `"${p}"`)
       .join(",")})`,
     "",
@@ -137,11 +142,12 @@ async function getPage(
 }
 
 // Looks at one website: the home page, then one contact page if needed.
+// Both pages are also read for a likely owner name.
 export async function scanSite(
   website: string,
   budget: { left: number },
 ): Promise<Omit<FoundContacts, "placeId" | "foundAt">> {
-  const empty = { email: "", emails: [], facebook: "", instagram: "" };
+  const empty = { email: "", emails: [], facebook: "", instagram: "", ownerName: "" };
   const start = safeSiteUrl(website);
   if (!start) return empty;
   const home = await getPage(start, budget);
@@ -150,6 +156,7 @@ export async function scanSite(
   let emails = a.emails;
   let facebook = a.facebook;
   let instagram = a.instagram;
+  let ownerName = extractOwnerName(home.html);
   if (!emails.length) {
     const origin = new URL(home.url).origin;
     const next = a.contactUrl || `${origin}/contact`;
@@ -160,11 +167,12 @@ export async function scanSite(
         emails = b.emails;
         facebook ||= b.facebook;
         instagram ||= b.instagram;
+        ownerName ||= extractOwnerName(page.html);
       }
     }
   }
   const ranked = rankEmails(emails, website).slice(0, 5);
-  return { email: ranked[0] ?? "", emails: ranked, facebook, instagram };
+  return { email: ranked[0] ?? "", emails: ranked, facebook, instagram, ownerName };
 }
 
 // Finds contacts for up to 8 businesses. Uses the cache where it is fresh.
@@ -207,6 +215,7 @@ export async function findContacts(
       emails: f.emails,
       facebook_url: f.facebook || null,
       instagram_url: f.instagram || null,
+      owner_name: f.ownerName || null,
       found_at: now,
     })),
   });
@@ -215,7 +224,7 @@ export async function findContacts(
   await Promise.all(
     fresh.map((f) => {
       const item = todo.find((t) => t.placeId === f.placeId);
-      if (!item?.saved || !(f.email || f.facebook || f.instagram)) return null;
+      if (!item?.saved || !(f.email || f.facebook || f.instagram || f.ownerName)) return null;
       const withEmail = !!f.email && !item.hasEmail;
       return serviceWrite<unknown>(
         `prospects?place_id=eq.${encodeURIComponent(f.placeId)}${withEmail ? "&email=is.null" : ""}`,
@@ -226,6 +235,7 @@ export async function findContacts(
             ...(withEmail ? { email: f.email } : {}),
             ...(f.facebook ? { facebook_url: f.facebook } : {}),
             ...(f.instagram ? { instagram_url: f.instagram } : {}),
+            ...(f.ownerName ? { website_owner_name: f.ownerName } : {}),
           },
         },
       );

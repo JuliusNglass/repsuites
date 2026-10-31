@@ -14,6 +14,7 @@ import {
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { addressCountry, phoneType } from "./prospect-contact";
 import { cachedContacts } from "./prospect-contact.server";
+import { ownerFresh } from "./prospect-owner";
 
 const PLACE_RE = /^[A-Za-z0-9_-]{10,300}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -546,7 +547,12 @@ function newToken(): string {
     .replace(/=+$/, "");
 }
 
-// Build (or rebuild) the report for a place and save it as a prospect.
+// A report younger than this is not rebuilt from the page without a confirm.
+export const REBUILD_GUARD_HOURS = 24;
+
+// Build (or rebuild) the report for a place and save it as a prospect. With
+// `guardRecent`, refuses to replace a report under 24 hours old unless
+// `force` is set (each build costs money).
 export async function saveProspectReport(
   placeId: string,
   source: "search" | "niche" | "inbound",
@@ -557,21 +563,47 @@ export async function saveProspectReport(
     keyword?: string;
     keywords?: string[];
     area?: import("./rank-grid").AreaSize;
+    guardRecent?: boolean;
+    force?: boolean;
   } = {},
 ) {
-  // Extra phrases run as separate requests (addProspectGrid): each grid is 25
-  // outside calls and a request may make at most 50.
-  const built = await buildReport(placeId, extra.keyword, [], extra.area);
-  if (!built)
-    return { ok: false as const, error: "Google could not find that business. Try again." };
   const [existing, found] = await Promise.all([
-    serviceRead<{ id: string; report_token: string | null; email: string | null }[]>(
-      `prospects?select=id,report_token,email&place_id=eq.${encodeURIComponent(placeId)}`,
+    serviceRead<
+      {
+        id: string;
+        report_token: string | null;
+        email: string | null;
+        report_at: string | null;
+        owner_looked_up_at: string | null;
+      }[]
+    >(
+      `prospects?select=id,report_token,email,report_at,owner_looked_up_at&place_id=eq.${encodeURIComponent(placeId)}`,
       "",
     ),
     cachedContacts([placeId]),
   ]);
   const row = existing.data?.[0];
+  if (extra.guardRecent && !extra.force && row?.report_at) {
+    const age = Date.now() - Date.parse(row.report_at);
+    if (Number.isFinite(age) && age < REBUILD_GUARD_HOURS * 3600000)
+      return {
+        ok: false as const,
+        recent: true as const,
+        reportAt: row.report_at,
+        error: `This business already has a report from ${new Date(row.report_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" })}. Confirm the rebuild to replace it.`,
+      };
+  }
+  // Extra phrases run as separate requests (addProspectGrid): each grid is 25
+  // outside calls and a request may make at most 50.
+  const built = await buildReport(placeId, extra.keyword, [], extra.area);
+  if (!built)
+    return { ok: false as const, error: "Google could not find that business. Try again." };
+  // Who owns it, from Companies House (UK only, 2 outside calls, kept 90 days).
+  let owner: Record<string, unknown> = {};
+  if (!ownerFresh(row?.owner_looked_up_at)) {
+    const { lookupOwner, ownerColumns } = await import("./prospect-owner.server");
+    owner = ownerColumns(await lookupOwner({ name: built.meta.name, address: built.meta.address }));
+  }
   // The email finder's result, unless an email was already typed in by hand.
   const c = found.get(placeId);
   const foundEmail = !extra.email && !row?.email && c?.email ? c.email : "";
@@ -594,7 +626,9 @@ export async function saveProspectReport(
     ...(extra.email ? { email: extra.email } : foundEmail ? { email: foundEmail } : {}),
     ...(c?.facebook ? { facebook_url: c.facebook } : {}),
     ...(c?.instagram ? { instagram_url: c.instagram } : {}),
+    ...(c?.ownerName ? { website_owner_name: c.ownerName } : {}),
     ...(extra.contactName ? { contact_name: extra.contactName } : {}),
+    ...owner,
   };
   // A rebuilt report may have a new score, so the link-preview picture is
   // made again next time the report is shared.

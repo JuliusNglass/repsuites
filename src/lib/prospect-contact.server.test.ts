@@ -20,7 +20,7 @@ describe("scanSite", () => {
             `<a href="/contact-us">Contact us</a><a href="https://facebook.com/sparkleclean">f</a>`,
           );
         if (url === "https://www.sparkle.co.uk/contact-us")
-          return page(`<p>Email: jayne@gmail.com or info@sparkle.co.uk</p>`);
+          return page(`<p>Hi, I'm Jayne. Email: jayne@gmail.com or info@sparkle.co.uk</p>`);
         return page("", 404);
       }),
     );
@@ -29,6 +29,7 @@ describe("scanSite", () => {
     expect(r.email).toBe("info@sparkle.co.uk");
     expect(r.emails).toEqual(["info@sparkle.co.uk", "jayne@gmail.com"]);
     expect(r.facebook).toBe("https://facebook.com/sparkleclean");
+    expect(r.ownerName).toBe("Jayne");
     expect(calls).toHaveLength(3);
     expect(budget.left).toBe(21);
   });

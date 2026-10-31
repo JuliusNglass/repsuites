@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { addressCountry, phoneType, type PhoneType } from "./prospect-contact";
+import { isUkAddress, ownerFresh, type Officer } from "./prospect-owner";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import {
   agencyGuard,
@@ -42,8 +43,13 @@ export const searchProspects = createServerFn({ method: "POST" })
               email: string | null;
               facebook_url: string | null;
               instagram_url: string | null;
+              report_at: string | null;
+              report_token: string | null;
             }[]
-          >(`prospects?select=place_id,email,facebook_url,instagram_url&place_id=in.(${ids})`, "")
+          >(
+            `prospects?select=place_id,email,facebook_url,instagram_url,report_at,report_token&place_id=in.(${ids})`,
+            "",
+          )
         : Promise.resolve({ data: [] as never[] }),
       cachedContacts(hits.map((h) => h.placeId)),
     ]);
@@ -58,6 +64,9 @@ export const searchProspects = createServerFn({ method: "POST" })
           ...h,
           saved: !!s,
           savedEmail: !!s?.email,
+          // Already has a report: the page offers Open, and asks before a rebuild.
+          reportAt: s?.report_token ? (s.report_at ?? "") : "",
+          reportLink: s?.report_token ? `https://repsuites.com/r/${s.report_token}` : "",
           // An email on a saved prospect (maybe typed by hand) wins.
           email: s?.email || c?.email || "",
           facebook: s?.facebook_url || c?.facebook || "",
@@ -103,6 +112,7 @@ export const findProspectContacts = createServerFn({ method: "POST" })
         email: f.email,
         facebook: f.facebook,
         instagram: f.instagram,
+        ownerName: f.ownerName,
       })),
     };
   });
@@ -117,16 +127,19 @@ function phrases(raw?: string): { keyword?: string; keywords?: string[] } {
 }
 
 export const buildProspectReport = createServerFn({ method: "POST" })
-  .validator((d: { placeId: string; keyword?: string; niche?: boolean; area?: string }) =>
-    z
-      .object({
-        placeId: z.string().regex(PLACE_RE),
-        // Up to 3 search phrases, separated by commas. The first is the main one.
-        keyword: z.string().trim().max(250).optional(),
-        niche: z.boolean().optional(),
-        area: z.enum(["small", "medium", "large"]).optional(),
-      })
-      .parse(d),
+  .validator(
+    (d: { placeId: string; keyword?: string; niche?: boolean; area?: string; force?: boolean }) =>
+      z
+        .object({
+          placeId: z.string().regex(PLACE_RE),
+          // Needed to replace a report under 24 hours old (the page asks first).
+          force: z.boolean().optional(),
+          // Up to 3 search phrases, separated by commas. The first is the main one.
+          keyword: z.string().trim().max(250).optional(),
+          niche: z.boolean().optional(),
+          area: z.enum(["small", "medium", "large"]).optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data }) => {
     const g = await agencyGuard(true);
@@ -135,6 +148,8 @@ export const buildProspectReport = createServerFn({ method: "POST" })
       createdBy: g.userId,
       ...phrases(data.keyword),
       ...(data.area ? { area: data.area } : {}),
+      guardRecent: true,
+      force: data.force === true,
     });
   });
 
@@ -148,6 +163,24 @@ export const addProspectPhrase = createServerFn({ method: "POST" })
     const g = await agencyGuard(true);
     if (!g.ok) return g;
     return addProspectGrid(data.placeId, data.keyword);
+  });
+
+// "Find owner": looks the business up on Companies House (UK only, free).
+export const findProspectOwner = createServerFn({ method: "POST" })
+  .validator((d: { id: string }) => z.object({ id: z.string().regex(UUID_RE) }).parse(d))
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const r = await serviceRead<
+      { id: string; name: string; address: string | null; owner_looked_up_at: string | null }[]
+    >(`prospects?select=id,name,address,owner_looked_up_at&id=eq.${data.id}`, "");
+    const row = r.data?.[0];
+    if (!row) return { ok: false as const, error: "Prospect not found." };
+    if (ownerFresh(row.owner_looked_up_at))
+      return { ok: true as const, found: false, cached: true };
+    const { findOwnerFor } = await import("./prospect-owner.server");
+    const f = await findOwnerFor(row);
+    return f.ok ? { ...f, cached: false } : f;
   });
 
 export const listProspects = createServerFn({ method: "GET" }).handler(async () => {
@@ -180,13 +213,24 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       address: string | null;
       facebook_url: string | null;
       instagram_url: string | null;
+      report_at: string | null;
+      company_number: string | null;
+      company_name: string | null;
+      owners: Officer[] | null;
+      owner_source: string | null;
+      owner_match: string | null;
+      owner_looked_up_at: string | null;
+      website_owner_name: string | null;
     }[]
   >(
-    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url&order=updated_at.desc&limit=300",
+    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url,report_at,company_number,company_name,owners,owner_source,owner_match,owner_looked_up_at,website_owner_name&order=updated_at.desc&limit=300",
     "",
   );
+  const { chKey } = await import("./prospect-owner.server");
   return {
     ok: true as const,
+    // Companies House look-ups need the key (a Cloudflare secret).
+    chEnabled: !!chKey(),
     prospects: (r.data ?? []).map((p) => ({
       id: p.id,
       name: p.name,
@@ -215,6 +259,15 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
         (p.phone_type as PhoneType | null) ?? phoneType(p.phone, addressCountry(p.address ?? "")),
       facebook: p.facebook_url ?? "",
       instagram: p.instagram_url ?? "",
+      reportAt: p.report_at,
+      uk: isUkAddress(p.address ?? ""),
+      companyNumber: p.company_number,
+      companyName: p.company_name,
+      owners: Array.isArray(p.owners) ? p.owners : [],
+      ownerSource: p.owner_source,
+      ownerMatch: p.owner_match,
+      ownerLookedUpAt: p.owner_looked_up_at,
+      websiteOwnerName: p.website_owner_name ?? "",
     })),
   };
 });

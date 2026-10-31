@@ -29,6 +29,7 @@ import {
   buildProspectReport,
   addProspectPhrase,
   findProspectContacts,
+  findProspectOwner,
   listProspects,
   prospectVideoThumb,
   removeProspectVideo,
@@ -47,6 +48,7 @@ import {
 } from "../lib/prospect-video";
 import { makeOgCard, videoFrame } from "../lib/og-card";
 import { matchesReach, PHONE_TYPE_LABEL, type ReachFilter } from "../lib/prospect-contact";
+import { ownerFirstName, ownerFresh, ownerLine } from "../lib/prospect-owner";
 
 export const Route = createFileRoute("/prospects")({
   head: () => ({
@@ -99,6 +101,29 @@ function shareText(
   return `${hi}, I put together a free report on how ${p.name} shows up on Google Maps, compared with the businesses nearest to you.${hook} It takes 2 minutes to read: ${link}`;
 }
 
+function shortDate(iso: string | null | undefined) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? ""
+    : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+// About what one report costs: 5p to 10p, plus about 8p per extra phrase.
+function reportCost(words: string) {
+  const extra = Math.min(
+    2,
+    Math.max(
+      0,
+      words
+        .split(",")
+        .map((w) => w.trim())
+        .filter(Boolean).length - 1,
+    ),
+  );
+  return 10 + extra * 8;
+}
+
 function today(offsetDays = 0) {
   const d = new Date(Date.now() + offsetDays * 86400000);
   return d.toISOString().slice(0, 10);
@@ -112,11 +137,17 @@ function Prospects() {
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
 
   // Builds one report (plus any extra search phrases). Returns true if it worked.
-  async function buildOne(h: { placeId: string; name: string }, quiet = false): Promise<boolean> {
+  async function buildOne(
+    h: { placeId: string; name: string },
+    quiet = false,
+    force = false,
+  ): Promise<boolean> {
     setBuilding(h.placeId);
+    setConfirm(null);
     const r = await build({
       data: {
         placeId: h.placeId,
+        ...(force ? { force: true } : {}),
         ...(words.trim() ? { keyword: words.trim() } : {}),
         ...(area ? { area } : {}),
         niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
@@ -137,20 +168,40 @@ function Prospects() {
     if (r.ok) {
       if (!quiet) toast.success(`Report ready for ${r.name}: score ${r.score}`);
       setHits(
-        (cur) => cur?.map((x) => (x.placeId === h.placeId ? { ...x, saved: true } : x)) ?? null,
+        (cur) =>
+          cur?.map((x) =>
+            x.placeId === h.placeId
+              ? {
+                  ...x,
+                  saved: true,
+                  reportAt: new Date().toISOString(),
+                  reportLink: `https://repsuites.com/r/${r.token}`,
+                }
+              : x,
+          ) ?? null,
       );
       if (!quiet) await load();
       return true;
+    }
+    // Built in the last 24 hours (maybe from another tab): ask first.
+    if ("recent" in r && r.recent) {
+      setHits(
+        (cur) =>
+          cur?.map((x) => (x.placeId === h.placeId ? { ...x, reportAt: r.reportAt } : x)) ?? null,
+      );
+      if (!quiet) setConfirm({ placeId: h.placeId, reportAt: r.reportAt });
+      return false;
     }
     if (!quiet) toast.error(r.error);
     return false;
   }
 
   // "Build all": up to 10 businesses shown (after the filter) without a
-  // report yet, one after another.
+  // report yet, one after another. Never rebuilds one that has a report.
   async function buildAll() {
-    const todo = visible.filter((h) => !h.saved).slice(0, 10);
+    const todo = visible.filter((h) => !h.reportLink).slice(0, 10);
     if (!todo.length) return;
+    if (builtCount) toast.message(`Skipping ${builtCount} already built`);
     let ok = 0;
     setBatch({ done: 0, total: todo.length });
     for (let i = 0; i < todo.length; i++) {
@@ -176,6 +227,9 @@ function Prospects() {
   const [stage, setStage] = useState<string>("all");
   const [reach, setReach] = useState<ReachFilter>("all");
   const [finding, setFinding] = useState<Set<string>>(new Set());
+  // The inline "Rebuild?" question under one search result.
+  const [confirm, setConfirm] = useState<{ placeId: string; reportAt: string } | null>(null);
+  const [chEnabled, setChEnabled] = useState(true);
   const find = useServerFn(findProspectContacts);
   const searchId = useRef(0);
 
@@ -238,12 +292,15 @@ function Prospects() {
     };
   }, [hits]);
   const visible = useMemo(() => (hits ?? []).filter((h) => matchesReach(h, reach)), [hits, reach]);
-  const newCount = Math.min(10, visible.filter((h) => !h.saved).length);
+  const newCount = Math.min(10, visible.filter((h) => !h.reportLink).length);
+  const builtCount = visible.filter((h) => h.reportLink).length;
 
   const load = useCallback(async () => {
     const r = await list();
-    if (r.ok) setItems(r.prospects);
-    else setErr(r.error);
+    if (r.ok) {
+      setItems(r.prospects);
+      setChEnabled(r.chEnabled);
+    } else setErr(r.error);
   }, [list]);
   useEffect(() => {
     void load();
@@ -414,12 +471,12 @@ function Prospects() {
                 None of these match the filter. Tap it again to show all.
               </p>
             )}
-            {visible.filter((h) => !h.saved).length > 1 && (
+            {newCount > 1 && (
               <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 flex flex-wrap items-center gap-3">
                 <p className="text-sm flex-1 min-w-0">
                   {batch
                     ? `Building ${batch.done + 1 > batch.total ? batch.total : batch.done + 1} of ${batch.total}. Keep this page open.`
-                    : `Build reports for ${reach === "all" ? "all " : ""}${newCount} new businesses ${reach === "all" ? "here" : "shown"} in one go (about ${newCount * 10}p).`}
+                    : `Build reports for ${reach === "all" ? "all " : ""}${newCount} new businesses ${reach === "all" ? "here" : "shown"} in one go (about ${newCount * 10}p).${builtCount ? ` Skipping ${builtCount} already built.` : ""}`}
                 </p>
                 <button
                   type="button"
@@ -448,15 +505,52 @@ function Prospects() {
                     </p>
                     <ReachBadges h={h} finding={finding.has(h.placeId)} />
                   </div>
-                  <button
-                    type="button"
-                    disabled={building !== null}
-                    onClick={() => void buildOne(h)}
-                    className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    {building === h.placeId ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    {h.saved ? "Rebuild report" : "Build report"}
-                  </button>
+                  {h.reportLink ? (
+                    <div className="flex flex-col items-end gap-1.5">
+                      <p className="text-xs font-semibold text-emerald-700">
+                        Report built{h.reportAt ? ` ${shortDate(h.reportAt)}` : ""}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <a
+                          href={h.reportLink}
+                          target="_blank"
+                          rel="noopener"
+                          className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5"
+                        >
+                          <ExternalLink className="w-4 h-4" /> Open report
+                        </a>
+                        <button
+                          type="button"
+                          disabled={building !== null || batch !== null}
+                          onClick={() => setConfirm({ placeId: h.placeId, reportAt: h.reportAt })}
+                          className="rounded-lg px-2 py-1 text-xs text-muted-foreground underline inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          {building === h.placeId ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : null}
+                          Rebuild
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={building !== null || batch !== null}
+                      onClick={() => void buildOne(h)}
+                      className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      {building === h.placeId ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      Build report
+                    </button>
+                  )}
+                  {confirm?.placeId === h.placeId && (
+                    <RebuildConfirm
+                      reportAt={confirm.reportAt}
+                      cost={reportCost(words)}
+                      onYes={() => void buildOne(h, false, true)}
+                      onNo={() => setConfirm(null)}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -517,9 +611,10 @@ function Prospects() {
                   : "No prospects here yet. Find some first."}
               </p>
             )}
+            {items && !chEnabled && <ChKeyNote />}
             <ul className="space-y-2">
               {shown.map((p) => (
-                <ProspectRow key={p.id} p={p} onSave={save} onReload={load} />
+                <ProspectRow key={p.id} p={p} onSave={save} onReload={load} chEnabled={chEnabled} />
               ))}
             </ul>
           </>
@@ -584,14 +679,148 @@ function useOgMaker() {
   );
 }
 
+// The "Rebuild?" question. Each report costs money, so a rebuild is never
+// one tap.
+function RebuildConfirm({
+  reportAt,
+  cost,
+  onYes,
+  onNo,
+}: {
+  reportAt: string;
+  cost: number;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  return (
+    <div
+      role="alertdialog"
+      aria-label="Rebuild the report?"
+      className="basis-full rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm flex flex-wrap items-center gap-2"
+    >
+      <p className="flex-1 min-w-0">
+        This business already has a report{reportAt ? ` from ${shortDate(reportAt)}` : ""}.
+        Rebuilding costs about {cost}p and replaces it. Rebuild?
+      </p>
+      <button
+        type="button"
+        onClick={onYes}
+        className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold"
+      >
+        Rebuild
+      </button>
+      <button
+        type="button"
+        onClick={onNo}
+        className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold"
+      >
+        Cancel
+      </button>
+    </div>
+  );
+}
+
+// Shown once (until dismissed) when the Companies House key is missing.
+function ChKeyNote() {
+  const [hidden, setHidden] = useState(true);
+  useEffect(() => {
+    setHidden(localStorage.getItem("rs-ch-key-note") === "1");
+  }, []);
+  if (hidden) return null;
+  return (
+    <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs flex items-center gap-2">
+      <p className="flex-1">Add a Companies House key to look up owners.</p>
+      <button
+        type="button"
+        onClick={() => {
+          localStorage.setItem("rs-ch-key-note", "1");
+          setHidden(true);
+        }}
+        className="underline text-muted-foreground"
+      >
+        OK
+      </button>
+    </div>
+  );
+}
+
+// Owner from Companies House (linked to the company page) or a possible
+// owner named on their website, plus "Find owner" for UK businesses.
+function OwnerInfo({
+  p,
+  chEnabled,
+  onReload,
+}: {
+  p: P;
+  chEnabled: boolean;
+  onReload: () => Promise<void>;
+}) {
+  const findOwner = useServerFn(findProspectOwner);
+  const [busy, setBusy] = useState(false);
+  const line = ownerLine(p);
+  const hasCh = p.ownerSource === "companies_house";
+  const canFind = chEnabled && p.uk && !hasCh && !ownerFresh(p.ownerLookedUpAt);
+  const notFound = chEnabled && p.uk && !hasCh && ownerFresh(p.ownerLookedUpAt);
+  if (!line && !canFind && !notFound) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-xs mt-0.5">
+      {line &&
+        (line.href ? (
+          <a
+            href={line.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold hover:underline"
+          >
+            {line.label}
+          </a>
+        ) : (
+          <span className="font-semibold">{line.label}</span>
+        ))}
+      {line && (
+        <span
+          className={`rounded-full px-2 py-0.5 text-[11px] ${
+            line.sure ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {line.source}
+        </span>
+      )}
+      {notFound && <span className="text-muted-foreground">Not found on Companies House</span>}
+      {canFind && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            const r = await findOwner({ data: { id: p.id } }).catch(() => null);
+            setBusy(false);
+            if (!r?.ok) {
+              toast.error(r && !r.ok ? r.error : "Something went wrong. Try again.");
+              return;
+            }
+            if (!r.found) toast.message("No matching company on Companies House");
+            await onReload();
+          }}
+          className="rounded-lg border border-border px-2 py-0.5 inline-flex items-center gap-1 disabled:opacity-50"
+        >
+          {busy && <Loader2 className="w-3 h-3 animate-spin" />} Find owner
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ProspectRow({
   p,
   onSave,
   onReload,
+  chEnabled,
 }: {
   p: P;
   onSave: (id: string, patch: Patch) => Promise<void>;
   onReload: () => Promise<void>;
+  chEnabled: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
@@ -600,8 +829,13 @@ function ProspectRow({
   const [contact, setContact] = useState(p.contactName);
   const makeOg = useOgMaker();
   const hasVideo = !!p.videoUrl;
-  const text = p.link ? (hasVideo ? videoMessage(p, p.link) : shareText(p, p.link)) : "";
-  const emailText = p.link && hasVideo ? videoMessage(p, p.link, true) : text;
+  // Greet the owner by first name when we know it and no contact is typed in.
+  const greet = {
+    ...p,
+    contactName: p.contactName || ownerFirstName(p.owners, p.websiteOwnerName),
+  };
+  const text = p.link ? (hasVideo ? videoMessage(greet, p.link) : shareText(greet, p.link)) : "";
+  const emailText = p.link && hasVideo ? videoMessage(greet, p.link, true) : text;
   const emailSubject = hasVideo
     ? `A quick video about ${p.name} on Google`
     : `How ${p.name} shows up on Google`;
@@ -641,6 +875,7 @@ function ProspectRow({
             </p>
           )}
           {p.topFix && <p className="text-xs mt-0.5 truncate">{p.topFix}</p>}
+          <OwnerInfo p={p} chEnabled={chEnabled} onReload={onReload} />
           <ReachBadges
             h={{
               phoneType: p.phoneType,
