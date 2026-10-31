@@ -138,9 +138,9 @@ describe("what 1 more customer is worth", () => {
     expect(h.indexOf("What 1 more customer is worth")).toBeLessThan(
       h.indexOf("You and your nearest rivals"),
     );
-    expect(h).toContain(
-      "Just <b>1 more customer a day</b> at £15 would add about <b>£4,680 a year</b>",
-    );
+    // The money is revealed under the map, not in "What we found".
+    expect(h).not.toContain("Just <b>1 more customer a day</b>");
+    expect(h.indexOf('id="map"')).toBeLessThan(h.indexOf('id="worth"'));
     expect(h).not.toContain("—");
   });
   it("uses the saved value, per week, and shows static numbers when printing", () => {

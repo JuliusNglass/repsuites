@@ -337,12 +337,6 @@ function findings(
             ? `When people near you search <b>"${esc(worst.keyword)}"</b>, you are <b>in the top 3 everywhere</b>. Great work.`
             : `When people near you search <b>"${esc(worst.keyword)}"</b>, you are in the top 3 in only <b>${worst.top3} of 25 places</b>. In the rest, they see other businesses first.`,
     });
-    // Worked example: 1 more a day at £40 is £40 x 312 = £12,480 a year.
-    if (worst.top3 < 20)
-      items.push({
-        icon: "&#128176;",
-        text: `Just <b>1 more customer a ${sale.period}</b> at ${esc(money(sale.amount, sale.currency))} would add about <b>${esc(money(yearlyValue(sale.amount, sale.period), sale.currency))} a year</b>.`,
-      });
   }
   if (r.business.reviews === 0)
     items.push({
@@ -372,10 +366,9 @@ function findings(
     });
   }
   if (!items.length) return "";
-  const start = extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start";
   return `<div class="card found"><h2 style="margin:0 0 10px">What we found</h2>
 ${items.map((i) => `<div class="finding"><span class="fi">${i.icon}</span><p>${i.text}</p></div>`).join("")}
-<div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px" href="${start}">Fix this: start free</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></div></div>`;
+<div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px;background:#0b1d3a;color:#fff" href="#map">See where you show up</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></div></div>`;
 }
 
 type Sale = ReturnType<typeof saleFor>;
@@ -422,7 +415,14 @@ ${controls}
 <div class="total"><div class="big" id="ws-total">${total}</div><div>a year in extra sales, from 1 more customer</div></div>
 ${growth}
 <p class="small" style="margin:12px 0 0">This is not a forecast. It shows what one extra customer would add at the price you set. Change the price to match yours.</p>
-<a class="cta noprint" href="${start}">Start free</a></div>${script}`;
+<h3 style="margin:18px 0 8px;font-size:1rem">How we help you win that customer</h3>
+<ul class="small" style="margin:0;padding-left:18px;font-size:.95rem;line-height:1.5">
+<li>Your own review page and QR code, so happy customers leave reviews in seconds.</li>
+<li>Unhappy customers message you privately first, not on Google.</li>
+<li>With Growth, we check this map again every month, so you can see yourself move up.</li>
+</ul>
+<a class="cta noprint" href="${start}">Start free</a>
+<p class="small noprint" style="text-align:center;margin:8px 0 0">No card needed. Takes 2 minutes.</p></div>${script}`;
 }
 
 export interface RenderExtra {
@@ -597,10 +597,12 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
 ${video}
 <p class="kicker">How you show up on Google</p>
 ${video ? `<h2 class="biz">${esc(b.name)}</h2>` : `<h1 class="biz">${esc(b.name)}</h1>`}
+<p style="margin:10px 0 0">RepSuites helps local businesses get found and chosen on Google. We checked how <b>${esc(b.name)}</b> shows up when people nearby search for what you do. Here is what we found, what it could be worth, and how to fix it.</p>
 <p class="muted">${esc(b.address)}<br>Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#64748b">See your Google profile</a>` : ""}</p>
 
 ${headline}
 
+<div id="map"></div>
 ${heat || (mapsLine ? `<h2>Where you show up on Google Maps</h2><div class="card">${mapsLine}</div>` : "")}
 
 ${worthSection(r, sale, extra)}
