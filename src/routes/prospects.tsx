@@ -66,6 +66,16 @@ type Patch = {
   email?: string;
   contactName?: string;
 };
+// The niche part of a search like "auto detailing in Newport" ("auto
+// detailing"), unless the search was for this business by name.
+function nicheTopic(q: string, name: string): string {
+  if (q.toLowerCase().includes(name.toLowerCase().slice(0, 6))) return "";
+  return q
+    .replace(/\s+(in|near|around|at)\s+.*$/i, "")
+    .trim()
+    .slice(0, 80);
+}
+
 type Hit = Extract<Awaited<ReturnType<typeof searchProspects>>, { ok: true }>["hits"][number];
 
 const STAGE_IDS = ["new", "sent", "opened", "replied", "booked", "won", "lost"] as const;
@@ -151,6 +161,7 @@ function Prospects() {
         ...(words.trim() ? { keyword: words.trim() } : {}),
         ...(area ? { area } : {}),
         niche: !q.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
+        ...(nicheTopic(q, h.name) ? { topic: nicheTopic(q, h.name) } : {}),
       },
     }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
     // Extra search phrases: one at a time (each is 25 map searches).

@@ -196,7 +196,12 @@ export function rivalTypes(primary: string, types: string[]): string[] {
   return [...new Set(specific)].slice(0, 5);
 }
 
-async function nearestRivals(p: any, lat: number, lng: number): Promise<Report["rivals"]> {
+async function nearestRivals(
+  p: any,
+  lat: number,
+  lng: number,
+  fallback = "",
+): Promise<Report["rivals"]> {
   const kinds = rivalTypes(String(p.primaryType ?? ""), (p.types ?? []).map(String));
   const mask =
     "places.id,places.displayName,places.rating,places.userRatingCount,places.location,places.primaryTypeDisplayName,places.businessStatus";
@@ -232,7 +237,7 @@ async function nearestRivals(p: any, lat: number, lng: number): Promise<Report["
     }
   }
   // Fallback: a text search for its category, kept within 15 km.
-  const category = String(p.primaryTypeDisplayName?.text ?? "");
+  const category = String(p.primaryTypeDisplayName?.text ?? "") || fallback;
   if (!category) return [];
   const j = await places("places:searchText", mask, {
     textQuery: category,
@@ -326,6 +331,7 @@ export async function buildReport(
   keywordOverride?: string,
   extraKeywords: string[] = [],
   areaOverride?: import("./rank-grid").AreaSize,
+  topic?: string,
 ): Promise<{
   report: Report;
   meta: {
@@ -363,11 +369,19 @@ export async function buildReport(
   // types, e.g. burger, fast food or American restaurant), closest first,
   // within 5 km, widening to 15 km in quiet areas. Never the busiest chain in
   // the nearest city just because it is famous.
-  const rivals = lat !== null && lng !== null ? await nearestRivals(p, lat, lng) : [];
+  // Some profiles have no Google category (only "point of interest"). Then use
+  // its most specific Google type ("car_wash" -> "car wash"), or the niche the
+  // search was for ("auto detailing"), so rivals and the map still work.
+  const fallback = (
+    category ||
+    rivalTypes(String(p.primaryType ?? ""), (p.types ?? []).map(String))[0]?.replace(/_/g, " ") ||
+    (topic ?? "").trim()
+  ).slice(0, 80);
+  const rivals = lat !== null && lng !== null ? await nearestRivals(p, lat, lng, fallback) : [];
 
   // Where it shows on Google Maps for its main search, from its own street,
   // and across a 5 by 5 grid. Extra search phrases get their own grid.
-  const keyword = (keywordOverride || category || "").toLowerCase().slice(0, 80);
+  const keyword = (keywordOverride || fallback || "").toLowerCase().slice(0, 80);
   let position: number | null = null;
   let checked = false;
   let mapsError = "";
@@ -433,6 +447,12 @@ export async function buildReport(
   const score = Math.round((got / max) * 100);
 
   const fixes: Report["fixes"] = [];
+  if (reviews === 0)
+    fixes.push({
+      title: "You have no Google reviews yet",
+      why: "Most people skip a business with no reviews and call the next one. Your first 10 reviews make the biggest difference of all.",
+      priority: "high",
+    });
   if (checked && (position === null || position > 3))
     fixes.push({
       title:
@@ -563,6 +583,7 @@ export async function saveProspectReport(
     keyword?: string;
     keywords?: string[];
     area?: import("./rank-grid").AreaSize;
+    topic?: string;
     guardRecent?: boolean;
     force?: boolean;
   } = {},
@@ -595,7 +616,7 @@ export async function saveProspectReport(
   }
   // Extra phrases run as separate requests (addProspectGrid): each grid is 25
   // outside calls and a request may make at most 50.
-  const built = await buildReport(placeId, extra.keyword, [], extra.area);
+  const built = await buildReport(placeId, extra.keyword, [], extra.area, extra.topic);
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
   // Who owns it, from Companies House (UK only, 2 outside calls, kept 90 days).

@@ -128,7 +128,14 @@ function phrases(raw?: string): { keyword?: string; keywords?: string[] } {
 
 export const buildProspectReport = createServerFn({ method: "POST" })
   .validator(
-    (d: { placeId: string; keyword?: string; niche?: boolean; area?: string; force?: boolean }) =>
+    (d: {
+      placeId: string;
+      keyword?: string;
+      niche?: boolean;
+      area?: string;
+      force?: boolean;
+      topic?: string;
+    }) =>
       z
         .object({
           placeId: z.string().regex(PLACE_RE),
@@ -138,6 +145,9 @@ export const buildProspectReport = createServerFn({ method: "POST" })
           keyword: z.string().trim().max(250).optional(),
           niche: z.boolean().optional(),
           area: z.enum(["small", "medium", "large"]).optional(),
+          // The niche searched for ("auto detailing"), used only when the
+          // business has no Google category.
+          topic: z.string().trim().max(80).optional(),
         })
         .parse(d),
   )
@@ -148,6 +158,7 @@ export const buildProspectReport = createServerFn({ method: "POST" })
       createdBy: g.userId,
       ...phrases(data.keyword),
       ...(data.area ? { area: data.area } : {}),
+      ...(data.topic ? { topic: data.topic } : {}),
       guardRecent: true,
       force: data.force === true,
     });
