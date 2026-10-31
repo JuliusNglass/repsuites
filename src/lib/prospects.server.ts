@@ -70,14 +70,20 @@ export interface SearchHit {
   phoneType: import("./prospect-contact").PhoneType;
 }
 
-export async function searchBusinesses(query: string): Promise<SearchHit[] | null> {
+// Google gives 20 results a page and up to 3 pages (60 in all); `next` is the
+// token for the following page, or "" when there are no more.
+export async function searchBusinesses(
+  query: string,
+  pageToken = "",
+): Promise<{ hits: SearchHit[]; next: string } | null> {
   const j = await places(
     "places:searchText",
-    "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.primaryTypeDisplayName,places.internationalPhoneNumber,places.nationalPhoneNumber,places.websiteUri",
-    { textQuery: query, pageSize: 20, languageCode: "en" },
+    "places.id,places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.primaryTypeDisplayName,places.internationalPhoneNumber,places.nationalPhoneNumber,places.websiteUri,nextPageToken",
+    { textQuery: query, pageSize: 20, languageCode: "en", ...(pageToken ? { pageToken } : {}) },
   );
   if (!j) return null;
-  return (j.places ?? [])
+  const next = typeof j.nextPageToken === "string" ? j.nextPageToken.slice(0, 2000) : "";
+  const hits: SearchHit[] = (j.places ?? [])
     .filter((p: any) => typeof p.id === "string" && PLACE_RE.test(p.id))
     .map((p: any) => ({
       placeId: p.id,
@@ -88,6 +94,7 @@ export async function searchBusinesses(query: string): Promise<SearchHit[] | nul
       category: String(p.primaryTypeDisplayName?.text ?? ""),
       ...reach(p),
     }));
+  return { hits, next };
 }
 
 // Phone (international format where Google has it), website and whether the

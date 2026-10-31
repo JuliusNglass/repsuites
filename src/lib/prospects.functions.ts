@@ -16,13 +16,21 @@ const PLACE_RE = /^[A-Za-z0-9_-]{10,300}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const searchProspects = createServerFn({ method: "POST" })
-  .validator((d: { q: string }) => z.object({ q: z.string().trim().min(3).max(120) }).parse(d))
+  .validator((d: { q: string; page?: string }) =>
+    z
+      .object({
+        q: z.string().trim().min(3).max(120),
+        page: z.string().max(2000).optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
     const g = await agencyGuard(true);
     if (!g.ok) return g;
-    const hits = await searchBusinesses(data.q);
-    if (!hits)
+    const found = await searchBusinesses(data.q, data.page ?? "");
+    if (!found)
       return { ok: false as const, error: "Google search is not available. Check the Maps key." };
+    const hits = found.hits;
     const ids = hits.map((h) => `"${h.placeId}"`).join(",");
     const { cachedContacts } = await import("./prospect-contact.server");
     const { contactsFresh } = await import("./prospect-contact");
@@ -42,6 +50,7 @@ export const searchProspects = createServerFn({ method: "POST" })
     const saved = new Map((known.data ?? []).map((k) => [k.place_id, k]));
     return {
       ok: true as const,
+      next: found.next,
       hits: hits.map((h) => {
         const s = saved.get(h.placeId);
         const c = cache.get(h.placeId);

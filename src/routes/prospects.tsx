@@ -170,6 +170,8 @@ function Prospects() {
   const [area, setArea] = useState<"" | "small" | "medium" | "large">("");
   const [hits, setHits] = useState<Hit[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [nextPage, setNextPage] = useState("");
+  const [moreLoading, setMoreLoading] = useState(false);
   const [building, setBuilding] = useState<string | null>(null);
   const [stage, setStage] = useState<string>("all");
   const [reach, setReach] = useState<ReachFilter>("all");
@@ -183,7 +185,7 @@ function Prospects() {
   async function findEmails(list: Hit[], id: number) {
     const todo = list.filter((h) => !h.checked && h.website);
     if (!todo.length) return;
-    setFinding(new Set(todo.map((h) => h.placeId)));
+    setFinding((cur) => new Set([...cur, ...todo.map((h) => h.placeId)]));
     const batches: Hit[][] = [];
     for (let i = 0; i < todo.length; i += 8) batches.push(todo.slice(i, i + 8));
     const run = async () => {
@@ -321,10 +323,12 @@ function Prospects() {
                 setSearching(true);
                 const id = ++searchId.current;
                 setFinding(new Set());
+                setNextPage("");
                 const r = await search({ data: { q } });
                 setSearching(false);
                 if (r.ok) {
                   setHits(r.hits);
+                  setNextPage(r.next);
                   void findEmails(r.hits, id);
                 } else toast.error(r.error);
               }}
@@ -405,7 +409,7 @@ function Prospects() {
                 )}
               </div>
             )}
-            {hits && hits.length > 0 && visible.length === 0 && (
+            {hits && hits.length > 0 && visible.length === 0 && !nextPage && (
               <p className="text-sm text-muted-foreground">
                 None of these match the filter. Tap it again to show all.
               </p>
@@ -456,6 +460,32 @@ function Prospects() {
                 </li>
               ))}
             </ul>
+            {hits && nextPage && (
+              <button
+                type="button"
+                disabled={moreLoading}
+                onClick={async () => {
+                  setMoreLoading(true);
+                  const id = searchId.current;
+                  const r = await search({ data: { q, page: nextPage } }).catch(() => null);
+                  setMoreLoading(false);
+                  if (id !== searchId.current) return;
+                  if (!r?.ok) {
+                    toast.error(r && !r.ok ? r.error : "Could not load more. Try again.");
+                    return;
+                  }
+                  const have = new Set((hits ?? []).map((h) => h.placeId));
+                  const fresh = r.hits.filter((h) => !have.has(h.placeId));
+                  setHits((cur) => [...(cur ?? []), ...fresh]);
+                  setNextPage(r.next);
+                  void findEmails(fresh, id);
+                }}
+                className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                {moreLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                Show more results ({hits.length} so far, Google gives up to 60)
+              </button>
+            )}
           </>
         )}
 
