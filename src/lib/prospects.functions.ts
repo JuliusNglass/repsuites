@@ -201,6 +201,7 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
   const r = await serviceRead<
     {
       id: string;
+      place_id: string;
       name: string;
       town: string | null;
       phone: string | null;
@@ -235,7 +236,7 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       website_owner_name: string | null;
     }[]
   >(
-    "prospects?select=id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url,report_at,company_number,company_name,owners,owner_source,owner_match,owner_looked_up_at,website_owner_name&order=updated_at.desc&limit=300",
+    "prospects?select=id,place_id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url,report_at,company_number,company_name,owners,owner_source,owner_match,owner_looked_up_at,website_owner_name&order=updated_at.desc&limit=300",
     "",
   );
   const { chKey } = await import("./prospect-owner.server");
@@ -245,6 +246,14 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
     chEnabled: !!chKey(),
     prospects: (r.data ?? []).map((p) => ({
       id: p.id,
+      placeId: p.place_id,
+      // The search phrases the report checked, for a rebuild from the pipeline.
+      phrases: (p.report?.grids?.length
+        ? p.report.grids.map((g) => g.keyword)
+        : p.report?.maps?.keyword
+          ? [p.report.maps.keyword]
+          : []
+      ).join(", "),
       name: p.name,
       town: p.town ?? "",
       phone: p.phone ?? "",

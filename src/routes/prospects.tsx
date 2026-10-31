@@ -24,6 +24,7 @@ import {
   Upload,
   Video,
   MapPin,
+  RefreshCw,
 } from "lucide-react";
 import { Logo } from "../components/site/Logo";
 import {
@@ -838,6 +839,37 @@ function ProspectRow({
 }) {
   const [open, setOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [rebuild, setRebuild] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
+  const [phrases, setPhrases] = useState(p.phrases);
+  const build = useServerFn(buildProspectReport);
+  const addPhrase = useServerFn(addProspectPhrase);
+  // Rebuild from the pipeline: no new search needed. The first phrase runs
+  // with the report; any others are added one at a time (25 map checks each).
+  const runRebuild = async () => {
+    setRebuilding(true);
+    const list = phrases
+      .split(",")
+      .map((w) => w.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+    const r = await build({
+      data: {
+        placeId: p.placeId,
+        force: true,
+        ...(list[0] ? { keyword: list[0] } : {}),
+      },
+    }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    if (r.ok)
+      for (const w of list.slice(1))
+        await addPhrase({ data: { placeId: p.placeId, keyword: w } }).catch(() => null);
+    setRebuilding(false);
+    if (r.ok) {
+      setRebuild(false);
+      toast.success(`Rebuilt the report for ${p.name}`);
+      await onReload();
+    } else toast.error("error" in r ? r.error : "Could not rebuild. Try again.");
+  };
   const [notes, setNotes] = useState(p.notes);
   const [email, setEmail] = useState(p.email);
   const [contact, setContact] = useState(p.contactName);
@@ -1010,12 +1042,54 @@ function ProspectRow({
           </button>
           <button
             type="button"
+            onClick={() => setRebuild((v) => !v)}
+            title="Run the report again with fresh Google figures"
+            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Rebuild
+          </button>
+          <button
+            type="button"
             onClick={() => setOpen((v) => !v)}
             className="ml-auto px-2 py-1.5 inline-flex items-center gap-1 text-muted-foreground"
           >
             Details{" "}
             {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
+        </div>
+      )}
+      {rebuild && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
+          <p>
+            Rebuild the report for <b>{p.name}</b> with fresh Google figures
+            {p.reportAt ? ` (last built ${shortDate(p.reportAt)})` : ""}. It costs about{" "}
+            {reportCost(phrases)}p and replaces the current one, at the same link.
+          </p>
+          <input
+            value={phrases}
+            onChange={(e) => setPhrases(e.target.value)}
+            placeholder="Search phrases, with commas: car valeting, car wash"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={rebuilding}
+              onClick={() => void runRebuild()}
+              className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {rebuilding && <Loader2 className="w-4 h-4 animate-spin" />}
+              {rebuilding ? "Rebuilding (about a minute)" : "Rebuild"}
+            </button>
+            <button
+              type="button"
+              disabled={rebuilding}
+              onClick={() => setRebuild(false)}
+              className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
       {videoOpen && p.link && <VideoPanel p={p} makeOg={makeOg} onReload={onReload} />}
