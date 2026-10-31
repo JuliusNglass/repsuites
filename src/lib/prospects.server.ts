@@ -596,9 +596,10 @@ export async function saveProspectReport(
         email: string | null;
         report_at: string | null;
         owner_looked_up_at: string | null;
+        prev_kw: string | null;
       }[]
     >(
-      `prospects?select=id,report_token,email,report_at,owner_looked_up_at&place_id=eq.${encodeURIComponent(placeId)}`,
+      `prospects?select=id,report_token,email,report_at,owner_looked_up_at,prev_kw:report->maps->>keyword&place_id=eq.${encodeURIComponent(placeId)}`,
       "",
     ),
     cachedContacts([placeId]),
@@ -616,7 +617,14 @@ export async function saveProspectReport(
   }
   // Extra phrases run as separate requests (addProspectGrid): each grid is 25
   // outside calls and a request may make at most 50.
-  const built = await buildReport(placeId, extra.keyword, [], extra.area, extra.topic);
+  // A rebuild without a niche keeps the search phrase the last report used.
+  const built = await buildReport(
+    placeId,
+    extra.keyword,
+    [],
+    extra.area,
+    extra.topic || row?.prev_kw || undefined,
+  );
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
   // Who owns it, from Companies House (UK only, 2 outside calls, kept 90 days).

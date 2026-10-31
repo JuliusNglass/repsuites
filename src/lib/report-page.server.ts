@@ -140,10 +140,7 @@ function heatMap(r: Report, extra: RenderExtra | null): string {
   const b = r.business;
   const grids =
     r.grids && r.grids.length ? r.grids : r.grid ? [{ keyword: r.maps.keyword, ...r.grid }] : [];
-  if (!grids.length)
-    return noCategory(r)
-      ? `<h2>Where you show up across your area</h2><div class="card"><p style="margin:0">We could not check where you show up on Google Maps, because your Google profile does not say what kind of business you are. Google cannot rank you for a search it cannot match you to. Once the right category is set, we can map where you show up street by street against your rivals.</p></div>`
-      : "";
+  if (!grids.length) return "";
   const center = grids[0]!.center ?? extra?.center ?? null;
   const miles = usesMiles(center?.lat, center?.lng);
   const spacingKm = grids[0]!.spacingKm ?? (miles ? 0.8 : 1);
@@ -238,11 +235,6 @@ function gridsOf(r: Report) {
       : [];
 }
 
-// A profile with no Google category, so no map check could run.
-function noCategory(r: Report): boolean {
-  return !r.business.category && !gridsOf(r).length && !r.maps.keyword;
-}
-
 // Score, parts and fixes as shown, worked out again from the area checks.
 export function scoreView(r: Report) {
   const grids = gridsOf(r);
@@ -272,12 +264,6 @@ export function scoreView(r: Report) {
     fixes.unshift({
       title: "You have no Google reviews yet",
       why: "Most people skip a business with no reviews and call the next one. Your first 10 reviews make the biggest difference of all.",
-      priority: "high",
-    });
-  if (noCategory(r))
-    fixes.push({
-      title: "Your Google profile does not say what kind of business you are",
-      why: "Google uses your business category to decide which searches to show you in. Without it, people searching for what you do may never see you. Setting it is free and takes two minutes.",
       priority: "high",
     });
   if (r.business.rating !== null && r.business.rating < 4 && !has("rating"))
@@ -321,11 +307,6 @@ function findings(
     items.push({
       icon: "&#11088;",
       text: `You have <b>no Google reviews yet</b>. Most people skip a business with no reviews and call the next one.`,
-    });
-  if (noCategory(r))
-    items.push({
-      icon: "&#128205;",
-      text: `Your Google profile <b>does not say what you do</b>, so Google cannot show you when people search for it.`,
     });
   const g = r.reviewGap;
   if (g) {
