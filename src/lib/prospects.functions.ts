@@ -1,7 +1,8 @@
 // Lead generator server functions (Accelur8 team only).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { addressCountry, phoneType, type PhoneType } from "./prospect-contact";
+import { addressCountry, phoneType, waNumber, type PhoneType } from "./prospect-contact";
+import { SENT_VIA } from "./prospect-pipeline";
 import { rankingHook } from "./prospect-video";
 import { isUkAddress, ownerFresh, type Officer } from "./prospect-owner";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
@@ -234,9 +235,11 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       owner_match: string | null;
       owner_looked_up_at: string | null;
       website_owner_name: string | null;
+      sent_at: string | null;
+      sent_via: string | null;
     }[]
   >(
-    "prospects?select=id,place_id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url,report_at,company_number,company_name,owners,owner_source,owner_match,owner_looked_up_at,website_owner_name&order=updated_at.desc&limit=300",
+    "prospects?select=id,place_id,name,town,phone,email,contact_name,stage,follow_up_on,notes,report,report_token,opens,last_opened_at,gbp_connected_at,source,created_at,video_url,video_kind,video_first_played_at,video_max_percent,og_image_url,phone_type,address,facebook_url,instagram_url,report_at,company_number,company_name,owners,owner_source,owner_match,owner_looked_up_at,website_owner_name,sent_at,sent_via&order=updated_at.desc&limit=300",
     "",
   );
   const { chKey } = await import("./prospect-owner.server");
@@ -300,6 +303,11 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       ownerMatch: p.owner_match,
       ownerLookedUpAt: p.owner_looked_up_at,
       websiteOwnerName: p.website_owner_name ?? "",
+      // When the message really went out, and how (null: not sent yet).
+      sentAt: p.sent_at,
+      sentVia: p.sent_via,
+      // Digits for a wa.me link, with the country code ("447700900123").
+      waDigits: waNumber(p.phone ?? "", addressCountry(p.address ?? "")),
     })),
   };
 });
@@ -334,10 +342,85 @@ export const updateProspect = createServerFn({ method: "POST" })
     if (!g.ok) return g;
     const body: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (data.stage) body["stage"] = data.stage;
+    // Moving back to New by hand means nothing was sent.
+    if (data.stage === "new") {
+      body["sent_at"] = null;
+      body["sent_via"] = null;
+    }
     if (data.followUpOn !== undefined) body["follow_up_on"] = data.followUpOn;
     if (data.notes !== undefined) body["notes"] = data.notes || null;
     if (data.email !== undefined) body["email"] = data.email || null;
     if (data.contactName !== undefined) body["contact_name"] = data.contactName || null;
+    const w = await serviceWrite<unknown>(`prospects?id=eq.${data.id}`, "", {
+      method: "PATCH",
+      body,
+    });
+    if (w.error) return { ok: false as const, error: "Could not save." };
+    // Moving to Sent by hand records it as sent now (if not already).
+    if (data.stage === "sent")
+      await serviceWrite<unknown>(`prospects?id=eq.${data.id}&sent_at=is.null`, "", {
+        method: "PATCH",
+        body: { sent_at: new Date().toISOString(), sent_via: "manual" },
+      });
+    return { ok: true as const };
+  });
+
+// The message really went out (WhatsApp, email, text, or copied and sent).
+// A new prospect moves to Sent with a follow-up in 3 days. Sending again
+// keeps the first time.
+export const markSent = createServerFn({ method: "POST" })
+  .validator((d: { id: string; via: string }) =>
+    z.object({ id: z.string().regex(UUID_RE), via: z.enum(SENT_VIA) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const r = await serviceRead<{ stage: string; sent_at: string | null }[]>(
+      `prospects?select=stage,sent_at&id=eq.${data.id}`,
+      "",
+    );
+    const row = r.data?.[0];
+    if (!row) return { ok: false as const, error: "Prospect not found." };
+    if (row.sent_at) return { ok: true as const, already: true };
+    const now = new Date();
+    const body: Record<string, unknown> = {
+      sent_at: now.toISOString(),
+      sent_via: data.via,
+      updated_at: now.toISOString(),
+    };
+    if (row.stage === "new") {
+      body["stage"] = "sent";
+      body["follow_up_on"] = new Date(now.getTime() + 3 * 86400000).toISOString().slice(0, 10);
+    }
+    const w = await serviceWrite<unknown>(`prospects?id=eq.${data.id}&sent_at=is.null`, "", {
+      method: "PATCH",
+      body,
+    });
+    return w.error ? { ok: false as const, error: "Could not save." } : { ok: true as const };
+  });
+
+// "Undo": it was not really sent. Clears the send and any opens, and moves
+// Sent or Opened back to New. Later stages stay as they are.
+export const undoSent = createServerFn({ method: "POST" })
+  .validator((d: { id: string }) => z.object({ id: z.string().regex(UUID_RE) }).parse(d))
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const r = await serviceRead<{ stage: string }[]>(`prospects?select=stage&id=eq.${data.id}`, "");
+    const row = r.data?.[0];
+    if (!row) return { ok: false as const, error: "Prospect not found." };
+    const body: Record<string, unknown> = {
+      sent_at: null,
+      sent_via: null,
+      opens: 0,
+      first_opened_at: null,
+      last_opened_at: null,
+      updated_at: new Date().toISOString(),
+    };
+    if (row.stage === "sent" || row.stage === "opened") {
+      body["stage"] = "new";
+      body["follow_up_on"] = null;
+    }
     const w = await serviceWrite<unknown>(`prospects?id=eq.${data.id}`, "", {
       method: "PATCH",
       body,

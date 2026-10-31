@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -24,6 +25,8 @@ import {
   Upload,
   Video,
   MapPin,
+  MoreHorizontal,
+  PhoneCall,
   RefreshCw,
 } from "lucide-react";
 import { Logo } from "../components/site/Logo";
@@ -39,8 +42,21 @@ import {
   searchProspects,
   setProspectOgImage,
   startProspectUpload,
+  markSent,
+  undoSent,
   updateProspect,
 } from "../lib/prospects.functions";
+import {
+  QUEUES,
+  inQueue,
+  matchesSearch,
+  opensLine,
+  queueCounts,
+  sendStatus,
+  sortQueue,
+  type QueueId,
+  type SentVia,
+} from "../lib/prospect-pipeline";
 import {
   OPENING_QUESTION,
   VIDEO_MAX_BYTES,
@@ -239,7 +255,8 @@ function Prospects() {
   const [nextPage, setNextPage] = useState("");
   const [moreLoading, setMoreLoading] = useState(false);
   const [building, setBuilding] = useState<string | null>(null);
-  const [stage, setStage] = useState<string>("all");
+  const [queue, setQueue] = useState<QueueId>("todo");
+  const [term, setTerm] = useState("");
   const [reach, setReach] = useState<ReachFilter>("all");
   const [finding, setFinding] = useState<Set<string>>(new Set());
   // The inline "Rebuild?" question under one search result.
@@ -328,10 +345,12 @@ function Prospects() {
       ),
     [items],
   );
-  const shown = useMemo(
-    () => (tab === "due" ? due : (items ?? []).filter((p) => stage === "all" || p.stage === stage)),
-    [tab, due, items, stage],
-  );
+  const counts2 = useMemo(() => queueCounts(items ?? []), [items]);
+  const shown = useMemo(() => {
+    if (tab === "due") return due;
+    const list = (items ?? []).filter((p) => inQueue(p, queue) && matchesSearch(p, term));
+    return sortQueue(list, queue);
+  }, [tab, due, items, queue, term]);
 
   const save = async (id: string, patch: Patch) => {
     const r = await update({ data: { id, ...patch } });
@@ -601,21 +620,37 @@ function Prospects() {
         {tab !== "find" && (
           <>
             {tab === "pipeline" && (
-              <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-                {[{ id: "all", label: "All" }, ...STAGES].map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setStage(s.id)}
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold border ${
-                      stage === s.id
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
+                  {QUEUES.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      aria-pressed={queue === s.id}
+                      onClick={() => setQueue(s.id)}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                        queue === s.id
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : counts2[s.id]
+                            ? "border-border"
+                            : "border-border text-muted-foreground"
+                      }`}
+                    >
+                      {s.label} ({counts2[s.id]})
+                    </button>
+                  ))}
+                </div>
+                <div className="relative sm:w-56 shrink-0">
+                  <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="search"
+                    value={term}
+                    onChange={(e) => setTerm(e.target.value)}
+                    placeholder="Search name or town"
+                    aria-label="Search name or town"
+                    className="w-full rounded-lg border border-input bg-background pl-8 pr-3 py-1.5 text-sm"
+                  />
+                </div>
               </div>
             )}
             {items === null && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -623,7 +658,11 @@ function Prospects() {
               <p className="text-sm text-muted-foreground">
                 {tab === "due"
                   ? "No follow-ups due. Nice."
-                  : "No prospects here yet. Find some first."}
+                  : items.length === 0
+                    ? "No prospects here yet. Find some first."
+                    : term.trim()
+                      ? "No prospects here match your search."
+                      : "Nothing here right now."}
               </p>
             )}
             {items && !chEnabled && <ChKeyNote />}
@@ -891,18 +930,53 @@ function ProspectRow({
     ? `A quick video about ${p.name} on Google`
     : `How ${p.name} shows up on Google`;
   const watched = watchLabel(p.videoFirstPlayedAt, p.videoMaxPercent);
-  // Sharing a report moves a new prospect to "sent" and sets a follow-up in 3
-  // days. It also makes the link-preview picture if there is none yet.
-  const shared = async () => {
+  const mark = useServerFn(markSent);
+  const undo = useServerFn(undoSent);
+  const [copied, setCopied] = useState(false);
+  const moreRef = useRef<HTMLDetailsElement>(null);
+  const closeMore = () => moreRef.current?.removeAttribute("open");
+  // Makes the link-preview picture if there is none yet.
+  const ensureOg = () => {
     if (!p.ogImage)
       void makeOg(
         p,
         p.videoUrl && p.videoKind ? { kind: p.videoKind, url: p.videoUrl } : null,
       ).then((ok) => (ok ? onReload() : undefined));
-    if (p.stage === "new") await onSave(p.id, { stage: "sent", followUpOn: today(3) });
   };
+  // The message really went out: records how and when, moves a new prospect
+  // to Sent and sets a follow-up in 3 days.
+  const sent = async (via: SentVia) => {
+    ensureOg();
+    setCopied(false);
+    if (p.sentAt) return;
+    const r = await mark({ data: { id: p.id, via } }).catch(() => ({
+      ok: false as const,
+      error: "Could not save. Try again.",
+    }));
+    if (!r.ok) toast.error(r.error);
+    await onReload();
+  };
+  const undoSend = async () => {
+    const r = await undo({ data: { id: p.id } }).catch(() => ({
+      ok: false as const,
+      error: "Could not save. Try again.",
+    }));
+    if (!r.ok) toast.error(r.error);
+    else toast.success("Marked as not sent");
+    await onReload();
+  };
+  const status = sendStatus(p);
+  const opensText = opensLine(p);
   const phone = p.phone.replace(/[^\d+]/g, "");
-  const noWhatsApp = p.phoneType === "landline" || p.phoneType === "none";
+  const wa = p.waDigits || (phone.startsWith("+") ? phone.slice(1) : "");
+  const noWhatsApp = p.phoneType === "landline" || p.phoneType === "none" || !wa;
+  const noWaTitle =
+    p.phoneType === "none" || !phone
+      ? "No phone number"
+      : p.phoneType === "landline"
+        ? "This looks like a landline"
+        : "Could not read this number for WhatsApp";
+  const btn = "rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1";
   return (
     <li className="rounded-xl border border-border bg-card p-3 space-y-2">
       <div className="flex items-start gap-3">
@@ -911,9 +985,42 @@ function ProspectRow({
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold truncate">{p.name}</p>
-          <p className="text-xs text-muted-foreground truncate">
+          <p className="text-xs mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span
+              className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold ${
+                status.tone === "green"
+                  ? "bg-emerald-100 text-emerald-800"
+                  : status.tone === "amber"
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {status.text}
+            </span>
+            {status.sent && (
+              <button
+                type="button"
+                onClick={() => void undoSend()}
+                title="It was not really sent. Clears the send and any opens."
+                className="underline text-muted-foreground"
+              >
+                Undo
+              </button>
+            )}
+            {opensText && (
+              <span
+                className={
+                  opensText.startsWith("Opened")
+                    ? "font-semibold text-emerald-700"
+                    : "text-muted-foreground"
+                }
+              >
+                {opensText}
+              </span>
+            )}
+          </p>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
             {p.town}
-            {p.opens > 0 ? ` - opened ${p.opens} time${p.opens === 1 ? "" : "s"}` : ""}
             {p.followUpOn
               ? ` - follow up ${new Date(p.followUpOn).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
               : ""}
@@ -961,73 +1068,66 @@ function ProspectRow({
           >
             <ExternalLink className="w-3.5 h-3.5" /> Open
           </a>
-          <a
-            href={`${p.link}?print=1`}
-            target="_blank"
-            rel="noopener"
-            title="Opens the report ready to save as a PDF"
-            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
-          >
-            <FileDown className="w-3.5 h-3.5" /> PDF
-          </a>
           {p.mapsUrl && (
             <a
               href={p.mapsUrl}
               target="_blank"
               rel="noopener"
               title="Their Google Business Profile on Google Maps"
-              className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+              className={btn}
             >
               <MapPin className="w-3.5 h-3.5" /> Google
             </a>
           )}
-          <button
-            type="button"
-            onClick={async () => {
-              await navigator.clipboard.writeText(text);
-              toast.success("Message and link copied");
-              await shared();
-            }}
-            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
-          >
-            <Copy className="w-3.5 h-3.5" /> Copy
-          </button>
           {noWhatsApp ? (
             <span
-              title={p.phoneType === "none" ? "No phone number" : "This looks like a landline"}
-              className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1 opacity-40 cursor-not-allowed"
+              title={noWaTitle}
+              className={`${btn} opacity-40 cursor-not-allowed`}
               aria-disabled="true"
             >
               <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
             </span>
           ) : (
-            <a
-              href={`https://wa.me/${phone.startsWith("+") ? phone.slice(1) : ""}?text=${encodeURIComponent(text)}`}
-              target="_blank"
-              rel="noopener"
-              onClick={() => void shared()}
-              title={
-                p.phoneType === "mobile" ? "Mobile number: very likely on WhatsApp" : undefined
-              }
-              className={`rounded-lg border px-2.5 py-1.5 inline-flex items-center gap-1 ${
-                p.phoneType === "mobile" ? "border-emerald-600 text-emerald-700" : "border-border"
-              }`}
-            >
-              <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
-            </a>
+            <>
+              <a
+                href={`https://wa.me/${wa}`}
+                target="_blank"
+                rel="noopener"
+                title="Open their WhatsApp chat without a message, to see if the number is on WhatsApp"
+                className={btn}
+              >
+                <PhoneCall className="w-3.5 h-3.5" /> Check
+              </a>
+              <a
+                href={`https://wa.me/${wa}?text=${encodeURIComponent(text)}`}
+                target="_blank"
+                rel="noopener"
+                onClick={() => void sent("whatsapp")}
+                title={
+                  p.phoneType === "mobile"
+                    ? "Mobile number: very likely on WhatsApp. Opens the message and marks it as sent."
+                    : "Opens the message in WhatsApp and marks it as sent"
+                }
+                className={`rounded-lg border px-2.5 py-1.5 inline-flex items-center gap-1 font-semibold ${
+                  p.phoneType === "mobile" ? "border-emerald-600 text-emerald-700" : "border-border"
+                }`}
+              >
+                <MessageCircle className="w-3.5 h-3.5" /> Send on WhatsApp
+              </a>
+            </>
           )}
           <a
             title={p.email ? `Email ${p.email}` : "No email yet. Add one in Details."}
             href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`}
-            onClick={() => void shared()}
-            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+            onClick={() => void sent("email")}
+            className={btn}
           >
             <Mail className="w-3.5 h-3.5" /> Email
           </a>
           <a
             href={`sms:${phone}?&body=${encodeURIComponent(text)}`}
-            onClick={() => void shared()}
-            className="rounded-lg border border-border px-2.5 py-1.5 inline-flex items-center gap-1"
+            onClick={() => void sent("text")}
+            className={btn}
           >
             <Smartphone className="w-3.5 h-3.5" /> Text
           </a>
@@ -1048,6 +1148,50 @@ function ProspectRow({
           >
             <RefreshCw className="w-3.5 h-3.5" /> Rebuild
           </button>
+          <details ref={moreRef} className="relative">
+            <summary
+              className={`${btn} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+            >
+              <MoreHorizontal className="w-3.5 h-3.5" /> More
+            </summary>
+            <div className="absolute z-20 mt-1 right-0 min-w-40 rounded-lg border border-border bg-card shadow-lg p-1 flex flex-col">
+              <a
+                href={`${p.link}?print=1`}
+                target="_blank"
+                rel="noopener"
+                onClick={closeMore}
+                title="Opens the report ready to save as a PDF"
+                className="rounded-md px-2.5 py-2 inline-flex items-center gap-1.5 hover:bg-muted"
+              >
+                <FileDown className="w-3.5 h-3.5" /> PDF
+              </a>
+              <button
+                type="button"
+                onClick={async () => {
+                  closeMore();
+                  await navigator.clipboard.writeText(text);
+                  toast.success("Message and link copied");
+                  ensureOg();
+                  if (!p.sentAt) setCopied(true);
+                }}
+                className="rounded-md px-2.5 py-2 inline-flex items-center gap-1.5 hover:bg-muted text-left"
+              >
+                <Copy className="w-3.5 h-3.5" /> Copy message
+              </button>
+              {!p.sentAt && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMore();
+                    void sent("manual");
+                  }}
+                  className="rounded-md px-2.5 py-2 inline-flex items-center gap-1.5 hover:bg-muted text-left"
+                >
+                  <Check className="w-3.5 h-3.5" /> Mark as sent
+                </button>
+              )}
+            </div>
+          </details>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -1055,6 +1199,25 @@ function ProspectRow({
           >
             Details{" "}
             {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      )}
+      {copied && !p.sentAt && (
+        <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs flex flex-wrap items-center gap-2">
+          <span>Did you send it?</span>
+          <button
+            type="button"
+            onClick={() => void sent("copy")}
+            className="rounded-lg bg-primary text-primary-foreground px-2.5 py-1 font-semibold inline-flex items-center gap-1"
+          >
+            <Check className="w-3.5 h-3.5" /> Mark as sent
+          </button>
+          <button
+            type="button"
+            onClick={() => setCopied(false)}
+            className="underline text-muted-foreground"
+          >
+            Not yet
           </button>
         </div>
       )}

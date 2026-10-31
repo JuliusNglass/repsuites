@@ -205,7 +205,8 @@ export async function linkThumbnail(link: string): Promise<string | null> {
 }
 
 // The report page tells us when the video plays and how far they got
-// (25, 50, 75 or 100 percent). The first play emails Julius.
+// (25, 50, 75 or 100 percent). The first play emails Julius. Nothing counts
+// until the message was sent (before that it is only our own testing).
 export async function trackVideo(token: string, event: "play" | "progress", percent: number) {
   if (!TOKEN_RE.test(token)) return;
   const r = await serviceRead<
@@ -218,13 +219,14 @@ export async function trackVideo(token: string, event: "play" | "progress", perc
       video_first_played_at: string | null;
       video_plays: number;
       video_max_percent: number;
+      sent_at: string | null;
     }[]
   >(
-    `prospects?select=id,name,contact_name,phone,video_url,video_first_played_at,video_plays,video_max_percent&report_token=eq.${token}`,
+    `prospects?select=id,name,contact_name,phone,video_url,video_first_played_at,video_plays,video_max_percent,sent_at&report_token=eq.${token}`,
     "",
   );
   const p = r.data?.[0];
-  if (!p?.video_url) return;
+  if (!p?.video_url || !p.sent_at) return;
   const now = new Date().toISOString();
   const pct = Math.max(0, Math.min(100, Math.round(percent / 25) * 25));
   const body: Record<string, unknown> = { video_last_played_at: now };
@@ -255,10 +257,11 @@ export async function trackVideo(token: string, event: "play" | "progress", perc
 
 // The prospect tapped "Message me on WhatsApp" or "Book a call" on their
 // report: move them to Replied (unless further along) and tell Julius once.
+// Only after the message was sent.
 export async function trackAction(token: string, action: "chat" | "call") {
   if (!TOKEN_RE.test(token)) return;
   const moved = await serviceWrite<{ id: string; name: string; phone: string | null }[]>(
-    `prospects?report_token=eq.${token}&stage=in.(new,sent,opened)`,
+    `prospects?report_token=eq.${token}&stage=in.(new,sent,opened)&sent_at=not.is.null`,
     "",
     {
       method: "PATCH",
