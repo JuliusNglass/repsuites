@@ -60,6 +60,25 @@ tr.you td{font-weight:700;background:#fffbeb}
 .sum{list-style:none;margin:14px 0 0;padding:0;font-size:1rem}.sum li{padding:8px 0;border-bottom:1px dashed #e2e8f0}.sum li b{white-space:nowrap}
 .total{margin:14px 0 0;background:#fffbeb;border:2px solid #f5b324;border-radius:14px;padding:14px;text-align:center}.total .big{font-size:2rem;font-weight:800;line-height:1.1;color:#0b1d3a}
 @media print{.cta,.noprint{display:none}body{background:#fff}.card{break-inside:avoid}}
+
+/* Polish: crisper text, balanced headings, steady numbers, softer depth, tactile buttons, 40px targets */
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+h1,h2,h3,.biz{text-wrap:balance}p,li,.finding p{text-wrap:pretty}
+h2{font-size:1.15rem;letter-spacing:-.01em;margin:32px 0 10px}
+.card{border:0;border-radius:20px;padding:18px;box-shadow:0 0 0 1px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04),0 4px 12px rgba(15,23,42,.04)}
+.found{box-shadow:0 0 0 2px #f5b324,0 6px 20px rgba(245,179,36,.15)}
+.map,.worth .num,.total,.sum{border-radius:10px}
+.total{border:0;box-shadow:inset 0 0 0 2px #f5b324}
+.big,#ws-total,.sum,.dial,td,.worth .num input{font-variant-numeric:tabular-nums}
+td:nth-child(n+2),th:nth-child(n+2){text-align:right}
+.fix{border-left-width:4px;border-radius:12px;box-shadow:0 0 0 1px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04)}
+.cta{transition-property:transform,box-shadow,filter;transition-duration:.15s;transition-timing-function:ease-out;box-shadow:0 1px 0 rgba(15,23,42,.08),0 6px 16px rgba(245,179,36,.35)}
+.cta:hover{filter:brightness(1.03)}.cta:active{transform:scale(.97)}
+.seg button,.kw button{min-height:40px;transition-property:background-color,color,transform;transition-duration:.15s}.seg button:active,.kw button:active{transform:scale(.97)}
+.worth input[type=range]{height:40px}
+.worth input[type=range]::-webkit-slider-thumb{width:26px;height:26px}
+.brand img{outline:1px solid rgba(15,23,42,.08);outline-offset:-1px}
+@media (prefers-reduced-motion:reduce){.cta,.seg button,.kw button{transition:none}}
 `;
 
 const FLASH: Record<string, string> = {
