@@ -95,7 +95,7 @@ function Pricing() {
                 className={`rounded-full px-5 py-2 ${yearly ? "bg-foreground text-background" : ""}`}
               >
                 Yearly{" "}
-                <span className={yearly ? "text-primary" : "text-emerald-700"}>2 months free</span>
+                <span className={yearly ? "text-primary" : "text-emerald-700"}>£91 off a year</span>
               </button>
             </div>
           </div>

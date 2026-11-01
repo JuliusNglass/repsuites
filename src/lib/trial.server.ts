@@ -51,7 +51,31 @@ const meta = (tenantId: string, plan: CheckoutPlan) => ({
 // saved card belong to that customer
 // (https://docs.stripe.com/api/checkout/sessions/create: mode, currency,
 // customer, setup_intent_data).
-export function trialCheckoutBody(o: { tenantId: string; plan: CheckoutPlan; customer: string }) {
+// What the card page says before the card is entered: the price, the date the
+// trial ends, and the first payment's date and amount.
+export function trialSubmitText(plan: CheckoutPlan, today: string): string {
+  const month = planPence("month", plan);
+  const t = monthlyTrial(today, month);
+  const day = (d: string) =>
+    new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  const first =
+    t.anchor === null
+      ? `First payment ${money(month)} on ${day(t.trialEnds)}, then ${money(month)} on the 1st of each month.`
+      : `First payment ${money(t.firstPence)} on ${day(t.trialEnds)} (the rest of that month), then ${money(month)} on the 1st of each month from ${day(t.fullFrom)}.`;
+  return `${TRIAL_PRODUCTS[plan].name}, ${money(month)} a month. Free until ${day(t.trialEnds)}. ${first} Nothing is taken today. Cancel before ${day(t.trialEnds)} and you pay nothing.`;
+}
+
+export function trialCheckoutBody(o: {
+  tenantId: string;
+  plan: CheckoutPlan;
+  customer: string;
+  today?: string;
+}) {
   const m = { ...meta(o.tenantId, o.plan), trial: "1", interval: "month" };
   return {
     mode: "setup",
@@ -62,7 +86,7 @@ export function trialCheckoutBody(o: { tenantId: string; plan: CheckoutPlan; cus
     setup_intent_data: { metadata: m },
     custom_text: {
       submit: {
-        message: `${TRIAL_PRODUCTS[o.plan].name}, ${money(planPence("month", o.plan))} a month. ${TRIAL_TERMS} Nothing is taken today. Cancel before the trial ends and you pay nothing.`,
+        message: trialSubmitText(o.plan, o.today ?? londonToday()),
       },
     },
     success_url: `${ORIGIN}/api/billing/back?paid=1&trial=1`,

@@ -24,7 +24,6 @@ vi.mock("./email.server", () => ({ sendEmail: vi.fn(async () => ({ ok: true })) 
 
 import { startTrialCheckout, startTrialFromSession, trialSubscriptionBody } from "./trial.server";
 import { handleStripeWebhook } from "./stripe-webhook.server";
-import { TRIAL_TERMS } from "./shop";
 
 const TENANT = "11111111-2222-4333-8444-555555555555";
 const WHSEC = "whsec_test_not_real";
@@ -200,7 +199,7 @@ describe("startTrialCheckout", () => {
     expect(f.get("metadata[kind]")).toBe("plan");
     expect(f.get("metadata[trial]")).toBe("1");
     expect(f.get("setup_intent_data[metadata][tenant_id]")).toBe(TENANT);
-    expect(f.get("custom_text[submit][message]")).toContain(TRIAL_TERMS);
+    expect(f.get("custom_text[submit][message]")).toMatch(/Free until .* Nothing is taken today\./);
     expect(f.get("custom_text[submit][message]")).not.toMatch(/—|\bwas\b|\bsave\b/i);
     expect([...f.keys()].some((k) => k.startsWith("line_items"))).toBe(false);
     // The new customer is remembered for next time.
@@ -361,5 +360,16 @@ describe("Stripe webhook with a trial", () => {
       value_pence: 4900,
       product_link: { product: "repsuites", type: "tenant", id: TENANT },
     });
+  });
+});
+
+import { trialSubmitText } from "./trial.server";
+describe("card page wording", () => {
+  it("shows the trial end, first payment date and amount before the card", () => {
+    const t = trialSubmitText("gold", "2026-11-20");
+    expect(t).toContain("Free until 4 December 2026");
+    expect(t).toContain("First payment £44.26 on 4 December 2026");
+    expect(t).toContain("£49 on the 1st of each month from 1 January 2027");
+    expect(t.length).toBeLessThanOrEqual(1200);
   });
 });
