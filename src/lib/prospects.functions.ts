@@ -519,8 +519,19 @@ export const markSent = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const g = await agencyGuard(true);
     if (!g.ok) return g;
-    const r = await serviceRead<{ stage: string; sent_at: string | null }[]>(
-      `prospects?select=stage,sent_at&id=eq.${data.id}`,
+    const r = await serviceRead<
+      {
+        stage: string;
+        sent_at: string | null;
+        name: string;
+        contact_name: string | null;
+        phone: string | null;
+        email: string | null;
+        report_token: string | null;
+        product: string | null;
+      }[]
+    >(
+      `prospects?select=stage,sent_at,name,contact_name,phone,email,report_token,product&id=eq.${data.id}`,
       "",
     );
     const row = r.data?.[0];
@@ -540,7 +551,13 @@ export const markSent = createServerFn({ method: "POST" })
       method: "PATCH",
       body,
     });
-    return w.error ? { ok: false as const, error: "Could not save." } : { ok: true as const };
+    if (w.error) return { ok: false as const, error: "Could not save." };
+    // Add them to the Accelur8 CRM so the follow-up sequence (with opt-out) runs.
+    if (data.via !== "manual") {
+      const { pushProspectToGhl } = await import("./ghl-prospect.server");
+      await pushProspectToGhl(row, data.via);
+    }
+    return { ok: true as const };
   });
 
 // "Undo": it was not really sent. Clears the send and any opens, and moves
