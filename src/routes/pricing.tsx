@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { PublicLayout } from "../components/site/PublicLayout";
 import { getSessionInfo } from "../lib/auth.functions";
 import { openBillingPortal, startPlanCheckout } from "../lib/shop.functions";
+import { getPopularPlan } from "../lib/popular-plan.functions";
 import {
   FREE_FEATURES,
   GROWTH,
@@ -33,10 +34,21 @@ export const Route = createFileRoute("/pricing")({
       },
     ],
   }),
+  // "Most popular" only when real subscriptions say so (popular-plan.ts).
+  loader: async () => getPopularPlan().catch(() => ({ planId: null })),
   component: Pricing,
 });
 
+function PopularBadge() {
+  return (
+    <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary text-primary-foreground text-sm font-bold px-3 py-1">
+      Most popular
+    </span>
+  );
+}
+
 function Pricing() {
+  const { planId: popular } = Route.useLoaderData();
   const session = useServerFn(getSessionInfo);
   const start = useServerFn(startPlanCheckout);
   const portal = useServerFn(openBillingPortal);
@@ -130,9 +142,7 @@ function Pricing() {
             </div>
 
             <div className="relative rounded-3xl border border-primary ring-2 ring-primary/40 bg-card p-7 flex flex-col md:-translate-y-2">
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary text-primary-foreground text-xs font-bold px-3 py-1">
-                Most popular
-              </span>
+              {popular === GROWTH.id && <PopularBadge />}
               <h2 className="text-xl font-bold">{GROWTH.name}</h2>
               <p className="text-base text-muted-foreground mt-1">{GROWTH.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
@@ -172,7 +182,8 @@ function Pricing() {
               </button>
             </div>
 
-            <div className="rounded-3xl border border-border bg-card p-7 flex flex-col">
+            <div className="relative rounded-3xl border border-border bg-card p-7 flex flex-col">
+              {popular === MANAGED.id && <PopularBadge />}
               <h2 className="text-xl font-bold">We do it for you</h2>
               <p className="text-base text-muted-foreground mt-1">{MANAGED.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
