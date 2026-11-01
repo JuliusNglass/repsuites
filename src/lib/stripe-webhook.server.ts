@@ -39,8 +39,25 @@ async function saveSubscription(sub: any) {
   await setPlan(tenantId, live ? plan : "free");
 }
 
+// A business already on a live plan (a second trial Checkout finished, say).
+async function alreadyLive(tenantId: string): Promise<boolean> {
+  if (!/^[0-9a-f-]{36}$/i.test(tenantId)) return false;
+  const b = await serviceRead<{ status: string | null }[]>(
+    `tenant_billing?select=status&tenant_id=eq.${tenantId}`,
+    "",
+  );
+  return ["active", "trialing", "past_due"].includes(String(b.data?.[0]?.status ?? ""));
+}
+
+// Lets Stripe's retry of this event run again after a failure.
+async function forgetEvent(id: string) {
+  await serviceWrite(`stripe_events?id=eq.${encodeURIComponent(id)}`, "", {
+    method: "DELETE",
+  }).catch(() => null);
+}
+
 // Someone bought "We do it for you": Julius needs to get in touch and set up access.
-async function managedBought(session: any) {
+async function managedBought(session: any, trial = false) {
   const tenantId = String(session?.metadata?.tenant_id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(tenantId)) return;
   const t = await serviceRead<{ name: string }[]>(`tenants?select=name&id=eq.${tenantId}`, "");
@@ -50,7 +67,7 @@ async function managedBought(session: any) {
   await sendEmail({
     to,
     subject: `New "We do it for you" customer: ${name}`,
-    html: `<p><b>${esc(name)}</b> just bought RepSuites: We do it for you (${money(Number(session?.amount_total ?? 0))}).</p>
+    html: `<p><b>${esc(name)}</b> just ${trial ? "started a 14-day free trial of" : "bought"} RepSuites: We do it for you${trial ? "" : ` (${money(Number(session?.amount_total ?? 0))})`}.</p>
 <p>Email: ${esc(email || "not given")}</p>
 <p>Next: get in touch today, get added as a manager on their Google profile (see Settings, Access help), then approve their first replies and posts.</p>`,
   }).catch(() => null);
@@ -138,6 +155,22 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
         const sub = await stripe(`subscriptions/${obj.subscription}`);
         if (sub.ok) await saveSubscription(sub.data);
         if (obj.metadata?.plan === "managed") await managedBought(obj);
+      }
+      // Monthly free trial: the card is saved, now make the subscription
+      // (trial.server.ts). Trialing unlocks the plan straight away.
+      if (obj.mode === "setup" && obj.metadata?.kind === "plan" && obj.metadata?.trial === "1") {
+        if (await alreadyLive(String(obj.metadata?.tenant_id ?? ""))) break;
+        const { startTrialFromSession } = await import("./trial.server");
+        const t = await startTrialFromSession(obj);
+        if (t?.ok) {
+          await saveSubscription(t.sub);
+          if (obj.metadata?.plan === "managed") await managedBought(obj, true);
+        } else if (t) {
+          // Stripe will retry the webhook; record nothing so it runs again.
+          console.warn(`Trial not started for ${String(obj.id)}: ${t.error}`);
+          await forgetEvent(String(event.id));
+          return 500;
+        }
       }
       break;
     case "checkout.session.async_payment_succeeded":

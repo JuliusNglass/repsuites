@@ -16,6 +16,7 @@ import {
   money,
   perDay,
   planPence,
+  TRIAL_TERMS,
   yearSaving,
   type BillingInterval,
   type CheckoutPlan,
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/pricing")({
       {
         name: "description",
         content:
-          "Start free with your own review page and QR code. Upgrade to RepSuites Growth for £49 a month, or £497 a year. Cancel any time.",
+          "Start free with your own review page and QR code. Upgrade to RepSuites Growth for £49 a month with a 14-day free trial, or £497 a year. No setup fee. Cancel any time.",
       },
     ],
   }),
@@ -78,7 +79,7 @@ function Pricing() {
               Start free. Grow when you are ready.
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              No contract. Cancel any time from your dashboard.
+              No contract. No setup fee. Cancel any time from your dashboard.
             </p>
             <div className="mt-8 inline-flex rounded-full border border-border bg-card p-1 text-sm font-semibold">
               <button
@@ -141,6 +142,7 @@ function Pricing() {
                   ? `That is ${money(Math.round(GROWTH.yearPence / 12))} a month. You save ${money(yearSaving())}.`
                   : `About ${perDay(GROWTH.monthPence)} a day`}
               </p>
+              {!yearly && <p className="text-xs font-semibold mt-2">{TRIAL_TERMS}</p>}
               <ul className="mt-6 space-y-2.5 text-sm flex-1">
                 <li className="flex gap-2.5 font-semibold">
                   <Check className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
@@ -160,7 +162,11 @@ function Pricing() {
                 className="mt-7 rounded-xl bg-primary text-primary-foreground font-bold py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {busy === "gold" && <Loader2 className="w-4 h-4 animate-spin" />}
-                {signedIn ? "Upgrade to Growth" : "Start free, upgrade any time"}
+                {signedIn
+                  ? yearly
+                    ? "Upgrade to Growth"
+                    : "Start my 14-day free trial"
+                  : "Start free, upgrade any time"}
               </button>
             </div>
 
@@ -178,6 +184,7 @@ function Pricing() {
                   ? `That is ${money(Math.round(MANAGED.yearPence / 12))} a month. You save ${money(yearSaving("managed"))}.`
                   : `About ${perDay(MANAGED.monthPence)} a day`}
               </p>
+              {!yearly && <p className="text-xs font-semibold mt-2">{TRIAL_TERMS}</p>}
               <ul className="mt-6 space-y-2.5 text-sm flex-1">
                 {MANAGED.features.map((f, i) => (
                   <li key={f} className={`flex gap-2.5 ${i === 0 ? "font-semibold" : ""}`}>
@@ -193,7 +200,11 @@ function Pricing() {
                 className="mt-7 rounded-xl border border-foreground font-bold py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {busy === "managed" && <Loader2 className="w-4 h-4 animate-spin" />}
-                {signedIn ? "Let us run it" : "Start free, then let us run it"}
+                {signedIn
+                  ? yearly
+                    ? "Let us run it"
+                    : "Start my 14-day free trial"
+                  : "Start free, then let us run it"}
               </button>
             </div>
           </div>
