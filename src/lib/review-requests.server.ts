@@ -212,6 +212,8 @@ export async function queueRequests(
     campaignId?: string | null;
     message?: string | null;
     emailSubject?: string | null;
+    // Send Accelur8 HQ a review_requested activity (one outside call).
+    hq?: boolean;
   },
 ): Promise<
   { ok: true; added: number; skipped: number; duplicates: number } | { ok: false; error: string }
@@ -296,7 +298,27 @@ export async function queueRequests(
         ? "duplicate"
         : "Could not save. Try again.",
     };
-  return { ok: true, added: rows.length - skipped, skipped, duplicates };
+  const added = rows.length - skipped;
+  // Accelur8 HQ, activity only: one call per batch, and only where the caller
+  // asks (the scheduled campaign and accounting runs share a tight
+  // outside-call budget, so they leave it out). Never fails the save.
+  const first = rows[0];
+  if (opts.hq && added > 0 && first) {
+    const { reviewRequestedEvent } = await import("./hq");
+    const { hqAfter } = await import("./hq.server");
+    await hqAfter(() =>
+      reviewRequestedEvent({
+        tenantId,
+        batchKey: first.token,
+        business: null,
+        added,
+        skipped,
+        source: opts.source,
+        channels: [...new Set(rows.filter((r) => !r.skip_reason).map((r) => r.channel))],
+      }),
+    );
+  }
+  return { ok: true, added, skipped, duplicates };
 }
 
 export async function addRequests(input: { people: Person[]; sendNow: boolean }) {
@@ -320,6 +342,7 @@ export async function addRequests(input: { people: Person[]; sendNow: boolean })
     event: "manual",
     externalId: null,
     createdBy: g.userId,
+    hq: true,
   });
   return r.ok
     ? r
@@ -374,7 +397,14 @@ export async function handleTrigger(
         channel: input.email ? "email" : "whatsapp",
       },
     ],
-    { dueAt, source: "webhook", event: input.event, externalId: input.externalId, createdBy: null },
+    {
+      dueAt,
+      source: "webhook",
+      event: input.event,
+      externalId: input.externalId,
+      createdBy: null,
+      hq: true,
+    },
   );
   if (!r.ok)
     return r.error === "duplicate"
@@ -535,9 +565,11 @@ async function requestByToken(token: string) {
       clicked_at: string | null;
       email: string | null;
       phone_key: string | null;
+      phone: string | null;
+      name: string | null;
     }[]
   >(
-    `review_requests?select=id,tenant_id,status,opened_at,clicked_at,email,phone_key&token=eq.${token}`,
+    `review_requests?select=id,tenant_id,status,opened_at,clicked_at,email,phone_key,phone,name&token=eq.${token}`,
     "",
   );
   return r.data?.[0] ?? null;
@@ -610,6 +642,21 @@ export async function unsubscribeRequest(token: string): Promise<boolean> {
       { method: "PATCH", body: { status: "stopped", unsubscribed_at: now } },
     );
   }
+  // Accelur8 HQ: store the opt-out (no CRM contact). Never fails the unsubscribe.
+  const { customerOptOutEvent } = await import("./hq");
+  const { hqAfter } = await import("./hq.server");
+  await hqAfter(async () =>
+    customerOptOutEvent({
+      requestId: row.id,
+      tenantId: row.tenant_id,
+      // businessName falls back to "us" for the email copy; HQ wants null.
+      business: await businessName(row.tenant_id).then((b) => (b === "us" ? null : b)),
+      email: row.email?.toLowerCase() ?? null,
+      phone: row.phone,
+      name: row.name,
+      how: "unsubscribe",
+    }),
+  );
   return true;
 }
 

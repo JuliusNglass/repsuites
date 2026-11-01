@@ -112,6 +112,22 @@ export async function addBusiness(d: AddBusinessData, addedBy: string) {
     }
   }
 
+  // Accelur8 HQ: a new business account (never fails adding the business).
+  const { hqAfter } = await import("./hq.server");
+  await hqAfter(() => ({
+    event: "signed_up",
+    idempotency_key: `tenant:${tenantId}:signed_up`,
+    contact: { email: email || null, name: ownerName || null, role: "owner" },
+    company: { name },
+    product_link: { type: "tenant", id: tenantId },
+    data: {
+      source: "agency",
+      plan: d.plan,
+      owner_status: owner.status,
+      ...(placeId ? { place_id: placeId } : {}),
+    },
+  }));
+
   return {
     ok: true as const,
     tenantId,

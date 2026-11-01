@@ -149,5 +149,29 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
       await saveSubscription(obj);
       break;
   }
+  // Tell Accelur8 HQ (trial started, paid, payment failed, cancelled). After
+  // the work above, never fails the webhook, one call at most.
+  await notifyHq(event).catch(() => null);
   return 200;
+}
+
+async function notifyHq(event: unknown) {
+  const { stripeHqEvent } = await import("./hq");
+  const { hqAfter, tenantParty } = await import("./hq.server");
+  await hqAfter(async () => {
+    const e = stripeHqEvent(event);
+    if (!e) return null;
+    const { tenantId, ...rest } = e;
+    if (!tenantId) return rest;
+    const who = await tenantParty(tenantId);
+    return {
+      ...rest,
+      contact: {
+        ...rest.contact,
+        email: who.email ?? rest.contact.email ?? null,
+        name: who.ownerName ?? rest.contact.name ?? null,
+      },
+      company: { name: who.business ?? null },
+    };
+  });
 }

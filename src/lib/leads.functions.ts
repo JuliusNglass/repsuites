@@ -80,8 +80,9 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.website) return { ok: true as const };
     const p = data.place ?? null;
-    const w = await serviceWrite<unknown>("leads", "", {
+    const w = await serviceWrite<{ id: string }[]>("leads", "", {
       method: "POST",
+      headers: { Prefer: "return=representation" },
       body: {
         name: data.name,
         business_name: data.business,
@@ -100,14 +101,53 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Sorry, that did not send. Please try again." };
     // Turn a request with a Google listing into a prospect with a ready report.
     let reportLink: string | null = null;
+    let prospectId: string | null = null;
     if (p?.placeId) {
       const { saveProspectReport } = await import("./prospects.server");
       const r = await saveProspectReport(p.placeId, "inbound", {
         email: data.email.toLowerCase(),
         contactName: data.name,
+        // One Accelur8 HQ call for this request: lead_captured below.
+        hq: false,
       }).catch(() => null);
-      if (r?.ok) reportLink = `https://repsuites.com/r/${r.token}`;
+      if (r?.ok) {
+        reportLink = `https://repsuites.com/r/${r.token}`;
+        prospectId = r.prospectId ?? null;
+      }
     }
-    await notifyNewLead(data, reportLink);
+    const leadId = w.data?.[0]?.id ?? null;
+    const { hqAfter } = await import("./hq.server");
+    await Promise.all([
+      notifyNewLead(data, reportLink),
+      // Accelur8 HQ: a new inbound lead. Never fails the request.
+      hqAfter(() =>
+        leadId
+          ? {
+              event: "lead_captured",
+              idempotency_key: `lead:${leadId}`,
+              contact: {
+                email: data.email.toLowerCase(),
+                phone: data.phone || null,
+                name: data.name,
+                role: "owner",
+              },
+              company: {
+                name: data.business,
+                town: data.town,
+                website: p?.websiteUrl || null,
+              },
+              ...(prospectId
+                ? { product_link: { type: "prospect" as const, id: prospectId } }
+                : {}),
+              data: {
+                source: "homepage_visibility_check",
+                lead_id: leadId,
+                ...(reportLink ? { report_url: reportLink } : {}),
+                ...(p?.placeId ? { place_id: p.placeId } : {}),
+              },
+            }
+          : null,
+      ),
+    ]);
     return { ok: true as const };
   });
