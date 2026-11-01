@@ -58,7 +58,7 @@ export function SocialPanel({
         <p className="font-bold flex items-center gap-1.5">
           <Facebook className="w-4 h-4" /> Facebook and Instagram
         </p>
-        <p className="text-sm text-muted-foreground mt-1">{blocked}</p>
+        <p className="text-base text-muted-foreground mt-1">{blocked}</p>
       </section>
     );
   if (!m) return null;
@@ -68,7 +68,7 @@ export function SocialPanel({
         <p className="font-bold flex items-center gap-1.5">
           <Facebook className="w-4 h-4" /> <Instagram className="w-4 h-4" /> Facebook and Instagram
         </p>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-base text-muted-foreground mt-1">
           Facebook and Instagram are coming soon. Your posts will go there too, at the same time as
           Google.
         </p>
@@ -93,7 +93,7 @@ export function SocialPanel({
               await disconnect().catch(() => null);
               await refresh();
             }}
-            className="text-xs text-muted-foreground font-semibold"
+            className="text-base text-muted-foreground font-semibold"
           >
             Disconnect
           </button>
@@ -102,7 +102,7 @@ export function SocialPanel({
 
       {(!c || c.status === "needs_reconnect") && (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             {c?.status === "needs_reconnect"
               ? "Facebook needs connecting again."
               : "Post the same updates to your Facebook Page and Instagram, at the same time as Google."}
@@ -119,7 +119,7 @@ export function SocialPanel({
                 toast.error(r?.error ?? "Could not start. Try again.");
               }
             }}
-            className="rounded-lg bg-[#1877F2] text-white px-3 py-2 text-sm font-bold inline-flex items-center gap-1.5 disabled:opacity-60"
+            className="rounded-lg bg-[#1464d2] text-white px-3 py-2 text-base font-bold inline-flex items-center gap-1.5 disabled:opacity-60"
           >
             {busy && <Loader2 className="w-4 h-4 animate-spin" />} Connect Facebook and Instagram
           </button>
@@ -128,7 +128,7 @@ export function SocialPanel({
 
       {c?.status === "choose_page" && (
         <div className="space-y-2">
-          <p className="text-sm">{c.error ?? "Which Facebook Page is this business?"}</p>
+          <p className="text-base">{c.error ?? "Which Facebook Page is this business?"}</p>
           {c.pages.map((p) => (
             <button
               key={p.id}
@@ -139,10 +139,10 @@ export function SocialPanel({
                 else toast.error(r?.error ?? "Could not save. Try again.");
                 await refresh();
               }}
-              className="block w-full text-left rounded-lg border border-border px-3 py-2 text-sm hover:border-primary"
+              className="block w-full text-left rounded-lg border border-border px-3 py-2 text-base hover:border-primary"
             >
               <b>{p.name}</b>
-              <span className="block text-xs text-muted-foreground">
+              <span className="block text-base text-muted-foreground">
                 {p.igUsername
                   ? `Instagram: @${p.igUsername}`
                   : "No Instagram business account linked"}
@@ -154,7 +154,7 @@ export function SocialPanel({
 
       {c?.status === "connected" && (
         <>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Connected to <b>{c.pageName}</b>
             {c.igUsername ? (
               <>
@@ -167,7 +167,7 @@ export function SocialPanel({
             . Posts go out at the same time as Google. Instagram only takes posts with a picture.
           </p>
           {upcoming.length > 0 && (
-            <ul className="divide-y divide-border text-xs">
+            <ul className="divide-y divide-border text-base">
               {upcoming.map((p) => {
                 const f = flags(p.id);
                 const fb = f?.facebook ?? true;
@@ -215,7 +215,7 @@ export function SocialPanel({
             </ul>
           )}
           {recent.length > 0 && (
-            <ul className="text-xs space-y-1">
+            <ul className="text-base space-y-1">
               {recent.map((p) => {
                 const f = flags(p.id);
                 if (!f) return null;

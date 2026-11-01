@@ -65,12 +65,12 @@ export function SignInCard({
             </span>
           )}
           <h1 className="text-2xl font-bold text-foreground tracking-tight">{hostTenant.name}</h1>
-          <p className="text-xs text-muted-foreground mt-1">Sign in to your account</p>
+          <p className="text-base text-muted-foreground mt-1">Sign in to your account</p>
         </div>
       ) : (
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Sign in</h1>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-base text-muted-foreground mt-1">
             Local visibility for local businesses
           </p>
         </div>
@@ -78,29 +78,32 @@ export function SignInCard({
 
       {/* Setup Required Banner when secrets are missing */}
       {!isConfigured && (
-        <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs leading-relaxed space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200 text-sm">
+        <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-base leading-relaxed space-y-2">
+          <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200 text-base">
             <Settings className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            Secrets Setup Required
+            Server setup needed
           </div>
           <p>Real sign-in and data access are disabled until server configuration is reviewed.</p>
-          <div className="bg-background/80 p-2.5 rounded font-mono text-[11px] border border-amber-500/20 text-muted-foreground space-y-0.5">
+          <div className="bg-background/80 p-2.5 rounded font-mono text-base border border-amber-500/20 text-muted-foreground space-y-0.5">
             <div>1. REPSUITES_PUBLISHABLE_KEY</div>
             <div>2. REPSUITES_SESSION_SECRET (≥ 32 bytes)</div>
             <div>3. REPSUITES_APP_ORIGIN</div>
           </div>
           {missingMessage && (
-            <p className="text-[11px] text-amber-900/80 dark:text-amber-200/80">{missingMessage}</p>
+            <p className="text-base text-amber-900 dark:text-amber-200">{missingMessage}</p>
           )}
         </div>
       )}
 
       {/* Blocked Setup Message */}
       {isBlockedPassword && (
-        <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-sm">
+        <div
+          role="alert"
+          className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-base space-y-2"
+        >
+          <div className="flex items-center gap-2 font-semibold text-base">
             <Key className="w-4 h-4 shrink-0" />
-            First-Password Change Pending
+            Set your own password first
           </div>
           <p>
             This account requires a first-time password setup. Follow the setup steps to activate
@@ -111,7 +114,11 @@ export function SignInCard({
 
       {/* Error Message */}
       {errorMessage && !isBlockedPassword && (
-        <div className="mb-6 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium flex items-center gap-2">
+        <div
+          id="signin-error"
+          role="alert"
+          className="mb-6 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-base font-medium flex items-center gap-2"
+        >
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {errorMessage}
         </div>
@@ -120,44 +127,62 @@ export function SignInCard({
       {/* Sign-In Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Email address</label>
+          <label
+            htmlFor="signin-email"
+            className="block text-base font-medium text-foreground mb-1"
+          >
+            Email address
+          </label>
           <input
+            id="signin-email"
+            name="email"
             type="email"
+            inputMode="email"
+            aria-invalid={errorMessage ? true : undefined}
+            aria-describedby={errorMessage ? "signin-error" : undefined}
             required
             disabled={!isConfigured || loading}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="e.g. you@yourbusiness.com"
             autoComplete="email"
-            className="w-full px-3 py-2 text-sm rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+            className="w-full px-3 py-2 min-h-11 text-base rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-foreground mb-1">Password</label>
+          <label
+            htmlFor="signin-password"
+            className="block text-base font-medium text-foreground mb-1"
+          >
+            Password
+          </label>
           <input
+            id="signin-password"
+            name="password"
             type="password"
+            aria-invalid={errorMessage ? true : undefined}
+            aria-describedby={errorMessage ? "signin-error" : undefined}
             required
             disabled={!isConfigured || loading}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
             autoComplete="current-password"
-            className="w-full px-3 py-2 text-sm rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+            className="w-full px-3 py-2 min-h-11 text-base rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
           />
         </div>
 
         <button
           type="submit"
           disabled={!isConfigured || loading}
-          className="w-full py-2.5 px-4 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-2.5 px-4 min-h-11 bg-primary text-primary-foreground text-base font-semibold rounded-lg hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
-            <span className="inline-block animate-spin">⏳</span>
+            <span>Signing in...</span>
           ) : (
             <>
               <Lock className="w-4 h-4" />
-              Sign In
+              Sign in
             </>
           )}
         </button>
@@ -166,14 +191,14 @@ export function SignInCard({
           <div className="text-center pt-1 space-y-2">
             <a
               href="/forgot-password"
-              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 block"
+              className="text-base text-muted-foreground hover:text-foreground underline underline-offset-2 inline-flex items-center min-h-11"
             >
               Forgot password?
             </a>
             {demoAvailable && (
               <a
                 href="/demo"
-                className="text-xs text-primary-ink hover:text-primary-ink/80 font-medium underline underline-offset-2 block"
+                className="text-base text-primary-ink hover:text-primary-ink/80 font-medium underline underline-offset-2 flex items-center justify-center min-h-11"
               >
                 Try the interactive demo →
               </a>
@@ -183,8 +208,8 @@ export function SignInCard({
       </form>
 
       {/* Security Notices */}
-      <div className="mt-6 pt-4 border-t border-border text-[11px] text-muted-foreground space-y-2">
-        <div className="flex items-center gap-1.5 text-foreground/80 font-medium">
+      <div className="mt-6 pt-4 border-t border-border text-base text-muted-foreground space-y-2">
+        <div className="flex items-center gap-1.5 text-foreground font-medium">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           Getting started
         </div>

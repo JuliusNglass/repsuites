@@ -105,7 +105,7 @@ function Cards() {
       <section className="px-4 pt-12 pb-14 md:pt-20 md:pb-20 overflow-hidden">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 md:gap-14 items-center">
           <div>
-            <p className="text-sm font-bold text-muted-foreground mb-4">
+            <p className="text-base font-bold text-muted-foreground mb-4">
               NFC review cards and table stands
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.06]">
@@ -129,7 +129,7 @@ function Cards() {
                 See prices
               </a>
             </div>
-            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-base text-muted-foreground">
               <li className="flex items-center gap-1.5">
                 <Truck className="w-4 h-4" /> Free UK delivery
               </li>
@@ -193,7 +193,7 @@ function Cards() {
                   <r.icon className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold mb-2">{r.title}</h3>
-                <p className="text-sm text-muted-foreground">{r.text}</p>
+                <p className="text-base text-muted-foreground">{r.text}</p>
               </div>
             ))}
           </div>
@@ -217,15 +217,15 @@ function Cards() {
                 className={`relative rounded-2xl border bg-card p-5 hover:border-foreground transition ${p.badge ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
               >
                 {p.badge && (
-                  <span className="absolute -top-2.5 left-4 rounded-full bg-primary text-primary-foreground text-[11px] font-bold px-2 py-0.5">
+                  <span className="absolute -top-2.5 left-4 rounded-full bg-primary text-primary-foreground text-sm font-bold px-2 py-0.5">
                     {p.badge}
                   </span>
                 )}
-                <div className="text-sm text-muted-foreground">
+                <div className="text-base text-muted-foreground">
                   {p.qty} card{p.qty === 1 ? "" : "s"}
                 </div>
                 <div className="text-3xl font-extrabold mt-1">{money(p.pence)}</div>
-                <div className="text-xs text-muted-foreground mt-1">{each(p)} each</div>
+                <div className="text-base text-muted-foreground mt-1">{each(p)} each</div>
               </Link>
             ))}
           </div>
@@ -239,20 +239,20 @@ function Cards() {
                 className="relative rounded-2xl border border-border bg-card p-5 flex items-center justify-between hover:border-foreground transition"
               >
                 <div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-base text-muted-foreground">
                     {p.qty} stand{p.qty === 1 ? "" : "s"} with NFC and QR code
                   </div>
                   <div className="text-3xl font-extrabold mt-1">{money(p.pence)}</div>
                 </div>
                 {p.badge && (
-                  <span className="rounded-full bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1">
+                  <span className="rounded-full bg-primary text-primary-foreground text-sm font-bold px-2.5 py-1">
                     {p.badge}
                   </span>
                 )}
               </Link>
             ))}
           </div>
-          <p className="text-sm text-muted-foreground mt-6 text-center">
+          <p className="text-base text-muted-foreground mt-6 text-center">
             Worked out: if just one new customer picks you because of your reviews, they can pay for
             a {money(CARD_PACKS[1]!.pence)} pack of cards on their first visit.
           </p>

@@ -20,6 +20,10 @@ export async function stripe<T = any>(
   path: string,
   body?: Record<string, unknown>,
   method: "GET" | "POST" = body ? "POST" : "GET",
+  // Stripe's Idempotency-Key header: a retried POST with the same key returns
+  // the first result instead of doing it twice.
+  // https://docs.stripe.com/api/idempotent_requests
+  opts: { idempotencyKey?: string } = {},
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const key = (process.env["REPSUITES_STRIPE_SECRET_KEY"] ?? "").trim();
   if (!key) return { ok: false, error: "Payments are not switched on yet." };
@@ -31,6 +35,7 @@ export async function stripe<T = any>(
       headers: {
         Authorization: `Bearer ${key}`,
         "Content-Type": "application/x-www-form-urlencoded",
+        ...(opts.idempotencyKey ? { "Idempotency-Key": opts.idempotencyKey } : {}),
       },
       ...(method === "POST" ? { body: form.toString() } : {}),
       signal: AbortSignal.timeout(20000),

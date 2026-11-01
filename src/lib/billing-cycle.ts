@@ -36,3 +36,53 @@ export function monthlyAnchor(today: string): Record<string, unknown> {
     proration_behavior: "create_prorations",
   };
 }
+
+// ---------- 14-day free trial (monthly plans) ----------
+// The trial runs its full 14 days from sign-up. The first payment covers only
+// the days left in that month after the trial ends, then the full price on the
+// 1st of each month. Worked example: trial from 20 Nov ends 4 Dec. 4 to 31 Dec
+// is 28 days of December's 31, so £49 x 28 / 31 = £44.26 on 4 Dec, then £49
+// on 1 Jan.
+
+export const TRIAL_DAYS = 14;
+
+// A date plus some days ("2026-11-20" + 14 = "2026-12-04").
+export function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// How many days the date's month has (December: 31).
+export function daysInMonth(date: string): number {
+  const first = `${date.slice(0, 8)}01`;
+  return Math.round((Date.parse(firstAfter(date)) - Date.parse(first)) / 86_400_000);
+}
+
+export interface TrialPlan {
+  trialEnds: string; // the day the trial ends and the first payment is taken
+  trialEnd: number; // 9am UK time on that day, as a Unix time (Stripe trial_end)
+  anchor: number | null; // 9am UK on the next 1st (Stripe billing_cycle_anchor), null if the trial ends on a 1st
+  firstPaymentDays: number; // days the first payment covers (28)
+  monthDays: number; // days in that month (31)
+  firstPence: number; // the first payment (4426 = £44.26)
+  fullFrom: string; // the 1st when the full price starts ("2027-01-01")
+}
+
+// The trial and first payment for someone who signs up today. Stripe works
+// out the real part-month charge; this is the same sum, for showing and tests.
+export function monthlyTrial(today: string, monthPence: number): TrialPlan {
+  const trialEnds = addDays(today, TRIAL_DAYS);
+  const monthDays = daysInMonth(trialEnds);
+  const onFirst = trialEnds.endsWith("-01");
+  const firstPaymentDays = monthDays - Number(trialEnds.slice(8, 10)) + 1;
+  return {
+    trialEnds,
+    trialEnd: nineAmLondon(trialEnds),
+    anchor: onFirst ? null : nineAmLondon(firstAfter(trialEnds)),
+    firstPaymentDays,
+    monthDays,
+    firstPence: Math.round((monthPence * firstPaymentDays) / monthDays),
+    fullFrom: onFirst ? trialEnds : firstAfter(trialEnds),
+  };
+}

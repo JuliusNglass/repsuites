@@ -53,17 +53,17 @@ h1{font-size:1.55rem;line-height:1.2;margin:0 0 4px}.kicker{margin:0 0 4px;font-
 table{width:100%;border-collapse:collapse;font-size:1rem}td,th{padding:10px 6px;border-bottom:1px solid #e2e8f0;text-align:left}th{font-size:.95rem;color:#334155;font-weight:700}
 tr.you td{font-weight:700;background:#fffbeb}
 .fix{border-left:4px solid #f59e0b;padding:10px 12px;background:#fff;border-radius:8px;margin:8px 0}.fix.high{border-color:#dc2626}
-.fix b{display:block}.fix span{color:#334155;font-size:1rem}.fix .tag{display:inline-block;font-size:.85rem;font-weight:700;color:#334155;background:#fef3c7;border-radius:999px;padding:2px 10px;margin-bottom:6px}.fix.high .tag{background:#fee2e2;color:#991b1b}
+.fix b{display:block}.fix span{color:#334155;font-size:1rem}.fix .tag{display:inline-block;font-size:.875rem;font-weight:700;color:#334155;background:#fef3c7;border-radius:999px;padding:2px 10px;margin-bottom:6px}.fix.high .tag{background:#fee2e2;color:#991b1b}
 .cta{display:block;text-align:center;background:#f5b324;color:#0f172a;font-weight:800;text-decoration:none;border-radius:14px;padding:16px;font-size:1.05rem;margin-top:16px}
-.small{font-size:.95rem;color:#475569}a.small,.small a{color:#334155}
+.small{font-size:1rem;color:#475569}a.small,.small a{color:#334155}
 .found{border:2px solid #f5b324}.finding{display:flex;gap:10px;align-items:flex-start;margin:10px 0}.finding p{margin:0;font-size:1.0625rem}.fi{font-size:1.3rem;line-height:1.3}
 .map{position:relative;aspect-ratio:1;max-width:560px;margin:0 auto;border-radius:12px;overflow:hidden;background:#e8eef0;z-index:0}
 .kw{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.kw button{border:1px solid #64748b;background:#fff;color:#0b1b33;border-radius:999px;padding:8px 14px;font:inherit;font-size:1rem;cursor:pointer}.kw button.on{background:#0f172a;color:#fff;border-color:#0f172a}
-.pin{position:absolute;transform:translate(-50%,-50%);width:32px;height:32px;font-size:.85rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}.pin.rk-missing{border:0;box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.45)}
+.pin{position:absolute;transform:translate(-50%,-50%);width:32px;height:32px;font-size:.875rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}.pin.rk-missing{border:0;box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.45)}
 .pin.home{width:40px;height:40px;background:#0b1b33;border-radius:50%;z-index:3}
-.pin.home .rank{position:absolute;right:-12px;top:-12px;min-width:26px;height:26px;padding:0 4px;font-size:.8rem;border:2px solid #fff}
-.rpin{position:absolute;transform:translate(-50%,-110%) rotate(-45deg);width:24px;height:24px;border-radius:50% 50% 50% 0;background:#475569;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}.rpin span{transform:rotate(45deg);color:#fff;font-weight:800;font-size:.8rem}
-.rkey{display:inline-block;width:22px;height:22px;border-radius:50%;background:#475569;color:#fff;text-align:center;font-size:.8rem;line-height:22px}.leaflet-container{font:inherit;font-size:.85rem}.map .leaflet-control-attribution a{color:#0b4f8a;text-decoration:underline}.map .leaflet-bar a{width:44px!important;height:44px!important;line-height:44px!important;font-size:22px!important}
+.pin.home .rank{position:absolute;right:-12px;top:-12px;min-width:28px;height:28px;padding:0 4px;font-size:.875rem;border:2px solid #fff}
+.rpin{position:absolute;transform:translate(-50%,-110%) rotate(-45deg);width:24px;height:24px;border-radius:50% 50% 50% 0;background:#475569;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}.rpin span{transform:rotate(45deg);color:#fff;font-weight:800;font-size:.875rem}
+.rkey{display:inline-block;width:24px;height:24px;border-radius:50%;background:#475569;color:#fff;text-align:center;font-size:.875rem;line-height:24px}.leaflet-container{font:inherit;font-size:.875rem}.map .leaflet-control-attribution a{color:#0b4f8a;text-decoration:underline}.map .leaflet-bar a{width:44px!important;height:44px!important;line-height:44px!important;font-size:22px!important}
 .worth .ctl{display:flex;align-items:center;gap:10px;margin:12px 0 8px}.worth input[type=range]{flex:1;min-width:0;accent-color:#0f172a;height:28px}
 .worth .num{display:flex;align-items:center;border:1px solid #64748b;border-radius:10px;background:#fff;padding:0 8px;flex-shrink:0}.worth .num input{width:5.5em;border:0;font:inherit;font-weight:700;font-size:1.05rem;padding:8px 2px;background:transparent}.worth .num:focus-within{outline:3px solid #0b1b33;outline-offset:2px}.worth .num input:focus-visible{outline:none;box-shadow:none}
 .seg{display:inline-flex;border:1px solid #64748b;border-radius:999px;overflow:hidden}.seg button{border:0;background:#fff;color:#0b1b33;font:inherit;font-size:1rem;padding:8px 18px;cursor:pointer}.seg button.on{background:#0f172a;color:#fff}
@@ -403,7 +403,7 @@ ${
     ? `<div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px;background:#0b1d3a;color:#fff" href="#map">See where you show up</a><a href="#score" class="small" style="color:#334155">Your score: <b>${view.score}/100</b></a></div>`
     : `<div class="noprint" style="margin-top:14px"><a class="cta" style="margin:0" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free: get your review QR card</a>
 <p class="small" style="text-align:center;margin:8px 0 0">No card needed. Print it today.</p>
-<p style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:12px 0 0;font-size:.95rem"><a href="#map" style="color:#0b1d3a;font-weight:700">See where you show up &#8595;</a><a href="#score" class="small" style="color:#334155">Your score: <b>${view.score}/100</b></a></p></div>`
+<p style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:12px 0 0;font-size:1rem"><a href="#map" style="color:#0b1d3a;font-weight:700">See where you show up &#8595;</a><a href="#score" class="small" style="color:#334155">Your score: <b>${view.score}/100</b></a></p></div>`
 }</div>`;
 }
 
@@ -452,7 +452,7 @@ ${controls}
 ${growth}
 <p class="small" style="margin:12px 0 0">This is not a forecast. It shows what one extra customer would add at the price you set. Change the price to match yours.</p>
 <h3 style="margin:18px 0 8px;font-size:1rem">How we help you win that customer</h3>
-<ul class="small" style="margin:0;padding-left:18px;font-size:.95rem;line-height:1.5">
+<ul class="small" style="margin:0;padding-left:18px;font-size:1rem;line-height:1.5">
 <li>Your own review page and QR code, so happy customers leave reviews in seconds.</li>
 <li>Unhappy customers message you privately first, not on Google.</li>
 <li>With Growth, we check this map again every month, so you can see yourself move up.</li>
@@ -656,7 +656,7 @@ ${view.fixes.length ? `<ol style="list-style:none;margin:0;padding:0">${view.fix
 <div class="card">${view.parts
     .map(
       (p) =>
-        `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:.92rem"><span>${esc(p.label)}</span><b>${p.got} / ${p.max}</b></div><div class="bar"><span style="width:${Math.round((p.got / p.max) * 100)}%"></span></div></div>`,
+        `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:1rem"><span>${esc(p.label)}</span><b>${p.got} / ${p.max}</b></div><div class="bar"><span style="width:${Math.round((p.got / p.max) * 100)}%"></span></div></div>`,
     )
     .join("")}</div>
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#334155">Save or print this report</a></p>

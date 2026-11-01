@@ -203,7 +203,7 @@ export function PostPlanCard({
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Used behind your review cards and on your QR stand. We darken it a little so the words
               are easy to read.
             </p>
@@ -214,7 +214,7 @@ export function PostPlanCard({
                   alt="Your background now"
                   className="w-20 h-20 rounded-lg object-cover border border-border"
                 />
-                <span className="text-xs text-muted-foreground">Your background now</span>
+                <span className="text-base text-muted-foreground">Your background now</span>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
@@ -238,7 +238,7 @@ export function PostPlanCard({
                 type="button"
                 disabled={bgBusy}
                 onClick={() => fileInput.current?.click()}
-                className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
               >
                 <ImagePlus className="w-3.5 h-3.5" /> Upload a photo
               </button>
@@ -251,7 +251,7 @@ export function PostPlanCard({
                     const r = await saveBrandBackground({ data: { jpeg: null } }).catch(() => null);
                     await afterBackground(!!r?.ok, r && !r.ok ? r.error : undefined);
                   }}
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  className="rounded-lg border border-border px-3 py-1.5 text-base font-semibold disabled:opacity-50"
                 >
                   Remove background
                 </button>
@@ -259,15 +259,15 @@ export function PostPlanCard({
               {bgBusy && <Loader2 className="w-4 h-4 animate-spin self-center" />}
             </div>
             <div>
-              <p className="text-xs font-semibold mb-1.5">Or pick one of your Google photos</p>
+              <p className="text-base font-semibold mb-1.5">Or pick one of your Google photos</p>
               {photos === null ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : photos.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   No Google photos found. Connect Google, or upload a photo.
                 </p>
               ) : (
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                   {photos.map((p) => (
                     <button
                       key={p.url}
@@ -284,7 +284,7 @@ export function PostPlanCard({
                     >
                       <img src={p.thumb} alt="" className="w-full h-full object-cover" />
                       {p.byCustomer && (
-                        <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] py-0.5">
+                        <span className="absolute bottom-0 inset-x-0 bg-black/70 text-white text-sm leading-tight px-1 py-0.5">
                           Customer photo
                         </span>
                       )}
@@ -292,7 +292,7 @@ export function PostPlanCard({
                   ))}
                 </div>
               )}
-              <p className="text-[11px] text-muted-foreground mt-1.5">
+              <p className="text-base text-muted-foreground mt-1.5">
                 Customer photos belong to the customer who took them. Only use one if you are happy
                 to.
               </p>
@@ -302,11 +302,11 @@ export function PostPlanCard({
       )}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="text-sm font-bold flex items-center gap-1.5">
+          <h2 className="text-base font-bold flex items-center gap-1.5">
             <Sparkles className="w-4 h-4" /> Plan my month
           </h2>
           {hasCards && look && (
-            <label className="flex flex-wrap items-center gap-2 text-xs">
+            <label className="flex flex-wrap items-center gap-2 text-base">
               <span className="font-semibold">Card style</span>
               <select
                 value={chosenStyle(look)}
@@ -322,7 +322,7 @@ export function PostPlanCard({
                   } else toast.error(r && !r.ok ? r.error : "Could not change the style.");
                   setStyleBusy(false);
                 }}
-                className="rounded-lg border border-input bg-background px-2 py-1 text-xs"
+                className="rounded-lg border border-input bg-background px-2 py-1 text-base"
               >
                 {CARD_STYLES(look).map((o) => (
                   <option key={o.id} value={o.id}>
@@ -354,7 +354,7 @@ export function PostPlanCard({
               </span>
             </label>
           )}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             We write 4 posts from what your customers say, one for each week. You check them, then
             we post one every Tuesday at 11am.
           </p>
@@ -371,7 +371,7 @@ export function PostPlanCard({
               else toast.error(r?.error ?? "Something went wrong. Try again.");
               await onChanged();
             }}
-            className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+            className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
           >
             {busy === "plan" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             {busy === "plan" ? "Writing (about 30 seconds)" : "Plan my month"}
@@ -381,14 +381,14 @@ export function PostPlanCard({
 
       {drafts.length > 0 && (
         <>
-          <p className="text-sm font-semibold">
+          <p className="text-base font-semibold">
             {drafts.length} post{drafts.length === 1 ? "" : "s"} ready. Approve them and we post one
             each week.
           </p>
           <ul className="space-y-2">
             {drafts.map((p) => (
               <li key={p.id} className="rounded-lg border border-border bg-card p-3 space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <CalendarDays className="w-3.5 h-3.5" />
                   {new Date(p.publishAt).toLocaleString("en-GB", {
                     weekday: "short",
@@ -424,7 +424,7 @@ export function PostPlanCard({
                       />
                     </button>
                   ) : (
-                    <div className="w-20 h-20 rounded-lg border border-dashed border-border bg-muted flex items-center justify-center text-[10px] text-muted-foreground text-center p-1">
+                    <div className="w-20 h-20 rounded-lg border border-dashed border-border bg-muted flex items-center justify-center text-base text-muted-foreground text-center p-1">
                       {p.imageKind === "card" ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
@@ -432,7 +432,7 @@ export function PostPlanCard({
                       )}
                     </div>
                   )}
-                  <div className="flex flex-col items-start gap-1 text-xs">
+                  <div className="flex flex-col items-start gap-1 text-base">
                     <span className="text-muted-foreground">
                       {p.imageKind === "google"
                         ? p.imageBy === "customer"
@@ -464,6 +464,7 @@ export function PostPlanCard({
                   </div>
                 </div>
                 <textarea
+                  aria-label="Post text"
                   value={edits[p.id] ?? p.summary}
                   onChange={(e) => setEdits((x) => ({ ...x, [p.id]: e.target.value }))}
                   onBlur={async () => {
@@ -477,7 +478,7 @@ export function PostPlanCard({
                   }}
                   rows={4}
                   maxLength={1500}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base"
                 />
               </li>
             ))}
@@ -494,7 +495,7 @@ export function PostPlanCard({
               setEdits({});
               await onChanged();
             }}
-            className="w-full rounded-lg bg-primary text-primary-foreground px-3 py-2.5 text-sm font-bold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="w-full rounded-lg bg-primary text-primary-foreground px-3 py-2.5 text-base font-bold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             {busy === "approve" && <Loader2 className="w-4 h-4 animate-spin" />} Approve all
           </button>

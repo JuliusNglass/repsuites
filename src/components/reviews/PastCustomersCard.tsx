@@ -26,11 +26,11 @@ import {
   type PreviewCounts,
 } from "../../lib/campaigns";
 import { fillMessage } from "../../lib/review-requests";
+import { fieldClass } from "../ui/field";
 
 type Data = Extract<Awaited<ReturnType<typeof getCampaignsFn>>, { ok: true }>;
 
-const field =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+const field = fieldClass;
 
 const STATUS: Record<string, string> = {
   running: "Running",
@@ -72,7 +72,12 @@ export function PastCustomersCard() {
     void refresh();
   }, [refresh]);
 
-  if (err) return <p className="text-sm text-destructive">{err}</p>;
+  if (err)
+    return (
+      <p role="alert" className="text-base text-destructive">
+        {err}
+      </p>
+    );
   if (!d) return null;
 
   const c = d.campaign;
@@ -176,7 +181,7 @@ export function PastCustomersCard() {
           <h3 id={`${ids}-title`} className="font-bold flex items-center gap-1.5">
             <History className="w-4 h-4" aria-hidden="true" /> Ask past customers
           </h3>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Have a list of past customers but only a few reviews? Upload it and we ask a few each
             day, so it feels personal and stays safe for your email.
           </p>
@@ -185,7 +190,7 @@ export function PastCustomersCard() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-semibold"
+            className="shrink-0 rounded-lg border border-border px-3 py-2 text-base font-semibold"
           >
             Start
           </button>
@@ -195,9 +200,9 @@ export function PastCustomersCard() {
       {c && progressBlock()}
 
       {open && !active && (
-        <div className="space-y-3 text-sm">
+        <div className="space-y-3 text-base">
           <div className="space-y-1">
-            <label htmlFor={`${ids}-file`} className="text-xs font-semibold block">
+            <label htmlFor={`${ids}-file`} className="text-base font-semibold block">
               1. Upload a CSV file, or paste your list below
             </label>
             <input
@@ -205,9 +210,9 @@ export function PastCustomersCard() {
               type="file"
               accept=".csv,.txt,text/csv,text/plain"
               onChange={(e) => void readFile(e.target.files?.[0])}
-              className="block text-xs"
+              className="block text-base"
             />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Columns: name, email, phone, last job date (optional). A header row helps but is not
               needed. Up to {n(CAMPAIGN_MAX)} customers per campaign.
             </p>
@@ -226,13 +231,13 @@ export function PastCustomersCard() {
               placeholder={
                 "name,email,phone,last job date\nJane Smith,jane@example.com,07700 900123,14/03/2025"
               }
-              className={`${field} font-mono text-xs`}
+              className={`${field} font-mono text-base`}
             />
             <button
               type="button"
               disabled={busy || !text.trim()}
               onClick={() => void check()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-base font-semibold disabled:opacity-50"
             >
               {busy ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
@@ -246,10 +251,10 @@ export function PastCustomersCard() {
           {counts && (
             <div className="space-y-3">
               <div className="rounded-lg bg-muted/50 p-3" role="status">
-                <p className="text-xs font-semibold mb-2">
+                <p className="text-base font-semibold mb-2">
                   {n(counts.ready)} of {n(counts.rows + unreadable)} can be asked
                 </p>
-                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-xs">
+                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-base">
                   {(
                     [
                       ["By email", counts.validEmails],
@@ -272,7 +277,7 @@ export function PastCustomersCard() {
               </div>
 
               <div className="space-y-1">
-                <label htmlFor={`${ids}-rate`} className="text-xs font-semibold block">
+                <label htmlFor={`${ids}-rate`} className="text-base font-semibold block">
                   2. How many to ask each day ({RATE_MIN} to {RATE_MAX})
                 </label>
                 <input
@@ -286,7 +291,7 @@ export function PastCustomersCard() {
                   onBlur={() => setRate(clampRate(rate))}
                   className={`${field} max-w-[8rem]`}
                 />
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   {counts.ready
                     ? `At ${clampRate(rate)} a day this takes about ${days} day${days === 1 ? "" : "s"}. `
                     : ""}
@@ -295,7 +300,7 @@ export function PastCustomersCard() {
               </div>
 
               <div className="space-y-1">
-                <label htmlFor={`${ids}-msg`} className="text-xs font-semibold block">
+                <label htmlFor={`${ids}-msg`} className="text-base font-semibold block">
                   3. Your message
                 </label>
                 <textarea
@@ -306,7 +311,7 @@ export function PastCustomersCard() {
                   maxLength={600}
                   className={field}
                 />
-                <label htmlFor={`${ids}-subj`} className="text-xs font-semibold block">
+                <label htmlFor={`${ids}-subj`} className="text-base font-semibold block">
                   Email subject
                 </label>
                 <input
@@ -316,18 +321,18 @@ export function PastCustomersCard() {
                   maxLength={150}
                   className={field}
                 />
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   {"{name}"} becomes their first name, {"{business}"} your business name and{" "}
                   {"{link}"} their review link. Every email has an unsubscribe link. Reminders
                   follow your Ask settings.
                 </p>
-                <p className="text-xs rounded-lg border border-border p-2">
+                <p className="text-base rounded-lg border border-border p-2">
                   <span className="font-semibold">Preview: </span>
                   {sample}
                 </p>
               </div>
 
-              <label className="flex items-start gap-2 text-xs">
+              <label className="flex items-start gap-2 text-base">
                 <input
                   type="checkbox"
                   checked={lawful}
@@ -346,7 +351,7 @@ export function PastCustomersCard() {
                   type="button"
                   disabled={busy || !lawful || !counts.ready}
                   onClick={() => void go()}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-bold disabled:opacity-50"
                 >
                   {busy ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
@@ -358,14 +363,14 @@ export function PastCustomersCard() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg border border-border px-3 py-2 text-xs font-semibold"
+                  className="rounded-lg border border-border px-3 py-2 text-base font-semibold"
                 >
                   Cancel
                 </button>
               </div>
             </div>
           )}
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             We stop by ourselves if more than 5 in 100 emails bounce, or more than 2 in 100 people
             unsubscribe, in a day, and tell you why.
           </p>
@@ -379,7 +384,7 @@ export function PastCustomersCard() {
     const p = d!.progress;
     return (
       <div className="rounded-lg border border-border p-3 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-base">
           <p>
             <span className="font-semibold">{STATUS[c.status] ?? c.status}</span>
             <span className="text-muted-foreground">
@@ -398,7 +403,7 @@ export function PastCustomersCard() {
                   type="button"
                   disabled={busy}
                   onClick={() => void set("paused")}
-                  className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-base font-semibold disabled:opacity-50"
                 >
                   <Pause className="w-3.5 h-3.5" aria-hidden="true" /> Pause
                 </button>
@@ -407,7 +412,7 @@ export function PastCustomersCard() {
                   type="button"
                   disabled={busy}
                   onClick={() => void set("running")}
-                  className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-base font-semibold disabled:opacity-50"
                 >
                   <Play className="w-3.5 h-3.5" aria-hidden="true" /> Resume
                 </button>
@@ -416,7 +421,7 @@ export function PastCustomersCard() {
                 type="button"
                 disabled={busy}
                 onClick={() => void set("stopped")}
-                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-base font-semibold disabled:opacity-50"
               >
                 <Square className="w-3.5 h-3.5" aria-hidden="true" /> Stop
               </button>
@@ -425,7 +430,7 @@ export function PastCustomersCard() {
         </div>
         {c.stopReason && c.status !== "running" && (
           <p
-            className={`text-xs ${c.stopReason.startsWith("Stopped automatically") ? "text-destructive" : "text-muted-foreground"}`}
+            className={`text-base ${c.stopReason.startsWith("Stopped automatically") ? "text-destructive" : "text-muted-foreground"}`}
             role="status"
           >
             {c.stopReason}
@@ -444,23 +449,23 @@ export function PastCustomersCard() {
             ).map(([label, v]) => (
               <div key={label} className="rounded-lg bg-muted/50 py-2">
                 <dd className="text-lg font-bold tabular-nums">{n(v)}</dd>
-                <dt className="text-[11px] text-muted-foreground">{label}</dt>
+                <dt className="text-base text-muted-foreground">{label}</dt>
               </div>
             ))}
           </dl>
         )}
         {p && p.skipped > 0 && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             {n(p.skipped)} skipped at send time (asked recently or unsubscribed).
           </p>
         )}
         {active && (
-          <label className="flex items-center gap-2 text-xs">
+          <label className="flex items-center gap-2 text-base">
             <span>Ask about</span>
             <select
               value={c.dailyRate}
               onChange={(e) => void changeRate(Number(e.target.value))}
-              className="rounded-lg border border-input bg-background px-2 py-1 text-xs"
+              className="rounded-lg border border-input bg-background px-2 py-1 text-base"
             >
               {[...new Set([10, 15, 25, 40, 50, 75, 100, c.dailyRate])]
                 .sort((a, b) => a - b)
@@ -477,7 +482,7 @@ export function PastCustomersCard() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="text-xs font-semibold underline"
+            className="text-base font-semibold underline"
           >
             Start a new campaign
           </button>

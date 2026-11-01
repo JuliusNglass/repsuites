@@ -196,13 +196,32 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
       const unconfirmed = await emailUnconfirmed(g.userId);
       if (unconfirmed) return { ok: false as const, error: unconfirmed };
     }
-    const b = await serviceRead<{ stripe_customer_id: string | null; status: string | null }[]>(
-      `tenant_billing?select=stripe_customer_id,status&tenant_id=eq.${g.tenantId}`,
+    const b = await serviceRead<
+      {
+        stripe_customer_id: string | null;
+        stripe_subscription_id: string | null;
+        status: string | null;
+      }[]
+    >(
+      `tenant_billing?select=stripe_customer_id,stripe_subscription_id,status&tenant_id=eq.${g.tenantId}`,
       "",
     );
     const bill = b.data?.[0];
     if (bill?.status && ["active", "trialing", "past_due"].includes(bill.status))
       return { ok: false as const, error: "manage" };
+    // Monthly plans: a 14-day free trial, once per business (a business that
+    // had a plan before goes straight to paying). Card saved now, subscription
+    // made by the webhook; see trial.server.ts.
+    if (data.interval === "month" && !bill?.stripe_subscription_id) {
+      const { startTrialCheckout } = await import("./trial.server");
+      const t = await startTrialCheckout({
+        tenantId: g.tenantId,
+        plan: data.plan as CheckoutPlan,
+        email: g.email,
+        customer: bill?.stripe_customer_id ?? null,
+      });
+      return t.ok ? { ok: true as const, url: t.url } : { ok: false as const, error: t.error };
+    }
     const s = await stripe<{ url: string }>("checkout/sessions", {
       mode: "subscription",
       client_reference_id: g.tenantId,

@@ -88,13 +88,13 @@ function Order() {
       <div className="max-w-6xl mx-auto px-4 pt-6 pb-32 md:pb-16">
         <Link
           to="/cards"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground"
+          className="inline-flex items-center gap-1.5 text-base text-muted-foreground"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
         <h1 className="text-3xl md:text-4xl font-extrabold mt-3">Design your review cards</h1>
         {search.back ? (
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-base text-muted-foreground">
             No payment was taken. Your choices are below whenever you are ready.
           </p>
         ) : (
@@ -108,7 +108,7 @@ function Order() {
           <div className="space-y-8 order-2 md:order-1">
             <section>
               <h2 className="font-bold mb-1">1. Your business</h2>
-              <p className="text-sm text-muted-foreground mb-3">
+              <p className="text-base text-muted-foreground mb-3">
                 Find it on Google so the card opens your own review page.
               </p>
               <BusinessSearch value={name} onChange={setName} confirmed={biz} onConfirm={setBiz} />
@@ -122,7 +122,7 @@ function Order() {
                     key={m}
                     type="button"
                     onClick={() => setMsgIdx(i)}
-                    className={`w-full text-left rounded-xl border px-4 py-3 text-sm flex gap-3 items-start ${msgIdx === i ? "border-foreground bg-card" : "border-border"}`}
+                    className={`w-full text-left rounded-xl border px-4 py-3 text-base flex gap-3 items-start ${msgIdx === i ? "border-foreground bg-card" : "border-border"}`}
                   >
                     <span
                       className={`mt-0.5 w-4 h-4 rounded-full border shrink-0 flex items-center justify-center ${msgIdx === i ? "bg-foreground border-foreground" : "border-muted-foreground"}`}
@@ -135,7 +135,7 @@ function Order() {
                 <div
                   className={`rounded-xl border px-4 py-3 ${msgIdx === -1 ? "border-foreground bg-card" : "border-border"}`}
                 >
-                  <label className="text-sm font-semibold flex items-center gap-2">
+                  <label className="text-base font-semibold flex items-center gap-2">
                     <input
                       type="radio"
                       checked={msgIdx === -1}
@@ -147,13 +147,14 @@ function Order() {
                   {msgIdx === -1 && (
                     <>
                       <input
+                        aria-label="Your own message"
                         value={custom}
                         onChange={(e) => setCustom(e.target.value.slice(0, 60))}
                         placeholder="e.g. Thanks for visiting! Tap to tell us how we did."
-                        className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-base"
                         autoFocus
                       />
-                      <p className="text-xs text-muted-foreground mt-1">{custom.length}/60</p>
+                      <p className="text-base text-muted-foreground mt-1">{custom.length}/60</p>
                     </>
                   )}
                 </div>
@@ -162,7 +163,7 @@ function Order() {
 
             <section>
               <h2 className="font-bold mb-3">3. How many</h2>
-              <p className="text-sm font-semibold mb-2">NFC cards</p>
+              <p className="text-base font-semibold mb-2">NFC cards</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {CARD_PACKS.map((p) => (
                   <button
@@ -175,19 +176,19 @@ function Order() {
                     className={`relative rounded-xl border p-3 text-left ${cards === p.id ? "border-foreground bg-card ring-2 ring-primary/40" : "border-border"}`}
                   >
                     {p.badge && (
-                      <span className="absolute -top-2 right-2 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5">
+                      <span className="absolute -top-2 right-2 rounded-full bg-primary text-primary-foreground text-sm font-bold px-1.5">
                         {p.badge}
                       </span>
                     )}
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-base text-muted-foreground">
                       {p.qty} card{p.qty === 1 ? "" : "s"}
                     </div>
                     <div className="text-xl font-extrabold">{money(p.pence)}</div>
-                    <div className="text-[11px] text-muted-foreground">{each(p)} each</div>
+                    <div className="text-base text-muted-foreground">{each(p)} each</div>
                   </button>
                 ))}
               </div>
-              <p className="text-sm font-semibold mt-5 mb-2">
+              <p className="text-base font-semibold mt-5 mb-2">
                 Add an A5 table stand{" "}
                 <span className="font-normal text-muted-foreground">(optional)</span>
               </p>
@@ -203,11 +204,11 @@ function Order() {
                     className={`relative rounded-xl border p-3 text-left ${stands === p.id ? "border-foreground bg-card ring-2 ring-primary/40" : "border-border"}`}
                   >
                     {p.badge && (
-                      <span className="absolute -top-2 right-2 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5">
+                      <span className="absolute -top-2 right-2 rounded-full bg-primary text-primary-foreground text-sm font-bold px-1.5">
                         {p.badge}
                       </span>
                     )}
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-base text-muted-foreground">
                       {p.qty} stand{p.qty === 1 ? "" : "s"}
                     </div>
                     <div className="text-xl font-extrabold">{money(p.pence)}</div>
@@ -220,7 +221,7 @@ function Order() {
           {/* Preview and summary */}
           <aside className="order-1 md:order-2 md:sticky md:top-20 space-y-4">
             <div className="rounded-3xl bg-muted/60 p-6 sm:p-8">
-              <div className="flex justify-center gap-1 mb-5 text-xs font-semibold">
+              <div className="flex justify-center gap-1 mb-5 text-base font-semibold">
                 {(["card", "stand"] as const).map((v) => (
                   <button
                     key={v}
@@ -239,7 +240,7 @@ function Order() {
                   <StandPreview name={shown} message={message} />
                 </div>
               )}
-              <p className="text-center text-xs text-muted-foreground mt-4">
+              <p className="text-center text-base text-muted-foreground mt-4">
                 Preview. The QR code on your cards opens your own review page.
               </p>
             </div>
@@ -248,7 +249,7 @@ function Order() {
               <Summary c={c} s={s} total={total} />
               <PayButton ready={ready} canPay={canPay} paying={paying} total={total} onPay={pay} />
               {!shown && (
-                <p className="text-xs text-muted-foreground mt-2 text-center">
+                <p className="text-base text-muted-foreground mt-2 text-center">
                   Add your business name to continue.
                 </p>
               )}
@@ -259,7 +260,7 @@ function Order() {
 
       {/* Phone checkout bar */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-30 p-3 bg-background/95 backdrop-blur border-t border-border">
-        <div className="flex items-center justify-between text-sm mb-2">
+        <div className="flex items-center justify-between text-base mb-2">
           <span className="text-muted-foreground">
             {[
               c && `${c.qty} card${c.qty === 1 ? "" : "s"}`,
@@ -286,7 +287,7 @@ function Summary({
   total: number;
 }) {
   return (
-    <div className="space-y-2 text-sm">
+    <div className="space-y-2 text-base">
       {c && (
         <div className="flex justify-between">
           <span>
@@ -350,7 +351,7 @@ function PayButton({
         {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
         Pay {money(total)} securely
       </button>
-      <p className="mt-2 text-[11px] text-center text-muted-foreground">
+      <p className="mt-2 text-base text-center text-muted-foreground">
         Card, Apple Pay or Google Pay via Stripe. Delivery address on the next page.
       </p>
     </>

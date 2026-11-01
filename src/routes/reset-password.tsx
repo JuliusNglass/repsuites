@@ -50,7 +50,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <div className="relative z-10 w-full max-w-sm bg-card border border-border rounded-xl shadow-lg p-6 sm:p-8">
         <div className="mb-6 text-center">
           <span className="text-lg font-bold tracking-tight text-foreground">RepSuites</span>
-          <p className="mt-1 text-xs text-muted-foreground">by Accelur8</p>
+          <p className="mt-1 text-base text-muted-foreground">by Accelur8</p>
         </div>
         {children}
       </div>
@@ -147,7 +147,7 @@ function ResetPasswordPage() {
   if (checking) {
     return (
       <Shell>
-        <p className="text-center text-sm text-muted-foreground">Checking your link...</p>
+        <p className="text-center text-base text-muted-foreground">Checking your link...</p>
       </Shell>
     );
   }
@@ -156,7 +156,10 @@ function ResetPasswordPage() {
     return (
       <Shell>
         <div className="space-y-4">
-          <div className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs p-3 flex items-start gap-2">
+          <div
+            role="alert"
+            className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-base p-3 flex items-start gap-2"
+          >
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
               This link has expired. Return to sign in and request a new password reset link.
@@ -164,7 +167,7 @@ function ResetPasswordPage() {
           </div>
           <a
             href="/"
-            className="block w-full rounded-lg bg-primary text-primary-foreground text-sm font-semibold py-2.5 text-center min-h-[44px]"
+            className="block w-full rounded-lg bg-primary text-primary-foreground text-base font-semibold py-2.5 text-center min-h-[44px]"
           >
             Back to sign in
           </a>
@@ -179,10 +182,13 @@ function ResetPasswordPage() {
         <div className="text-center space-y-3">
           <ShieldCheck className="w-12 h-12 mx-auto text-emerald-600" />
           <h1 className="text-lg font-semibold">Password updated</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Your password has been changed. Sign in with your new password.
           </p>
-          <a href="/" className="inline-block mt-2 text-sm font-medium text-primary-ink underline">
+          <a
+            href="/"
+            className="inline-block mt-2 text-base font-medium text-primary-ink underline"
+          >
             Go to sign in
           </a>
         </div>
@@ -196,19 +202,22 @@ function ResetPasswordPage() {
         <div className="text-center space-y-2">
           <KeyRound className="w-10 h-10 mx-auto text-primary-ink" />
           <h1 className="text-lg font-bold">Set a new password</h1>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Choose a password (12-256 characters) to replace your current one.
           </p>
         </div>
         {error && (
-          <div className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs p-3 flex items-start gap-2">
+          <div
+            role="alert"
+            className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-base p-3 flex items-start gap-2"
+          >
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             {error}
           </div>
         )}
         {uncertain ? (
           <div className="space-y-3">
-            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs p-3 space-y-2">
+            <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-base p-3 space-y-2">
               <p>
                 We could not confirm whether your password was changed. Do not submit again yet.
               </p>
@@ -219,7 +228,7 @@ function ResetPasswordPage() {
             </div>
             <a
               href="/"
-              className="block w-full rounded-lg border border-input py-2.5 text-sm font-medium text-center min-h-[44px]"
+              className="block w-full rounded-lg border border-input py-2.5 text-base font-medium text-center min-h-[44px]"
             >
               Back to sign in
             </a>
@@ -227,8 +236,11 @@ function ResetPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-foreground mb-1">New password</label>
+              <label htmlFor="rp-new" className="block text-base font-medium text-foreground mb-1">
+                New password
+              </label>
               <input
+                id="rp-new"
                 type="password"
                 required
                 minLength={12}
@@ -237,27 +249,31 @@ function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={saving}
                 autoComplete="new-password"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-foreground mb-1">
+              <label
+                htmlFor="rp-confirm"
+                className="block text-base font-medium text-foreground mb-1"
+              >
                 Confirm password
               </label>
               <input
+                id="rp-confirm"
                 type="password"
                 required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 disabled={saving}
                 autoComplete="new-password"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
               />
             </div>
             <button
               type="submit"
               disabled={saving}
-              className="w-full rounded-lg bg-primary text-primary-foreground text-sm font-semibold py-2.5 min-h-[44px] disabled:opacity-50"
+              className="w-full rounded-lg bg-primary text-primary-foreground text-base font-semibold py-2.5 min-h-[44px] disabled:opacity-50"
             >
               {saving ? "Saving..." : "Set new password"}
             </button>
