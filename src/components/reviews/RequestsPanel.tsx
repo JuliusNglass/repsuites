@@ -39,12 +39,12 @@ import {
   whatsappLink,
   type Channel,
 } from "../../lib/review-requests";
+import { fieldClass } from "../ui/field";
 
 type Data = Extract<Awaited<ReturnType<typeof getRequestsFn>>, { ok: true }>;
 type Req = Data["requests"][number];
 
-const field =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+const field = fieldClass;
 
 const CHIP: Record<string, string> = {
   Sent: "bg-slate-100 text-slate-700",
@@ -141,7 +141,7 @@ export function RequestsPanel() {
 
   if (err)
     return (
-      <p role="alert" className="text-sm text-destructive">
+      <p role="alert" className="text-base text-destructive">
         {err}
       </p>
     );
@@ -272,7 +272,7 @@ export function RequestsPanel() {
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="font-bold">Ask a customer for a review</h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               WhatsApp and text messages open on your phone, ready to send. Free, and they come from
               your own number. Emails go automatically.
             </p>
@@ -314,7 +314,7 @@ export function RequestsPanel() {
           </select>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <label className="flex items-center gap-2 text-xs">
+          <label className="flex items-center gap-2 text-base">
             <input
               type="checkbox"
               checked={sendNow}
@@ -327,7 +327,7 @@ export function RequestsPanel() {
             <button
               type="button"
               onClick={() => setShowPaste((v) => !v)}
-              className="rounded-lg border border-border px-3 py-2 text-xs font-semibold"
+              className="rounded-lg border border-border px-3 py-2 text-base font-semibold"
             >
               Paste a list
             </button>
@@ -335,7 +335,7 @@ export function RequestsPanel() {
               type="button"
               disabled={busy || !contact.trim()}
               onClick={() => void addOne()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-bold disabled:opacity-50"
             >
               {busy ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -362,24 +362,24 @@ export function RequestsPanel() {
               type="button"
               disabled={busy || !paste.trim()}
               onClick={() => void addPasted()}
-              className="rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold disabled:opacity-50"
+              className="rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-bold disabled:opacity-50"
             >
               Add these customers
             </button>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           Ask every customer, not only the happy ones, and never offer anything in return. Google
           does not allow either.
         </p>
       </section>
 
       {showSettings && (
-        <section className="rounded-xl border border-border bg-card p-4 space-y-3 text-sm">
+        <section className="rounded-xl border border-border bg-card p-4 space-y-3 text-base">
           <h3 className="font-bold">Message settings</h3>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="space-y-1">
-              <span className="text-xs font-semibold">Your country (for phone numbers)</span>
+              <span className="text-base font-semibold">Your country (for phone numbers)</span>
               <select
                 value={s.countryCode}
                 onChange={(e) => setS({ ...s, countryCode: e.target.value })}
@@ -393,7 +393,7 @@ export function RequestsPanel() {
               </select>
             </label>
             <label className="space-y-1">
-              <span className="text-xs font-semibold">
+              <span className="text-base font-semibold">
                 Wait before asking (also for automatic requests)
               </span>
               <select
@@ -411,7 +411,7 @@ export function RequestsPanel() {
               </select>
             </label>
             <label className="space-y-1">
-              <span className="text-xs font-semibold">Don't ask the same customer again for</span>
+              <span className="text-base font-semibold">Don't ask the same customer again for</span>
               <select
                 value={s.cooldownDays}
                 onChange={(e) =>
@@ -427,7 +427,7 @@ export function RequestsPanel() {
               </select>
             </label>
             <label className="space-y-1">
-              <span className="text-xs font-semibold">
+              <span className="text-base font-semibold">
                 Reminders for customers who have not reviewed
               </span>
               <select
@@ -442,7 +442,9 @@ export function RequestsPanel() {
             </label>
             {s.maxReminders >= 1 && (
               <label className="space-y-1">
-                <span className="text-xs font-semibold">Reminder 1, days after the first ask</span>
+                <span className="text-base font-semibold">
+                  Reminder 1, days after the first ask
+                </span>
                 <select
                   value={s.reminder1Days}
                   onChange={(e) => {
@@ -466,7 +468,9 @@ export function RequestsPanel() {
             )}
             {s.maxReminders >= 2 && (
               <label className="space-y-1">
-                <span className="text-xs font-semibold">Reminder 2, days after the first ask</span>
+                <span className="text-base font-semibold">
+                  Reminder 2, days after the first ask
+                </span>
                 <select
                   value={s.reminder2Days}
                   onChange={(e) => setS({ ...s, reminder2Days: Number(e.target.value) })}
@@ -483,7 +487,7 @@ export function RequestsPanel() {
               </label>
             )}
             <label className="space-y-1">
-              <span className="text-xs font-semibold">Quiet hours: no emails from</span>
+              <span className="text-base font-semibold">Quiet hours: no emails from</span>
               <div className="flex items-center gap-2">
                 <select
                   value={s.quietStart}
@@ -497,7 +501,7 @@ export function RequestsPanel() {
                     </option>
                   ))}
                 </select>
-                <span className="text-xs">to</span>
+                <span className="text-base">to</span>
                 <select
                   value={s.quietEnd}
                   onChange={(e) => setS({ ...s, quietEnd: Number(e.target.value) })}
@@ -513,13 +517,13 @@ export function RequestsPanel() {
               </div>
             </label>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Reminders stop as soon as the customer taps a review site, sends private feedback,
             leaves a Google review under the same name (when Google is connected) or unsubscribes.
             If they only opened the link, we skip straight to the last reminder.
           </p>
           <label className="space-y-1 block">
-            <span className="text-xs font-semibold">First message</span>
+            <span className="text-base font-semibold">First message</span>
             <textarea
               value={s.message}
               onChange={(e) => setS({ ...s, message: e.target.value })}
@@ -528,7 +532,7 @@ export function RequestsPanel() {
             />
           </label>
           <label className="space-y-1 block">
-            <span className="text-xs font-semibold">Reminder</span>
+            <span className="text-base font-semibold">Reminder</span>
             <textarea
               value={s.reminderMessage}
               onChange={(e) => setS({ ...s, reminderMessage: e.target.value })}
@@ -537,14 +541,14 @@ export function RequestsPanel() {
             />
           </label>
           <label className="space-y-1 block">
-            <span className="text-xs font-semibold">Email subject</span>
+            <span className="text-base font-semibold">Email subject</span>
             <input
               value={s.emailSubject}
               onChange={(e) => setS({ ...s, emailSubject: e.target.value })}
               className={field}
             />
           </label>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             {"{name}"} becomes the customer's first name, {"{business}"} your business name and{" "}
             {"{link}"} their personal review link. Keep {"{link}"} in each message.
           </p>
@@ -552,7 +556,7 @@ export function RequestsPanel() {
             type="button"
             disabled={busy}
             onClick={() => void saveSettings()}
-            className="rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold disabled:opacity-50"
+            className="rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-bold disabled:opacity-50"
           >
             Save settings
           </button>
@@ -565,7 +569,7 @@ export function RequestsPanel() {
             <h3 className="font-bold flex items-center gap-1.5">
               <Zap className="w-4 h-4" /> Ask automatically
             </h3>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Send a review request when a job is done or an invoice is paid. We wait{" "}
               {d.settings.firstDelayHours} hour{d.settings.firstDelayHours === 1 ? "" : "s"}, and
               never send between {hourLabel(d.settings.quietStart)} and{" "}
@@ -575,32 +579,32 @@ export function RequestsPanel() {
           <button
             type="button"
             onClick={() => setShowAuto((v) => !v)}
-            className="shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-semibold"
+            className="shrink-0 rounded-lg border border-border px-3 py-2 text-base font-semibold"
           >
             {showAuto ? "Hide" : "Set up"}
           </button>
         </div>
         {showAuto && (
-          <div className="space-y-3 text-sm">
+          <div className="space-y-3 text-base">
             {d.triggerUrl ? (
               <div className="space-y-1">
-                <span className="text-xs font-semibold">Your private webhook address</span>
+                <span className="text-base font-semibold">Your private webhook address</span>
                 <div className="flex gap-2">
                   <input
                     aria-label="Your private webhook address"
                     readOnly
                     value={d.triggerUrl}
-                    className={`${field} font-mono text-xs`}
+                    className={`${field} font-mono text-base`}
                   />
                   <button
                     type="button"
                     onClick={() => void copyText(d.triggerUrl!)}
-                    className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold"
+                    className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-border px-3 text-base font-semibold"
                   >
                     <Copy className="w-3.5 h-3.5" /> Copy
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   Keep it private: anyone with it can add requests.{" "}
                   <button type="button" onClick={() => void newAddress()} className="underline">
                     <RefreshCw className="inline w-3 h-3" /> Make a new address
@@ -608,19 +612,19 @@ export function RequestsPanel() {
                 </p>
               </div>
             ) : (
-              <p role="alert" className="text-xs text-destructive">
+              <p role="alert" className="text-base text-destructive">
                 Could not make your address. Refresh.
               </p>
             )}
             <div className="rounded-lg bg-muted/50 p-3 space-y-2">
-              <p className="text-xs font-semibold">GoHighLevel</p>
-              <p className="text-xs">
+              <p className="text-base font-semibold">GoHighLevel</p>
+              <p className="text-base">
                 In GoHighLevel, add a Webhook step to your 'Invoice paid' or 'Job won' workflow
                 pointing at this address. Method POST. Under Custom Data, add these:
               </p>
               <ul className="space-y-1">
                 {GHL_FIELDS.map(([k, v]) => (
-                  <li key={k} className="flex items-center gap-2 text-xs">
+                  <li key={k} className="flex items-center gap-2 text-base">
                     <code className="w-24 shrink-0 font-semibold">{k}</code>
                     <code className="min-w-0 flex-1 truncate text-muted-foreground">{v}</code>
                     {v.startsWith("{{") || !v.includes(" ") ? (
@@ -636,22 +640,22 @@ export function RequestsPanel() {
                   </li>
                 ))}
               </ul>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 For a 'Job won' workflow, set event to job_done. The external_id stops the same job
                 or invoice asking twice.
               </p>
             </div>
             <div className="rounded-lg bg-muted/50 p-3 space-y-1">
-              <p className="text-xs font-semibold">Zapier, Make or anything else</p>
-              <p className="text-xs">
+              <p className="text-base font-semibold">Zapier, Make or anything else</p>
+              <p className="text-base">
                 Send a POST to the address, as JSON or a form, with name, email, phone (optional),
                 event (job_done, invoice_paid or manual) and external_id (optional).
               </p>
-              <pre className="overflow-x-auto rounded bg-background p-2 text-xs">
+              <pre className="overflow-x-auto rounded bg-background p-2 text-base">
                 {`{"name":"Jane Smith","email":"jane@example.com","phone":"07700 900123","event":"invoice_paid","external_id":"INV-1042"}`}
               </pre>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Customers with an email get an email. Customers with only a phone number appear under
               Ready to send for a one tap WhatsApp or text. Anyone asked in the last{" "}
               {d.settings.cooldownDays} days, or who unsubscribed, is skipped.
@@ -661,7 +665,7 @@ export function RequestsPanel() {
       </section>
 
       <section className="rounded-xl border border-border bg-card p-4">
-        <h3 className="font-bold text-sm mb-2">Last 30 days</h3>
+        <h3 className="font-bold text-base mb-2">Last 30 days</h3>
         <dl className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center">
           {(
             [
@@ -675,7 +679,7 @@ export function RequestsPanel() {
           ).map(([label, n]) => (
             <div key={label} className="rounded-lg bg-muted/50 py-2">
               <dd className="text-lg font-bold tabular-nums">{n}</dd>
-              <dt className="text-xs text-muted-foreground">{label}</dt>
+              <dt className="text-base text-muted-foreground">{label}</dt>
             </div>
           ))}
         </dl>
@@ -686,32 +690,32 @@ export function RequestsPanel() {
           <h3 className="font-bold">Ready to send ({toSend.length})</h3>
         </div>
         {toSend.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Nothing waiting. Reminders appear here when they are due.
           </p>
         ) : (
           <ul className="space-y-2">
             {toSend.map((r) => (
               <li key={r.id} className="rounded-lg border border-border p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2 text-sm">
+                <div className="flex items-center justify-between gap-2 text-base">
                   <span className="font-semibold truncate">{r.name || r.phone}</span>
-                  <span className="text-xs text-muted-foreground shrink-0">
+                  <span className="text-base text-muted-foreground shrink-0">
                     {r.step === 0 ? "First ask" : `Reminder ${r.step}`}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground line-clamp-2">{textFor(r)}</p>
+                <p className="text-base text-muted-foreground line-clamp-2">{textFor(r)}</p>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => void sent(r, "whatsapp")}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#25d366] text-[#0b1b33] px-3 py-1.5 text-xs font-bold"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#25d366] text-[#0b1b33] px-3 py-1.5 text-base font-bold"
                   >
                     <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                   </button>
                   <button
                     type="button"
                     onClick={() => void sent(r, "sms")}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-base font-semibold"
                   >
                     <MessageSquare className="w-3.5 h-3.5" /> Text
                   </button>
@@ -720,7 +724,7 @@ export function RequestsPanel() {
                     onClick={() =>
                       void stop({ data: { id: r.id, remove: false } }).then(() => refresh())
                     }
-                    className="text-xs text-muted-foreground px-2"
+                    className="text-base text-muted-foreground px-2"
                   >
                     Skip
                   </button>
@@ -734,13 +738,13 @@ export function RequestsPanel() {
       <section className="rounded-xl border border-border bg-card p-4 space-y-2">
         <h3 className="font-bold">Recent requests</h3>
         {d.requests.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No requests yet.</p>
+          <p className="text-base text-muted-foreground">No requests yet.</p>
         ) : (
           <ul className="divide-y divide-border">
             {d.requests.slice(0, 50).map((r) => {
               const chips = requestChips(r);
               return (
-                <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-base">
                   <div className="min-w-0">
                     <div className="font-medium truncate flex items-center gap-1.5">
                       {r.channel === "email" ? (
@@ -750,7 +754,7 @@ export function RequestsPanel() {
                       )}
                       {r.name || r.email || r.phone}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-sm text-muted-foreground">
                       Added {when(r.createdAt)}
                       {r.source === "campaign"
                         ? " (past customer)"
@@ -771,7 +775,7 @@ export function RequestsPanel() {
                       {chips.map((c) => (
                         <span
                           key={c}
-                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${CHIP[c] ?? "bg-slate-100 text-slate-600"}`}
+                          className={`rounded-full px-2 py-0.5 text-sm font-semibold ${CHIP[c] ?? "bg-slate-100 text-slate-600"}`}
                         >
                           {c}
                         </span>

@@ -139,7 +139,7 @@ export function emailFor(type: EmailType, f: Facts, unsubUrl: string): Email {
   const biz = esc(f.name);
   const hi = `<p>Hi ${esc(first)},</p>`;
   const sign = `<p>Any questions, just reply to this email.</p><p>The RepSuites team</p>`;
-  const foot = `<p style="font-size:12px;color:#64748b;margin-top:24px">You get these tips because ${biz} has a RepSuites account. <a href="${unsubUrl}" style="color:#64748b">Stop these emails</a>.</p>`;
+  const foot = `<p style="font-size:14px;color:#64748b;margin-top:24px">You get these tips because ${biz} has a RepSuites account. <a href="${unsubUrl}" style="color:#64748b">Stop these emails</a>.</p>`;
   const wrap = (subject: string, body: string): Email => ({
     subject,
     html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#0f172a;max-width:560px">${hi}${body}${sign}${foot}</div>`,

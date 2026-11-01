@@ -119,7 +119,7 @@ function Home() {
               Get a free visibility check
             </a>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">
+          <p className="mt-3 text-base text-muted-foreground">
             Free review page and QR code in 2 minutes. No card needed.
           </p>
         </div>
@@ -358,7 +358,7 @@ function CheckForm() {
         {busy && <Loader2 className="w-4 h-4 animate-spin" />}
         Send me my free check
       </button>
-      <p className="text-sm text-muted-foreground text-center">
+      <p className="text-base text-muted-foreground text-center">
         We use your details only to send your check and follow up about it. See our{" "}
         <Link to="/privacy" className="underline">
           Privacy Policy

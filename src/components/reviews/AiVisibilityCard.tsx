@@ -6,11 +6,11 @@ import { CheckCircle2, Loader2, Sparkles, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getAiVisibilityFn, runAiVisibilityFn } from "../../lib/ai-visibility.functions";
 import { aiSummary } from "../../lib/ai-visibility";
+import { fieldClass } from "../ui/field";
 
 type Data = Extract<Awaited<ReturnType<typeof getAiVisibilityFn>>, { ok: true }>;
 
-const field =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+const field = fieldClass;
 
 export function AiVisibilityCard() {
   const load = useServerFn(getAiVisibilityFn);
@@ -39,7 +39,7 @@ export function AiVisibilityCard() {
         <h3 className="font-bold flex items-center gap-1.5">
           <Sparkles className="w-4 h-4" /> Are AI assistants recommending you?
         </h3>
-        <p className="text-sm text-muted-foreground mt-1">{blocked}</p>
+        <p className="text-base text-muted-foreground mt-1">{blocked}</p>
       </section>
     );
   if (!d) return null;
@@ -51,7 +51,7 @@ export function AiVisibilityCard() {
         <h3 className="font-bold flex items-center gap-1.5">
           <Sparkles className="w-4 h-4" /> Are AI assistants recommending you?
         </h3>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           More people now ask an AI assistant who to use. We ask an assistant that searches the web
           (Claude) the questions your customers would, and see who it recommends and where it
           looked. Answers vary, so watch the trend month to month.
@@ -83,16 +83,18 @@ export function AiVisibilityCard() {
             else toast.error(r?.error ?? "Could not check.");
             await refresh();
           }}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-bold disabled:opacity-50"
         >
           {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           {busy ? "Asking (about 1 minute)" : "Check now"}
         </button>
       </div>
-      {!d.ready && <p className="text-xs text-muted-foreground">This check switches on shortly.</p>}
+      {!d.ready && (
+        <p className="text-base text-muted-foreground">This check switches on shortly.</p>
+      )}
       {l && l.total > 0 && (
         <div className="space-y-2">
-          <p className="text-sm">
+          <p className="text-base">
             Named in{" "}
             <b>
               {l.named} of {l.total}
@@ -110,10 +112,10 @@ export function AiVisibilityCard() {
               <div className="grid sm:grid-cols-2 gap-3">
                 {sum.rivals.length > 0 && (
                   <div className="rounded-lg bg-muted/60 p-3">
-                    <p className="text-xs font-bold text-muted-foreground mb-1">
+                    <p className="text-base font-bold text-muted-foreground mb-1">
                       Recommended instead of you
                     </p>
-                    <ul className="text-sm space-y-0.5">
+                    <ul className="text-base space-y-0.5">
                       {sum.rivals.map((x) => (
                         <li key={x.name}>
                           {x.name}{" "}
@@ -127,15 +129,15 @@ export function AiVisibilityCard() {
                 )}
                 {sum.sites.length > 0 && (
                   <div className="rounded-lg bg-muted/60 p-3">
-                    <p className="text-xs font-bold text-muted-foreground mb-1">
+                    <p className="text-base font-bold text-muted-foreground mb-1">
                       Where the AI looked
                     </p>
-                    <ul className="text-sm space-y-0.5">
+                    <ul className="text-base space-y-0.5">
                       {sum.sites.map((x) => (
                         <li key={x.name}>{x.name}</li>
                       ))}
                     </ul>
-                    <p className="text-xs text-muted-foreground mt-1.5">
+                    <p className="text-base text-muted-foreground mt-1.5">
                       Being listed, with good reviews, on these sites makes you more likely to be
                       recommended.
                     </p>
@@ -146,7 +148,7 @@ export function AiVisibilityCard() {
           })()}
           <ul className="space-y-2">
             {l.results.map((r) => (
-              <li key={r.question} className="rounded-lg border border-border p-3 text-sm">
+              <li key={r.question} className="rounded-lg border border-border p-3 text-base">
                 <div className="flex items-start gap-2">
                   {r.named ? (
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -155,7 +157,7 @@ export function AiVisibilityCard() {
                   )}
                   <div className="min-w-0">
                     <p className="font-medium">"{r.question}"</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-base text-muted-foreground">
                       {r.named
                         ? `You were number ${r.position} of ${r.businesses.length} named.`
                         : r.businesses.length
@@ -170,7 +172,7 @@ export function AiVisibilityCard() {
         </div>
       )}
       {l && l.total === 0 && l.error && (
-        <p role="alert" className="text-xs text-destructive">
+        <p role="alert" className="text-base text-destructive">
           {l.error}
         </p>
       )}

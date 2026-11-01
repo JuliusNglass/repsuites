@@ -113,15 +113,19 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border px-4 h-16 flex items-center justify-between gap-3">
-        <a href="/" className="shrink-0">
-          <Logo />
+        <a
+          href="/"
+          className="shrink-0 inline-flex items-center min-h-11"
+          aria-label="RepSuites home"
+        >
+          <Logo compact={many} />
         </a>
         <div className="flex items-center gap-3 min-w-0">
           {many && (
             <button
               type="button"
               onClick={() => setPicking((v) => !v)}
-              className="min-w-0 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm"
+              className="min-w-0 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-base"
             >
               <Building2 className="w-4 h-4 shrink-0" />
               <span className="truncate max-w-[40vw] sm:max-w-xs">
@@ -131,13 +135,13 @@ function Dashboard() {
             </button>
           )}
           {s.agency && (
-            <a href="/prospects" className="text-sm font-semibold shrink-0">
+            <a href="/prospects" className="text-base font-semibold shrink-0">
               Prospects
             </a>
           )}
           <button
             type="button"
-            className="text-sm text-muted-foreground shrink-0"
+            className="text-base text-muted-foreground shrink-0"
             onClick={async () => {
               await out();
               navigate({ to: "/" });
@@ -164,7 +168,7 @@ function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setAdding(true)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold"
+                  className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-3 py-2 text-base font-semibold"
                 >
                   <Plus className="w-4 h-4" />
                   Add a business
@@ -187,7 +191,7 @@ function Dashboard() {
                   <button
                     type="button"
                     onClick={() => void switchTo(b.id)}
-                    className={`w-full text-left px-3 py-2.5 text-sm hover:bg-muted ${
+                    className={`w-full text-left px-3 py-2.5 text-base hover:bg-muted ${
                       b.id === s.activeId ? "font-semibold" : ""
                     }`}
                   >
@@ -196,7 +200,7 @@ function Dashboard() {
                 </li>
               ))}
               {filtered.length === 0 && (
-                <li className="px-3 py-2.5 text-sm text-muted-foreground">No match.</li>
+                <li className="px-3 py-2.5 text-base text-muted-foreground">No match.</li>
               )}
             </ul>
           </div>
@@ -217,7 +221,7 @@ function Dashboard() {
                   type="button"
                   onClick={() => setTab(t.id)}
                   aria-current={tab === t.id ? "page" : undefined}
-                  className={`shrink-0 px-3 py-3 text-sm font-semibold border-b-2 ${
+                  className={`shrink-0 px-3 py-3 text-base font-semibold border-b-2 ${
                     tab === t.id
                       ? "border-primary text-foreground"
                       : "border-transparent text-muted-foreground"
@@ -245,7 +249,7 @@ function Dashboard() {
       <main className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">{active?.name ?? "Welcome back"}</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Signed in as {s.email}
             {s.agency ? " (Accelur8 team)" : ""}
           </p>
@@ -264,7 +268,7 @@ function Dashboard() {
         )}
         {active && tab === "reviews" && (
           <>
-            <div className="inline-flex rounded-lg border border-border p-0.5 text-sm font-semibold">
+            <div className="inline-flex rounded-lg border border-border p-0.5 text-base font-semibold">
               <button
                 type="button"
                 onClick={() => setInbox("google")}

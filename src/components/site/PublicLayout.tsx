@@ -12,12 +12,12 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <Link to="/" className="flex items-center min-h-11 shrink-0" aria-label="RepSuites home">
             <Logo />
           </Link>
-          {/* Every link is at least 44px tall and never wraps. Below 400px "Cards"
+          {/* Every link is at least 44px tall and never wraps. Below 420px "Cards"
               moves to the footer so the header fits on the smallest phones. */}
-          <nav className="flex items-center gap-1 sm:gap-4 text-sm whitespace-nowrap">
+          <nav className="flex items-center gap-1 sm:gap-4 text-base whitespace-nowrap">
             <Link
               to="/cards"
-              className="hidden min-[400px]:inline-flex items-center min-h-11 text-muted-foreground hover:text-foreground px-2"
+              className="hidden min-[420px]:inline-flex items-center min-h-11 text-muted-foreground hover:text-foreground px-2"
             >
               Cards
             </Link>

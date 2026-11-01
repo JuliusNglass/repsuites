@@ -128,7 +128,7 @@ function Start() {
                 </li>
               ))}
             </ul>
-            <p className="mt-6 text-sm text-muted-foreground">
+            <p className="mt-6 text-base text-muted-foreground">
               Want more later? RepSuites Growth writes your review replies, asks customers for
               reviews and gets you higher on Google Maps.{" "}
               <Link to="/pricing" className="underline underline-offset-2">
@@ -142,12 +142,12 @@ function Start() {
             className="order-1 md:order-2 rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm space-y-4"
           >
             <h2 className="text-xl font-bold">Create your free account</h2>
-            <p className="-mt-2 text-sm text-muted-foreground">
+            <p className="-mt-2 text-base text-muted-foreground">
               Then print your review QR card. Free, no card needed.
             </p>
             <div id={fromReport ? undefined : "s-business"} tabIndex={fromReport ? undefined : -1}>
               {fromReport ? (
-                <label className="text-sm font-semibold block mb-1.5" htmlFor="s-business">
+                <label className="text-base font-semibold block mb-1.5" htmlFor="s-business">
                   Your business
                 </label>
               ) : null}
@@ -172,7 +172,7 @@ function Start() {
               <FieldError id="s-business-err" message={errFor("business")} />
             </div>
             <div>
-              <label className="text-sm font-semibold block mb-1.5" htmlFor="s-name">
+              <label className="text-base font-semibold block mb-1.5" htmlFor="s-name">
                 Your name
               </label>
               <input
@@ -187,7 +187,7 @@ function Start() {
               <FieldError id="s-name-err" message={errFor("name")} />
             </div>
             <div>
-              <label className="text-sm font-semibold block mb-1.5" htmlFor="s-email">
+              <label className="text-base font-semibold block mb-1.5" htmlFor="s-email">
                 Email
               </label>
               <input
@@ -204,7 +204,7 @@ function Start() {
               <FieldError id="s-email-err" message={errFor("email")} />
             </div>
             <div>
-              <label className="text-sm font-semibold block mb-1.5" htmlFor="s-pass">
+              <label className="text-base font-semibold block mb-1.5" htmlFor="s-pass">
                 Choose a password
               </label>
               <input
@@ -217,7 +217,7 @@ function Start() {
                 aria-describedby={errFor("password") ? "s-pass-hint s-pass-err" : "s-pass-hint"}
                 aria-invalid={errFor("password") ? true : undefined}
               />
-              <p id="s-pass-hint" className="mt-1.5 text-sm text-muted-foreground">
+              <p id="s-pass-hint" className="mt-1.5 text-base text-muted-foreground">
                 At least 10 characters
               </p>
               <FieldError id="s-pass-err" message={errFor("password")} />
@@ -255,7 +255,7 @@ function Start() {
             </label>
             <FieldError id="s-agree-err" message={errFor("agree")} />
             {error && (
-              <p className="text-sm text-destructive" role="alert">
+              <p className="text-base text-destructive" role="alert">
                 {error}{" "}
                 {error.includes("Sign in") && (
                   <Link to="/login" className="underline font-semibold">
@@ -272,7 +272,7 @@ function Start() {
               {busy && <Loader2 className="w-5 h-5 animate-spin" />}
               {busy ? "Setting up your account" : "Start free"}
             </button>
-            <p className="text-sm text-center text-muted-foreground">
+            <p className="text-base text-center text-muted-foreground">
               No card needed. Already have an account?{" "}
               <Link to="/login" className="underline">
                 Sign in
@@ -289,7 +289,7 @@ function Start() {
 function FieldError({ id, message }: { id: string; message: string | null }) {
   if (!message) return null;
   return (
-    <p id={id} role="alert" className="mt-1.5 text-sm font-semibold text-destructive">
+    <p id={id} role="alert" className="mt-1.5 text-base font-semibold text-destructive">
       {message}
     </p>
   );

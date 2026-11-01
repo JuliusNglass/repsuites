@@ -59,20 +59,20 @@ function ForgotPasswordPage() {
       <div className="relative z-10 w-full max-w-sm bg-card border border-border rounded-xl shadow-lg p-6 sm:p-8">
         <div className="mb-6 text-center">
           <span className="text-lg font-bold tracking-tight text-foreground">RepSuites</span>
-          <p className="mt-1 text-xs text-muted-foreground">by Accelur8</p>
+          <p className="mt-1 text-base text-muted-foreground">by Accelur8</p>
         </div>
 
         {sent ? (
           <div className="text-center space-y-3">
             <ShieldCheck className="w-12 h-12 mx-auto text-emerald-600" />
             <h1 className="text-lg font-semibold">Check your email</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               If an account exists for that email, you will receive a link to reset your password.
               The link expires after a short time.
             </p>
             <a
               href="/"
-              className="inline-block mt-2 text-sm font-medium text-primary-ink underline"
+              className="inline-block mt-2 text-base font-medium text-primary-ink underline"
             >
               Back to sign in
             </a>
@@ -82,14 +82,14 @@ function ForgotPasswordPage() {
             <div className="text-center space-y-2">
               <Mail className="w-10 h-10 mx-auto text-primary-ink" />
               <h1 className="text-lg font-bold">Reset your password</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 Enter your email and we will send a link to set a new password.
               </p>
             </div>
             {error && (
               <div
                 role="alert"
-                className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm p-3 flex items-start gap-2"
+                className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-base p-3 flex items-start gap-2"
               >
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 {error}
@@ -99,7 +99,7 @@ function ForgotPasswordPage() {
               <div>
                 <label
                   htmlFor="fp-email"
-                  className="block text-sm font-medium text-foreground mb-1"
+                  className="block text-base font-medium text-foreground mb-1"
                 >
                   Email address
                 </label>
@@ -119,7 +119,7 @@ function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg bg-primary text-primary-foreground text-sm font-semibold py-2.5 min-h-[44px] disabled:opacity-50"
+                className="w-full rounded-lg bg-primary text-primary-foreground text-base font-semibold py-2.5 min-h-[44px] disabled:opacity-50"
               >
                 {loading ? "Sending..." : "Send reset link"}
               </button>
@@ -127,7 +127,7 @@ function ForgotPasswordPage() {
             <div className="text-center">
               <a
                 href="/"
-                className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 inline-flex items-center min-h-11"
+                className="text-base text-muted-foreground hover:text-foreground underline underline-offset-2 inline-flex items-center min-h-11"
               >
                 Back to sign in
               </a>

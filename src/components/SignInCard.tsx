@@ -65,12 +65,12 @@ export function SignInCard({
             </span>
           )}
           <h1 className="text-2xl font-bold text-foreground tracking-tight">{hostTenant.name}</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
+          <p className="text-base text-muted-foreground mt-1">Sign in to your account</p>
         </div>
       ) : (
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Sign in</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-base text-muted-foreground mt-1">
             Local visibility for local businesses
           </p>
         </div>
@@ -78,19 +78,19 @@ export function SignInCard({
 
       {/* Setup Required Banner when secrets are missing */}
       {!isConfigured && (
-        <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs leading-relaxed space-y-2">
-          <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200 text-sm">
+        <div className="mb-6 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-base leading-relaxed space-y-2">
+          <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200 text-base">
             <Settings className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
             Server setup needed
           </div>
           <p>Real sign-in and data access are disabled until server configuration is reviewed.</p>
-          <div className="bg-background/80 p-2.5 rounded font-mono text-xs border border-amber-500/20 text-muted-foreground space-y-0.5">
+          <div className="bg-background/80 p-2.5 rounded font-mono text-base border border-amber-500/20 text-muted-foreground space-y-0.5">
             <div>1. REPSUITES_PUBLISHABLE_KEY</div>
             <div>2. REPSUITES_SESSION_SECRET (≥ 32 bytes)</div>
             <div>3. REPSUITES_APP_ORIGIN</div>
           </div>
           {missingMessage && (
-            <p className="text-xs text-amber-900 dark:text-amber-200">{missingMessage}</p>
+            <p className="text-base text-amber-900 dark:text-amber-200">{missingMessage}</p>
           )}
         </div>
       )}
@@ -99,9 +99,9 @@ export function SignInCard({
       {isBlockedPassword && (
         <div
           role="alert"
-          className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm space-y-2"
+          className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-base space-y-2"
         >
-          <div className="flex items-center gap-2 font-semibold text-sm">
+          <div className="flex items-center gap-2 font-semibold text-base">
             <Key className="w-4 h-4 shrink-0" />
             Set your own password first
           </div>
@@ -117,7 +117,7 @@ export function SignInCard({
         <div
           id="signin-error"
           role="alert"
-          className="mb-6 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center gap-2"
+          className="mb-6 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-base font-medium flex items-center gap-2"
         >
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {errorMessage}
@@ -127,7 +127,10 @@ export function SignInCard({
       {/* Sign-In Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="signin-email" className="block text-sm font-medium text-foreground mb-1">
+          <label
+            htmlFor="signin-email"
+            className="block text-base font-medium text-foreground mb-1"
+          >
             Email address
           </label>
           <input
@@ -150,7 +153,7 @@ export function SignInCard({
         <div>
           <label
             htmlFor="signin-password"
-            className="block text-sm font-medium text-foreground mb-1"
+            className="block text-base font-medium text-foreground mb-1"
           >
             Password
           </label>
@@ -188,14 +191,14 @@ export function SignInCard({
           <div className="text-center pt-1 space-y-2">
             <a
               href="/forgot-password"
-              className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 inline-flex items-center min-h-11"
+              className="text-base text-muted-foreground hover:text-foreground underline underline-offset-2 inline-flex items-center min-h-11"
             >
               Forgot password?
             </a>
             {demoAvailable && (
               <a
                 href="/demo"
-                className="text-sm text-primary-ink hover:text-primary-ink/80 font-medium underline underline-offset-2 flex items-center justify-center min-h-11"
+                className="text-base text-primary-ink hover:text-primary-ink/80 font-medium underline underline-offset-2 flex items-center justify-center min-h-11"
               >
                 Try the interactive demo →
               </a>
@@ -205,7 +208,7 @@ export function SignInCard({
       </form>
 
       {/* Security Notices */}
-      <div className="mt-6 pt-4 border-t border-border text-sm text-muted-foreground space-y-2">
+      <div className="mt-6 pt-4 border-t border-border text-base text-muted-foreground space-y-2">
         <div className="flex items-center gap-1.5 text-foreground font-medium">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           Getting started

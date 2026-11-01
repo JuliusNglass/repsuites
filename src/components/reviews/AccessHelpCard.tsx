@@ -14,7 +14,7 @@ type Data = Extract<Awaited<ReturnType<typeof getAccessHelpFn>>, { ok: true }>;
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <li className="flex gap-2">
-      <span className="shrink-0 w-5 h-5 rounded-full bg-primary/15 text-xs font-bold flex items-center justify-center">
+      <span className="shrink-0 w-6 h-6 rounded-full bg-primary/15 text-sm font-bold flex items-center justify-center">
         {n}
       </span>
       <span>{children}</span>
@@ -39,12 +39,12 @@ function Path({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-2 p-3 text-left text-sm font-semibold"
+        className="w-full flex items-center justify-between gap-2 p-3 text-left text-base font-semibold"
       >
         {title}
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && <div className="px-3 pb-3 text-sm space-y-2">{children}</div>}
+      {open && <div className="px-3 pb-3 text-base space-y-2">{children}</div>}
     </div>
   );
 }
@@ -99,7 +99,7 @@ export function AccessHelpCard() {
         <h3 className="font-bold flex items-center gap-1.5">
           <KeyRound className="w-4 h-4" /> Give us access to your Google profile
         </h3>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-base text-muted-foreground mt-1">
           Pick the way that suits you. You always stay the owner of your Google profile. We only
           help to run it, and you can remove us at any time.
         </p>
@@ -146,14 +146,14 @@ export function AccessHelpCard() {
                 await navigator.clipboard.writeText(email).catch(() => null);
                 toast.success("Email copied");
               }}
-              className="inline-flex items-center gap-1 text-xs font-semibold underline"
+              className="inline-flex items-center gap-1 text-base font-semibold underline"
             >
               <Copy className="w-3 h-3" /> Copy
             </button>
           </Step>
           <Step n={5}>Choose Manager (not Owner), then Invite. That is it.</Step>
         </ol>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           You stay the owner. A manager can reply to reviews and post updates, but cannot remove you
           or delete your profile.
         </p>
@@ -193,23 +193,23 @@ export function AccessHelpCard() {
           </Step>
           <Step n={5}>Once you are the owner, add us as a manager (way 2 above).</Step>
         </ol>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           We are happy to help with this in person, including filming the short video.
         </p>
       </Path>
 
       {d.agency && t && (
-        <div className="rounded-lg bg-muted/60 p-3 space-y-2 text-sm">
-          <p className="text-xs font-bold text-muted-foreground">
+        <div className="rounded-lg bg-muted/60 p-3 space-y-2 text-base">
+          <p className="text-base font-bold text-muted-foreground">
             Access help (Accelur8 team only)
           </p>
           <div className="grid sm:grid-cols-3 gap-2">
-            <label className="text-xs space-y-1">
+            <label className="text-base space-y-1">
               <span>Status</span>
               <select
                 value={t.status}
                 onChange={(e) => setT({ ...t, status: e.target.value as AccessStatus })}
-                className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
+                className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-base"
               >
                 {ACCESS_STATUSES.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -218,22 +218,22 @@ export function AccessHelpCard() {
                 ))}
               </select>
             </label>
-            <label className="text-xs space-y-1">
+            <label className="text-base space-y-1">
               <span>Request sent on</span>
               <input
                 type="date"
                 value={t.requestedOn ?? ""}
                 onChange={(e) => setT({ ...t, requestedOn: e.target.value || null })}
-                className="w-full min-w-0 rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
+                className="w-full min-w-0 rounded-lg border border-input bg-background px-2 py-1.5 text-base"
               />
             </label>
-            <label className="text-xs space-y-1">
+            <label className="text-base space-y-1">
               <span>Video check on</span>
               <input
                 type="date"
                 value={t.videoOn ?? ""}
                 onChange={(e) => setT({ ...t, videoOn: e.target.value || null })}
-                className="w-full min-w-0 rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
+                className="w-full min-w-0 rounded-lg border border-input bg-background px-2 py-1.5 text-base"
               />
             </label>
           </div>
@@ -243,7 +243,7 @@ export function AccessHelpCard() {
             onChange={(e) => setT({ ...t, note: e.target.value.slice(0, 1000) })}
             rows={2}
             placeholder="Notes, e.g. old agency controls it, owner asked them on Monday"
-            className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm"
+            className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-base"
           />
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -253,13 +253,13 @@ export function AccessHelpCard() {
                 if (r?.ok) toast.success("Saved");
                 else toast.error(r?.error ?? "Could not save.");
               }}
-              className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-bold"
+              className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-bold"
             >
               Save
             </button>
             {chase && (
               <span
-                className={`text-xs ${chase <= today ? "text-destructive font-bold" : "text-muted-foreground"}`}
+                className={`text-base ${chase <= today ? "text-destructive font-bold" : "text-muted-foreground"}`}
               >
                 Chase on {day(chase)}
               </span>

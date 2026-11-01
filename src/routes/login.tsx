@@ -17,7 +17,7 @@ function LoginPage() {
         <Logo />
       </a>
       <SignInCard isConfigured={status.isConfigured} missingMessage={status.missingMessage} />
-      <p className="mt-6 text-sm text-muted-foreground">
+      <p className="mt-6 text-base text-muted-foreground">
         <a href="/forgot-password" className="inline-flex min-h-11 items-center underline">
           Forgot your password?
         </a>

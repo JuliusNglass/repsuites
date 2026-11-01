@@ -124,7 +124,7 @@ function Pricing() {
                 <span className="text-5xl font-extrabold">£0</span>
                 <span className="text-muted-foreground">for ever</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">No card needed</p>
+              <p className="text-base text-muted-foreground mt-1">No card needed</p>
               <ul className="mt-6 space-y-2.5 text-base flex-1">
                 {FREE_FEATURES.map((f) => (
                   <li key={f} className="flex gap-2.5">
@@ -149,7 +149,7 @@ function Pricing() {
                 <span className="text-5xl font-extrabold">{money(planPence(interval))}</span>
                 <span className="text-muted-foreground">{yearly ? "a year" : "a month"}</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-base text-muted-foreground mt-1">
                 {yearly
                   ? `That is ${money(Math.round(GROWTH.yearPence / 12))} a month. You save ${money(yearSaving())}.`
                   : `About ${perDay(GROWTH.monthPence)} a day`}
@@ -192,7 +192,7 @@ function Pricing() {
                 </span>
                 <span className="text-muted-foreground">{yearly ? "a year" : "a month"}</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-base text-muted-foreground mt-1">
                 {yearly
                   ? `That is ${money(Math.round(MANAGED.yearPence / 12))} a month. You save ${money(yearSaving("managed"))}.`
                   : `About ${perDay(MANAGED.monthPence)} a day`}

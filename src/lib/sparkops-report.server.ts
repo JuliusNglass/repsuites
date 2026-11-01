@@ -56,12 +56,12 @@ body{background:#f3f7f8}
 .worth input[type=range]{accent-color:#0f766e}
 .kw button.on,.seg button.on{background:#0b1d3a;border-color:#0b1d3a}
 .ctlgrid label{display:block;font-weight:700;margin-top:12px}
-.ctl .unit{color:#64748b;font-size:.85rem;white-space:nowrap}
-.est{background:#fff7ed;border-radius:10px;padding:10px 12px;font-size:.9rem;margin:12px 0 0}
+.ctl .unit{color:#64748b;font-size:.875rem;white-space:nowrap}
+.est{background:#fff7ed;border-radius:10px;padding:10px 12px;font-size:1rem;margin:12px 0 0}
 .tick{list-style:none;margin:0;padding:0}.tick li{border-bottom:1px solid #e2e8f0;padding:10px 0}.tick li:last-child{border-bottom:0}
 .tick label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:40px}
 .tick input{width:22px;height:22px;flex-shrink:0;margin:2px 0 0;accent-color:#0f766e}
-.tick b{display:block}.tick span.fx{display:block;color:#475569;font-size:.92rem;margin-top:2px}.tick span.fx em{font-style:normal;font-weight:700;color:#0f766e}
+.tick b{display:block}.tick span.fx{display:block;color:#475569;font-size:1rem;margin-top:2px}.tick span.fx em{font-style:normal;font-weight:700;color:#0f766e}
 .helps{margin:0;padding-left:18px}.helps li{margin:4px 0}
 .price{text-align:center;font-weight:700;margin:14px 0 0;color:#0b1d3a}
 .vid .steps .n{background:#14b8a6}.vid .steps .arrow{color:#14b8a6}

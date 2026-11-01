@@ -25,12 +25,12 @@ import { InsightsCard } from "./InsightsCard";
 import { AiVisibilityCard } from "./AiVisibilityCard";
 import { PostPlanCard } from "./PostPlanCard";
 import { SocialPanel } from "./SocialPanel";
+import { fieldClass } from "../ui/field";
 
 type Data = Extract<Awaited<ReturnType<typeof getGoogleFn>>, { ok: true }>;
 type Review = Data["reviews"][number];
 
-const field =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+const field = fieldClass;
 
 const when = (iso: string | null) =>
   iso
@@ -90,7 +90,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
   if (err) return null;
   if (!d)
     return (
-      <section className="rounded-xl border border-border p-4 text-sm text-muted-foreground flex items-center gap-2">
+      <section className="rounded-xl border border-border p-4 text-base text-muted-foreground flex items-center gap-2">
         <Loader2 className="w-4 h-4 animate-spin" /> Loading Google
       </section>
     );
@@ -108,8 +108,8 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
         <section className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h2 className="text-sm font-bold">Google Business Profile</h2>
-              <p className="text-xs text-muted-foreground">
+              <h2 className="text-base font-bold">Google Business Profile</h2>
+              <p className="text-base text-muted-foreground">
                 {!d.ready
                   ? "The Google connection is being set up. Check back soon."
                   : !c
@@ -121,12 +121,12 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
                         : "Google needs connecting again."}
               </p>
               {c?.error && (
-                <p role="alert" className="text-xs text-destructive mt-1">
+                <p role="alert" className="text-base text-destructive mt-1">
                   {c.error}
                 </p>
               )}
             </div>
-            <div className="flex gap-2 text-xs">
+            <div className="flex flex-wrap gap-2 text-base">
               {d.ready && d.canConnect && (!c || c.status === "needs_reconnect") && (
                 <button
                   type="button"
@@ -215,7 +215,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
       {connected && tab === "reviews" && (
         <section className="rounded-xl border border-border bg-card p-4 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex rounded-lg border border-border p-0.5 text-xs font-semibold">
+            <div className="inline-flex rounded-lg border border-border p-0.5 text-base font-semibold">
               <button
                 type="button"
                 onClick={() => setOnlyOpen(true)}
@@ -235,17 +235,17 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
               type="button"
               disabled={busy !== null}
               onClick={() => void run("sync", () => refreshGoogleReviewsFn(), "Reviews checked")}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-primary-ink disabled:opacity-50"
+              className="inline-flex items-center gap-1 text-base font-semibold text-primary-ink disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${busy === "sync" ? "animate-spin" : ""}`} /> Check
               now
             </button>
           </div>
           {d.reviews.length === 0 && (
-            <p className="text-xs text-muted-foreground">No Google reviews yet.</p>
+            <p className="text-base text-muted-foreground">No Google reviews yet.</p>
           )}
           {onlyOpen && needReply.length === 0 && d.reviews.length > 0 && (
-            <p className="text-xs text-muted-foreground">Every review has a reply. Nice work.</p>
+            <p className="text-base text-muted-foreground">Every review has a reply. Nice work.</p>
           )}
           {list.slice(0, shown).map((r) => (
             <GoogleReview key={r.id} r={r} onChanged={load} />
@@ -254,7 +254,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
             <button
               type="button"
               onClick={() => setShown((n) => n + 10)}
-              className="w-full rounded-lg border border-border py-2 text-sm font-semibold"
+              className="w-full rounded-lg border border-border py-2 text-base font-semibold"
             >
               Show more ({list.length - shown} left)
             </button>
@@ -296,18 +296,18 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
     <div
       className={`rounded-lg border p-3 space-y-2 ${!r.reply && r.stars <= 3 ? "border-destructive/40" : "border-border"}`}
     >
-      <div className="flex flex-wrap items-center gap-2 text-xs">
+      <div className="flex flex-wrap items-center gap-2 text-base">
         <Stars n={r.stars} />
         <span className="font-semibold">{r.reviewer}</span>
         <span className="text-muted-foreground">{when(r.at)}</span>
       </div>
       {r.comment ? (
-        <p className="text-sm whitespace-pre-line">{r.comment}</p>
+        <p className="text-base whitespace-pre-line">{r.comment}</p>
       ) : (
-        <p className="text-xs text-muted-foreground">Stars only, no comment.</p>
+        <p className="text-base text-muted-foreground">Stars only, no comment.</p>
       )}
       {r.reply && !open ? (
-        <div className="rounded-md bg-muted/60 p-2 text-xs">
+        <div className="rounded-md bg-muted/60 p-2 text-base">
           <div className="font-semibold mb-0.5">
             {r.auto ? "Answered automatically" : "Your reply"}{" "}
             {r.replyAt ? `(${when(r.replyAt)})` : ""}
@@ -325,7 +325,7 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
           </button>
         </div>
       ) : !open ? (
-        <div className="flex gap-3 text-xs">
+        <div className="flex flex-wrap gap-3 text-base">
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -354,11 +354,11 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
             className={field}
           />
           {r.error && (
-            <p role="alert" className="text-xs text-destructive">
+            <p role="alert" className="text-base text-destructive">
               {r.error}
             </p>
           )}
-          <div className="flex gap-3 text-xs">
+          <div className="flex flex-wrap gap-3 text-base">
             <button
               type="button"
               disabled={busy !== null}
@@ -401,10 +401,10 @@ type Perf = Extract<Awaited<ReturnType<typeof getGooglePerformanceFn>>, { ok: tr
 
 function Trend({ now, before }: { now: number; before: number }) {
   const c = change(now, before);
-  if (c === null) return <span className="text-xs text-muted-foreground">new</span>;
+  if (c === null) return <span className="text-base text-muted-foreground">new</span>;
   const tone = c > 0 ? "text-emerald-700" : c < 0 ? "text-destructive" : "text-muted-foreground";
   return (
-    <span className={`text-xs font-semibold ${tone}`}>
+    <span className={`text-base font-semibold ${tone}`}>
       {c > 0 ? "+" : ""}
       {c}%
     </span>
@@ -433,8 +433,8 @@ function PerformanceCard() {
   return (
     <section className="rounded-xl border border-border bg-card p-4 space-y-3">
       <div>
-        <h2 className="text-sm font-bold">How your Google profile is doing</h2>
-        <p className="text-xs text-muted-foreground">
+        <h2 className="text-base font-bold">How your Google profile is doing</h2>
+        <p className="text-base text-muted-foreground">
           {p
             ? `${fmt(p.period.split)} to ${fmt(p.period.end)}, compared with the 4 weeks before. Google's figures run a few days behind.`
             : "Loading the last 4 weeks from Google"}
@@ -447,7 +447,7 @@ function PerformanceCard() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {tiles.map(([label, now, before]) => (
               <div key={label} className="rounded-lg border border-border p-2.5">
-                <div className="text-xs text-muted-foreground">{label}</div>
+                <div className="text-base text-muted-foreground">{label}</div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-lg font-bold">{now.toLocaleString("en-GB")}</span>
                   <Trend now={now} before={before} />
@@ -456,17 +456,17 @@ function PerformanceCard() {
             ))}
           </div>
           {p.reviews.avgNow !== null && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Average stars from new reviews: {p.reviews.avgNow}
               {p.reviews.avgBefore !== null ? ` (was ${p.reviews.avgBefore})` : ""}.
             </p>
           )}
           {p.searchTerms.length > 0 && (
             <div className="space-y-1">
-              <div className="text-xs font-semibold">
+              <div className="text-base font-semibold">
                 What people searched to find you ({p.searchMonth})
               </div>
-              <ol className="text-xs grid sm:grid-cols-2 gap-x-4 gap-y-0.5">
+              <ol className="text-base grid sm:grid-cols-2 gap-x-4 gap-y-0.5">
                 {p.searchTerms.map((t, i) => (
                   <li key={t.term} className="flex justify-between gap-2">
                     <span className="truncate">
@@ -504,15 +504,15 @@ function ReportSettingsCard({
   }, [s]);
   return (
     <section className="rounded-xl border border-border bg-card p-4 space-y-2">
-      <h2 className="text-sm font-bold">Monthly report by email</h2>
-      <p className="text-xs text-muted-foreground">
+      <h2 className="text-base font-bold">Monthly report by email</h2>
+      <p className="text-base text-muted-foreground">
         {s.enabled
           ? `On. The figures for each month go to ${s.email} on the 4th of the next month.`
           : "Off. Switch it on to get last month's Google figures by email on the 4th of each month."}
         {s.lastError ? ` Last time it could not be sent: ${s.lastError}` : ""}
       </p>
       {canEdit && (
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-base">
           <label className="inline-flex items-center gap-1.5">
             <input
               type="checkbox"
@@ -527,7 +527,7 @@ function ReportSettingsCard({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="owner@yourbusiness.co.uk"
-            className="rounded-lg border border-input bg-background px-2 py-1 text-sm min-w-[14rem]"
+            className="rounded-lg border border-input bg-background px-2 py-1 text-base min-w-[14rem]"
           />
           <button
             type="button"
@@ -602,8 +602,8 @@ function ReplySettingsCard({
     <section className="rounded-xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-bold">Review replies</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="text-base font-bold">Review replies</h2>
+          <p className="text-base text-muted-foreground">
             {mode.label}
             {s.mode === "auto" ? ` for ${s.autoMinStars} stars and above` : ""}. {mode.help}
           </p>
@@ -612,21 +612,21 @@ function ReplySettingsCard({
           <button
             type="button"
             onClick={() => setOpen(!open)}
-            className="text-xs font-semibold text-primary-ink"
+            className="text-base font-semibold text-primary-ink"
           >
             {open ? "Close" : "Change"}
           </button>
         )}
       </div>
       {open && (
-        <div className="space-y-3 text-sm">
+        <div className="space-y-3 text-base">
           <div className="grid gap-2 sm:grid-cols-3">
             {MODES.map((m) => (
               <label
                 key={m.id}
                 className={`rounded-lg border p-2.5 cursor-pointer ${v.mode === m.id ? "border-primary bg-primary/5" : "border-border"}`}
               >
-                <span className="flex items-center gap-1.5 font-semibold text-xs">
+                <span className="flex items-center gap-1.5 font-semibold text-base">
                   <input
                     type="radio"
                     checked={v.mode === m.id}
@@ -634,12 +634,12 @@ function ReplySettingsCard({
                   />
                   {m.label}
                 </span>
-                <span className="block text-xs text-muted-foreground mt-1">{m.help}</span>
+                <span className="block text-base text-muted-foreground mt-1">{m.help}</span>
               </label>
             ))}
           </div>
           {v.mode === "auto" && (
-            <label className="flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-2 text-base">
               Post automatically for
               <select
                 value={v.autoMinStars}
@@ -653,13 +653,13 @@ function ReplySettingsCard({
             </label>
           )}
           {v.mode !== "off" && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Only reviews that arrive after you save are handled this way. Older reviews are left
               for you.
             </p>
           )}
           <label className="block space-y-1">
-            <span className="text-xs font-semibold">
+            <span className="text-base font-semibold">
               About your business (helps the replies sound like you)
             </span>
             <textarea
@@ -671,7 +671,7 @@ function ReplySettingsCard({
               className={field}
             />
           </label>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Templates: {"{name}"} becomes the reviewer's first name, {"{business}"} your business
             name and {"{stars}"} the number of stars.
           </p>
@@ -683,7 +683,7 @@ function ReplySettingsCard({
             ] as const
           ).map(([k, label]) => (
             <label key={k} className="block space-y-1">
-              <span className="text-xs font-semibold">{label}</span>
+              <span className="text-base font-semibold">{label}</span>
               <textarea
                 value={v[k]}
                 onChange={(e) => setV({ ...v, [k]: e.target.value })}
@@ -715,7 +715,7 @@ function ReplySettingsCard({
               } else toast.error(r.error);
               await onSaved();
             }}
-            className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+            className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-semibold disabled:opacity-50"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
           </button>
@@ -773,14 +773,14 @@ function ChoosePlace({ onDone }: { onDone: () => Promise<void> }) {
   }, []);
   if (err)
     return (
-      <p role="alert" className="text-xs text-destructive">
+      <p role="alert" className="text-base text-destructive">
         {err}
       </p>
     );
   if (!places) return <Loader2 className="w-4 h-4 animate-spin" />;
   if (!places.length)
     return (
-      <p className="text-xs text-muted-foreground">
+      <p className="text-base text-muted-foreground">
         No Business Profile found on this Google account. Connect with the account that manages your
         profile.
       </p>
@@ -807,13 +807,15 @@ function ChoosePlace({ onDone }: { onDone: () => Promise<void> }) {
       key={p.location}
       type="button"
       onClick={() => void pick(p)}
-      className={`w-full text-left rounded-lg border px-3 py-2 text-sm hover:bg-muted/50 ${
+      className={`w-full text-left rounded-lg border px-3 py-2 text-base hover:bg-muted/50 ${
         highlight ? "border-emerald-400 bg-emerald-50" : "border-border"
       }`}
     >
       <span className="font-semibold">{p.title}</span>
-      {highlight && <span className="ml-2 text-xs font-semibold text-emerald-800">Best match</span>}
-      {p.address && <span className="block text-xs text-muted-foreground">{p.address}</span>}
+      {highlight && (
+        <span className="ml-2 text-base font-semibold text-emerald-800">Best match</span>
+      )}
+      {p.address && <span className="block text-base text-muted-foreground">{p.address}</span>}
     </button>
   );
   return (
@@ -836,7 +838,7 @@ function ChoosePlace({ onDone }: { onDone: () => Promise<void> }) {
           : shown
         ).map((p) => row(p))}
         {shown.length === 0 && t && (
-          <p className="text-xs text-muted-foreground">No profile matches that.</p>
+          <p className="text-base text-muted-foreground">No profile matches that.</p>
         )}
       </div>
     </div>
@@ -872,8 +874,8 @@ function GooglePosts({
   return (
     <section className="rounded-xl border border-border bg-card p-4 space-y-3">
       <div>
-        <h2 className="text-sm font-bold">Google posts</h2>
-        <p className="text-xs text-muted-foreground">
+        <h2 className="text-base font-bold">Google posts</h2>
+        <p className="text-base text-muted-foreground">
           Updates and offers that show on your Google profile. Regular posts help you show up in
           local searches.
         </p>
@@ -887,7 +889,7 @@ function GooglePosts({
         placeholder="For example: Autumn deep cleans now booking in Newport and Cwmbran. Ovens, carpets and all the corners the summer missed."
         className={field}
       />
-      <div className="grid gap-2 sm:grid-cols-2 text-sm">
+      <div className="grid gap-2 sm:grid-cols-2 text-base">
         <select
           aria-label="Button on the post"
           value={action}
@@ -910,7 +912,7 @@ function GooglePosts({
           />
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-3 text-xs">
+      <div className="flex flex-wrap items-center gap-3 text-base">
         <label className="inline-flex items-center gap-1.5">
           <input type="radio" checked={!later} onChange={() => setLater(false)} /> Post now
         </label>
@@ -949,7 +951,7 @@ function GooglePosts({
           } else toast.error(r.error);
           await onChanged();
         }}
-        className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+        className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-semibold disabled:opacity-50"
       >
         {busy ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -960,7 +962,7 @@ function GooglePosts({
         )}
       </button>
       {posts.length > 0 && (
-        <ul className="divide-y divide-border text-xs">
+        <ul className="divide-y divide-border text-base">
           {posts.map((p) => (
             <li key={p.id} className="py-2 space-y-0.5">
               <div className="flex flex-wrap items-center gap-2">

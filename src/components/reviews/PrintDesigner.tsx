@@ -46,6 +46,7 @@ import {
   type Design,
   type PrintFormat,
 } from "../../lib/print-design";
+import { fieldClass } from "../ui/field";
 
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -111,7 +112,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   return (
     <section className="space-y-2">
       <h3 className="flex items-center gap-2 font-bold">
-        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs inline-flex items-center justify-center shrink-0">
+        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm inline-flex items-center justify-center shrink-0">
           {n}
         </span>
         {title}
@@ -121,8 +122,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
-const field =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+const field = fieldClass;
 
 export function PrintDesigner({
   url,
@@ -309,7 +309,7 @@ export function PrintDesigner({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-bold text-lg">Make a review card</h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Four quick steps. The preview updates as you go.
             </p>
           </div>
@@ -340,7 +340,7 @@ export function PrintDesigner({
             <Step n={1} title="Choose what to print">
               {FORMAT_GROUPS.map((g) => (
                 <div key={g.id} className="space-y-1.5">
-                  <p className="text-xs font-semibold text-muted-foreground">{g.title}</p>
+                  <p className="text-base font-semibold text-muted-foreground">{g.title}</p>
                   <div className="grid sm:grid-cols-2 gap-2">
                     {(Object.keys(FORMATS) as PrintFormat[])
                       .filter((f) => FORMATS[f].group === g.id)
@@ -356,10 +356,10 @@ export function PrintDesigner({
                         >
                           <Thumb format={f} />
                           <span className="min-w-0">
-                            <span className="block text-sm font-semibold leading-tight">
+                            <span className="block text-base font-semibold leading-tight">
                               {FORMATS[f].label}
                             </span>
-                            <span className="block text-xs text-muted-foreground leading-tight">
+                            <span className="block text-base text-muted-foreground leading-tight">
                               Best for: {FORMATS[f].bestFor}
                             </span>
                           </span>
@@ -372,7 +372,7 @@ export function PrintDesigner({
 
             <Step n={2} title="Choose the words">
               <label className="block space-y-1">
-                <span className="text-sm font-semibold">Business name</span>
+                <span className="text-base font-semibold">Business name</span>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -381,7 +381,7 @@ export function PrintDesigner({
                 />
               </label>
               <div className="space-y-1">
-                <span className="text-sm font-semibold">Message</span>
+                <span className="text-base font-semibold">Message</span>
                 <select
                   aria-label="Message on the card"
                   value={msg}
@@ -407,7 +407,7 @@ export function PrintDesigner({
                   className={field}
                 />
                 {FORMATS[format].small || isDigital(format) ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     This size only shows the headline, so keep it short
                     {headline.length > 32 ? " (yours is quite long)" : ""}.
                   </p>
@@ -421,13 +421,13 @@ export function PrintDesigner({
                     className={field}
                   />
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-base text-muted-foreground">
                   Keep it open to every customer and do not offer anything in return for a review.
                   Google does not allow either.
                 </p>
               </div>
               {format !== "coaster" && format !== "sticker" && format !== "square" && (
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-base">
                   <input
                     type="checkbox"
                     checked={footer}
@@ -440,7 +440,7 @@ export function PrintDesigner({
 
             <Step n={3} title="Your look">
               <div className="space-y-1">
-                <span className="text-sm font-semibold">Colours</span>
+                <span className="text-base font-semibold">Colours</span>
                 <div className="flex flex-wrap gap-2">
                   {primary && (
                     <button
@@ -470,7 +470,7 @@ export function PrintDesigner({
                   type="button"
                   onClick={() => setMoreColours((v) => !v)}
                   aria-expanded={moreColours}
-                  className="inline-flex items-center gap-1 text-xs font-semibold underline underline-offset-2 py-1"
+                  className="inline-flex items-center gap-1 text-base font-semibold underline underline-offset-2 py-1"
                 >
                   More colours
                   <ChevronDown
@@ -479,7 +479,7 @@ export function PrintDesigner({
                 </button>
                 {moreColours && (
                   <div className="rounded-lg border border-border p-3 space-y-2">
-                    <span className="text-xs font-semibold">Your brand colours (hex codes)</span>
+                    <span className="text-base font-semibold">Your brand colours (hex codes)</span>
                     {(
                       [
                         ["Primary (background)", primaryHex, setPrimaryHex, primary, "#0b1d3a"],
@@ -492,7 +492,7 @@ export function PrintDesigner({
                         ],
                       ] as const
                     ).map(([label, val, set, ok, eg]) => (
-                      <label key={label} className="flex items-center gap-2 text-xs">
+                      <label key={label} className="flex items-center gap-2 text-base">
                         <input
                           type="color"
                           value={ok ?? eg}
@@ -521,7 +521,7 @@ export function PrintDesigner({
                       type="button"
                       disabled={savingBrand || !primary}
                       onClick={() => void keepBrand()}
-                      className="w-full rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                      className="w-full rounded-lg border border-border px-3 py-1.5 text-base font-semibold disabled:opacity-50"
                     >
                       {savingBrand ? "Saving..." : "Save as this business's brand colours"}
                     </button>
@@ -530,7 +530,7 @@ export function PrintDesigner({
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <label className="rounded-lg border border-dashed border-border px-3 py-3 text-sm cursor-pointer text-center">
+                <label className="rounded-lg border border-dashed border-border px-3 py-3 text-base cursor-pointer text-center">
                   <ImagePlus className="w-4 h-4 mx-auto mb-1" />
                   {logo ? "Change logo" : "Add your logo"}
                   <input
@@ -540,7 +540,7 @@ export function PrintDesigner({
                     onChange={(e) => void pick(e.target.files?.[0], setLogo, "logo")}
                   />
                 </label>
-                <label className="rounded-lg border border-dashed border-border px-3 py-3 text-sm cursor-pointer text-center">
+                <label className="rounded-lg border border-dashed border-border px-3 py-3 text-base cursor-pointer text-center">
                   <ImagePlus className="w-4 h-4 mx-auto mb-1" />
                   {photo ? "Change photo" : "Background photo"}
                   <input
@@ -552,7 +552,7 @@ export function PrintDesigner({
                 </label>
               </div>
               {(logo || photo) && (
-                <div className="flex gap-3 text-xs">
+                <div className="flex flex-wrap gap-3 text-base">
                   {logo && (
                     <button type="button" className="underline" onClick={() => forget("logo")}>
                       Remove logo
@@ -568,7 +568,7 @@ export function PrintDesigner({
             </Step>
 
             <Step n={4} title="Download">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 Size: <b>{sizeText(format)}</b>
                 {digital ? "" : ", with 3 mm extra round the edge (bleed) at 300 dpi"}
               </p>
@@ -610,7 +610,7 @@ export function PrintDesigner({
                   className={
                     digital
                       ? "rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2.5 inline-flex items-center justify-center gap-2 disabled:opacity-50"
-                      : "rounded-lg border border-border px-4 py-2.5 text-sm font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                      : "rounded-lg border border-border px-4 py-2.5 text-base font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50"
                   }
                 >
                   <Download className="w-4 h-4" />{" "}
@@ -618,7 +618,7 @@ export function PrintDesigner({
                 </button>
               </div>
               {isDigital(format) ? (
-                <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs space-y-2">
+                <div className="rounded-lg border border-border bg-muted/40 p-3 text-base space-y-2">
                   <p>
                     Add the picture to your email signature, invoices or WhatsApp. In an email, link
                     the picture to your review page so people can tap it:
@@ -642,7 +642,7 @@ export function PrintDesigner({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg border border-amber-300 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100 p-3 text-xs space-y-1">
+                <div className="rounded-lg border border-amber-300 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100 p-3 text-base space-y-1">
                   <p className="font-semibold">Tip</p>
                   <p>
                     On a phone: open the PDF, tap Share, then Print. Or take it to any print shop.
@@ -656,7 +656,7 @@ export function PrintDesigner({
                     For a print shop or online printer (e.g. Vistaprint, Solopress), use the PDF for
                     a print shop and ask for the size shown.
                   </p>
-                  <p className="text-xs">
+                  <p className="text-base">
                     The dotted line in the preview shows where it is cut. It is not printed.
                   </p>
                 </div>
@@ -665,7 +665,7 @@ export function PrintDesigner({
           </div>
 
           <div className="min-w-0 order-1 md:order-2 md:sticky md:top-0 md:self-start flex flex-col items-center gap-2 bg-muted/40 rounded-xl p-4 min-h-[10rem]">
-            <p className="text-xs font-semibold text-muted-foreground">
+            <p className="text-base font-semibold text-muted-foreground">
               Preview: {FORMATS[format].label}
             </p>
             <div ref={preview} className="flex items-center justify-center w-full min-w-0" />
@@ -683,14 +683,14 @@ export function PrintDesigner({
               {digital ? "Download picture" : "Download PDF"}
             </button>
             {!digital && (
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-base text-muted-foreground text-center">
                 Printing at home? Use the A4 sheet in step 4.
               </p>
             )}
             {done && (
               <div
                 role="status"
-                className="w-full max-w-xs rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-100 p-3 text-sm space-y-1"
+                className="w-full max-w-xs rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-100 p-3 text-base space-y-1"
               >
                 <p className="font-semibold inline-flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4" /> Done. Scan it with another phone to test

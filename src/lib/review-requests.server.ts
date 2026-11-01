@@ -761,7 +761,7 @@ export async function runEmailRequests(token: string) {
       `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#111;max-width:520px;line-height:1.5">` +
       `<p>${esc(text)}</p>` +
       `<p><a href="${vars.link}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px">Leave a quick review</a></p>` +
-      `<p style="color:#6b7280;font-size:12px;margin-top:24px">You received this because you ${r.campaign_id ? "have used" : "recently used"} ${esc(c.business)}. ` +
+      `<p style="color:#6b7280;font-size:14px;margin-top:24px">You received this because you ${r.campaign_id ? "have used" : "recently used"} ${esc(c.business)}. ` +
       `<a href="${unsub}" style="color:#6b7280">Unsubscribe</a> and ${esc(c.business)} will not email you about reviews again.</p></div>`;
     const res = await sendEmail({
       to: email,

@@ -113,14 +113,14 @@ export function AccountingCard() {
         <h3 id="acct-title" className="font-bold">
           Ask automatically when an invoice is paid
         </h3>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           Connect your accounting software. When a customer pays an invoice, we add a review request
           for them, using your message, wait time and quiet hours from the Ask tab. Only invoices
           paid after you connect are used.
         </p>
       </div>
       {err && (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-base text-destructive">
           {err}
         </p>
       )}
@@ -137,15 +137,15 @@ export function AccountingCard() {
                 key={x.provider}
                 className="py-3 flex flex-wrap items-start justify-between gap-2"
               >
-                <div className="min-w-0 text-sm">
+                <div className="min-w-0 text-base">
                   <p className="font-semibold">{x.name}</p>
                   {!c && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-base text-muted-foreground">
                       {x.ready ? "Not connected" : "Coming soon"}
                     </p>
                   )}
                   {c && (
-                    <div className="text-xs text-muted-foreground space-y-0.5">
+                    <div className="text-base text-muted-foreground space-y-0.5">
                       <p>
                         {c.status === "connected" ? "Connected" : "Needs reconnecting"}
                         {c.accountName ? ` to ${c.accountName}` : ""}
@@ -167,7 +167,7 @@ export function AccountingCard() {
                     <button
                       type="button"
                       disabled
-                      className="rounded-lg border border-border px-3 py-2 text-xs font-semibold opacity-60"
+                      className="rounded-lg border border-border px-3 py-2 text-base font-semibold opacity-60"
                     >
                       Coming soon
                     </button>
@@ -177,7 +177,7 @@ export function AccountingCard() {
                       type="button"
                       disabled={isBusy}
                       onClick={() => void start(x.provider)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-bold disabled:opacity-50"
                     >
                       {isBusy ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
@@ -193,7 +193,7 @@ export function AccountingCard() {
                       type="button"
                       disabled={isBusy}
                       onClick={() => void now(x.provider)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-base font-semibold disabled:opacity-50"
                     >
                       <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" /> Check now
                       <span className="sr-only"> {x.name}</span>
@@ -204,7 +204,7 @@ export function AccountingCard() {
                       type="button"
                       disabled={isBusy}
                       onClick={() => void stop(x.provider)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-base font-semibold disabled:opacity-50"
                     >
                       <Unplug className="w-3.5 h-3.5" aria-hidden="true" /> Disconnect
                       <span className="sr-only"> {x.name}</span>
@@ -216,7 +216,7 @@ export function AccountingCard() {
           })}
         </ul>
       )}
-      <p className="text-xs text-muted-foreground">
+      <p className="text-base text-muted-foreground">
         We only read invoices and customer contact details. Anyone asked recently, or who
         unsubscribed, is skipped. Customers with only a phone number appear under Ready to send in
         the Ask tab.

@@ -9,6 +9,7 @@ import {
   markFeedbackRead,
   saveReviewLinks,
 } from "../../lib/review-links.functions";
+import { fieldClass } from "../ui/field";
 
 type Data = Extract<Awaited<ReturnType<typeof getReviewLinks>>, { ok: true }>;
 type Link = { platform: Data["links"][number]["platform"]; label: string; url: string };
@@ -23,8 +24,7 @@ const NAMES: Record<Link["platform"], string> = {
   other: "Other site",
 };
 
-const field =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
+const field = fieldClass;
 
 export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
   const read = useServerFn(getReviewLinks);
@@ -61,7 +61,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
 
   if (err)
     return (
-      <p role="alert" className="text-sm text-destructive">
+      <p role="alert" className="text-base text-destructive">
         {err}
       </p>
     );
@@ -74,7 +74,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
         <>
           <div>
             <h2 className="font-bold">Review sites on your QR page</h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Customers who scan your code see every site below. The first one is the big button.
               Your Google link from the QR code is used automatically if you do not add one.
             </p>
@@ -84,7 +84,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
             {links.map((l, i) => (
               <li key={i} className="rounded-lg border border-border p-3 space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold rounded bg-muted px-2 py-0.5">
+                  <span className="text-sm font-semibold rounded bg-muted px-2 py-0.5">
                     {i === 0 ? "Main button" : `Option ${i + 1}`}
                   </span>
                   <select
@@ -97,7 +97,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
                         ),
                       )
                     }
-                    className="rounded-lg border border-input bg-background px-2 py-1 text-sm"
+                    className="rounded-lg border border-input bg-background px-2 py-1 text-base"
                   >
                     {Object.entries(NAMES).map(([id, n]) => (
                       <option key={id} value={id}>
@@ -166,7 +166,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
                     { platform: links.length ? "facebook" : "google", label: "", url: "" },
                   ])
                 }
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-base"
               >
                 <Plus className="w-4 h-4" /> Add a review site
               </button>
@@ -188,7 +188,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
                   }
                   setSaving(false);
                 }}
-                className="rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2 text-sm disabled:opacity-50"
+                className="rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2 text-base disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save"}
               </button>
@@ -201,26 +201,26 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
           <h3 className="font-semibold flex items-center gap-2">
             <MessageSquareLock className="w-4 h-4" /> Private feedback
             {unread > 0 && (
-              <span className="text-xs rounded-full bg-primary text-primary-foreground px-2">
+              <span className="text-sm rounded-full bg-primary text-primary-foreground px-2">
                 {unread} new
               </span>
             )}
           </h3>
-          <p className="text-xs text-muted-foreground mb-2">
+          <p className="text-base text-muted-foreground mb-2">
             Messages customers sent from your QR page instead of, or as well as, a review. You also
             get each one by email.
           </p>
           {d.feedback.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing yet.</p>
+            <p className="text-base text-muted-foreground">Nothing yet.</p>
           ) : (
             <ul className="space-y-2">
               {d.feedback.map((f) => (
                 <li
                   key={f.id}
-                  className={`rounded-lg border p-3 text-sm ${f.read_at ? "border-border" : "border-primary/50 bg-primary/5"}`}
+                  className={`rounded-lg border p-3 text-base ${f.read_at ? "border-border" : "border-primary/50 bg-primary/5"}`}
                 >
                   <p className="whitespace-pre-line">{f.message}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {new Date(f.created_at).toLocaleString("en-GB", {
                       dateStyle: "medium",
                       timeStyle: "short",
@@ -235,7 +235,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
                         await markRead({ data: { id: f.id } });
                         await load();
                       }}
-                      className="text-xs font-semibold underline underline-offset-2 mt-1"
+                      className="text-base font-semibold underline underline-offset-2 mt-1"
                     >
                       Mark as read
                     </button>

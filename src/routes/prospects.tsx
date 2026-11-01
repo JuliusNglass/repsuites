@@ -81,6 +81,7 @@ import {
   type Product,
 } from "../lib/sparkops";
 import { isUkAddress } from "../lib/prospect-owner";
+import { fieldClass } from "../components/ui/field";
 
 export const Route = createFileRoute("/prospects")({
   head: () => ({
@@ -124,10 +125,8 @@ const STAGES: { id: (typeof STAGE_IDS)[number]; label: string }[] = [
 ];
 
 // 16px text on phones: iOS Safari zooms in on smaller inputs.
-const field =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/40";
-const fieldPlain =
-  "w-full rounded-lg border border-input bg-background px-3 py-2 text-base sm:text-sm";
+const field = fieldClass;
+const fieldPlain = "w-full rounded-lg border border-input bg-background px-3 py-2 text-base";
 const FAILED = "Something went wrong. Check your connection and try again.";
 // A rough check so a typo is caught here, not as a silent server error.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -490,12 +489,12 @@ function Prospects() {
         <a href="/dashboard">
           <Logo />
         </a>
-        <a href="/dashboard" className="text-sm text-muted-foreground">
+        <a href="/dashboard" className="text-base text-muted-foreground">
           Dashboard
         </a>
       </header>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-3 flex items-center gap-2">
-        <span id="selling" className="text-sm font-semibold">
+        <span id="selling" className="text-base font-semibold">
           Selling:
         </span>
         <div
@@ -509,7 +508,7 @@ function Prospects() {
               type="button"
               aria-pressed={product === id}
               onClick={() => setProduct(id)}
-              className={`min-h-10 rounded-full px-4 text-sm font-bold ${
+              className={`min-h-10 rounded-full px-4 text-base font-bold ${
                 product === id
                   ? id === "sparkops"
                     ? "bg-teal-700 text-white"
@@ -536,7 +535,7 @@ function Prospects() {
               type="button"
               onClick={() => setTab(id)}
               aria-current={tab === id ? "page" : undefined}
-              className={`shrink-0 px-3 py-3 text-sm font-semibold border-b-2 ${
+              className={`shrink-0 px-3 py-3 text-base font-semibold border-b-2 ${
                 tab === id ? "border-primary" : "border-transparent text-muted-foreground"
               }`}
             >
@@ -607,7 +606,7 @@ function Prospects() {
                       setQ(nicheQuery(n, q));
                       document.getElementById("prospect-q")?.focus();
                     }}
-                    className="min-h-8 rounded-full border border-border px-3 py-1 text-xs font-semibold"
+                    className="min-h-8 rounded-full border border-border px-3 py-1 text-base font-semibold"
                   >
                     {n}
                   </button>
@@ -634,12 +633,12 @@ function Prospects() {
                 They travel to customers (cleaners, trades): up to 4 miles away
               </option>
             </select>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Each report checks the business against its nearest rivals and its Google Maps
               position. About 5p to 10p per report, plus about 8p for each extra search phrase.
             </p>
             {hits && hits.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nothing found. Try another search.</p>
+              <p className="text-base text-muted-foreground">Nothing found. Try another search.</p>
             )}
             {hits && hits.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
@@ -655,7 +654,7 @@ function Prospects() {
                     type="button"
                     aria-pressed={reach === id}
                     onClick={() => setReach((cur) => (cur === id ? "all" : id))}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                    className={`rounded-full px-3 py-1 text-base font-semibold border ${
                       reach === id
                         ? "bg-primary text-primary-foreground border-primary"
                         : "border-border"
@@ -668,7 +667,7 @@ function Prospects() {
                   type="button"
                   aria-pressed={ukOnly}
                   onClick={() => setUkOnly((v) => !v)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                  className={`rounded-full px-3 py-1 text-base font-semibold border ${
                     ukOnly ? "bg-primary text-primary-foreground border-primary" : "border-border"
                   }`}
                 >
@@ -678,7 +677,7 @@ function Prospects() {
                   <span
                     role="status"
                     aria-live="polite"
-                    className="text-xs text-muted-foreground inline-flex items-center gap-1"
+                    className="text-base text-muted-foreground inline-flex items-center gap-1"
                   >
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> Looking for emails on{" "}
                     {finding.size} website{finding.size === 1 ? "" : "s"}
@@ -687,13 +686,13 @@ function Prospects() {
               </div>
             )}
             {hits && hits.length > 0 && visible.length === 0 && !nextPage && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 None of these match the filter. Tap it again to show all.
               </p>
             )}
             {newCount > 1 && (
               <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 flex flex-wrap items-center gap-3">
-                <p role="status" aria-live="polite" className="text-sm flex-1 min-w-0">
+                <p role="status" aria-live="polite" className="text-base flex-1 min-w-0">
                   {batch
                     ? `Building ${batch.done + 1 > batch.total ? batch.total : batch.done + 1} of ${batch.total}. Keep this page open.`
                     : `Build reports for ${reach === "all" ? "all " : ""}${newCount} new businesses ${reach === "all" ? "here" : "shown"} in one go (about ${newCount * reportCost(words)}p).${builtCount ? ` Skipping ${builtCount} already built.` : ""}`}
@@ -702,7 +701,7 @@ function Prospects() {
                   type="button"
                   disabled={building !== null || batch !== null}
                   onClick={() => void buildAll()}
-                  className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-bold inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-bold inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {batch && <Loader2 className="w-4 h-4 animate-spin" />}
                   Build all
@@ -717,8 +716,8 @@ function Prospects() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold truncate">{h.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{h.address}</p>
-                    <p className="text-xs mt-0.5 inline-flex items-center gap-1">
+                    <p className="text-base text-muted-foreground truncate">{h.address}</p>
+                    <p className="text-base mt-0.5 inline-flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       {h.rating?.toFixed(1) ?? "-"} ({h.reviews} reviews)
                       {h.category ? ` - ${h.category}` : ""}
@@ -727,14 +726,14 @@ function Prospects() {
                   </div>
                   {otherProduct(h) ? (
                     <div className="flex flex-col items-end gap-1.5">
-                      <p className="text-xs font-semibold text-muted-foreground">
+                      <p className="text-base font-semibold text-muted-foreground">
                         In your {PRODUCT_LABEL[h.product ?? "repsuites"]} pipeline
                       </p>
                       <button
                         type="button"
                         disabled={building !== null || batch !== null}
                         onClick={() => setConfirm({ placeId: h.placeId, reportAt: h.reportAt })}
-                        className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                        className="rounded-lg border border-border px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
                       >
                         {building === h.placeId ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -744,7 +743,7 @@ function Prospects() {
                     </div>
                   ) : builtHere(h) || h.reportLink ? (
                     <div className="flex flex-col items-end gap-1.5">
-                      <p className="text-xs font-semibold text-emerald-700">
+                      <p className="text-base font-semibold text-emerald-700">
                         Report built{h.reportAt ? ` ${shortDate(h.reportAt)}` : ""}
                       </p>
                       <div className="flex items-center gap-1.5">
@@ -752,7 +751,7 @@ function Prospects() {
                           href={h.reportLink}
                           target="_blank"
                           rel="noopener"
-                          className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5"
+                          className="rounded-lg border border-border px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5"
                         >
                           <ExternalLink className="w-4 h-4" /> Open report
                         </a>
@@ -760,7 +759,7 @@ function Prospects() {
                           type="button"
                           disabled={building !== null || batch !== null}
                           onClick={() => setConfirm({ placeId: h.placeId, reportAt: h.reportAt })}
-                          className="rounded-lg px-2 py-1 text-xs text-muted-foreground underline inline-flex items-center gap-1 disabled:opacity-50"
+                          className="rounded-lg px-2 py-1 text-base text-muted-foreground underline inline-flex items-center gap-1 disabled:opacity-50"
                         >
                           {building === h.placeId ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -774,7 +773,7 @@ function Prospects() {
                       type="button"
                       disabled={building !== null || batch !== null}
                       onClick={() => void buildOne(h)}
-                      className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                      className="rounded-lg border border-border px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
                     >
                       {building === h.placeId ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                       Build report
@@ -816,7 +815,7 @@ function Prospects() {
                   setNextPage(r.next);
                   void findEmails(fresh, id);
                 }}
-                className="w-full rounded-lg border border-border px-4 py-2 text-sm font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+                className="w-full rounded-lg border border-border px-4 py-2 text-base font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {moreLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Show more results ({hits.length} so far, Google gives up to 60)
@@ -866,7 +865,7 @@ function Prospects() {
                   await load();
                 };
                 return (
-                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-base space-y-2">
                     <p role="status" aria-live="polite">
                       {fixing
                         ? `Adding maps: ${Math.min(fixing.done + 1, fixing.total)} of ${fixing.total}. Keep this page open.`
@@ -879,20 +878,20 @@ function Prospects() {
                           onChange={(e) => setFixPhrase(e.target.value)}
                           placeholder="e.g. car detailing"
                           aria-label="Search phrase for the reports with no map"
-                          className="flex-1 min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-base sm:text-sm"
+                          className="flex-1 min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-base"
                         />
                         <button
                           type="button"
                           disabled={fixPhrase.trim().length < 3}
                           onClick={() => setFixAsk(missing.slice(0, FIX_CAP).map((p) => p.id))}
-                          className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm font-semibold disabled:opacity-50"
+                          className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-semibold disabled:opacity-50"
                         >
                           Rebuild {missing.length === 1 ? "it" : "all"}
                         </button>
                       </div>
                     )}
                     {!fixing && !fixAsk && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-base text-muted-foreground">
                         {missing.map((p) => p.name).join(", ")}
                       </p>
                     )}
@@ -933,7 +932,7 @@ function Prospects() {
                           ))}
                         </ul>
                         {missing.length > FIX_CAP && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-base text-muted-foreground">
                             {missing.length - FIX_CAP} more after these. Run it again for the rest.
                           </p>
                         )}
@@ -946,14 +945,14 @@ function Prospects() {
                             type="button"
                             disabled={!ticked.length}
                             onClick={() => void runFix()}
-                            className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm font-semibold disabled:opacity-50"
+                            className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-semibold disabled:opacity-50"
                           >
                             Rebuild {ticked.length}
                           </button>
                           <button
                             type="button"
                             onClick={() => setFixAsk(null)}
-                            className="min-h-10 rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+                            className="min-h-10 rounded-lg border border-border px-3 py-2 text-base font-semibold"
                           >
                             Cancel
                           </button>
@@ -972,7 +971,7 @@ function Prospects() {
                       type="button"
                       aria-pressed={queue === s.id}
                       onClick={() => setQueue(s.id)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold border ${
+                      className={`rounded-full px-3 py-1 text-base font-semibold border ${
                         queue === s.id
                           ? "bg-primary text-primary-foreground border-primary"
                           : counts2[s.id]
@@ -992,14 +991,14 @@ function Prospects() {
                     onChange={(e) => setTerm(e.target.value)}
                     placeholder="Search name or town"
                     aria-label="Search name or town"
-                    className="w-full rounded-lg border border-input bg-background pl-8 pr-3 py-1.5 text-base sm:text-sm"
+                    className="w-full rounded-lg border border-input bg-background pl-8 pr-3 py-1.5 text-base"
                   />
                 </div>
               </div>
             )}
             {mine === null && <Loader2 className="w-4 h-4 animate-spin" />}
             {mine && shown.length === 0 && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 {tab === "due"
                   ? "No follow-ups due. Nice."
                   : mine.length === 0
@@ -1010,7 +1009,7 @@ function Prospects() {
               </p>
             )}
             {items && mine && tab === "pipeline" && total > items.length && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-base text-muted-foreground">
                 Showing the {mine.length} most recently changed of {pipelineTotal}, plus every
                 follow-up due.
               </p>
@@ -1109,7 +1108,7 @@ function RebuildConfirm({
     <div
       role="alertdialog"
       aria-label="Rebuild the report?"
-      className="basis-full rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm flex flex-wrap items-center gap-2"
+      className="basis-full rounded-lg border border-amber-300 bg-amber-50 p-3 text-base flex flex-wrap items-center gap-2"
     >
       <p className="flex-1 min-w-0">
         {move
@@ -1119,14 +1118,14 @@ function RebuildConfirm({
       <button
         type="button"
         onClick={onYes}
-        className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold"
+        className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-semibold"
       >
         {move ? "Build" : "Rebuild"}
       </button>
       <button
         type="button"
         onClick={onNo}
-        className="rounded-lg border border-border px-3 py-1.5 text-sm font-semibold"
+        className="rounded-lg border border-border px-3 py-1.5 text-base font-semibold"
       >
         Cancel
       </button>
@@ -1142,7 +1141,7 @@ function ChKeyNote() {
   }, []);
   if (hidden) return null;
   return (
-    <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs flex items-center gap-2">
+    <div className="rounded-lg border border-border bg-muted/40 p-3 text-base flex items-center gap-2">
       <p className="flex-1">Add a Companies House key to look up owners.</p>
       <button
         type="button"
@@ -1177,7 +1176,7 @@ function OwnerInfo({
   const notFound = chEnabled && p.uk && !hasCh && ownerFresh(p.ownerLookedUpAt);
   if (!line && !canFind && !notFound) return null;
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-xs mt-0.5">
+    <div className="flex flex-wrap items-center gap-1.5 text-base mt-0.5">
       {line &&
         (line.href ? (
           <a
@@ -1193,7 +1192,7 @@ function OwnerInfo({
         ))}
       {line && (
         <span
-          className={`rounded-full px-2 py-0.5 text-xs ${
+          className={`rounded-full px-2 py-0.5 text-sm ${
             line.sure ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"
           }`}
         >
@@ -1398,12 +1397,14 @@ const ProspectRow = memo(function ProspectRow({
   return (
     <li className="rounded-xl border border-border bg-card p-3 space-y-2">
       <div className="flex items-start gap-3">
-        <span className={`shrink-0 rounded-lg px-2 py-1 text-sm font-bold ${scoreClass(p.score)}`}>
+        <span
+          className={`shrink-0 rounded-lg px-2 py-1 text-base font-bold ${scoreClass(p.score)}`}
+        >
           {p.score ?? "-"}
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-semibold truncate">{p.name}</p>
-          <p className="text-xs mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <p className="text-base mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
             <span
               className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold ${
                 status.tone === "green"
@@ -1441,7 +1442,7 @@ const ProspectRow = memo(function ProspectRow({
             <div
               role="alertdialog"
               aria-label="Undo sent?"
-              className="mt-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs flex flex-wrap items-center gap-2"
+              className="mt-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-base flex flex-wrap items-center gap-2"
             >
               <span>This clears the sent time and opens. Undo?</span>
               <button
@@ -1460,7 +1461,7 @@ const ProspectRow = memo(function ProspectRow({
               </button>
             </div>
           )}
-          <p className="text-xs text-muted-foreground truncate mt-0.5">
+          <p className="text-base text-muted-foreground truncate mt-0.5">
             {p.town}
             {p.followUpOn
               ? ` - follow up ${new Date(p.followUpOn).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
@@ -1469,11 +1470,11 @@ const ProspectRow = memo(function ProspectRow({
             {p.googleConnected ? " - connected Google" : ""}
           </p>
           {watched && (
-            <p className="text-xs mt-0.5 font-semibold text-emerald-700 inline-flex items-center gap-1">
+            <p className="text-base mt-0.5 font-semibold text-emerald-700 inline-flex items-center gap-1">
               <Video className="w-3.5 h-3.5" /> {watched}
             </p>
           )}
-          {p.topFix && <p className="text-xs mt-0.5 truncate">{p.topFix}</p>}
+          {p.topFix && <p className="text-base mt-0.5 truncate">{p.topFix}</p>}
           <OwnerInfo p={p} chEnabled={chEnabled} onRefresh={onRefresh} />
           <ReachBadges
             h={{
@@ -1491,7 +1492,7 @@ const ProspectRow = memo(function ProspectRow({
           onChange={(e) =>
             void onSave(p.id, { stage: e.target.value as (typeof STAGE_IDS)[number] })
           }
-          className="shrink-0 min-h-10 rounded-lg border border-input bg-background px-2 py-1 text-base sm:text-xs"
+          className="shrink-0 min-h-10 rounded-lg border border-input bg-background px-2 py-1 text-base"
         >
           {STAGES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -1501,7 +1502,7 @@ const ProspectRow = memo(function ProspectRow({
         </select>
       </div>
       {p.link && (
-        <div className="flex flex-wrap gap-1.5 text-sm sm:text-xs">
+        <div className="flex flex-wrap gap-1.5 text-base">
           {noWhatsApp ? (
             <span title={noWaTitle} className={off} aria-disabled="true">
               <MessageCircle className="w-4 h-4" /> WhatsApp
@@ -1683,7 +1684,7 @@ const ProspectRow = memo(function ProspectRow({
         </div>
       )}
       {copied && !p.sentAt && (
-        <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs flex flex-wrap items-center gap-2">
+        <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-base flex flex-wrap items-center gap-2">
           <span>Did you send it?</span>
           <button
             type="button"
@@ -1702,7 +1703,7 @@ const ProspectRow = memo(function ProspectRow({
         </div>
       )}
       {rebuild && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm space-y-2">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-base space-y-2">
           <p>
             Rebuild the report for <b>{p.name}</b> with fresh Google figures
             {p.reportAt ? ` (last built ${shortDate(p.reportAt)})` : ""}. It costs about{" "}
@@ -1721,7 +1722,7 @@ const ProspectRow = memo(function ProspectRow({
               type="button"
               disabled={rebuilding}
               onClick={() => void runRebuild()}
-              className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+              className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
             >
               {rebuilding && <Loader2 className="w-4 h-4 animate-spin" />}
               {rebuilding ? "Rebuilding (about a minute)" : "Rebuild"}
@@ -1730,7 +1731,7 @@ const ProspectRow = memo(function ProspectRow({
               type="button"
               disabled={rebuilding}
               onClick={() => setRebuild(false)}
-              className="min-h-10 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold"
+              className="min-h-10 rounded-lg border border-border px-3 py-1.5 text-base font-semibold"
             >
               Cancel
             </button>
@@ -1740,7 +1741,7 @@ const ProspectRow = memo(function ProspectRow({
       {videoOpen && p.link && <VideoPanel p={p} makeOg={makeOg} onRefresh={onRefresh} />}
       {open && (
         <div className="grid sm:grid-cols-2 gap-2 pt-1">
-          <label className="text-xs space-y-1">
+          <label className="text-base space-y-1">
             <span className="sr-only">Contact name</span>
             <input
               value={contact}
@@ -1750,7 +1751,7 @@ const ProspectRow = memo(function ProspectRow({
               className={field}
             />
           </label>
-          <label className="text-xs space-y-1">
+          <label className="text-base space-y-1">
             <span className="sr-only">Email</span>
             <input
               type="email"
@@ -1762,7 +1763,7 @@ const ProspectRow = memo(function ProspectRow({
               className={field}
             />
           </label>
-          <label className="text-xs space-y-1 sm:col-span-2">
+          <label className="text-base space-y-1 sm:col-span-2">
             <span className="font-semibold">Follow up on</span>
             <input
               type="date"
@@ -1771,7 +1772,7 @@ const ProspectRow = memo(function ProspectRow({
               className={field}
             />
           </label>
-          <label className="text-xs space-y-1 sm:col-span-2">
+          <label className="text-base space-y-1 sm:col-span-2">
             <span className="sr-only">Notes</span>
             <textarea
               value={notes}
@@ -1811,13 +1812,13 @@ const ProspectRow = memo(function ProspectRow({
                 setSaving(false);
               }
             }}
-            className="min-h-10 rounded-lg bg-primary text-primary-foreground font-semibold px-3 py-2 text-sm sm:col-span-2 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="min-h-10 rounded-lg bg-primary text-primary-foreground font-semibold px-3 py-2 text-base sm:col-span-2 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Save details
           </button>
           {p.phone && (
-            <p className="text-xs text-muted-foreground sm:col-span-2">Phone: {p.phone}</p>
+            <p className="text-base text-muted-foreground sm:col-span-2">Phone: {p.phone}</p>
           )}
         </div>
       )}
@@ -1859,11 +1860,11 @@ function MinSaleField({
   const n = Math.round(Number(value));
   const amount = value.trim() && n > 0 ? n : def.amount;
   return (
-    <div className="text-xs space-y-1 sm:col-span-2">
+    <div className="text-base space-y-1 sm:col-span-2">
       <span className="font-semibold">Minimum sale</span>
       <div className="flex gap-2">
         <div className="flex flex-1 items-center rounded-lg border border-input bg-background px-3">
-          <span className="text-sm text-muted-foreground">{saleSymbol(cur)}</span>
+          <span className="text-base text-muted-foreground">{saleSymbol(cur)}</span>
           <input
             type="number"
             inputMode="numeric"
@@ -1873,14 +1874,14 @@ function MinSaleField({
             onChange={(e) => onValue(e.target.value.replace(/[^\d]/g, ""))}
             placeholder={String(def.amount)}
             aria-label="Minimum sale"
-            className="w-full bg-transparent px-1 py-2 text-sm outline-none"
+            className="w-full bg-transparent px-1 py-2 text-base outline-none"
           />
         </div>
         <select
           value={period}
           onChange={(e) => onPeriod(e.target.value as SalePeriod)}
           aria-label="Per day or per week"
-          className="rounded-lg border border-input bg-background px-2 py-2 text-sm"
+          className="rounded-lg border border-input bg-background px-2 py-2 text-base"
         >
           <option value="day">per day</option>
           <option value="week">per week</option>
@@ -1982,7 +1983,7 @@ function VideoPanel({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2 text-sm">
+    <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2 text-base">
       {p.videoUrl ? (
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-semibold">
@@ -1990,7 +1991,7 @@ function VideoPanel({
               ? "Uploaded video"
               : `${(p.videoKind ?? "").replace(/^./, (c) => c.toUpperCase())} video`}
           </span>
-          <a href={p.videoUrl} target="_blank" rel="noopener" className="underline text-xs">
+          <a href={p.videoUrl} target="_blank" rel="noopener" className="underline text-base">
             Watch
           </a>
           <button
@@ -2010,13 +2011,13 @@ function VideoPanel({
               }
               await onRefresh(p.id);
             }}
-            className="ml-auto min-h-10 rounded-lg border border-border px-3 py-1 text-xs inline-flex items-center gap-1 disabled:opacity-50"
+            className="ml-auto min-h-10 rounded-lg border border-border px-3 py-1 text-base inline-flex items-center gap-1 disabled:opacity-50"
           >
             <Trash2 className="w-3.5 h-3.5" /> Remove
           </button>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           Record a short screen video walking through their report. It shows at the top of their
           report link, with a {p.product === "sparkops" ? "Book a 15-minute demo" : "Start free"}{" "}
           button under it.
@@ -2060,7 +2061,7 @@ function VideoPanel({
       </label>
       {busy && (
         <div role="status" aria-live="polite" className="space-y-1">
-          <p className="text-xs inline-flex items-center gap-1.5">
+          <p className="text-base inline-flex items-center gap-1.5">
             <Loader2 className="w-3.5 h-3.5 animate-spin" /> {busy}
             {pct !== null ? ` ${pct}%` : ""}. Keep this page open.
           </p>
@@ -2085,7 +2086,7 @@ function ReachBadges({
   finding: boolean;
 }) {
   const [showEmail, setShowEmail] = useState(false);
-  const pill = "rounded-full px-2 py-0.5 text-xs font-semibold inline-flex items-center gap-1";
+  const pill = "rounded-full px-2 py-0.5 text-sm font-semibold inline-flex items-center gap-1";
   return (
     <div className="flex flex-wrap items-center gap-1 mt-1">
       {h.phoneType === "mobile" && (

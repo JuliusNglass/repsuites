@@ -72,7 +72,7 @@ export function AddBusinessForm({
     await onDone(r.tenantId);
   };
 
-  const input = "w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm";
+  const input = "w-full rounded-lg border border-input bg-background px-3 py-2.5 text-base";
 
   return (
     <form onSubmit={submit} className="rounded-lg border border-border bg-card p-4 space-y-4">
@@ -84,16 +84,16 @@ export function AddBusinessForm({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-semibold block">Google listing</label>
+        <label className="text-base font-semibold block">Google listing</label>
         {pick ? (
-          <div className="flex items-start justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-sm">
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-border px-3 py-2.5 text-base">
             <div className="min-w-0">
               <div className="font-semibold truncate">{pick.name}</div>
               <div className="text-muted-foreground truncate">{pick.address}</div>
             </div>
             <button
               type="button"
-              className="text-sm text-muted-foreground shrink-0"
+              className="text-base text-muted-foreground shrink-0"
               onClick={() => setPick(null)}
             >
               Change
@@ -119,7 +119,7 @@ export function AddBusinessForm({
                 type="button"
                 onClick={() => void find()}
                 disabled={looking || q.trim().length < 3}
-                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-border px-3 text-sm font-semibold disabled:opacity-50"
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-border px-3 text-base font-semibold disabled:opacity-50"
               >
                 <Search className="w-4 h-4" />
                 {looking ? "Searching" : "Search"}
@@ -136,7 +136,7 @@ export function AddBusinessForm({
                         setName(h.name);
                         setHits(null);
                       }}
-                      className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted"
+                      className="w-full text-left px-3 py-2.5 text-base hover:bg-muted"
                     >
                       <div className="font-semibold">{h.name}</div>
                       <div className="text-muted-foreground">{h.address}</div>
@@ -144,13 +144,13 @@ export function AddBusinessForm({
                   </li>
                 ))}
                 {hits.length === 0 && (
-                  <li className="px-3 py-2.5 text-sm text-muted-foreground">
+                  <li className="px-3 py-2.5 text-base text-muted-foreground">
                     No match. You can still type the name below.
                   </li>
                 )}
               </ul>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Optional, but without it there is no Google review link.
             </p>
           </>
@@ -158,7 +158,7 @@ export function AddBusinessForm({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-semibold block" htmlFor="ab-name">
+        <label className="text-base font-semibold block" htmlFor="ab-name">
           Business name
         </label>
         <input
@@ -174,7 +174,7 @@ export function AddBusinessForm({
 
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="space-y-2">
-          <label className="text-sm font-semibold block" htmlFor="ab-owner">
+          <label className="text-base font-semibold block" htmlFor="ab-owner">
             Owner name <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
           <input
@@ -186,7 +186,7 @@ export function AddBusinessForm({
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold block" htmlFor="ab-email">
+          <label className="text-base font-semibold block" htmlFor="ab-email">
             Owner email <span className="font-normal text-muted-foreground">(optional)</span>
           </label>
           <input
@@ -198,18 +198,18 @@ export function AddBusinessForm({
           />
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-base text-muted-foreground">
         With an email, the owner gets a link to choose their own password. If they already have an
         account, they just get access.
       </p>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-semibold mb-2">Plan</legend>
+        <legend className="text-base font-semibold mb-2">Plan</legend>
         <div className="flex flex-wrap gap-2">
           {ADD_PLANS.map((p) => (
             <label
               key={p.id}
-              className={`cursor-pointer rounded-lg border px-3 py-2 text-sm ${
+              className={`cursor-pointer rounded-lg border px-3 py-2 text-base ${
                 plan === p.id ? "border-primary font-semibold" : "border-border"
               }`}
             >
@@ -228,13 +228,13 @@ export function AddBusinessForm({
       </fieldset>
 
       <div className="flex gap-2 justify-end">
-        <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm">
+        <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-base">
           Cancel
         </button>
         <button
           type="submit"
           disabled={busy || name.trim().length < 2}
-          className="rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2 text-sm disabled:opacity-50"
+          className="rounded-lg bg-primary text-primary-foreground font-semibold px-4 py-2 text-base disabled:opacity-50"
         >
           {busy ? "Adding" : "Add business"}
         </button>
