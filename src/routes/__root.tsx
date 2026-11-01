@@ -82,7 +82,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             <p className="font-semibold mb-1">Error details:</p>
             <p className="break-words">{errorMessage}</p>
             {errorStack && (
-              <pre className="mt-2 text-[10px] text-destructive/80 whitespace-pre-wrap">
+              <pre className="mt-2 text-xs text-destructive/80 whitespace-pre-wrap">
                 {errorStack}
               </pre>
             )}

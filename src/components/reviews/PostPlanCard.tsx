@@ -292,7 +292,7 @@ export function PostPlanCard({
                   ))}
                 </div>
               )}
-              <p className="text-[11px] text-muted-foreground mt-1.5">
+              <p className="text-xs text-muted-foreground mt-1.5">
                 Customer photos belong to the customer who took them. Only use one if you are happy
                 to.
               </p>
@@ -424,7 +424,7 @@ export function PostPlanCard({
                       />
                     </button>
                   ) : (
-                    <div className="w-20 h-20 rounded-lg border border-dashed border-border bg-muted flex items-center justify-center text-[10px] text-muted-foreground text-center p-1">
+                    <div className="w-20 h-20 rounded-lg border border-dashed border-border bg-muted flex items-center justify-center text-xs text-muted-foreground text-center p-1">
                       {p.imageKind === "card" ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
@@ -464,6 +464,7 @@ export function PostPlanCard({
                   </div>
                 </div>
                 <textarea
+                  aria-label="Post text"
                   value={edits[p.id] ?? p.summary}
                   onChange={(e) => setEdits((x) => ({ ...x, [p.id]: e.target.value }))}
                   onBlur={async () => {

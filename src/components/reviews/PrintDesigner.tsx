@@ -359,7 +359,7 @@ export function PrintDesigner({
                             <span className="block text-sm font-semibold leading-tight">
                               {FORMATS[f].label}
                             </span>
-                            <span className="block text-[11px] text-muted-foreground leading-tight">
+                            <span className="block text-xs text-muted-foreground leading-tight">
                               Best for: {FORMATS[f].bestFor}
                             </span>
                           </span>
@@ -383,6 +383,7 @@ export function PrintDesigner({
               <div className="space-y-1">
                 <span className="text-sm font-semibold">Message</span>
                 <select
+                  aria-label="Message on the card"
                   value={msg}
                   onChange={(e) => {
                     const i = Number(e.target.value);
@@ -406,7 +407,7 @@ export function PrintDesigner({
                   className={field}
                 />
                 {FORMATS[format].small || isDigital(format) ? (
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     This size only shows the headline, so keep it short
                     {headline.length > 32 ? " (yours is quite long)" : ""}.
                   </p>
@@ -420,7 +421,7 @@ export function PrintDesigner({
                     className={field}
                   />
                 )}
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Keep it open to every customer and do not offer anything in return for a review.
                   Google does not allow either.
                 </p>
@@ -655,7 +656,7 @@ export function PrintDesigner({
                     For a print shop or online printer (e.g. Vistaprint, Solopress), use the PDF for
                     a print shop and ask for the size shown.
                   </p>
-                  <p className="text-[11px] opacity-80">
+                  <p className="text-xs">
                     The dotted line in the preview shows where it is cut. It is not printed.
                   </p>
                 </div>
@@ -682,7 +683,7 @@ export function PrintDesigner({
               {digital ? "Download picture" : "Download PDF"}
             </button>
             {!digital && (
-              <p className="text-[11px] text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 Printing at home? Use the A4 sheet in step 4.
               </p>
             )}

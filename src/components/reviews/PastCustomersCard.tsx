@@ -72,7 +72,12 @@ export function PastCustomersCard() {
     void refresh();
   }, [refresh]);
 
-  if (err) return <p className="text-sm text-destructive">{err}</p>;
+  if (err)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {err}
+      </p>
+    );
   if (!d) return null;
 
   const c = d.campaign;
@@ -207,7 +212,7 @@ export function PastCustomersCard() {
               onChange={(e) => void readFile(e.target.files?.[0])}
               className="block text-xs"
             />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Columns: name, email, phone, last job date (optional). A header row helps but is not
               needed. Up to {n(CAMPAIGN_MAX)} customers per campaign.
             </p>
@@ -286,7 +291,7 @@ export function PastCustomersCard() {
                   onBlur={() => setRate(clampRate(rate))}
                   className={`${field} max-w-[8rem]`}
                 />
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {counts.ready
                     ? `At ${clampRate(rate)} a day this takes about ${days} day${days === 1 ? "" : "s"}. `
                     : ""}
@@ -316,7 +321,7 @@ export function PastCustomersCard() {
                   maxLength={150}
                   className={field}
                 />
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {"{name}"} becomes their first name, {"{business}"} your business name and{" "}
                   {"{link}"} their review link. Every email has an unsubscribe link. Reminders
                   follow your Ask settings.
@@ -365,7 +370,7 @@ export function PastCustomersCard() {
               </div>
             </div>
           )}
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             We stop by ourselves if more than 5 in 100 emails bounce, or more than 2 in 100 people
             unsubscribe, in a day, and tell you why.
           </p>
@@ -444,13 +449,13 @@ export function PastCustomersCard() {
             ).map(([label, v]) => (
               <div key={label} className="rounded-lg bg-muted/50 py-2">
                 <dd className="text-lg font-bold tabular-nums">{n(v)}</dd>
-                <dt className="text-[11px] text-muted-foreground">{label}</dt>
+                <dt className="text-xs text-muted-foreground">{label}</dt>
               </div>
             ))}
           </dl>
         )}
         {p && p.skipped > 0 && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {n(p.skipped)} skipped at send time (asked recently or unsubscribed).
           </p>
         )}

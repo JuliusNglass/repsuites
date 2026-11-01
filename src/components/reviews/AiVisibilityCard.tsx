@@ -59,12 +59,14 @@ export function AiVisibilityCard() {
       </div>
       <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
         <input
+          aria-label="Type of business"
           value={service}
           onChange={(e) => setService(e.target.value)}
           placeholder="Type of business, e.g. burger restaurant"
           className={field}
         />
         <input
+          aria-label="Your town"
           value={town}
           onChange={(e) => setTown(e.target.value)}
           placeholder="Your town, e.g. Newport"
@@ -108,7 +110,7 @@ export function AiVisibilityCard() {
               <div className="grid sm:grid-cols-2 gap-3">
                 {sum.rivals.length > 0 && (
                   <div className="rounded-lg bg-muted/60 p-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">
+                    <p className="text-xs font-bold text-muted-foreground mb-1">
                       Recommended instead of you
                     </p>
                     <ul className="text-sm space-y-0.5">
@@ -125,7 +127,7 @@ export function AiVisibilityCard() {
                 )}
                 {sum.sites.length > 0 && (
                   <div className="rounded-lg bg-muted/60 p-3">
-                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">
+                    <p className="text-xs font-bold text-muted-foreground mb-1">
                       Where the AI looked
                     </p>
                     <ul className="text-sm space-y-0.5">
@@ -133,7 +135,7 @@ export function AiVisibilityCard() {
                         <li key={x.name}>{x.name}</li>
                       ))}
                     </ul>
-                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                    <p className="text-xs text-muted-foreground mt-1.5">
                       Being listed, with good reviews, on these sites makes you more likely to be
                       recommended.
                     </p>
@@ -167,7 +169,11 @@ export function AiVisibilityCard() {
           </ul>
         </div>
       )}
-      {l && l.total === 0 && l.error && <p className="text-xs text-destructive">{l.error}</p>}
+      {l && l.total === 0 && l.error && (
+        <p role="alert" className="text-xs text-destructive">
+          {l.error}
+        </p>
+      )}
     </section>
   );
 }

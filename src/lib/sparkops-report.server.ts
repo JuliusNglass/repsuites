@@ -126,7 +126,7 @@ function findings(r: Report, extra: RenderExtra | null): string {
   if (scan)
     items.push({
       icon: "&#128172;",
-      text: `${esc(scan)}${ops?.reviews?.quote ? ` One says: <i>"${esc(ops.reviews.quote)}"</i>.` : ""} Checklists with photos and 'on my way' texts help stop this.`,
+      text: `${esc(scan)}${ops?.reviews?.quote ? ` One says: "${esc(ops.reviews.quote)}".` : ""} Checklists with photos and 'on my way' texts help stop this.`,
     });
   if (ops?.booking === "none")
     items.push({

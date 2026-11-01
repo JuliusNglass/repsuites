@@ -13,7 +13,7 @@ function LoginPage() {
   const status = Route.useLoaderData();
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6">
-      <a href="/" className="mb-6">
+      <a href="/" className="mb-6 inline-flex items-center min-h-11" aria-label="RepSuites home">
         <Logo />
       </a>
       <SignInCard isConfigured={status.isConfigured} missingMessage={status.missingMessage} />

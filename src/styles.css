@@ -154,6 +154,39 @@
   }
 }
 
+/* Accelur8 build standard, applied everywhere (kept outside @layer so it wins
+   over size utilities such as text-xs or py-1 on a single control):
+   - form fields use at least 16px text, so phones do not zoom in and the
+     words are easy to read;
+   - on touch screens every button, link-button and field is at least 44px
+     tall, so it is easy to tap. Desktop layouts are unchanged. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not(
+    [type="file"]
+  ),
+select,
+textarea {
+  font-size: max(1rem, 1em);
+}
+@media (pointer: coarse) {
+  button:not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
+  select,
+  [role="button"],
+  [role="tab"],
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]) {
+    min-height: 44px;
+  }
+  button:not([role="switch"]):not([role="checkbox"]):not([role="radio"]),
+  [role="button"],
+  [role="tab"] {
+    min-width: 44px;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 20px;
+    min-height: 20px;
+  }
+}
+
 /* Respect "reduce motion": no slides, spins or smooth scrolling. */
 @media (prefers-reduced-motion: reduce) {
   *,

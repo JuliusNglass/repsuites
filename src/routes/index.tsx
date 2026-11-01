@@ -96,7 +96,7 @@ function Home() {
     <PublicLayout>
       <section className="px-4 pt-16 pb-14 md:pt-24 md:pb-20 text-center">
         <div className="max-w-3xl mx-auto">
-          <p className="text-sm font-bold text-muted-foreground mb-4">For local businesses</p>
+          <p className="text-base font-bold text-muted-foreground mb-4">For local businesses</p>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.08]">
             More local customers{" "}
             <span className="text-primary-ink">finding you and choosing you.</span>
@@ -119,7 +119,7 @@ function Home() {
               Get a free visibility check
             </a>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground">
             Free review page and QR code in 2 minutes. No card needed.
           </p>
         </div>
@@ -178,11 +178,11 @@ function Home() {
               <div key={f.title} className="rounded-2xl border border-border bg-card p-6">
                 <f.icon className="w-6 h-6 mb-3" />
                 <h3 className="font-bold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.text}</p>
+                <p className="text-base text-muted-foreground">{f.text}</p>
               </div>
             ))}
           </div>
-          <p className="text-center text-sm text-muted-foreground mt-8 max-w-2xl mx-auto">
+          <p className="text-center text-base text-muted-foreground mt-8 max-w-2xl mx-auto">
             You connect with your own Google account and can disconnect at any time. Read how we
             handle Google data in our{" "}
             <Link to="/privacy" className="underline underline-offset-2 text-foreground">
@@ -209,7 +209,10 @@ function Home() {
               Google review page. One scan, one tap, done. Already have RepSuites cards? They keep
               working.
             </p>
-            <Link to="/cards" className="font-semibold underline underline-offset-2">
+            <Link
+              to="/cards"
+              className="inline-flex items-center min-h-11 font-semibold underline underline-offset-2"
+            >
               About review cards
             </Link>
           </div>
@@ -251,24 +254,34 @@ function CheckForm() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Phones fill these in for the visitor and show the right keyboard.
+  const AUTO: Partial<Record<keyof typeof f, string>> = {
+    name: "name",
+    town: "address-level2",
+    email: "email",
+    phone: "tel",
+  };
   const field = (k: keyof typeof f, label: string, type = "text", required = true) => (
     <label className="block space-y-1">
-      <span className="text-sm font-semibold">{label}</span>
+      <span className="text-base font-semibold">{label}</span>
       <input
         type={type}
+        name={k}
         required={required}
         value={f[k]}
         onChange={(e) => setF({ ...f, [k]: e.target.value })}
-        className="w-full rounded-lg border border-input bg-background px-3 py-2.5"
+        autoComplete={AUTO[k]}
+        inputMode={type === "email" ? "email" : type === "tel" ? "tel" : undefined}
+        className="w-full rounded-lg border border-input bg-background px-3 py-2.5 min-h-11 text-base"
       />
     </label>
   );
   if (done)
     return (
-      <div className="rounded-2xl border border-border bg-card p-6 text-center">
+      <div role="status" className="rounded-2xl border border-border bg-card p-6 text-center">
         <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
         <p className="font-semibold">Thanks, we have your details.</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           Your visibility check will arrive by email within 2 working days.
         </p>
       </div>
@@ -332,7 +345,11 @@ function CheckForm() {
         value={f.website}
         onChange={(e) => setF({ ...f, website: e.target.value })}
       />
-      {err && <p className="text-sm text-destructive">{err}</p>}
+      {err && (
+        <p role="alert" className="text-base font-semibold text-destructive">
+          {err}
+        </p>
+      )}
       <button
         type="submit"
         disabled={busy}
@@ -341,7 +358,7 @@ function CheckForm() {
         {busy && <Loader2 className="w-4 h-4 animate-spin" />}
         Send me my free check
       </button>
-      <p className="text-xs text-muted-foreground text-center">
+      <p className="text-sm text-muted-foreground text-center">
         We use your details only to send your check and follow up about it. See our{" "}
         <Link to="/privacy" className="underline">
           Privacy Policy

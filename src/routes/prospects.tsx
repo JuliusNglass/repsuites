@@ -1193,7 +1193,7 @@ function OwnerInfo({
         ))}
       {line && (
         <span
-          className={`rounded-full px-2 py-0.5 text-[11px] ${
+          className={`rounded-full px-2 py-0.5 text-xs ${
             line.sure ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"
           }`}
         >
@@ -1518,7 +1518,7 @@ const ProspectRow = memo(function ProspectRow({
                   ? "Mobile number: very likely on WhatsApp. Opens the message and marks it as sent."
                   : "Opens the message in WhatsApp and marks it as sent"
               }
-              className="min-h-10 rounded-lg bg-emerald-600 text-white px-3 py-1.5 inline-flex items-center gap-1.5 font-semibold"
+              className="min-h-10 rounded-lg bg-emerald-700 text-white px-3 py-1.5 inline-flex items-center gap-1.5 font-semibold"
             >
               <MessageCircle className="w-4 h-4" /> Send on WhatsApp
             </a>
@@ -2085,7 +2085,7 @@ function ReachBadges({
   finding: boolean;
 }) {
   const [showEmail, setShowEmail] = useState(false);
-  const pill = "rounded-full px-2 py-0.5 text-[11px] font-semibold inline-flex items-center gap-1";
+  const pill = "rounded-full px-2 py-0.5 text-xs font-semibold inline-flex items-center gap-1";
   return (
     <div className="flex flex-wrap items-center gap-1 mt-1">
       {h.phoneType === "mobile" && (

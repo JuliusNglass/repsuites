@@ -200,7 +200,7 @@ export function AccessHelpCard() {
 
       {d.agency && t && (
         <div className="rounded-lg bg-muted/60 p-3 space-y-2 text-sm">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-bold text-muted-foreground">
             Access help (Accelur8 team only)
           </p>
           <div className="grid sm:grid-cols-3 gap-2">
@@ -238,6 +238,7 @@ export function AccessHelpCard() {
             </label>
           </div>
           <textarea
+            aria-label="Note"
             value={t.note}
             onChange={(e) => setT({ ...t, note: e.target.value.slice(0, 1000) })}
             rows={2}

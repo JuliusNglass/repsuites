@@ -91,6 +91,7 @@ export function RankingCard() {
         {d.canEdit && (
           <div className="flex items-center gap-2 text-xs">
             <select
+              aria-label="Map grid size"
               value={`${s.gridSize}|${s.spacingKm}`}
               onChange={(e) => {
                 const [g, k] = e.target.value.split("|").map(Number);
@@ -215,6 +216,7 @@ export function RankingCard() {
           }}
         >
           <input
+            aria-label="Search phrase to track"
             value={kw}
             onChange={(e) => setKw(e.target.value)}
             maxLength={80}
