@@ -179,7 +179,7 @@ export function BusinessSearch({
               </button>
             </li>
           ))}
-          <li className="px-3 py-1.5 text-[11px] text-muted-foreground border-t border-border">
+          <li className="px-3 py-1.5 text-xs text-muted-foreground border-t border-border">
             Not listed? Just type your business name.
           </li>
         </ul>

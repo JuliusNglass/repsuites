@@ -147,6 +147,7 @@ function Order() {
                   {msgIdx === -1 && (
                     <>
                       <input
+                        aria-label="Your own message"
                         value={custom}
                         onChange={(e) => setCustom(e.target.value.slice(0, 60))}
                         placeholder="e.g. Thanks for visiting! Tap to tell us how we did."
@@ -175,7 +176,7 @@ function Order() {
                     className={`relative rounded-xl border p-3 text-left ${cards === p.id ? "border-foreground bg-card ring-2 ring-primary/40" : "border-border"}`}
                   >
                     {p.badge && (
-                      <span className="absolute -top-2 right-2 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5">
+                      <span className="absolute -top-2 right-2 rounded-full bg-primary text-primary-foreground text-xs font-bold px-1.5">
                         {p.badge}
                       </span>
                     )}
@@ -183,7 +184,7 @@ function Order() {
                       {p.qty} card{p.qty === 1 ? "" : "s"}
                     </div>
                     <div className="text-xl font-extrabold">{money(p.pence)}</div>
-                    <div className="text-[11px] text-muted-foreground">{each(p)} each</div>
+                    <div className="text-xs text-muted-foreground">{each(p)} each</div>
                   </button>
                 ))}
               </div>
@@ -203,7 +204,7 @@ function Order() {
                     className={`relative rounded-xl border p-3 text-left ${stands === p.id ? "border-foreground bg-card ring-2 ring-primary/40" : "border-border"}`}
                   >
                     {p.badge && (
-                      <span className="absolute -top-2 right-2 rounded-full bg-primary text-primary-foreground text-[10px] font-bold px-1.5">
+                      <span className="absolute -top-2 right-2 rounded-full bg-primary text-primary-foreground text-xs font-bold px-1.5">
                         {p.badge}
                       </span>
                     )}
@@ -350,7 +351,7 @@ function PayButton({
         {paying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
         Pay {money(total)} securely
       </button>
-      <p className="mt-2 text-[11px] text-center text-muted-foreground">
+      <p className="mt-2 text-xs text-center text-muted-foreground">
         Card, Apple Pay or Google Pay via Stripe. Delivery address on the next page.
       </p>
     </>

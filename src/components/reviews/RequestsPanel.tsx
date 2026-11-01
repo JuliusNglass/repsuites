@@ -139,7 +139,12 @@ export function RequestsPanel() {
   );
   const counts = useMemo(() => last30Counts(d?.requests ?? [], new Date()), [d]);
 
-  if (err) return <p className="text-sm text-destructive">{err}</p>;
+  if (err)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {err}
+      </p>
+    );
   if (!d || !s) return <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />;
 
   function textFor(r: Req) {
@@ -283,12 +288,14 @@ export function RequestsPanel() {
         </div>
         <div className="grid sm:grid-cols-[1fr_1.3fr_auto] gap-2">
           <input
+            aria-label="Customer name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Customer name"
             className={field}
           />
           <input
+            aria-label="Customer mobile number or email"
             value={contact}
             onChange={(e) => setContact(e.target.value)}
             placeholder="Mobile number or email"
@@ -342,6 +349,7 @@ export function RequestsPanel() {
         {showPaste && (
           <div className="space-y-2">
             <textarea
+              aria-label="Customer list, one per line"
               value={paste}
               onChange={(e) => setPaste(e.target.value)}
               rows={5}
@@ -360,7 +368,7 @@ export function RequestsPanel() {
             </button>
           </div>
         )}
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Ask every customer, not only the happy ones, and never offer anything in return. Google
           does not allow either.
         </p>
@@ -505,7 +513,7 @@ export function RequestsPanel() {
               </div>
             </label>
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Reminders stop as soon as the customer taps a review site, sends private feedback,
             leaves a Google review under the same name (when Google is connected) or unsubscribes.
             If they only opened the link, we skip straight to the last reminder.
@@ -536,7 +544,7 @@ export function RequestsPanel() {
               className={field}
             />
           </label>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {"{name}"} becomes the customer's first name, {"{business}"} your business name and{" "}
             {"{link}"} their personal review link. Keep {"{link}"} in each message.
           </p>
@@ -578,7 +586,12 @@ export function RequestsPanel() {
               <div className="space-y-1">
                 <span className="text-xs font-semibold">Your private webhook address</span>
                 <div className="flex gap-2">
-                  <input readOnly value={d.triggerUrl} className={`${field} font-mono text-xs`} />
+                  <input
+                    aria-label="Your private webhook address"
+                    readOnly
+                    value={d.triggerUrl}
+                    className={`${field} font-mono text-xs`}
+                  />
                   <button
                     type="button"
                     onClick={() => void copyText(d.triggerUrl!)}
@@ -587,7 +600,7 @@ export function RequestsPanel() {
                     <Copy className="w-3.5 h-3.5" /> Copy
                   </button>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Keep it private: anyone with it can add requests.{" "}
                   <button type="button" onClick={() => void newAddress()} className="underline">
                     <RefreshCw className="inline w-3 h-3" /> Make a new address
@@ -595,7 +608,9 @@ export function RequestsPanel() {
                 </p>
               </div>
             ) : (
-              <p className="text-xs text-destructive">Could not make your address. Refresh.</p>
+              <p role="alert" className="text-xs text-destructive">
+                Could not make your address. Refresh.
+              </p>
             )}
             <div className="rounded-lg bg-muted/50 p-3 space-y-2">
               <p className="text-xs font-semibold">GoHighLevel</p>
@@ -621,7 +636,7 @@ export function RequestsPanel() {
                   </li>
                 ))}
               </ul>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 For a 'Job won' workflow, set event to job_done. The external_id stops the same job
                 or invoice asking twice.
               </p>
@@ -632,11 +647,11 @@ export function RequestsPanel() {
                 Send a POST to the address, as JSON or a form, with name, email, phone (optional),
                 event (job_done, invoice_paid or manual) and external_id (optional).
               </p>
-              <pre className="overflow-x-auto rounded bg-background p-2 text-[11px]">
+              <pre className="overflow-x-auto rounded bg-background p-2 text-xs">
                 {`{"name":"Jane Smith","email":"jane@example.com","phone":"07700 900123","event":"invoice_paid","external_id":"INV-1042"}`}
               </pre>
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Customers with an email get an email. Customers with only a phone number appear under
               Ready to send for a one tap WhatsApp or text. Anyone asked in the last{" "}
               {d.settings.cooldownDays} days, or who unsubscribed, is skipped.
@@ -660,7 +675,7 @@ export function RequestsPanel() {
           ).map(([label, n]) => (
             <div key={label} className="rounded-lg bg-muted/50 py-2">
               <dd className="text-lg font-bold tabular-nums">{n}</dd>
-              <dt className="text-[11px] text-muted-foreground">{label}</dt>
+              <dt className="text-xs text-muted-foreground">{label}</dt>
             </div>
           ))}
         </dl>
@@ -680,7 +695,7 @@ export function RequestsPanel() {
               <li key={r.id} className="rounded-lg border border-border p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2 text-sm">
                   <span className="font-semibold truncate">{r.name || r.phone}</span>
-                  <span className="text-[11px] text-muted-foreground shrink-0">
+                  <span className="text-xs text-muted-foreground shrink-0">
                     {r.step === 0 ? "First ask" : `Reminder ${r.step}`}
                   </span>
                 </div>
@@ -689,7 +704,7 @@ export function RequestsPanel() {
                   <button
                     type="button"
                     onClick={() => void sent(r, "whatsapp")}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#25d366] text-white px-3 py-1.5 text-xs font-bold"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#25d366] text-[#0b1b33] px-3 py-1.5 text-xs font-bold"
                   >
                     <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
                   </button>
@@ -735,7 +750,7 @@ export function RequestsPanel() {
                       )}
                       {r.name || r.email || r.phone}
                     </div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                       Added {when(r.createdAt)}
                       {r.source === "campaign"
                         ? " (past customer)"
@@ -756,7 +771,7 @@ export function RequestsPanel() {
                       {chips.map((c) => (
                         <span
                           key={c}
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${CHIP[c] ?? "bg-slate-100 text-slate-600"}`}
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${CHIP[c] ?? "bg-slate-100 text-slate-600"}`}
                         >
                           {c}
                         </span>

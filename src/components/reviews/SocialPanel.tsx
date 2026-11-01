@@ -119,7 +119,7 @@ export function SocialPanel({
                 toast.error(r?.error ?? "Could not start. Try again.");
               }
             }}
-            className="rounded-lg bg-[#1877F2] text-white px-3 py-2 text-sm font-bold inline-flex items-center gap-1.5 disabled:opacity-60"
+            className="rounded-lg bg-[#1464d2] text-white px-3 py-2 text-sm font-bold inline-flex items-center gap-1.5 disabled:opacity-60"
           >
             {busy && <Loader2 className="w-4 h-4 animate-spin" />} Connect Facebook and Instagram
           </button>

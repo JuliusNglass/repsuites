@@ -20,7 +20,7 @@ function Themes({ items, tone }: { items: Theme[]; tone: "good" | "bad" }) {
           <div className="flex items-baseline justify-between gap-2">
             <span className="font-semibold">{t.theme}</span>
             <span
-              className={`text-[11px] font-semibold shrink-0 ${tone === "good" ? "text-emerald-700" : "text-destructive"}`}
+              className={`text-xs font-semibold shrink-0 ${tone === "good" ? "text-emerald-700" : "text-destructive"}`}
             >
               {t.mentions} mention{t.mentions === 1 ? "" : "s"}
             </span>
@@ -94,19 +94,17 @@ export function InsightsCard() {
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-lg bg-muted/60 p-2">
             <div className="text-lg font-extrabold">{f.reviews}</div>
-            <div className="text-[11px] text-muted-foreground">
-              new reviews (was {f.reviewsBefore})
-            </div>
+            <div className="text-xs text-muted-foreground">new reviews (was {f.reviewsBefore})</div>
           </div>
           <div className="rounded-lg bg-muted/60 p-2">
             <div className="text-lg font-extrabold">{f.avg ?? "-"}</div>
-            <div className="text-[11px] text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               average stars{f.avgBefore !== null ? ` (was ${f.avgBefore})` : ""}
             </div>
           </div>
           <div className="rounded-lg bg-muted/60 p-2">
             <div className="text-lg font-extrabold">{f.privateMessages}</div>
-            <div className="text-[11px] text-muted-foreground">private messages</div>
+            <div className="text-xs text-muted-foreground">private messages</div>
           </div>
         </div>
       )}
@@ -116,7 +114,7 @@ export function InsightsCard() {
           <p className="text-sm font-medium">{s.headline}</p>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-emerald-700 mb-2">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 mb-2">
                 <ThumbsUp className="w-3.5 h-3.5" /> What they love
               </p>
               {s.praises.length ? (
@@ -126,7 +124,7 @@ export function InsightsCard() {
               )}
             </div>
             <div>
-              <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-destructive mb-2">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-destructive mb-2">
                 <ThumbsDown className="w-3.5 h-3.5" /> What needs attention
               </p>
               {s.complaints.length ? (
@@ -138,7 +136,7 @@ export function InsightsCard() {
           </div>
           {s.people.length > 0 && (
             <div>
-              <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mb-2">
                 <Users className="w-3.5 h-3.5" /> Staff customers mention
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -155,7 +153,7 @@ export function InsightsCard() {
           )}
           {s.trend && <p className="text-sm text-muted-foreground">{s.trend}</p>}
           <div className="rounded-lg bg-primary/10 p-3">
-            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide mb-1">
+            <p className="flex items-center gap-1.5 text-xs font-bold mb-1">
               <Lightbulb className="w-3.5 h-3.5" /> One thing to do this month
             </p>
             <p className="text-sm font-semibold">{s.action.title}</p>

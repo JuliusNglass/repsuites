@@ -119,7 +119,11 @@ export function AccountingCard() {
           paid after you connect are used.
         </p>
       </div>
-      {err && <p className="text-sm text-destructive">{err}</p>}
+      {err && (
+        <p role="alert" className="text-sm text-destructive">
+          {err}
+        </p>
+      )}
       {!d && !err && (
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" aria-label="Loading" />
       )}
@@ -212,7 +216,7 @@ export function AccountingCard() {
           })}
         </ul>
       )}
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         We only read invoices and customer contact details. Anyone asked recently, or who
         unsubscribed, is skipped. Customers with only a phone number appear under Ready to send in
         the Ask tab.

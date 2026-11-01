@@ -103,6 +103,7 @@ export function AddBusinessForm({
           <>
             <div className="flex gap-2">
               <input
+                aria-label="Search for the business on Google"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => {

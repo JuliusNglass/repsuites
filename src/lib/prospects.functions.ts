@@ -387,7 +387,7 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       "",
     ),
     serviceRead<ProspectRowDb[]>(
-      `prospects?select=${PROSPECT_SELECT}&follow_up_on=lte.${today}&stage=not.in.(won,lost)&order=follow_up_on.asc`,
+      `prospects?select=${PROSPECT_SELECT}&follow_up_on=lte.${today}&stage=not.in.(won,lost)&order=follow_up_on.asc&limit=${LIST_LIMIT}`,
       "",
     ),
   ]);

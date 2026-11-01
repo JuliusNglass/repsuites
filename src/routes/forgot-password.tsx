@@ -82,30 +82,38 @@ function ForgotPasswordPage() {
             <div className="text-center space-y-2">
               <Mail className="w-10 h-10 mx-auto text-primary-ink" />
               <h1 className="text-lg font-bold">Reset your password</h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Enter your email and we will send a link to set a new password.
               </p>
             </div>
             {error && (
-              <div className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs p-3 flex items-start gap-2">
+              <div
+                role="alert"
+                className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm p-3 flex items-start gap-2"
+              >
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 {error}
               </div>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
+                <label
+                  htmlFor="fp-email"
+                  className="block text-sm font-medium text-foreground mb-1"
+                >
                   Email address
                 </label>
                 <input
+                  id="fp-email"
                   type="email"
+                  inputMode="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
                   autoComplete="email"
                   placeholder="e.g. you@yourbusiness.com"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                 />
               </div>
               <button
@@ -119,7 +127,7 @@ function ForgotPasswordPage() {
             <div className="text-center">
               <a
                 href="/"
-                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 inline-flex items-center min-h-11"
               >
                 Back to sign in
               </a>

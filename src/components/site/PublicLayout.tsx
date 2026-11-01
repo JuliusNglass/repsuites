@@ -9,25 +9,33 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-center" aria-label="RepSuites home">
+          <Link to="/" className="flex items-center min-h-11 shrink-0" aria-label="RepSuites home">
             <Logo />
           </Link>
-          <nav className="flex items-center gap-2 sm:gap-4 text-sm">
-            <Link to="/cards" className="text-muted-foreground hover:text-foreground px-1">
+          {/* Every link is at least 44px tall and never wraps. Below 400px "Cards"
+              moves to the footer so the header fits on the smallest phones. */}
+          <nav className="flex items-center gap-1 sm:gap-4 text-sm whitespace-nowrap">
+            <Link
+              to="/cards"
+              className="hidden min-[400px]:inline-flex items-center min-h-11 text-muted-foreground hover:text-foreground px-2"
+            >
               Cards
             </Link>
             <Link
               to="/pricing"
-              className="hidden sm:inline text-muted-foreground hover:text-foreground"
+              className="hidden sm:inline-flex items-center min-h-11 px-2 text-muted-foreground hover:text-foreground"
             >
               Pricing
             </Link>
-            <Link to="/login" className="text-muted-foreground hover:text-foreground px-2">
+            <Link
+              to="/login"
+              className="inline-flex items-center min-h-11 text-muted-foreground hover:text-foreground px-2"
+            >
               Log in
             </Link>
             <a
               href="/start"
-              className="rounded-lg bg-primary text-primary-foreground font-semibold px-3 sm:px-4 py-2"
+              className="inline-flex items-center min-h-11 rounded-lg bg-primary text-primary-foreground font-semibold px-3 sm:px-4"
             >
               Start free
             </a>
@@ -40,7 +48,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           <span>
             © {new Date().getFullYear()} Accelur8 Ltd. RepSuites is a product by Accelur8.
           </span>
-          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+          <div className="flex flex-wrap justify-center gap-x-4 [&_a]:inline-flex [&_a]:items-center [&_a]:min-h-11 [&_a]:px-1">
+            <Link to="/cards" className="hover:text-foreground">
+              Review cards
+            </Link>
             <Link to="/privacy" className="hover:text-foreground">
               Privacy Policy
             </Link>

@@ -69,6 +69,8 @@ async function notifyNewLead(
         subject: `Visibility check request: ${lead.business} (${lead.town})`,
         html,
       }),
+      // Never let a slow email service hold up the visitor's form.
+      signal: AbortSignal.timeout(10000),
     });
   } catch {
     // ignore: the lead is saved

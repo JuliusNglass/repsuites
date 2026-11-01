@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { prefillName, reviewUrl, signupProblem, stageAfterSignup } from "./signup";
+import { prefillName, reviewUrl, signupProblem, signupProblemAt, stageAfterSignup } from "./signup";
 import { GROWTH, planPence, yearSaving } from "./shop";
 import { notInPlanMessage } from "./plan-access";
 
@@ -17,6 +17,14 @@ describe("free sign-up", () => {
     expect(signupProblem({ ...ok, password: "short" })).toMatch(/10 characters/);
     expect(signupProblem({ ...ok, email: "sam" })).toMatch(/email/);
     expect(signupProblem({ ...ok, agree: false })).toMatch(/terms/);
+  });
+  it("says which field each problem belongs to", () => {
+    expect(signupProblemAt(ok)).toBeNull();
+    expect(signupProblemAt({ ...ok, business: "" })?.field).toBe("business");
+    expect(signupProblemAt({ ...ok, name: " " })?.field).toBe("name");
+    expect(signupProblemAt({ ...ok, email: "sam" })?.field).toBe("email");
+    expect(signupProblemAt({ ...ok, password: "short" })?.field).toBe("password");
+    expect(signupProblemAt({ ...ok, agree: false })?.field).toBe("agree");
   });
   it("builds the Google review link", () =>
     expect(reviewUrl("ChIJabc123xyz")).toBe(

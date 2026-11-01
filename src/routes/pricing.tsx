@@ -80,21 +80,23 @@ function Pricing() {
             <p className="mt-4 text-lg text-muted-foreground">
               No contract. Cancel any time from your dashboard.
             </p>
-            <div className="mt-8 inline-flex rounded-full border border-border bg-card p-1 text-sm font-semibold">
+            <div className="mt-8 inline-flex rounded-full border border-border bg-card p-1 text-base font-semibold">
               <button
                 type="button"
                 onClick={() => setInterval("month")}
-                className={`rounded-full px-5 py-2 ${!yearly ? "bg-foreground text-background" : ""}`}
+                aria-pressed={!yearly}
+                className={`rounded-full px-5 py-2 min-h-11 ${!yearly ? "bg-foreground text-background" : ""}`}
               >
                 Monthly
               </button>
               <button
                 type="button"
                 onClick={() => setInterval("year")}
-                className={`rounded-full px-5 py-2 ${yearly ? "bg-foreground text-background" : ""}`}
+                aria-pressed={yearly}
+                className={`rounded-full px-5 py-2 min-h-11 ${yearly ? "bg-foreground text-background" : ""}`}
               >
                 Yearly{" "}
-                <span className={yearly ? "text-primary" : "text-emerald-700"}>2 months free</span>
+                <span className={yearly ? "text-primary" : "text-emerald-700"}>£91 off a year</span>
               </button>
             </div>
           </div>
@@ -102,15 +104,15 @@ function Pricing() {
           <div className="mt-10 grid md:grid-cols-3 gap-5 items-stretch">
             <div className="rounded-3xl border border-border bg-card p-7 flex flex-col">
               <h2 className="text-xl font-bold">Free</h2>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-base text-muted-foreground mt-1">
                 Start getting more reviews today.
               </p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-5xl font-extrabold">£0</span>
                 <span className="text-muted-foreground">for ever</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">No card needed</p>
-              <ul className="mt-6 space-y-2.5 text-sm flex-1">
+              <p className="text-sm text-muted-foreground mt-1">No card needed</p>
+              <ul className="mt-6 space-y-2.5 text-base flex-1">
                 {FREE_FEATURES.map((f) => (
                   <li key={f} className="flex gap-2.5">
                     <Check className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
@@ -131,17 +133,17 @@ function Pricing() {
                 Most popular
               </span>
               <h2 className="text-xl font-bold">{GROWTH.name}</h2>
-              <p className="text-sm text-muted-foreground mt-1">{GROWTH.tagline}</p>
+              <p className="text-base text-muted-foreground mt-1">{GROWTH.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-5xl font-extrabold">{money(planPence(interval))}</span>
                 <span className="text-muted-foreground">{yearly ? "a year" : "a month"}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {yearly
                   ? `That is ${money(Math.round(GROWTH.yearPence / 12))} a month. You save ${money(yearSaving())}.`
                   : `About ${perDay(GROWTH.monthPence)} a day`}
               </p>
-              <ul className="mt-6 space-y-2.5 text-sm flex-1">
+              <ul className="mt-6 space-y-2.5 text-base flex-1">
                 <li className="flex gap-2.5 font-semibold">
                   <Check className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
                   <span>Everything in Free, plus:</span>
@@ -166,19 +168,19 @@ function Pricing() {
 
             <div className="rounded-3xl border border-border bg-card p-7 flex flex-col">
               <h2 className="text-xl font-bold">We do it for you</h2>
-              <p className="text-sm text-muted-foreground mt-1">{MANAGED.tagline}</p>
+              <p className="text-base text-muted-foreground mt-1">{MANAGED.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
                 <span className="text-5xl font-extrabold">
                   {money(planPence(interval, "managed"))}
                 </span>
                 <span className="text-muted-foreground">{yearly ? "a year" : "a month"}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {yearly
                   ? `That is ${money(Math.round(MANAGED.yearPence / 12))} a month. You save ${money(yearSaving("managed"))}.`
                   : `About ${perDay(MANAGED.monthPence)} a day`}
               </p>
-              <ul className="mt-6 space-y-2.5 text-sm flex-1">
+              <ul className="mt-6 space-y-2.5 text-base flex-1">
                 {MANAGED.features.map((f, i) => (
                   <li key={f} className={`flex gap-2.5 ${i === 0 ? "font-semibold" : ""}`}>
                     <Check className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
@@ -201,19 +203,20 @@ function Pricing() {
           <div className="mt-12 grid md:grid-cols-2 gap-5">
             <div className="rounded-2xl bg-muted/60 p-6">
               <h3 className="font-bold">How the maths works</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                Growth is {money(GROWTH.monthPence)} a month. If a customer spends £20 with you, 3
-                extra customers a month pays for it. Everyone after that is profit.
+              <p className="text-base text-muted-foreground mt-2">
+                Growth is {money(GROWTH.monthPence)} a month. Say a customer spends £20 with you. 3
+                extra customers a month is 3 x £20 = £60. That is more than the{" "}
+                {money(GROWTH.monthPence)} you pay.
               </p>
             </div>
             <div className="rounded-2xl bg-muted/60 p-6">
               <h3 className="font-bold">Just want review cards?</h3>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-base text-muted-foreground mt-2">
                 Cards and table stands are a one-off buy and work without a plan.
               </p>
               <Link
                 to="/cards"
-                className="mt-3 inline-block font-semibold underline underline-offset-2"
+                className="mt-2 inline-flex items-center min-h-11 font-semibold underline underline-offset-2"
               >
                 See review cards
               </Link>

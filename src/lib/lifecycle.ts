@@ -171,7 +171,7 @@ export function emailFor(type: EmailType, f: Facts, unsubUrl: string): Email {
 <li>Ask customers for reviews by email, WhatsApp or text</li>
 <li>See where you show up on Google Maps across your area</li>
 <li>A plain-English summary of what customers say, every month</li></ul>
-<p>It is £49 a month, or £497 a year (2 months free). Cancel any time.</p>${button("https://repsuites.com/pricing", "See RepSuites Growth")}`,
+<p>It is £49 a month, or £497 a year (£91 less than paying monthly). Cancel any time.</p>${button("https://repsuites.com/pricing", "See RepSuites Growth")}`,
       );
     }
     case "nudge_7":

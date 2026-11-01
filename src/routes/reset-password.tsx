@@ -156,7 +156,10 @@ function ResetPasswordPage() {
     return (
       <Shell>
         <div className="space-y-4">
-          <div className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs p-3 flex items-start gap-2">
+          <div
+            role="alert"
+            className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm p-3 flex items-start gap-2"
+          >
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>
               This link has expired. Return to sign in and request a new password reset link.
@@ -196,12 +199,15 @@ function ResetPasswordPage() {
         <div className="text-center space-y-2">
           <KeyRound className="w-10 h-10 mx-auto text-primary-ink" />
           <h1 className="text-lg font-bold">Set a new password</h1>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Choose a password (12-256 characters) to replace your current one.
           </p>
         </div>
         {error && (
-          <div className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs p-3 flex items-start gap-2">
+          <div
+            role="alert"
+            className="rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm p-3 flex items-start gap-2"
+          >
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
             {error}
           </div>
@@ -227,8 +233,11 @@ function ResetPasswordPage() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-foreground mb-1">New password</label>
+              <label htmlFor="rp-new" className="block text-sm font-medium text-foreground mb-1">
+                New password
+              </label>
               <input
+                id="rp-new"
                 type="password"
                 required
                 minLength={12}
@@ -237,21 +246,25 @@ function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={saving}
                 autoComplete="new-password"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-foreground mb-1">
+              <label
+                htmlFor="rp-confirm"
+                className="block text-sm font-medium text-foreground mb-1"
+              >
                 Confirm password
               </label>
               <input
+                id="rp-confirm"
                 type="password"
                 required
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 disabled={saving}
                 autoComplete="new-password"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-base min-h-[44px] focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
               />
             </div>
             <button

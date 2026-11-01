@@ -120,7 +120,11 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
                         ? "Choose which Google profile is this business."
                         : "Google needs connecting again."}
               </p>
-              {c?.error && <p className="text-xs text-destructive mt-1">{c.error}</p>}
+              {c?.error && (
+                <p role="alert" className="text-xs text-destructive mt-1">
+                  {c.error}
+                </p>
+              )}
             </div>
             <div className="flex gap-2 text-xs">
               {d.ready && d.canConnect && (!c || c.status === "needs_reconnect") && (
@@ -341,6 +345,7 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
       ) : (
         <div className="space-y-2">
           <textarea
+            aria-label="Your reply"
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={text ? 4 : 2}
@@ -348,7 +353,11 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
             placeholder="Write a reply, or get a draft to edit"
             className={field}
           />
-          {r.error && <p className="text-xs text-destructive">{r.error}</p>}
+          {r.error && (
+            <p role="alert" className="text-xs text-destructive">
+              {r.error}
+            </p>
+          )}
           <div className="flex gap-3 text-xs">
             <button
               type="button"
@@ -392,10 +401,10 @@ type Perf = Extract<Awaited<ReturnType<typeof getGooglePerformanceFn>>, { ok: tr
 
 function Trend({ now, before }: { now: number; before: number }) {
   const c = change(now, before);
-  if (c === null) return <span className="text-[11px] text-muted-foreground">new</span>;
+  if (c === null) return <span className="text-xs text-muted-foreground">new</span>;
   const tone = c > 0 ? "text-emerald-700" : c < 0 ? "text-destructive" : "text-muted-foreground";
   return (
-    <span className={`text-[11px] font-semibold ${tone}`}>
+    <span className={`text-xs font-semibold ${tone}`}>
       {c > 0 ? "+" : ""}
       {c}%
     </span>
@@ -438,7 +447,7 @@ function PerformanceCard() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {tiles.map(([label, now, before]) => (
               <div key={label} className="rounded-lg border border-border p-2.5">
-                <div className="text-[11px] text-muted-foreground">{label}</div>
+                <div className="text-xs text-muted-foreground">{label}</div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-lg font-bold">{now.toLocaleString("en-GB")}</span>
                   <Trend now={now} before={before} />
@@ -513,6 +522,7 @@ function ReportSettingsCard({
             Send me the report
           </label>
           <input
+            aria-label="Email address for the report"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -624,7 +634,7 @@ function ReplySettingsCard({
                   />
                   {m.label}
                 </span>
-                <span className="block text-[11px] text-muted-foreground mt-1">{m.help}</span>
+                <span className="block text-xs text-muted-foreground mt-1">{m.help}</span>
               </label>
             ))}
           </div>
@@ -643,7 +653,7 @@ function ReplySettingsCard({
             </label>
           )}
           {v.mode !== "off" && (
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Only reviews that arrive after you save are handled this way. Older reviews are left
               for you.
             </p>
@@ -661,7 +671,7 @@ function ReplySettingsCard({
               className={field}
             />
           </label>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Templates: {"{name}"} becomes the reviewer's first name, {"{business}"} your business
             name and {"{stars}"} the number of stars.
           </p>
@@ -761,7 +771,12 @@ function ChoosePlace({ onDone }: { onDone: () => Promise<void> }) {
       } else setErr(r.error);
     });
   }, []);
-  if (err) return <p className="text-xs text-destructive">{err}</p>;
+  if (err)
+    return (
+      <p role="alert" className="text-xs text-destructive">
+        {err}
+      </p>
+    );
   if (!places) return <Loader2 className="w-4 h-4 animate-spin" />;
   if (!places.length)
     return (
@@ -797,9 +812,7 @@ function ChoosePlace({ onDone }: { onDone: () => Promise<void> }) {
       }`}
     >
       <span className="font-semibold">{p.title}</span>
-      {highlight && (
-        <span className="ml-2 text-[11px] font-semibold text-emerald-800">Best match</span>
-      )}
+      {highlight && <span className="ml-2 text-xs font-semibold text-emerald-800">Best match</span>}
       {p.address && <span className="block text-xs text-muted-foreground">{p.address}</span>}
     </button>
   );
@@ -808,6 +821,7 @@ function ChoosePlace({ onDone }: { onDone: () => Promise<void> }) {
       {best && !t && row(best, true)}
       {places.length > 6 && (
         <input
+          aria-label="Search your Google profiles"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={`Search ${places.length} profiles by name or address`}
@@ -865,6 +879,7 @@ function GooglePosts({
         </p>
       </div>
       <textarea
+        aria-label="Post text"
         value={summary}
         onChange={(e) => setSummary(e.target.value)}
         rows={4}
@@ -873,7 +888,12 @@ function GooglePosts({
         className={field}
       />
       <div className="grid gap-2 sm:grid-cols-2 text-sm">
-        <select value={action} onChange={(e) => setAction(e.target.value)} className={field}>
+        <select
+          aria-label="Button on the post"
+          value={action}
+          onChange={(e) => setAction(e.target.value)}
+          className={field}
+        >
           {BUTTONS.map((b) => (
             <option key={b.id} value={b.id}>
               {b.label}
@@ -882,6 +902,7 @@ function GooglePosts({
         </select>
         {action && action !== "CALL" && (
           <input
+            aria-label="Button link"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://your-booking-page"
@@ -970,7 +991,11 @@ function GooglePosts({
                 )}
               </div>
               <p className="line-clamp-2">{p.summary}</p>
-              {p.error && <p className="text-destructive">{p.error}</p>}
+              {p.error && (
+                <p role="alert" className="text-destructive">
+                  {p.error}
+                </p>
+              )}
             </li>
           ))}
         </ul>

@@ -59,7 +59,12 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
     change(next);
   };
 
-  if (err) return <p className="text-sm text-destructive">{err}</p>;
+  if (err)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {err}
+      </p>
+    );
   if (!d) return <Loader2 className="w-4 h-4 animate-spin" />;
   const unread = d.feedback.filter((f) => !f.read_at).length;
 
@@ -83,6 +88,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
                     {i === 0 ? "Main button" : `Option ${i + 1}`}
                   </span>
                   <select
+                    aria-label="Review site"
                     value={l.platform}
                     onChange={(e) =>
                       change(
@@ -128,6 +134,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
                 </div>
                 {l.platform === "other" && (
                   <input
+                    aria-label="Button text"
                     value={l.label}
                     onChange={(e) =>
                       change(links.map((x, k) => (k === i ? { ...x, label: e.target.value } : x)))
@@ -137,6 +144,7 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
                   />
                 )}
                 <input
+                  aria-label="Review page link"
                   value={l.url}
                   onChange={(e) =>
                     change(links.map((x, k) => (k === i ? { ...x, url: e.target.value } : x)))
