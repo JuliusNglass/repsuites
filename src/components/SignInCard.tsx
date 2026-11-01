@@ -173,7 +173,7 @@ export function SignInCard({
             {demoAvailable && (
               <a
                 href="/demo"
-                className="text-xs text-primary hover:text-primary/80 font-medium underline underline-offset-2 block"
+                className="text-xs text-primary-ink hover:text-primary-ink/80 font-medium underline underline-offset-2 block"
               >
                 Try the interactive demo →
               </a>

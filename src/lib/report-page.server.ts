@@ -7,6 +7,16 @@ import { gridInsight, joinSides, sideOf, gridSpots } from "./report-map";
 import { usesMiles } from "./units";
 import { embedUrl, type VideoKind } from "./prospect-video";
 import {
+  READING_HEAD,
+  READING_STYLE,
+  RANK_PIN_STYLE,
+  rankBand,
+  rankLegend,
+  rankText,
+  rankWords,
+  readingToggle,
+} from "./reading";
+import {
   money,
   saleFor,
   saleRange,
@@ -28,36 +38,36 @@ function bookingLink(name: string): string {
 }
 
 function scoreColour(n: number): string {
-  return n >= 75 ? "#059669" : n >= 50 ? "#d97706" : "#dc2626";
+  return n >= 75 ? "#047857" : n >= 50 ? "#b45309" : "#b91c1c";
 }
 
 export const STYLE = `
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0f172a;line-height:1.5}
-main{max-width:44rem;margin:0 auto;padding:28px 18px 40px}
-.brand{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:20px}.brand img{width:28px;height:28px;border-radius:6px}
-h1{font-size:1.55rem;line-height:1.2;margin:0 0 4px}.kicker{margin:0 0 2px;font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#b7791f}.biz{font-size:2rem;font-weight:800;line-height:1.15;margin:0 0 6px;color:#0b1d3a;border-left:6px solid #f5b324;padding-left:12px}h2{font-size:1.1rem;margin:28px 0 10px}
-.muted{color:#64748b;font-size:.9rem}
+main{max-width:42rem;margin:0 auto;padding:24px 18px 40px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:20px}.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px}.top .brand{margin:0}.brand img{width:28px;height:28px;border-radius:6px}
+h1{font-size:1.55rem;line-height:1.2;margin:0 0 4px}.kicker{margin:0 0 4px;font-size:1rem;font-weight:700;color:#7a5200}.biz{font-size:2rem;font-weight:800;line-height:1.15;margin:0 0 6px;color:#0b1d3a;border-left:6px solid #f5b324;padding-left:12px}h2{font-size:1.3rem;line-height:1.3;margin:28px 0 10px}
+.muted{color:#475569;font-size:1rem}
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;margin:12px 0}
 .score{display:flex;align-items:center;gap:16px}.dial{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800;color:#fff;flex-shrink:0}
 .bar{height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:4px}.bar>span{display:block;height:100%;background:#0f172a}
-table{width:100%;border-collapse:collapse;font-size:.95rem}td,th{padding:8px 6px;border-bottom:1px solid #e2e8f0;text-align:left}th{font-size:.8rem;color:#64748b;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:1rem}td,th{padding:10px 6px;border-bottom:1px solid #e2e8f0;text-align:left}th{font-size:.95rem;color:#334155;font-weight:700}
 tr.you td{font-weight:700;background:#fffbeb}
 .fix{border-left:4px solid #f59e0b;padding:10px 12px;background:#fff;border-radius:8px;margin:8px 0}.fix.high{border-color:#dc2626}
-.fix b{display:block}.fix span{color:#475569;font-size:.92rem}
+.fix b{display:block}.fix span{color:#334155;font-size:1rem}.fix .tag{display:inline-block;font-size:.85rem;font-weight:700;color:#334155;background:#fef3c7;border-radius:999px;padding:2px 10px;margin-bottom:6px}.fix.high .tag{background:#fee2e2;color:#991b1b}
 .cta{display:block;text-align:center;background:#f5b324;color:#0f172a;font-weight:800;text-decoration:none;border-radius:14px;padding:16px;font-size:1.05rem;margin-top:16px}
-.small{font-size:.8rem;color:#64748b}
-.found{border:2px solid #f5b324}.finding{display:flex;gap:10px;align-items:flex-start;margin:10px 0}.finding p{margin:0;font-size:1rem}.fi{font-size:1.3rem;line-height:1.3}
+.small{font-size:.95rem;color:#475569}a.small,.small a{color:#334155}
+.found{border:2px solid #f5b324}.finding{display:flex;gap:10px;align-items:flex-start;margin:10px 0}.finding p{margin:0;font-size:1.0625rem}.fi{font-size:1.3rem;line-height:1.3}
 .map{position:relative;aspect-ratio:1;max-width:560px;margin:0 auto;border-radius:12px;overflow:hidden;background:#e8eef0;z-index:0}
-.kw{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.kw button{border:1px solid #cbd5e1;background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}.kw button.on{background:#0f172a;color:#fff;border-color:#0f172a}
-.pin{position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
-.pin.home{width:38px;height:38px;background:#0f172a;z-index:3}
-.pin.home .rank{position:absolute;right:-10px;top:-10px;min-width:22px;height:22px;padding:0 4px;border-radius:11px;font-size:.68rem;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
-.rpin{position:absolute;transform:translate(-50%,-110%) rotate(-45deg);width:24px;height:24px;border-radius:50% 50% 50% 0;background:#475569;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}.rpin span{transform:rotate(45deg);color:#fff;font-weight:800;font-size:.7rem}
-.rkey{display:inline-block;width:16px;height:16px;border-radius:50%;background:#475569;color:#fff;text-align:center;font-size:.65rem;line-height:16px}
+.kw{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.kw button{border:1px solid #64748b;background:#fff;color:#0b1b33;border-radius:999px;padding:8px 14px;font:inherit;font-size:1rem;cursor:pointer}.kw button.on{background:#0f172a;color:#fff;border-color:#0f172a}
+.pin{position:absolute;transform:translate(-50%,-50%);width:32px;height:32px;font-size:.85rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}.pin.rk-missing{border:0;box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.45)}
+.pin.home{width:40px;height:40px;background:#0b1b33;border-radius:50%;z-index:3}
+.pin.home .rank{position:absolute;right:-12px;top:-12px;min-width:26px;height:26px;padding:0 4px;font-size:.8rem;border:2px solid #fff}
+.rpin{position:absolute;transform:translate(-50%,-110%) rotate(-45deg);width:24px;height:24px;border-radius:50% 50% 50% 0;background:#475569;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}.rpin span{transform:rotate(45deg);color:#fff;font-weight:800;font-size:.8rem}
+.rkey{display:inline-block;width:22px;height:22px;border-radius:50%;background:#475569;color:#fff;text-align:center;font-size:.8rem;line-height:22px}.leaflet-container{font:inherit;font-size:.85rem}.map .leaflet-control-attribution a{color:#0b4f8a;text-decoration:underline}.map .leaflet-bar a{width:44px!important;height:44px!important;line-height:44px!important;font-size:22px!important}
 .worth .ctl{display:flex;align-items:center;gap:10px;margin:12px 0 8px}.worth input[type=range]{flex:1;min-width:0;accent-color:#0f172a;height:28px}
-.worth .num{display:flex;align-items:center;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:0 8px;flex-shrink:0}.worth .num input{width:5.5em;border:0;font:inherit;font-weight:700;font-size:1.05rem;padding:8px 2px;background:transparent}.worth .num input:focus{outline:none}
-.seg{display:inline-flex;border:1px solid #cbd5e1;border-radius:999px;overflow:hidden}.seg button{border:0;background:#fff;font:inherit;font-size:.9rem;padding:7px 16px;cursor:pointer}.seg button.on{background:#0f172a;color:#fff}
-.sum{list-style:none;margin:14px 0 0;padding:0;font-size:1rem}.sum li{padding:8px 0;border-bottom:1px dashed #e2e8f0}.sum li b{white-space:nowrap}
+.worth .num{display:flex;align-items:center;border:1px solid #64748b;border-radius:10px;background:#fff;padding:0 8px;flex-shrink:0}.worth .num input{width:5.5em;border:0;font:inherit;font-weight:700;font-size:1.05rem;padding:8px 2px;background:transparent}.worth .num:focus-within{outline:3px solid #0b1b33;outline-offset:2px}.worth .num input:focus-visible{outline:none;box-shadow:none}
+.seg{display:inline-flex;border:1px solid #64748b;border-radius:999px;overflow:hidden}.seg button{border:0;background:#fff;color:#0b1b33;font:inherit;font-size:1rem;padding:8px 18px;cursor:pointer}.seg button.on{background:#0f172a;color:#fff}
+.sum{margin:14px 0 0;padding:0 0 0 1.4em;font-size:1.0625rem}.sum li{padding:8px 0;border-bottom:1px dashed #e2e8f0}.sum li b{white-space:nowrap}
 .total{margin:14px 0 0;background:#fffbeb;border:2px solid #f5b324;border-radius:14px;padding:14px;text-align:center}.total .big{font-size:2rem;font-weight:800;line-height:1.1;color:#0b1d3a}
 @media print{.cta,.noprint{display:none}body{background:#fff}.card{break-inside:avoid}}
 
@@ -74,12 +84,12 @@ td:nth-child(n+2),th:nth-child(n+2){text-align:right}
 .fix{border-left-width:4px;border-radius:12px;box-shadow:0 0 0 1px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04)}
 .cta{transition-property:transform,box-shadow,filter;transition-duration:.15s;transition-timing-function:ease-out;box-shadow:0 1px 0 rgba(15,23,42,.08),0 6px 16px rgba(245,179,36,.35)}
 .cta:hover{filter:brightness(1.03)}.cta:active{transform:scale(.97)}
-.seg button,.kw button{min-height:40px;transition-property:background-color,color,transform;transition-duration:.15s}.seg button:active,.kw button:active{transform:scale(.97)}
-.worth input[type=range]{height:40px}
+.seg button,.kw button{min-height:44px;transition-property:background-color,color,transform;transition-duration:.15s}.seg button:active,.kw button:active{transform:scale(.97)}
+.worth input[type=range]{height:44px}
 .worth input[type=range]::-webkit-slider-thumb{width:26px;height:26px}
 .brand img{outline:1px solid rgba(15,23,42,.08);outline-offset:-1px}
 @media (prefers-reduced-motion:reduce){.cta,.seg button,.kw button{transition:none}}
-`;
+${READING_STYLE}${RANK_PIN_STYLE}`;
 
 const FLASH: Record<string, string> = {
   connected: "Done. Your real numbers from Google are below.",
@@ -124,10 +134,10 @@ function realNumbers(token: string, snap: ProspectSnapshot | null, flash: string
   const delta = (now: number, before: number) => {
     if (before <= 0) return "";
     const up = now >= before;
-    return `<div class="small" style="color:${up ? "#059669" : "#dc2626"}">${up ? "Up" : "Down"} from ${fmt(before)}</div>`;
+    return `<div class="small" style="color:${up ? "#047857" : "#b91c1c"};font-weight:700">${up ? '<span aria-hidden="true">&#9650;</span> Up' : '<span aria-hidden="true">&#9660;</span> Down'} from ${fmt(before)}</div>`;
   };
   const tile = (label: string, now: number, before: number) =>
-    `<div style="background:#f8fafc;border-radius:12px;padding:12px"><div style="font-size:1.5rem;font-weight:800">${fmt(now)}</div><div style="font-size:.88rem">${label}</div>${delta(now, before)}</div>`;
+    `<div style="background:#f8fafc;border-radius:12px;padding:12px"><div style="font-size:1.5rem;font-weight:800">${fmt(now)}</div><div style="font-size:1rem">${label}</div>${delta(now, before)}</div>`;
   const perWeek = Math.round(leads / 13);
   const words = snap.searchTerms.length
     ? `<p style="margin:16px 0 6px"><b>What people typed to find you</b> <span class="small">(${esc(snap.searchMonth)})</span></p><ul style="margin:0;padding-left:18px">${snap.searchTerms
@@ -149,7 +159,7 @@ ${tile("website visits", c.websiteClicks, pv.websiteClicks)}
 <p style="margin:14px 0 0">That is about <b>${fmt(perWeek)} people a week</b> getting in touch with you from Google${leadsBefore > 0 && leads !== leadsBefore ? ` (${leads > leadsBefore ? "up" : "down"} from ${fmt(Math.round(leadsBefore / 13))})` : ""}.</p>
 <p class="muted" style="margin:8px 0 0">More reviews and more top 3 spots on the map mean more of these.</p>
 ${words}
-<p class="small" style="margin:14px 0 0">We keep these figures, not access to your profile. <a href="${connect}" style="color:#64748b">Update my numbers</a></p></div>`;
+<p class="small" style="margin:14px 0 0">We keep these figures, not access to your profile. <a href="${connect}">Update my numbers</a></p></div>`;
 }
 
 // The 5 by 5 check drawn as pins on a real map people can zoom and drag
@@ -157,16 +167,10 @@ ${words}
 // rivals as lettered grey pins. With several search phrases, buttons switch
 // between them. Without a location, or if the map cannot load, the plain
 // grid of dots shows instead.
-function rankColour(v: number | null) {
-  return v === -1
-    ? { bg: "#94a3b8", fg: "#fff", t: "?" }
-    : v === null
-      ? { bg: "#dc2626", fg: "#fff", t: "20+" }
-      : v <= 3
-        ? { bg: "#059669", fg: "#fff", t: String(v) }
-        : v <= 10
-          ? { bg: "#f59e0b", fg: "#111", t: String(v) }
-          : { bg: "#ef4444", fg: "#fff", t: String(v) };
+// One pin: its band (colour and shape, see reading.ts), what it shows and
+// what a screen reader says.
+function rankPin(v: number | null) {
+  return { b: rankBand(v), t: rankText(v), w: rankWords(v) };
 }
 
 export function heatMap(r: Report, extra: RenderExtra | null): string {
@@ -177,7 +181,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const center = grids[0]!.center ?? extra?.center ?? null;
   const miles = usesMiles(center?.lat, center?.lng);
   const spacingKm = grids[0]!.spacingKm ?? (miles ? 0.8 : 1);
-  const legend = `<p class="small" style="text-align:center;margin:10px 0 0"><span style="color:#059669">&#9679;</span> top 3 &nbsp; <span style="color:#f59e0b">&#9679;</span> 4 to 10 &nbsp; <span style="color:#ef4444">&#9679;</span> 11 to 20 &nbsp; <span style="color:#dc2626">&#9679;</span> not in the top 20</p>`;
+  const legend = `${rankLegend()}<p class="small" style="text-align:center;margin:8px auto 0">The number on each pin is where you came on Google Maps from that spot.</p>`;
   // Plain words: "in the top 3 in 6 of the 25 places", "not in the top 3
   // anywhere", "in the top 3 everywhere".
   // The top card already says "X of 25"; this explains the shape: your own
@@ -215,18 +219,19 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
     return `${home} ${rings}${sides}`;
   };
   const dots = (g: (typeof grids)[number]) =>
-    `<div style="display:grid;grid-template-columns:repeat(${g.size},1fr);gap:8px;max-width:340px;margin:0 auto">${g.ranks
+    `<div role="img" aria-label="${esc(`Grid of ${g.ranks.length} search spots for "${g.keyword}". You are in the top 3 in ${g.top3} of them.`)}" style="display:grid;grid-template-columns:repeat(${g.size},1fr);gap:8px;max-width:340px;margin:0 auto">${g.ranks
       .map((v) => {
-        const d = rankColour(v);
-        return `<div style="aspect-ratio:1;border-radius:50%;background:${d.bg};color:${d.fg};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem">${d.t}</div>`;
+        const d = rankPin(v);
+        return `<div class="rk rk-${d.b}" style="aspect-ratio:1;font-size:1rem">${d.t}</div>`;
       })
       .join("")}</div>`;
   const tabs =
     grids.length > 1
-      ? `<div class="kw noprint">${grids.map((g, i) => `<button type="button" data-i="${i}"${i === 0 ? ' class="on"' : ""}>${esc(g.keyword)}</button>`).join("")}</div>`
+      ? `<div class="kw noprint" role="group" aria-label="Search phrase">${grids.map((g, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0 ? "true" : "false"}"${i === 0 ? ' class="on"' : ""}>${esc(g.keyword)}</button>`).join("")}</div>`
       : "";
   const furthest = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
-  const intro = `<p style="margin:0 0 12px">We searched Google Maps from 25 places around you, up to ${esc(furthest)} away, just like a customer standing there would. Each pin shows where you came in the list from that place. The house is you. Pinch or use + and − to zoom in and see the businesses around you.</p>`;
+  const intro = `<p style="margin:0 0 8px">We searched Google Maps from 25 places around you, up to ${esc(furthest)} away. This is what a customer standing there would see.</p>
+<ul style="margin:0 0 12px;padding-left:1.2em"><li>Each pin shows where you came in the list from that place.</li><li>The house is you.</li><li>Pinch, or use + and −, to zoom in.</li></ul>`;
   if (!center || !extra)
     return `<h2>Where you show up across your area</h2><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div>`;
   const spots = gridSpots(center, 5, spacingKm).map((p) => [
@@ -239,7 +244,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
     name: b.name,
     grids: grids.map((g) => ({
       k: g.keyword,
-      pins: g.ranks.map((v) => rankColour(v)),
+      pins: g.ranks.map((v) => rankPin(v)),
       s: summaryOf(g),
     })),
     rivals: r.rivals
@@ -251,19 +256,19 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
     ? `<p class="small" style="margin:8px 0 0">${data.rivals.map((x) => `<b class="rkey">${x.l}</b> ${esc(x.n)}`).join(" &nbsp; ")}</p>`
     : "";
   return `<h2>Where you show up across your area</h2><div class="card">${intro}${tabs}
-<div id="rmap" class="map"><div id="rmap-fallback" style="padding:16px">${dots(grids[0]!)}</div></div>
-${legend}${rivalKey}<p id="rmap-sum" style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div>
+<div id="rmap" class="map" role="region" aria-label="Map of where you show up. The words under the map say the same thing."><div id="rmap-fallback" style="padding:16px">${dots(grids[0]!)}</div></div>
+${legend}${rivalKey}<p id="rmap-sum" aria-live="polite" style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>(function(){var D=${json};if(!window.L)return;var el=document.getElementById("rmap");document.getElementById("rmap-fallback").remove();
 var m=L.map(el,{scrollWheelZoom:false,zoomSnap:0.5});L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(m);
 m.fitBounds(L.latLngBounds(D.spots),{padding:[24,24]});el.addEventListener("wheel",function(e){if(e.ctrlKey){e.preventDefault();m.setZoom(m.getZoom()-e.deltaY*0.02);}},{passive:false});var layer=L.layerGroup().addTo(m);
 var house='<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>';
-function draw(i){layer.clearLayers();var g=D.grids[i];D.spots.forEach(function(p,j){var d=g.pins[j];var html=j===12?'<div class="pin home">'+house+'<span class="rank" style="background:'+d.bg+';color:'+d.fg+'">'+d.t+'</span></div>':'<div class="pin" style="background:'+d.bg+';color:'+d.fg+'">'+d.t+'</div>';
-L.marker(p,{icon:L.divIcon({className:"",html:html,iconSize:[0,0]}),zIndexOffset:j===12?1000:0}).bindTooltip(j===12?D.name+": "+d.t:"From here: "+d.t).addTo(layer);});
-D.rivals.forEach(function(x){L.marker(x.at,{icon:L.divIcon({className:"",html:'<div class="rpin"><span>'+x.l+'</span></div>',iconSize:[0,0]})}).bindTooltip(x.n).addTo(layer);});
+function draw(i){layer.clearLayers();var g=D.grids[i];D.spots.forEach(function(p,j){var d=g.pins[j];var html=j===12?'<div class="pin home">'+house+'<span class="rank rk rk-'+d.b+'">'+d.t+'</span></div>':'<div class="pin rk rk-'+d.b+'">'+d.t+'</div>';
+L.marker(p,{icon:L.divIcon({className:"",html:html,iconSize:[0,0]}),zIndexOffset:j===12?1000:0,keyboard:false}).bindTooltip(j===12?D.name+": "+d.w:"From here: "+d.w).addTo(layer);});
+D.rivals.forEach(function(x){L.marker(x.at,{icon:L.divIcon({className:"",html:'<div class="rpin"><span>'+x.l+'</span></div>',iconSize:[0,0]}),keyboard:false}).bindTooltip(x.n).addTo(layer);});
 document.getElementById("rmap-sum").innerHTML=g.s;}
-draw(0);document.querySelectorAll(".kw button").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".kw button").forEach(function(x){x.classList.remove("on")});b.classList.add("on");draw(+b.getAttribute("data-i"));});});})();</script>`;
+draw(0);document.querySelectorAll(".kw button").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".kw button").forEach(function(x){x.classList.remove("on");x.setAttribute("aria-pressed","false");});b.classList.add("on");b.setAttribute("aria-pressed","true");draw(+b.getAttribute("data-i"));});});})();</script>`;
 }
 
 // The Maps part of the score uses the whole area (all search phrases), not
@@ -392,13 +397,13 @@ function findings(
   }
   if (!items.length) return "";
   return `<div class="card found"><h2 style="margin:0 0 10px">What we found</h2>
-${items.map((i) => `<div class="finding"><span class="fi">${i.icon}</span><p>${i.text}</p></div>`).join("")}
+${items.map((i) => `<div class="finding"><span class="fi" aria-hidden="true">${i.icon}</span><p>${i.text}</p></div>`).join("")}
 ${
   hasVideo
-    ? `<div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px;background:#0b1d3a;color:#fff" href="#map">See where you show up</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></div>`
+    ? `<div class="noprint" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px"><a class="cta" style="margin:0;flex:1;min-width:200px;padding:12px;background:#0b1d3a;color:#fff" href="#map">See where you show up</a><a href="#score" class="small" style="color:#334155">Your score: <b>${view.score}/100</b></a></div>`
     : `<div class="noprint" style="margin-top:14px"><a class="cta" style="margin:0" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free: get your review QR card</a>
 <p class="small" style="text-align:center;margin:8px 0 0">No card needed. Print it today.</p>
-<p style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:12px 0 0;font-size:.95rem"><a href="#map" style="color:#0b1d3a;font-weight:700">See where you show up &#8595;</a><a href="#score" class="small" style="color:#64748b">Your score: <b>${view.score}/100</b></a></p></div>`
+<p style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:12px 0 0;font-size:.95rem"><a href="#map" style="color:#0b1d3a;font-weight:700">See where you show up &#8595;</a><a href="#score" class="small" style="color:#334155">Your score: <b>${view.score}/100</b></a></p></div>`
 }</div>`;
 }
 
@@ -591,18 +596,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     : r.maps.position === null
       ? `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>not in the first 20</b> results on Google Maps.</p>`
       : `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>number ${r.maps.position}</b> on Google Maps.${r.maps.position <= 3 ? " That is the top 3. Well done." : " The first 3 are the ones most people tap."}</p>`;
-  // Heatmap: one coloured dot per spot, the business in the middle.
   const hm = r.grid;
-  const dot = (v: number | null) =>
-    v === -1
-      ? { bg: "#e2e8f0", fg: "#64748b", t: "?" }
-      : v === null
-        ? { bg: "#dc2626", fg: "#fff", t: "20+" }
-        : v <= 3
-          ? { bg: "#059669", fg: "#fff", t: String(v) }
-          : v <= 10
-            ? { bg: "#f59e0b", fg: "#111", t: String(v) }
-            : { bg: "#ef4444", fg: "#fff", t: String(v) };
   const heat = hm ? heatMap(r, extra) : "";
   const g = r.reviewGap;
   const gap = g
@@ -623,13 +617,13 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
       : "https://repsuites.com/og-image.png?v=2";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}"><style>${STYLE}${video ? VIDEO_STYLE : ""}</style></head><body><main>
-<div class="brand"><img src="/logo-mark.png" alt=""> RepSuites</div>
+<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}">${READING_HEAD}<style>${STYLE}${video ? VIDEO_STYLE : ""}</style></head><body><main>
+<div class="top"><div class="brand"><img src="/logo-mark.png" alt=""> RepSuites</div>${readingToggle()}</div>
 ${video}
 <p class="kicker">How you show up on Google</p>
 ${video ? `<h2 class="biz">${esc(b.name)}</h2>` : `<h1 class="biz">${esc(b.name)}</h1>`}
 <p style="margin:10px 0 0">RepSuites helps local businesses get found and chosen on Google. We checked how <b>${esc(b.name)}</b> shows up when people nearby search for what you do. Here is what we found, what it could be worth, and how to fix it.</p>
-<p class="muted">${esc(b.address)}<br>Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#64748b">See your Google profile</a>` : ""}</p>
+<p class="muted">${esc(b.address)}<br>Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
 
 ${headline}
 
@@ -651,11 +645,11 @@ ${gap}
 ${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
 
 <h2>What to fix first</h2>
-${view.fixes.length ? view.fixes.map((f) => `<div class="fix ${f.priority}"><b>${esc(f.title)}</b><span>${esc(f.why)}</span></div>`).join("") : `<div class="card">Your Google profile is in good shape. The next step is a steady flow of new reviews.</div>`}
+${view.fixes.length ? `<ol style="list-style:none;margin:0;padding:0">${view.fixes.map((f) => `<li class="fix ${f.priority}" style="max-width:none"><span class="tag">${f.priority === "high" ? "Do this first" : "Worth doing"}</span><b>${esc(f.title)}</b><span>${esc(f.why)}</span></li>`).join("")}</ol>` : `<div class="card">Your Google profile is in good shape. The next step is a steady flow of new reviews.</div>`}
 
 <div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
 <p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
-<p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}" style="color:#64748b">Or book a free 15-minute call</a></p></div>
+<p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}" style="color:#334155">Or book a free 15-minute call</a></p></div>
 <h2 id="score">How we worked out your score</h2>
 <div class="card score"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
@@ -665,7 +659,7 @@ ${view.fixes.length ? view.fixes.map((f) => `<div class="fix ${f.priority}"><b>$
         `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:.92rem"><span>${esc(p.label)}</span><b>${p.got} / ${p.max}</b></div><div class="bar"><span style="width:${Math.round((p.got / p.max) * 100)}%"></span></div></div>`,
     )
     .join("")}</div>
-<p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#64748b">Save or print this report</a></p>
+<p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#334155">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time.</p>
 </main>${extra ? actionTracker(extra.token) : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
 }

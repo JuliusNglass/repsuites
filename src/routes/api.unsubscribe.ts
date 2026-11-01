@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { unsubscribe } from "../lib/lifecycle.server";
 
 const page = (body: string) =>
-  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>RepSuites emails</title></head><body style="font-family:system-ui,sans-serif;text-align:center;padding:48px 16px;color:#0f172a">${body}</body></html>`;
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>RepSuites emails</title></head><body style="font-family:system-ui,sans-serif;font-size:1.125rem;line-height:1.6;padding:48px 16px;color:#0b1b33;background:#f6faf9"><main style="max-width:30rem;margin:0 auto">${body}</main></body></html>`;
 const HTML = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" };
 
 export const Route = createFileRoute("/api/unsubscribe")({

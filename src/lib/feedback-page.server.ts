@@ -6,6 +6,7 @@
 // everyone as an extra, never instead of a review.
 // No em dashes in this copy (AGENTS.md).
 import { textOn } from "./brand";
+import { READING_HEAD, READING_STYLE, readingToggle } from "./reading";
 import { tenantKind } from "./business-type";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { sendEmail } from "./email.server";
@@ -19,10 +20,10 @@ export const PLATFORMS: Record<Platform, { name: string; colour: string; text: s
   google: { name: "Google", colour: "#1a73e8", text: "#ffffff" },
   facebook: { name: "Facebook", colour: "#1877f2", text: "#ffffff" },
   tripadvisor: { name: "Tripadvisor", colour: "#34e0a1", text: "#000000" },
-  trustpilot: { name: "Trustpilot", colour: "#00b67a", text: "#ffffff" },
+  trustpilot: { name: "Trustpilot", colour: "#00b67a", text: "#0b1b33" },
   yelp: { name: "Yelp", colour: "#d32323", text: "#ffffff" },
   booking: { name: "Booking.com", colour: "#003580", text: "#ffffff" },
-  other: { name: "our review page", colour: "#111827", text: "#ffffff" },
+  other: { name: "our review page", colour: "#0b1b33", text: "#ffffff" },
 };
 
 export interface FeedbackTarget {
@@ -125,23 +126,26 @@ function buttonText(l: FeedbackTarget["links"][number]): string {
 }
 
 const STYLE = `
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0f172a}
-main{max-width:28rem;margin:0 auto;padding:40px 20px 32px}
-h1{font-size:1.5rem;line-height:1.25;margin:0 0 8px}p{margin:0 0 16px;color:#475569;line-height:1.5}
-.btn{display:block;width:100%;text-align:center;text-decoration:none;font-weight:700;border-radius:14px;padding:16px;font-size:1.05rem;margin:0 0 10px}
-.alt{display:block;text-align:center;text-decoration:none;font-weight:600;border:1px solid #cbd5e1;border-radius:12px;padding:12px;margin:0 0 8px;color:#0f172a;background:#fff}
-.small{font-size:.85rem;color:#64748b}
-details{margin-top:24px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px}
-summary{cursor:pointer;font-weight:600}
-label{display:block;font-size:.85rem;font-weight:600;margin:12px 0 4px}
-input,textarea{width:100%;font:inherit;border:1px solid #cbd5e1;border-radius:10px;padding:10px;background:#fff}
-textarea{min-height:110px}
-button{margin-top:14px;width:100%;font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px;background:#0f172a;color:#fff}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0b1b33}
+${READING_STYLE}
+main{max-width:30rem;margin:0 auto;padding:24px 20px 32px}
+.tools{display:flex;justify-content:flex-end;margin:0 0 16px}
+h1{font-size:1.6rem;line-height:1.25;margin:0 0 10px}p{margin:0 0 16px;color:#334155}
+.steps{margin:0 0 20px;padding-left:1.4em;color:#334155}.steps li{margin:0 0 4px;padding-left:4px}
+.btn{display:flex;align-items:center;justify-content:center;min-height:56px;width:100%;text-align:center;text-decoration:none;font-weight:700;border-radius:14px;padding:14px 16px;font-size:1.15rem;margin:0 0 12px}
+.alt{display:flex;align-items:center;justify-content:center;min-height:52px;text-align:center;text-decoration:none;font-weight:700;border:2px solid #64748b;border-radius:12px;padding:10px 14px;margin:0 0 10px;color:#0b1b33;background:#fff}
+.small{font-size:1rem;color:#334155}
+details{margin-top:24px;background:#fff;border:1px solid #94a3b8;border-radius:14px;padding:4px 16px}
+summary{cursor:pointer;font-weight:700;min-height:48px;display:flex;align-items:center;padding:8px 0}
+label{display:block;font-size:1rem;font-weight:700;margin:16px 0 6px}
+input,textarea{width:100%;font:inherit;border:2px solid #64748b;border-radius:10px;padding:12px;background:#fff;color:#0b1b33;min-height:48px}
+textarea{min-height:130px}
+button[type=submit]{margin:16px 0 12px;min-height:52px;width:100%;font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px;background:#0b1b33;color:#fff;cursor:pointer}
 .hp{position:absolute;left:-9999px}
-footer{text-align:center;margin-top:28px}footer a{color:#64748b;font-size:.8rem}
-.ok{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:14px;padding:14px 16px;color:#065f46;margin-bottom:20px}
+footer{text-align:center;margin-top:28px}footer a{display:inline-flex;align-items:center;min-height:44px;color:#475569;font-size:.95rem}
+.ok{background:#ecfdf5;border:2px solid #047857;border-radius:14px;padding:14px 16px;color:#064e3b;margin-bottom:20px;font-weight:600}
+.bad{background:#fef2f2;border-color:#b91c1c;color:#7f1d1d}
 `;
-
 // The page heading, escaped.
 export function greeting(t: Pick<FeedbackTarget, "business" | "hospitality">): string {
   return `${t.hospitality ? "Thanks for visiting" : "Thanks for choosing"} ${esc(t.business)}`;
@@ -181,30 +185,32 @@ export function renderFeedbackPage(
   const bc = t.brand?.primary ?? null;
   const bcText = bc ? textOn(bc) : "#ffffff";
   const bar = bc
-    ? `<div style="background:${bc};color:${bcText};padding:14px 20px;text-align:center;font-weight:800;letter-spacing:.02em${t.brand?.secondary ? `;border-bottom:4px solid ${t.brand.secondary}` : ""}">${name}</div>`
+    ? `<header style="background:${bc};color:${bcText};padding:14px 20px;text-align:center;font-weight:800;letter-spacing:.02em${t.brand?.secondary ? `;border-bottom:4px solid ${t.brand.secondary}` : ""}">${name}</header>`
     : "";
   const banner =
     note === "sent"
-      ? `<div class="ok">Thank you. Your message has been passed to ${name}.</div>`
+      ? `<div class="ok" role="status">Thank you. Your message has been passed to ${name}.</div>`
       : note === "error"
-        ? `<div class="ok" style="background:#fef2f2;border-color:#fca5a5;color:#991b1b">Sorry, that did not send. Please try again.</div>`
+        ? `<div class="ok bad" role="alert">Sorry, your message did not send. Check you have written a message below, then tap Send privately again.</div>`
         : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Review ${name}</title><meta property="og:title" content="Leave ${name} a quick review"><meta property="og:description" content="It takes about 30 seconds. Thank you!"><meta property="og:image" content="https://repsuites.com/og-image.png?v=2"><meta name="robots" content="noindex">
-<style>${STYLE}</style></head><body>${bar}<main>
+${READING_HEAD}<style>${STYLE}</style></head><body>${bar}<main>
+<div class="tools">${readingToggle()}</div>
 ${banner}
 <h1>${greeting(t)}</h1>
-<p>Your review helps other people find us. It only takes a minute.</p>
+<p>Your review helps other people find us. It takes about a minute.</p>
+<ol class="steps"><li>Tap the button below.</li><li>Give your rating and a few words.</li><li>Tap Post.</li></ol>
 ${primary}${others}
 <details${note === "error" ? " open" : ""}>
 <summary>Want to tell us something privately?</summary>
 <p class="small" style="margin-top:10px">This goes straight to the team at ${name}. It does not replace a public review.</p>
 <form method="post">
-<label for="m">Your message</label><textarea id="m" name="message" required minlength="2" maxlength="2000"></textarea>
+<label for="m">Your message (needed)</label><textarea id="m" name="message" required minlength="2" maxlength="2000"${note === "error" ? ' aria-invalid="true"' : ""}></textarea>
 <label for="n">Your name (optional)</label><input id="n" name="name" maxlength="120" autocomplete="name">
-<label for="c">Email or phone, if you would like a reply (optional)</label><input id="c" name="contact" maxlength="200" autocomplete="email">
-<input class="hp" tabindex="-1" autocomplete="off" name="website" aria-hidden="true">${rq ? `<input type="hidden" name="rq" value="${rq}">` : ""}
+<label for="c">Email or phone for a reply (optional)</label><input id="c" name="contact" maxlength="200" autocomplete="email">
+<input class="hp" tabindex="-1" autocomplete="off" name="website" aria-hidden="true" aria-label="Leave this empty">${rq ? `<input type="hidden" name="rq" value="${rq}">` : ""}
 <button type="submit"${bc ? ` style="background:${bc};color:${bcText}"` : ""}>Send privately</button>
 </form></details>
 <footer><a href="https://repsuites.com">Powered by RepSuites</a></footer>
@@ -212,7 +218,7 @@ ${primary}${others}
 }
 
 export function notFoundPage(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main style="text-align:center"><h1>Thanks for scanning</h1><p>This review code is not active at the moment. Please ask the business for their review link.</p><footer><a href="https://repsuites.com">RepSuites</a></footer></main></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main><h1>Thanks for scanning</h1><p>This review code is not active at the moment. Please ask the business for their review link.</p><footer><a href="https://repsuites.com">RepSuites</a></footer></main></body></html>`;
 }
 
 // Save private feedback and tell the owners. Returns false on bad input.

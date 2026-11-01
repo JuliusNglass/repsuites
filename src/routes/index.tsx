@@ -96,11 +96,10 @@ function Home() {
     <PublicLayout>
       <section className="px-4 pt-16 pb-14 md:pt-24 md:pb-20 text-center">
         <div className="max-w-3xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-            For local businesses
-          </p>
+          <p className="text-sm font-bold text-muted-foreground mb-4">For local businesses</p>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.08]">
-            More local customers <span className="text-primary">finding you and choosing you.</span>
+            More local customers{" "}
+            <span className="text-primary-ink">finding you and choosing you.</span>
           </h1>
           <p className="mt-5 text-lg text-muted-foreground">
             When someone nearby needs what you do, they search Google or ask an AI assistant, look

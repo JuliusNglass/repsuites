@@ -96,15 +96,22 @@ export function WelcomeCard({
           {steps.map((s) => (
             <li key={s.title} className="flex gap-3">
               {s.done ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2
+                  aria-hidden="true"
+                  className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5"
+                />
               ) : (
-                <Circle className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+                <Circle
+                  aria-hidden="true"
+                  className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5"
+                />
               )}
               <div className="text-sm">
-                <p
-                  className={`font-semibold ${s.done ? "line-through text-muted-foreground" : ""}`}
-                >
+                {/* "Done" in words, not a line through the text: struck-out
+                    text is hard to read, and a tick alone is colour and shape only. */}
+                <p className={`font-semibold ${s.done ? "text-muted-foreground" : ""}`}>
                   {s.title}
+                  {s.done && <span className="ml-1.5 font-bold text-emerald-700">Done</span>}
                 </p>
                 {!s.done && (
                   <p className="text-muted-foreground">

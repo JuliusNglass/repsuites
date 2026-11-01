@@ -12,16 +12,16 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const status = Route.useLoaderData();
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6">
+    <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6">
       <a href="/" className="mb-6">
         <Logo />
       </a>
       <SignInCard isConfigured={status.isConfigured} missingMessage={status.missingMessage} />
-      <p className="mt-6 text-xs text-muted-foreground">
-        <a href="/forgot-password" className="underline">
+      <p className="mt-6 text-sm text-muted-foreground">
+        <a href="/forgot-password" className="inline-flex min-h-11 items-center underline">
           Forgot your password?
         </a>
       </p>
-    </div>
+    </main>
   );
 }

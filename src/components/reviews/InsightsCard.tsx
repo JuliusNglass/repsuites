@@ -25,7 +25,7 @@ function Themes({ items, tone }: { items: Theme[]; tone: "good" | "bad" }) {
               {t.mentions} mention{t.mentions === 1 ? "" : "s"}
             </span>
           </div>
-          {t.quote && <p className="text-xs text-muted-foreground italic">"{t.quote}"</p>}
+          {t.quote && <p className="text-xs text-muted-foreground">"{t.quote}"</p>}
         </li>
       ))}
     </ul>

@@ -320,7 +320,7 @@ export const THEMES: Theme[] = [
     text: "#0f172a",
     accent: "#2563eb",
   },
-  { id: "coral", name: "Coral", bg: ["#ff6b5a", "#e8455f"], text: "#ffffff", accent: "#fff3c4" },
+  { id: "coral", name: "Coral", bg: ["#d6402f", "#c93a4f"], text: "#ffffff", accent: "#fff3c4" },
   {
     id: "charcoal",
     name: "Charcoal",
@@ -791,7 +791,7 @@ export function renderDesign(d: Design, showGuides = false, scale = 1): HTMLCanv
   let accent = d.theme.accent;
   if (d.photo) {
     cover(ctx, d.photo, W, H);
-    ctx.fillStyle = "rgba(8, 12, 24, 0.58)";
+    ctx.fillStyle = "rgba(8, 12, 24, 0.68)"; // dark enough to read text over any photo
     ctx.fillRect(0, 0, W, H);
     text = "#ffffff";
     accent = d.theme.id === "white" || d.theme.id === "cream" ? "#f5b324" : d.theme.accent;

@@ -10,7 +10,7 @@ import { openRequest, recordRequestClick, unsubscribeRequest } from "../lib/revi
 
 const page = (title: string, text: string, extra = "") =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title}</title>` +
-  `<style>body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0f172a}main{max-width:28rem;margin:0 auto;padding:56px 20px;text-align:center}p{color:#475569;line-height:1.5}button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px 18px;background:#0f172a;color:#fff;cursor:pointer}</style>` +
+  `<style>body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0b1b33;font-size:1.125rem;line-height:1.6;letter-spacing:.01em}main{max-width:30rem;margin:0 auto;padding:56px 20px}p{color:#334155}button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px 18px;min-height:48px;background:#0b1b33;color:#fff;cursor:pointer}:focus-visible{outline:3px solid #0b1b33;outline-offset:3px;box-shadow:0 0 0 6px #f5b324}</style>` +
   `</head><body><main><h1>${title}</h1><p>${text}</p>${extra}</main></body></html>`;
 
 const HTML = {
@@ -68,7 +68,7 @@ export const Route = createFileRoute("/q/$token")({
             `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Leave a review</title>` +
               `<meta property="og:title" content="Leave a quick review"><meta property="og:description" content="It takes about 30 seconds. Thank you!">` +
               `<noscript><meta http-equiv="refresh" content="0;url=${r.redirect.replace(/\?rq=.*$/, "")}"></noscript></head>` +
-              `<body style="font-family:system-ui,sans-serif;text-align:center;padding:60px 20px;color:#475569">Opening the review page...` +
+              `<body style="font-family:system-ui,sans-serif;font-size:1.125rem;line-height:1.6;padding:60px 20px;color:#334155;background:#f6faf9">Opening the review page...` +
               `<script>location.replace(${next})</script></body></html>`,
             { status: 200, headers: HTML },
           );

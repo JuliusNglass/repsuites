@@ -45,7 +45,7 @@ function parseRecoveryHash(): string | null {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6 relative">
+    <main className="min-h-screen bg-background flex items-center justify-center p-4 sm:p-6 relative">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 pointer-events-none" />
       <div className="relative z-10 w-full max-w-sm bg-card border border-border rounded-xl shadow-lg p-6 sm:p-8">
         <div className="mb-6 text-center">
@@ -54,7 +54,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
         {children}
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -182,7 +182,7 @@ function ResetPasswordPage() {
           <p className="text-sm text-muted-foreground">
             Your password has been changed. Sign in with your new password.
           </p>
-          <a href="/" className="inline-block mt-2 text-sm font-medium text-primary underline">
+          <a href="/" className="inline-block mt-2 text-sm font-medium text-primary-ink underline">
             Go to sign in
           </a>
         </div>
@@ -194,7 +194,7 @@ function ResetPasswordPage() {
     <Shell>
       <div className="space-y-4">
         <div className="text-center space-y-2">
-          <KeyRound className="w-10 h-10 mx-auto text-primary" />
+          <KeyRound className="w-10 h-10 mx-auto text-primary-ink" />
           <h1 className="text-lg font-bold">Set a new password</h1>
           <p className="text-xs text-muted-foreground">
             Choose a password (12-256 characters) to replace your current one.

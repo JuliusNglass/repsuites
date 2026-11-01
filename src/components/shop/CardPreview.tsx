@@ -56,7 +56,12 @@ export function CardPreview({
           </div>
         </div>
         <div className="shrink-0 self-center bg-white rounded-lg p-1.5 w-[30%]">
-          <QRCodeSVG value="https://repsuites.com" className="w-full h-auto" level="M" />
+          <QRCodeSVG
+            value="https://repsuites.com"
+            className="w-full h-auto"
+            level="M"
+            title="QR code"
+          />
         </div>
       </div>
     </div>
@@ -88,7 +93,12 @@ export function StandPreview({
           {message}
         </div>
         <div className="mt-auto bg-white rounded-lg p-2 w-[55%]">
-          <QRCodeSVG value="https://repsuites.com" className="w-full h-auto" level="M" />
+          <QRCodeSVG
+            value="https://repsuites.com"
+            className="w-full h-auto"
+            level="M"
+            title="QR code"
+          />
         </div>
         <div
           className="mt-2 text-[10px] font-semibold uppercase tracking-wider"

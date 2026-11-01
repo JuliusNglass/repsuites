@@ -16,27 +16,33 @@ import {
 type Data = Extract<Awaited<ReturnType<typeof getRankingFn>>, { ok: true }>;
 type Scan = NonNullable<Data["keywords"][number]["latest"]>;
 
+// Same colours and shapes as the report map (see reading.ts): blue circle for
+// the top 3, amber rounded square for 4 to 10, red square for 11 to 20, and a
+// white circle with a dashed outline when not in the top 20. The number is
+// always shown, so colour is never the only clue.
 function cellTone(rank: number | null) {
-  if (rank === null) return "bg-muted text-muted-foreground";
-  if (rank <= 3) return "bg-emerald-500 text-white";
-  if (rank <= 10) return "bg-amber-400 text-black";
-  return "bg-red-500 text-white";
+  if (rank === null)
+    return "bg-white text-[#0b1b33] rounded-full outline-2 outline-dashed outline-slate-500 -outline-offset-2";
+  if (rank <= 3) return "bg-[#1f6fd1] text-white rounded-full";
+  if (rank <= 10) return "bg-[#f0a020] text-[#0b1b33] rounded-md";
+  return "bg-[#d93a3f] text-white rounded-[2px]";
 }
 
 function Grid({ scan }: { scan: Scan }) {
   return (
     <div
-      className="grid gap-0.5 w-fit"
+      className="grid gap-1 w-fit"
+      role="img"
       style={{ gridTemplateColumns: `repeat(${scan.gridSize}, minmax(0, 1fr))` }}
-      aria-label="Position on Google Maps at each point of the grid"
+      aria-label={`Position on Google Maps at ${scan.points.length} points: top 3 at ${scan.points.filter((p) => p.rank !== null && p.rank <= 3).length}, not in the top 20 at ${scan.points.filter((p) => p.rank === null).length}`}
     >
       {scan.points.map((p, i) => (
         <div
           key={i}
           title={p.rank === null ? "Not in the top 20" : `Number ${p.rank}`}
-          className={`w-7 h-7 rounded text-[10px] font-semibold grid place-items-center ${cellTone(p.rank)}`}
+          className={`w-8 h-8 text-xs font-bold tabular-nums grid place-items-center ${cellTone(p.rank)}`}
         >
-          {p.rank ?? "-"}
+          {p.rank ?? "–"}
         </div>
       ))}
     </div>
@@ -131,20 +137,24 @@ export function RankingCard() {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground items-center">
-        <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-emerald-500" /> Top 3
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-amber-400" /> 4 to 10
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-red-500" /> 11 to 20
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="w-3 h-3 rounded bg-muted border border-border" /> Not in the top 20
-        </span>
-      </div>
+      <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground items-center">
+        {[
+          { rank: 1, label: "Top 3" },
+          { rank: 5, label: "4 to 10" },
+          { rank: 14, label: "11 to 20" },
+          { rank: null, label: "Not in the top 20" },
+        ].map((x) => (
+          <li key={x.label} className="inline-flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className={`w-5 h-5 text-[11px] font-bold grid place-items-center ${cellTone(x.rank)}`}
+            >
+              {x.rank ?? "–"}
+            </span>
+            {x.label}
+          </li>
+        ))}
+      </ul>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {d.keywords.map((k) => (
@@ -152,7 +162,7 @@ export function RankingCard() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="text-sm font-semibold">{k.keyword}</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-xs text-muted-foreground">
                   {k.latest
                     ? `Checked ${new Date(k.latest.runAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}. Shows at ${k.latest.found} of ${k.latest.points.length} points${k.latest.average !== null ? `, average position ${k.latest.average}` : ""}${k.previous?.average != null && k.latest.average !== null ? ` (was ${k.previous.average})` : ""}.`
                     : s.enabled
@@ -185,7 +195,7 @@ export function RankingCard() {
                     "It will be checked within the hour",
                   )
                 }
-                className="text-[11px] font-semibold text-primary disabled:opacity-50"
+                className="min-h-8 text-xs font-semibold text-primary-ink underline underline-offset-2 disabled:opacity-50"
               >
                 Check again
               </button>
@@ -218,7 +228,7 @@ export function RankingCard() {
           >
             {busy === "add" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Track this search"}
           </button>
-          <span className="basis-full text-[11px] text-muted-foreground">
+          <span className="basis-full text-xs text-muted-foreground">
             Up to 5 searches. Tip: use the words from "What people searched to find you".
           </span>
         </form>

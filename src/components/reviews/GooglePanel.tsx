@@ -154,7 +154,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
                   onClick={() =>
                     void run("sync", () => refreshGoogleReviewsFn(), "Reviews checked")
                   }
-                  className="inline-flex items-center gap-1 font-semibold text-primary disabled:opacity-50"
+                  className="inline-flex items-center gap-1 font-semibold text-primary-ink disabled:opacity-50"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${busy === "sync" ? "animate-spin" : ""}`} />{" "}
                   Check now
@@ -231,7 +231,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
               type="button"
               disabled={busy !== null}
               onClick={() => void run("sync", () => refreshGoogleReviewsFn(), "Reviews checked")}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-primary disabled:opacity-50"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary-ink disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${busy === "sync" ? "animate-spin" : ""}`} /> Check
               now
@@ -315,7 +315,7 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
               setText(r.reply ?? "");
               setOpen(true);
             }}
-            className="mt-1.5 font-semibold text-primary"
+            className="mt-1.5 font-semibold text-primary-ink"
           >
             Edit reply
           </button>
@@ -333,7 +333,7 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
             type="button"
             disabled={busy !== null}
             onClick={() => void draft()}
-            className="font-semibold text-primary disabled:opacity-50"
+            className="font-semibold text-primary-ink disabled:opacity-50"
           >
             {busy === "draft" ? "Drafting..." : "Draft a reply"}
           </button>
@@ -354,7 +354,7 @@ function GoogleReview({ r, onChanged }: { r: Review; onChanged: () => Promise<vo
               type="button"
               disabled={busy !== null}
               onClick={() => void draft()}
-              className="font-semibold text-primary disabled:opacity-50"
+              className="font-semibold text-primary-ink disabled:opacity-50"
             >
               {busy === "draft" ? "Drafting..." : text ? "New draft" : "Draft a reply"}
             </button>
@@ -545,7 +545,7 @@ function ReportSettingsCard({
                 if (r.ok) toast.success(`Last month's report sent to ${s.email}`);
                 else toast.error(r.error);
               }}
-              className="font-semibold text-primary disabled:opacity-50"
+              className="font-semibold text-primary-ink disabled:opacity-50"
             >
               {busy === "test" ? "Sending..." : "Send last month's report now"}
             </button>
@@ -602,7 +602,7 @@ function ReplySettingsCard({
           <button
             type="button"
             onClick={() => setOpen(!open)}
-            className="text-xs font-semibold text-primary"
+            className="text-xs font-semibold text-primary-ink"
           >
             {open ? "Close" : "Change"}
           </button>

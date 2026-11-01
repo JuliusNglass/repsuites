@@ -105,11 +105,11 @@ function Cards() {
       <section className="px-4 pt-12 pb-14 md:pt-20 md:pb-20 overflow-hidden">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 md:gap-14 items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
+            <p className="text-sm font-bold text-muted-foreground mb-4">
               NFC review cards and table stands
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.06]">
-              One tap. <span className="text-primary">One more 5-star review.</span>
+              One tap. <span className="text-primary-ink">One more 5-star review.</span>
             </h1>
             <p className="mt-5 text-lg text-muted-foreground max-w-xl">
               Your happy customers already want to help. Give them a card they tap on their phone

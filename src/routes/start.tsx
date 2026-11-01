@@ -102,9 +102,7 @@ function Start() {
       <section className="px-4 py-6 md:py-16">
         <div className="max-w-5xl mx-auto grid md:grid-cols-[1fr_1.1fr] gap-10 items-start">
           <div className="order-2 md:order-1 md:pt-6">
-            <p className="text-sm font-semibold text-primary uppercase tracking-wide">
-              Free for ever
-            </p>
+            <p className="text-base font-semibold text-primary-ink">Free for ever</p>
             <h1 className="mt-2 text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
               Get more Google reviews, starting today
             </h1>
@@ -244,7 +242,7 @@ function Start() {
               {busy && <Loader2 className="w-5 h-5 animate-spin" />}
               {busy ? "Setting up your account" : "Start free"}
             </button>
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-sm text-center text-muted-foreground">
               No card needed. Already have an account?{" "}
               <Link to="/login" className="underline">
                 Sign in
