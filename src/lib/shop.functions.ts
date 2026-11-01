@@ -98,8 +98,8 @@ export const startCardCheckout = createServerFn({ method: "POST" })
     const s = await stripe<{ id: string; url: string }>("checkout/sessions", {
       mode: "payment",
       client_reference_id: orderId,
-      metadata: { kind: "shop", order_id: orderId },
-      payment_intent_data: { metadata: { kind: "shop", order_id: orderId } },
+      metadata: { kind: "shop", product: "repsuites", order_id: orderId },
+      payment_intent_data: { metadata: { kind: "shop", product: "repsuites", order_id: orderId } },
       line_items: [
         ...(cards
           ? [
@@ -209,9 +209,9 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
       ...(bill?.stripe_customer_id
         ? { customer: bill.stripe_customer_id }
         : { customer_email: g.email }),
-      metadata: { kind: "plan", tenant_id: g.tenantId, plan: data.plan },
+      metadata: { kind: "plan", product: "repsuites", tenant_id: g.tenantId, plan: data.plan },
       subscription_data: {
-        metadata: { kind: "plan", tenant_id: g.tenantId, plan: data.plan },
+        metadata: { kind: "plan", product: "repsuites", tenant_id: g.tenantId, plan: data.plan },
         // Monthly plans are paid on the 1st; mid-month joiners pay for the
         // days left this month first. Yearly plans run from the join date.
         ...(data.interval === "month" ? monthlyAnchor(londonToday()) : {}),
