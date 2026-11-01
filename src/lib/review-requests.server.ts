@@ -105,7 +105,7 @@ function daysOf(s: RequestSettings): ReminderDays {
   return [s.reminder1Days, Math.max(s.reminder2Days, s.reminder1Days + 1)];
 }
 
-async function timezoneFor(tenantId: string): Promise<string> {
+export async function timezoneFor(tenantId: string): Promise<string> {
   const r = await serviceRead<{ timezone: string }[]>(
     `tenant_settings?select=timezone&tenant_id=eq.${tenantId}`,
     "",
@@ -132,13 +132,13 @@ async function triggerTokenFor(tenantId: string, rotate = false): Promise<string
   return w.error ? null : token;
 }
 
-async function businessName(tenantId: string): Promise<string> {
+export async function businessName(tenantId: string): Promise<string> {
   const r = await serviceRead<{ name: string }[]>(`tenants?select=name&id=eq.${tenantId}`, "");
   return r.data?.[0]?.name ?? "us";
 }
 
 const LIST_COLUMNS =
-  "id,token,name,phone,email,channel,status,step,due_at,last_sent_at,first_sent_at,opened_at,clicked_at,feedback_at,reviewed_at,unsubscribed_at,reminders_sent,skip_reason,source,event,error,created_at";
+  "id,token,name,phone,email,channel,status,step,due_at,last_sent_at,first_sent_at,opened_at,clicked_at,feedback_at,reviewed_at,unsubscribed_at,reminders_sent,skip_reason,source,event,error,created_at,message";
 
 export async function readRequests() {
   const g = await guard(false);
@@ -181,21 +181,26 @@ export async function readRequests() {
       event: r.event as string | null,
       error: r.error as string | null,
       createdAt: r.created_at as string,
+      message: (r.message ?? null) as string | null,
     })),
   };
 }
 
-interface Person {
+export interface Person {
   name: string;
   phone: string | null;
   email: string | null;
   channel: Channel;
+  // Per person (accounting invoices, campaign contacts); overrides opts.externalId.
+  externalId?: string | null;
 }
 
 // Saves requests for one business. Customers who unsubscribed, or who were
 // asked within the "don't ask again" window, are saved as skipped with the
-// reason, so the business can see why nothing went out.
-async function queueRequests(
+// reason, so the business can see why nothing went out. Used by the Ask tab,
+// the webhook, accounting connections and past customer campaigns. People
+// whose external id was already used are left out (counted as duplicates).
+export async function queueRequests(
   tenantId: string,
   people: Person[],
   opts: {
@@ -204,10 +209,35 @@ async function queueRequests(
     event: TriggerEvent | null;
     externalId: string | null;
     createdBy: string | null;
+    campaignId?: string | null;
+    message?: string | null;
+    emailSubject?: string | null;
   },
-): Promise<{ ok: true; added: number; skipped: number } | { ok: false; error: string }> {
+): Promise<
+  { ok: true; added: number; skipped: number; duplicates: number } | { ok: false; error: string }
+> {
   const s = await settingsFor(tenantId);
   const now = new Date();
+  let duplicates = 0;
+  const ids = people.map((p) => p.externalId).filter((x): x is string => !!x);
+  if (ids.length) {
+    const have = await serviceRead<{ external_id: string }[]>(
+      `review_requests?select=external_id&tenant_id=eq.${tenantId}&external_id=in.(${ids
+        .map((i) => `"${encodeURIComponent(i.replace(/"/g, ""))}"`)
+        .join(",")})`,
+      "",
+    );
+    const seen = new Set((have.data ?? []).map((h) => h.external_id));
+    const before = people.length;
+    people = people.filter((p) => {
+      if (!p.externalId) return true;
+      if (seen.has(p.externalId)) return false;
+      seen.add(p.externalId);
+      return true;
+    });
+    duplicates = before - people.length;
+    if (!people.length) return { ok: true, added: 0, skipped: 0, duplicates };
+  }
   const since = new Date(now.getTime() - s.cooldownDays * 86400000).toISOString();
   const [pastR, outR] = await Promise.all([
     serviceRead<
@@ -250,8 +280,11 @@ async function queueRequests(
         due_at: opts.dueAt,
         source: opts.source,
         event: opts.event,
-        external_id: opts.externalId,
+        external_id: p.externalId ?? opts.externalId,
         created_by: opts.createdBy,
+        campaign_id: opts.campaignId ?? null,
+        message: opts.message ?? null,
+        email_subject: opts.emailSubject ?? null,
       };
     });
   if (!rows.length) return { ok: false, error: "Add a phone number or email for each customer." };
@@ -263,7 +296,7 @@ async function queueRequests(
         ? "duplicate"
         : "Could not save. Try again.",
     };
-  return { ok: true, added: rows.length - skipped, skipped };
+  return { ok: true, added: rows.length - skipped, skipped, duplicates };
 }
 
 export async function addRequests(input: { people: Person[]; sendNow: boolean }) {
@@ -624,7 +657,7 @@ export async function runEmailRequests(token: string) {
   const nowIso = () => new Date().toISOString();
   const dueQuery = () =>
     serviceRead<any[]>(
-      `review_requests?select=id,tenant_id,token,name,email,step,first_sent_at,reminders_sent,opened_at,clicked_at,feedback_at,reviewed_at,unsubscribed_at&channel=eq.email&status=in.(due,waiting)&due_at=lte.${nowIso()}&order=due_at.asc&limit=40`,
+      `review_requests?select=id,tenant_id,token,name,email,step,first_sent_at,reminders_sent,opened_at,clicked_at,feedback_at,reviewed_at,unsubscribed_at,message,email_subject,campaign_id&channel=eq.email&status=in.(due,waiting)&due_at=lte.${nowIso()}&order=due_at.asc&limit=40`,
       "",
     );
   // First settle reminders for every business with something due.
@@ -675,17 +708,17 @@ export async function runEmailRequests(token: string) {
     }
     const vars = { name: r.name ?? "", business: c.business, link: linkFor(r.token) };
     const unsub = `${vars.link}?unsub=1`;
-    const body = fillMessage(r.step === 0 ? c.s.message : c.s.reminderMessage, vars);
+    const body = fillMessage(r.step === 0 ? r.message || c.s.message : c.s.reminderMessage, vars);
     const text = body.replace(vars.link, "").trim();
     const html =
       `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#111;max-width:520px;line-height:1.5">` +
       `<p>${esc(text)}</p>` +
       `<p><a href="${vars.link}" style="display:inline-block;background:#0f172a;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px">Leave a quick review</a></p>` +
-      `<p style="color:#6b7280;font-size:12px;margin-top:24px">You received this because you recently used ${esc(c.business)}. ` +
+      `<p style="color:#6b7280;font-size:12px;margin-top:24px">You received this because you ${r.campaign_id ? "have used" : "recently used"} ${esc(c.business)}. ` +
       `<a href="${unsub}" style="color:#6b7280">Unsubscribe</a> and ${esc(c.business)} will not email you about reviews again.</p></div>`;
     const res = await sendEmail({
       to: email,
-      subject: fillMessage(c.s.emailSubject, vars),
+      subject: fillMessage((r.step === 0 && r.email_subject) || c.s.emailSubject, vars),
       html,
       text: `${body}\n\nUnsubscribe: ${unsub}`,
       headers: {
@@ -700,6 +733,7 @@ export async function runEmailRequests(token: string) {
         body: {
           ...nextAfterSend(r, c.s, c.tz, now),
           reminders_sent: Math.min(2, (r.reminders_sent ?? 0) + (r.step > 0 ? 1 : 0)),
+          ...(res.id ? { email_id: res.id.slice(0, 100) } : {}),
         },
       });
       sent++;

@@ -8,7 +8,7 @@ export async function sendEmail(input: {
   text?: string;
   replyTo?: string;
   headers?: Record<string, string>;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+}): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const key = (process.env["REPSUITES_RESEND_API_KEY"] ?? "").trim();
   if (!key) return { ok: false, error: "Email is not set up yet." };
   try {
@@ -26,7 +26,11 @@ export async function sendEmail(input: {
         ...(input.headers ? { headers: input.headers } : {}),
       }),
     });
-    if (r.ok) return { ok: true };
+    if (r.ok) {
+      // Resend returns the email id, used to match bounce reports.
+      const sent = (await r.json().catch(() => null)) as { id?: unknown } | null;
+      return typeof sent?.id === "string" ? { ok: true, id: sent.id } : { ok: true };
+    }
     const body = (await r.json().catch(() => null)) as { message?: string } | null;
     return {
       ok: false,

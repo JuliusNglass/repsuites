@@ -18,6 +18,8 @@ import { EmailCheckBar } from "../components/reviews/EmailCheckBar";
 import { BillingCard } from "../components/reviews/BillingCard";
 import { AccessHelpCard } from "../components/reviews/AccessHelpCard";
 import { AddBusinessForm } from "../components/agency/AddBusinessForm";
+import { AccountingCard } from "../components/reviews/AccountingCard";
+import { PastCustomersCard } from "../components/reviews/PastCustomersCard";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -284,6 +286,7 @@ function Dashboard() {
           </>
         )}
         {active && tab === "ask" && <RequestsPanel key={`a-${active.id}`} />}
+        {active && tab === "ask" && <PastCustomersCard key={`past-${active.id}`} />}
         {active && tab === "results" && <GooglePanel key={`g-${active.id}`} tab="results" />}
         {active && tab === "posts" && (
           <>
@@ -299,6 +302,7 @@ function Dashboard() {
         )}
         {active && tab === "settings" && !s.agency && <BillingCard key={`b-${active.id}`} />}
         {active && tab === "settings" && <GooglePanel key={`s-${active.id}`} tab="settings" />}
+        {active && tab === "settings" && <AccountingCard key={`ac-${active.id}`} />}
         {active && tab === "settings" && <AccessHelpCard key={`a-${active.id}`} />}
       </main>
     </div>

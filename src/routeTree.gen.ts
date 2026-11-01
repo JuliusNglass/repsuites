@@ -35,10 +35,15 @@ import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.goo
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
 import { Route as ApiInternalLifecycleRouteImport } from './routes/api.internal.lifecycle'
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
+import { Route as ApiInternalReviewAutomationRouteImport } from './routes/api.internal.review-automation'
 import { Route as ApiInternalReviewRequestsRouteImport } from './routes/api.internal.review-requests'
 import { Route as ApiMetaDataDeletionRouteImport } from './routes/api.meta.data-deletion'
+import { Route as ApiResendWebhookRouteImport } from './routes/api.resend.webhook'
 import { Route as ApiReviewTriggerTokenRouteImport } from './routes/api.review-trigger.$token'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as ApiAccountingCallbackProviderRouteImport } from './routes/api.accounting.callback.$provider'
+import { Route as ApiAccountingWebhookQuickbooksRouteImport } from './routes/api.accounting.webhook.quickbooks'
+import { Route as ApiAccountingWebhookXeroRouteImport } from './routes/api.accounting.webhook.xero'
 import { Route as ApiGoogleOauthCallbackRouteImport } from './routes/api.google.oauth.callback'
 import { Route as ApiMetaOauthCallbackRouteImport } from './routes/api.meta.oauth.callback'
 
@@ -172,6 +177,12 @@ const ApiInternalRankChecksRoute = ApiInternalRankChecksRouteImport.update({
   path: '/api/internal/rank-checks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalReviewAutomationRoute =
+  ApiInternalReviewAutomationRouteImport.update({
+    id: '/api/internal/review-automation',
+    path: '/api/internal/review-automation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalReviewRequestsRoute =
   ApiInternalReviewRequestsRouteImport.update({
     id: '/api/internal/review-requests',
@@ -181,6 +192,11 @@ const ApiInternalReviewRequestsRoute =
 const ApiMetaDataDeletionRoute = ApiMetaDataDeletionRouteImport.update({
   id: '/api/meta/data-deletion',
   path: '/api/meta/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiResendWebhookRoute = ApiResendWebhookRouteImport.update({
+  id: '/api/resend/webhook',
+  path: '/api/resend/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiReviewTriggerTokenRoute = ApiReviewTriggerTokenRouteImport.update({
@@ -193,6 +209,24 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   path: '/api/stripe/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAccountingCallbackProviderRoute =
+  ApiAccountingCallbackProviderRouteImport.update({
+    id: '/api/accounting/callback/$provider',
+    path: '/api/accounting/callback/$provider',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAccountingWebhookQuickbooksRoute =
+  ApiAccountingWebhookQuickbooksRouteImport.update({
+    id: '/api/accounting/webhook/quickbooks',
+    path: '/api/accounting/webhook/quickbooks',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAccountingWebhookXeroRoute =
+  ApiAccountingWebhookXeroRouteImport.update({
+    id: '/api/accounting/webhook/xero',
+    path: '/api/accounting/webhook/xero',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiGoogleOauthCallbackRoute = ApiGoogleOauthCallbackRouteImport.update({
   id: '/api/google/oauth/callback',
   path: '/api/google/oauth/callback',
@@ -231,10 +265,15 @@ export interface FileRoutesByFullPath {
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
+  '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
+  '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
   '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
 }
@@ -265,10 +304,15 @@ export interface FileRoutesByTo {
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
+  '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
+  '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
   '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
 }
@@ -300,10 +344,15 @@ export interface FileRoutesById {
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
+  '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
+  '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
+  '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
   '/api/google/oauth/callback': typeof ApiGoogleOauthCallbackRoute
   '/api/meta/oauth/callback': typeof ApiMetaOauthCallbackRoute
 }
@@ -336,10 +385,15 @@ export interface FileRouteTypes {
     | '/api/internal/google-report'
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
+    | '/api/internal/review-automation'
     | '/api/internal/review-requests'
     | '/api/meta/data-deletion'
+    | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/api/accounting/callback/$provider'
+    | '/api/accounting/webhook/quickbooks'
+    | '/api/accounting/webhook/xero'
     | '/api/google/oauth/callback'
     | '/api/meta/oauth/callback'
   fileRoutesByTo: FileRoutesByTo
@@ -370,10 +424,15 @@ export interface FileRouteTypes {
     | '/api/internal/google-report'
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
+    | '/api/internal/review-automation'
     | '/api/internal/review-requests'
     | '/api/meta/data-deletion'
+    | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/api/accounting/callback/$provider'
+    | '/api/accounting/webhook/quickbooks'
+    | '/api/accounting/webhook/xero'
     | '/api/google/oauth/callback'
     | '/api/meta/oauth/callback'
   id:
@@ -404,10 +463,15 @@ export interface FileRouteTypes {
     | '/api/internal/google-report'
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
+    | '/api/internal/review-automation'
     | '/api/internal/review-requests'
     | '/api/meta/data-deletion'
+    | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/api/accounting/callback/$provider'
+    | '/api/accounting/webhook/quickbooks'
+    | '/api/accounting/webhook/xero'
     | '/api/google/oauth/callback'
     | '/api/meta/oauth/callback'
   fileRoutesById: FileRoutesById
@@ -439,10 +503,15 @@ export interface RootRouteChildren {
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
   ApiInternalLifecycleRoute: typeof ApiInternalLifecycleRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
+  ApiInternalReviewAutomationRoute: typeof ApiInternalReviewAutomationRoute
   ApiInternalReviewRequestsRoute: typeof ApiInternalReviewRequestsRoute
   ApiMetaDataDeletionRoute: typeof ApiMetaDataDeletionRoute
+  ApiResendWebhookRoute: typeof ApiResendWebhookRoute
   ApiReviewTriggerTokenRoute: typeof ApiReviewTriggerTokenRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  ApiAccountingCallbackProviderRoute: typeof ApiAccountingCallbackProviderRoute
+  ApiAccountingWebhookQuickbooksRoute: typeof ApiAccountingWebhookQuickbooksRoute
+  ApiAccountingWebhookXeroRoute: typeof ApiAccountingWebhookXeroRoute
   ApiGoogleOauthCallbackRoute: typeof ApiGoogleOauthCallbackRoute
   ApiMetaOauthCallbackRoute: typeof ApiMetaOauthCallbackRoute
 }
@@ -631,6 +700,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalRankChecksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/review-automation': {
+      id: '/api/internal/review-automation'
+      path: '/api/internal/review-automation'
+      fullPath: '/api/internal/review-automation'
+      preLoaderRoute: typeof ApiInternalReviewAutomationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/review-requests': {
       id: '/api/internal/review-requests'
       path: '/api/internal/review-requests'
@@ -645,6 +721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMetaDataDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/resend/webhook': {
+      id: '/api/resend/webhook'
+      path: '/api/resend/webhook'
+      fullPath: '/api/resend/webhook'
+      preLoaderRoute: typeof ApiResendWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/review-trigger/$token': {
       id: '/api/review-trigger/$token'
       path: '/api/review-trigger/$token'
@@ -657,6 +740,27 @@ declare module '@tanstack/react-router' {
       path: '/api/stripe/webhook'
       fullPath: '/api/stripe/webhook'
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/accounting/callback/$provider': {
+      id: '/api/accounting/callback/$provider'
+      path: '/api/accounting/callback/$provider'
+      fullPath: '/api/accounting/callback/$provider'
+      preLoaderRoute: typeof ApiAccountingCallbackProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/accounting/webhook/quickbooks': {
+      id: '/api/accounting/webhook/quickbooks'
+      path: '/api/accounting/webhook/quickbooks'
+      fullPath: '/api/accounting/webhook/quickbooks'
+      preLoaderRoute: typeof ApiAccountingWebhookQuickbooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/accounting/webhook/xero': {
+      id: '/api/accounting/webhook/xero'
+      path: '/api/accounting/webhook/xero'
+      fullPath: '/api/accounting/webhook/xero'
+      preLoaderRoute: typeof ApiAccountingWebhookXeroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/google/oauth/callback': {
@@ -703,10 +807,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
   ApiInternalLifecycleRoute: ApiInternalLifecycleRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
+  ApiInternalReviewAutomationRoute: ApiInternalReviewAutomationRoute,
   ApiInternalReviewRequestsRoute: ApiInternalReviewRequestsRoute,
   ApiMetaDataDeletionRoute: ApiMetaDataDeletionRoute,
+  ApiResendWebhookRoute: ApiResendWebhookRoute,
   ApiReviewTriggerTokenRoute: ApiReviewTriggerTokenRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  ApiAccountingCallbackProviderRoute: ApiAccountingCallbackProviderRoute,
+  ApiAccountingWebhookQuickbooksRoute: ApiAccountingWebhookQuickbooksRoute,
+  ApiAccountingWebhookXeroRoute: ApiAccountingWebhookXeroRoute,
   ApiGoogleOauthCallbackRoute: ApiGoogleOauthCallbackRoute,
   ApiMetaOauthCallbackRoute: ApiMetaOauthCallbackRoute,
 }

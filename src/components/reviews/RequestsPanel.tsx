@@ -143,11 +143,15 @@ export function RequestsPanel() {
   if (!d || !s) return <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />;
 
   function textFor(r: Req) {
-    return fillMessage(r.step === 0 ? d!.settings.message : d!.settings.reminderMessage, {
-      name: r.name,
-      business: d!.business,
-      link: r.link,
-    });
+    // Past customer campaigns carry their own first message.
+    return fillMessage(
+      r.step === 0 ? r.message || d!.settings.message : d!.settings.reminderMessage,
+      {
+        name: r.name,
+        business: d!.business,
+        link: r.link,
+      },
+    );
   }
 
   async function addOne() {
@@ -733,13 +737,15 @@ export function RequestsPanel() {
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       Added {when(r.createdAt)}
-                      {r.source === "webhook"
-                        ? r.event === "invoice_paid"
-                          ? " (invoice paid)"
-                          : r.event === "job_done"
-                            ? " (job done)"
-                            : " (automatic)"
-                        : ""}
+                      {r.source === "campaign"
+                        ? " (past customer)"
+                        : r.source === "webhook" || r.source === "accounting"
+                          ? r.event === "invoice_paid"
+                            ? " (invoice paid)"
+                            : r.event === "job_done"
+                              ? " (job done)"
+                              : " (automatic)"
+                          : ""}
                       {r.lastSentAt ? `, last asked ${when(r.lastSentAt)}` : ""}
                       {!r.lastSentAt && r.status === "due" && r.channel === "email"
                         ? `, sends ${new Date(r.dueAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`
