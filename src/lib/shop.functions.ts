@@ -8,6 +8,7 @@ import {
 } from "./auth.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { stripe, stripeReady } from "./stripe.server";
+import { londonToday, monthlyAnchor } from "./billing-cycle";
 import {
   findCardPack,
   findStandPack,
@@ -209,7 +210,12 @@ export const startPlanCheckout = createServerFn({ method: "POST" })
         ? { customer: bill.stripe_customer_id }
         : { customer_email: g.email }),
       metadata: { kind: "plan", tenant_id: g.tenantId, plan: data.plan },
-      subscription_data: { metadata: { kind: "plan", tenant_id: g.tenantId, plan: data.plan } },
+      subscription_data: {
+        metadata: { kind: "plan", tenant_id: g.tenantId, plan: data.plan },
+        // Monthly plans are paid on the 1st; mid-month joiners pay for the
+        // days left this month first. Yearly plans run from the join date.
+        ...(data.interval === "month" ? monthlyAnchor(londonToday()) : {}),
+      },
       line_items: [
         {
           quantity: 1,

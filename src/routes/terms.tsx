@@ -39,8 +39,10 @@ export const Route = createFileRoute("/terms")({
 
         <h2>5. Subscription &amp; Billing</h2>
         <p>
-          Paid plans are billed monthly. You may cancel at any time; access continues until the end
-          of the billing period. Refunds are handled on a case-by-case basis.
+          Monthly plans are billed on the 1st of each month. If you start part way through a
+          month, your first payment covers only the days left in that month. Yearly plans are
+          billed once a year from the day you start. You may cancel at any time; access continues
+          until the end of the billing period. Refunds are handled on a case-by-case basis.
         </p>
 
         <h2>6. Intellectual Property</h2>
