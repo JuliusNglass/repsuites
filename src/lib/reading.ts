@@ -59,7 +59,7 @@ export const RANK_PIN_STYLE = `
 .rk-unknown{background:#e2e8f0;color:#334155;border-radius:50%}
 .rkey-list{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:8px 18px;margin:12px 0 0;padding:0;font-size:1rem}
 .rkey-list li{display:flex;align-items:center;gap:8px}
-.rkey-list .rk{width:24px;height:24px;font-size:.75rem}
+.rkey-list .rk{width:24px;height:24px;font-size:.875rem}
 `;
 
 // The legend, drawn with the same shapes as the pins.

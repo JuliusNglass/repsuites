@@ -30,11 +30,11 @@ export function EmailCheckBar() {
       <p className="font-bold flex items-center gap-1.5">
         <MailCheck className="w-4 h-4" /> Confirm your email
       </p>
-      <p className="text-sm">
+      <p className="text-base">
         We sent a 6-digit code to <b>{email}</b>. Type it here.{" "}
         <b>You can print your QR card now.</b>
       </p>
-      <p className="text-sm">
+      <p className="text-base">
         Private feedback from customers starts coming to your email once you confirm. You also need
         this before you can upgrade or ask customers for reviews.
       </p>
@@ -63,7 +63,7 @@ export function EmailCheckBar() {
         <button
           type="submit"
           disabled={busy || code.length !== 6}
-          className="rounded-lg bg-amber-500 text-amber-950 font-bold px-4 py-2 text-sm disabled:opacity-50 inline-flex items-center gap-1.5"
+          className="rounded-lg bg-amber-500 text-amber-950 font-bold px-4 py-2 text-base disabled:opacity-50 inline-flex items-center gap-1.5"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin" />} Confirm
         </button>
@@ -74,12 +74,12 @@ export function EmailCheckBar() {
             if (r?.ok) toast.success("New code sent. Check your inbox and spam folder.");
             else toast.error(r?.error ?? "Could not send. Try again.");
           }}
-          className="text-sm underline px-1"
+          className="text-base underline px-1"
         >
           Send a new code
         </button>
       </form>
-      <p className="text-xs">Connecting a Google account with the same email confirms it too.</p>
+      <p className="text-base">Connecting a Google account with the same email confirms it too.</p>
     </section>
   );
 }

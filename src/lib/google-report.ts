@@ -123,7 +123,7 @@ export function reportHtml(d: ReportData): string {
     (terms
       ? `<p style="margin:16px 0 4px"><b>What people searched to find you</b></p><ol style="margin:0;padding-left:20px">${terms}</ol>`
       : "") +
-    `<p style="color:#6b7280;font-size:12px;margin-top:20px">Changes compare with the month before. Figures come from Google and can change slightly as Google finishes counting.</p>` +
+    `<p style="color:#6b7280;font-size:14px;margin-top:20px">Changes compare with the month before. Figures come from Google and can change slightly as Google finishes counting.</p>` +
     `</div>`
   );
 }

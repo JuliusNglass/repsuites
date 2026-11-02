@@ -16,14 +16,25 @@ export interface SignupInput {
   agree: boolean;
 }
 
+export type SignupField = "business" | "name" | "email" | "password" | "agree";
+
+// The first problem with the form and the field it belongs to, so the page
+// can show the message right next to that field. Null if it is fine.
+export function signupProblemAt(i: SignupInput): { field: SignupField; message: string } | null {
+  if (i.business.trim().length < 2)
+    return { field: "business", message: "Add your business name." };
+  if (i.name.trim().length < 2) return { field: "name", message: "Add your name." };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(i.email.trim()))
+    return { field: "email", message: "Check your email address." };
+  if (i.password.length < 10)
+    return { field: "password", message: "Your password needs at least 10 characters." };
+  if (!i.agree) return { field: "agree", message: "Tick the box to agree to the terms." };
+  return null;
+}
+
 // Plain-words problems with the form, or null if it is fine.
 export function signupProblem(i: SignupInput): string | null {
-  if (i.business.trim().length < 2) return "Add your business name.";
-  if (i.name.trim().length < 2) return "Add your name.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(i.email.trim())) return "Check your email address.";
-  if (i.password.length < 10) return "Your password needs at least 10 characters.";
-  if (!i.agree) return "Tick the box to agree to the terms.";
-  return null;
+  return signupProblemAt(i)?.message ?? null;
 }
 
 // A prospect who signs up from their report is won.

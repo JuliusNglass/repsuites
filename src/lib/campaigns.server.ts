@@ -390,5 +390,22 @@ export async function recordEmailEvent(type: string, emailId: string): Promise<v
       method: "PATCH",
       body: { unsubscribed_at: now, ...stop },
     });
+    // Accelur8 HQ: store the opt-out (no CRM contact). Never fails the webhook.
+    const email = row.email?.toLowerCase();
+    if (email) {
+      const { customerOptOutEvent } = await import("./hq");
+      const { hqAfter } = await import("./hq.server");
+      await hqAfter(() =>
+        customerOptOutEvent({
+          requestId: row.id,
+          tenantId: row.tenant_id,
+          business: null,
+          email,
+          phone: null,
+          name: null,
+          how: "spam_complaint",
+        }),
+      );
+    }
   }
 }

@@ -51,7 +51,7 @@ function Thanks() {
         </ol>
         <div className="mt-10 rounded-2xl bg-muted/60 p-6">
           <h2 className="font-bold">Want to know where you rank while you wait?</h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-base text-muted-foreground mt-1">
             Get a free check of how you show up on Google Maps against nearby competitors.
           </p>
           <a
@@ -61,7 +61,7 @@ function Thanks() {
             Get my free visibility check
           </a>
         </div>
-        <Link to="/" className="mt-6 inline-block text-sm text-muted-foreground underline">
+        <Link to="/" className="mt-6 inline-block text-base text-muted-foreground underline">
           Back to RepSuites
         </Link>
       </section>

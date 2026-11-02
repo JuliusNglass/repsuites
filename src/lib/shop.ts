@@ -72,6 +72,11 @@ export const MANAGED = {
 
 export type CheckoutPlan = "gold" | "managed";
 
+// Monthly plans start with a 14-day free trial (card taken at the start, no
+// setup fee). Yearly plans have no trial. The sums are in billing-cycle.ts.
+export const TRIAL_TERMS =
+  "14-day free trial, then billed on the 1st of each month (the first payment covers only the rest of that month).";
+
 export const FREE_FEATURES = [
   "Your own review page",
   "QR codes to print for tables, counters and receipts",

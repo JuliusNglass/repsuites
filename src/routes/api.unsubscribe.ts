@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/unsubscribe")({
         return new Response(
           page(`<h1 style="font-size:1.3rem">Stop RepSuites tips and reminders?</h1>
 <p>You will still get emails you need, like receipts and private feedback from customers.</p>
-<form method="post"><input type="hidden" name="t" value="${t}"><button style="background:#f5b324;border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-size:1rem;cursor:pointer">Yes, stop these emails</button></form>`),
+<form method="post"><input type="hidden" name="t" value="${t}"><button style="background:#f5b324;color:#0f172a;border:0;border-radius:10px;padding:12px 18px;min-height:48px;font-weight:700;font-size:1.125rem;cursor:pointer">Yes, stop these emails</button></form>`),
           { status: 200, headers: HTML },
         );
       },

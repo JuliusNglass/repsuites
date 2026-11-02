@@ -106,7 +106,7 @@ export function WelcomeCard({
                   className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5"
                 />
               )}
-              <div className="text-sm">
+              <div className="text-base">
                 {/* "Done" in words, not a line through the text: struck-out
                     text is hard to read, and a tick alone is colour and shape only. */}
                 <p className={`font-semibold ${s.done ? "text-muted-foreground" : ""}`}>
@@ -122,7 +122,7 @@ export function WelcomeCard({
                   <button
                     type="button"
                     onClick={() => void start()}
-                    className="text-xs font-semibold underline text-muted-foreground"
+                    className="text-base font-semibold underline text-muted-foreground"
                   >
                     Print another
                   </button>
@@ -140,7 +140,7 @@ export function WelcomeCard({
             <h2 className="font-bold flex items-center gap-1.5">
               <Sparkles className="w-4 h-4" /> Let RepSuites do the work
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-base text-muted-foreground mt-1">
               With Growth, AI writes your review replies, we ask customers for reviews, and you see
               where you show up on Google Maps. {money(GROWTH.monthPence)} a month. Cancel any time.
             </p>

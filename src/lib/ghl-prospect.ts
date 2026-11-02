@@ -10,6 +10,20 @@ export type GhlProspectInput = {
   product: string | null;
 };
 
+// Accelur8 Ltd sub-account, workflow "Prospect follow-up (WhatsApp contacted)".
+export const GHL_DEFAULT_URL =
+  "https://services.leadconnectorhq.com/hooks/HzEU9UBWZEzxuB5SSDYE/webhook-trigger/sidfYiEU9hJ32b4FBL5i";
+
+// Where to push prospects, or null to skip. Unset: the Accelur8 workflow.
+// "off" (or "none", "false", "disabled"): GHL is switched off. Anything that
+// is not an https link is treated as missing config and skipped.
+export function ghlProspectUrl(setting: string | undefined): string | null {
+  const v = (setting ?? "").trim();
+  if (!v) return GHL_DEFAULT_URL;
+  if (/^(off|none|false|disabled|0)$/i.test(v)) return null;
+  return /^https:\/\/\S+$/.test(v) ? v : null;
+}
+
 export function splitName(full: string | null): { first: string; last: string } {
   const parts = (full ?? "").trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return { first: "", last: "" };

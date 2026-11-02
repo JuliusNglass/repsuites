@@ -7,7 +7,7 @@ export const Route = createFileRoute("/terms")({
     <PublicLayout>
       <article className={textPageClass}>
         <h1>Terms of Service</h1>
-        <p className="text-muted-foreground">Last updated: 29 October 2026</p>
+        <p className="text-muted-foreground">Last updated: 1 November 2026</p>
 
         <h2>1. Acceptance of Terms</h2>
         <p>
@@ -39,10 +39,18 @@ export const Route = createFileRoute("/terms")({
 
         <h2>5. Subscription &amp; Billing</h2>
         <p>
-          Monthly plans are billed on the 1st of each month. If you start part way through a
-          month, your first payment covers only the days left in that month. Yearly plans are
-          billed once a year from the day you start. You may cancel at any time; access continues
-          until the end of the billing period. Refunds are handled on a case-by-case basis.
+          There is no setup fee. Monthly plans come with a 14-day free trial, then are billed on the
+          1st of each month (the first payment covers only the rest of that month). We ask for your
+          card details when the trial starts, but take nothing until it ends. The trial runs for the
+          full 14 days from the day you sign up; your first payment is taken on the day it ends and
+          covers only the days left in that month, then the full monthly price is taken on the 1st
+          of each month. For example, on RepSuites Growth at £49 a month, a trial that starts on 20
+          November ends on 4 December, the first payment of £49 x 28/31 = £44.26 covers 4 to 31
+          December, and £49 is taken on 1 January. If you cancel before the trial ends, you pay
+          nothing. The free trial is available once per business. Yearly plans have no free trial
+          and are billed once a year from the day you start. You may cancel at any time; access
+          continues until the end of the billing period. Refunds are handled on a case-by-case
+          basis.
         </p>
 
         <h2>6. Intellectual Property</h2>

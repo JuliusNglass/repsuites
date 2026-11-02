@@ -8,7 +8,7 @@ const page = (body: string) => `<!doctype html><html lang="en"><head><meta chars
 <title>Data deletion | RepSuites</title></head>
 <body style="font-family:system-ui,sans-serif;max-width:36rem;margin:0 auto;padding:40px 18px;line-height:1.5">
 <h1 style="font-size:1.4rem">Facebook data deletion</h1>${body}
-<p style="color:#64748b;font-size:.9rem">Questions? Email support@repsuites.com.</p></body></html>`;
+<p style="color:#64748b;font-size:1rem">Questions? Email support@repsuites.com.</p></body></html>`;
 
 export const Route = createFileRoute("/meta-deletion")({
   server: {

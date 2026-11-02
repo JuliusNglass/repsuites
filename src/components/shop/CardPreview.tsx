@@ -39,17 +39,15 @@ export function CardPreview({
       />
       <div className="absolute inset-0 p-[6%] flex gap-[5%] text-white">
         <div className="flex-1 min-w-0 flex flex-col">
-          <div className="text-sm sm:text-lg font-extrabold leading-tight line-clamp-2">
+          <div className="text-base sm:text-lg font-extrabold leading-tight line-clamp-2">
             {name || "Your Business"}
           </div>
           <div className="mt-1.5">
             <Stars />
           </div>
-          <div className="mt-auto text-[11px] sm:text-xs leading-snug text-white/85 line-clamp-3">
-            {message}
-          </div>
+          <div className="mt-auto text-sm leading-snug text-white/85 line-clamp-3">{message}</div>
           <div
-            className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider"
+            className="mt-2 flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider"
             style={{ color: GOLD }}
           >
             <Wifi className="w-3.5 h-3.5 rotate-90" /> Tap or scan
@@ -89,9 +87,7 @@ export function StandPreview({
         <div className="mt-2">
           <Stars size={12} />
         </div>
-        <div className="mt-3 text-[11px] sm:text-xs text-white/85 leading-snug line-clamp-4">
-          {message}
-        </div>
+        <div className="mt-3 text-sm text-white/85 leading-snug line-clamp-4">{message}</div>
         <div className="mt-auto bg-white rounded-lg p-2 w-[55%]">
           <QRCodeSVG
             value="https://repsuites.com"
@@ -101,7 +97,7 @@ export function StandPreview({
           />
         </div>
         <div
-          className="mt-2 text-[10px] font-semibold uppercase tracking-wider"
+          className="mt-2 text-sm font-semibold uppercase tracking-wider"
           style={{ color: GOLD }}
         >
           Tap your phone here

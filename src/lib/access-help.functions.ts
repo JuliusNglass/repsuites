@@ -13,7 +13,7 @@ import { isAccessStatus, type AccessStatus } from "./access-help";
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function managerEmail(): string {
-  return (process.env["REPSUITES_MANAGER_EMAIL"] ?? "").trim() || "julius@accelur8.com";
+  return (process.env["REPSUITES_MANAGER_EMAIL"] ?? "").trim() || "juliusnglass@gmail.com";
 }
 
 async function isAgency(userId: string): Promise<boolean> {

@@ -1,12 +1,11 @@
-import { ghlProspectPayload, type GhlProspectInput } from "./ghl-prospect";
-
-// Accelur8 Ltd sub-account, workflow "Prospect follow-up (WhatsApp contacted)".
-const DEFAULT_URL =
-  "https://services.leadconnectorhq.com/hooks/HzEU9UBWZEzxuB5SSDYE/webhook-trigger/sidfYiEU9hJ32b4FBL5i";
+import { ghlProspectPayload, ghlProspectUrl, type GhlProspectInput } from "./ghl-prospect";
 
 // Best effort: a failure here must never stop the prospect being marked sent.
+// Skips quietly when GHL is switched off (GHL_PROSPECT_WEBHOOK_URL=off) or
+// the address is not a valid https link. Accelur8 HQ gets prospect_sent anyway.
 export async function pushProspectToGhl(p: GhlProspectInput, via: string): Promise<boolean> {
-  const url = process.env["GHL_PROSPECT_WEBHOOK_URL"] || DEFAULT_URL;
+  const url = ghlProspectUrl(process.env["GHL_PROSPECT_WEBHOOK_URL"]);
+  if (!url) return false;
   if (!p.phone && !p.email) return false;
   try {
     const r = await fetch(url, {

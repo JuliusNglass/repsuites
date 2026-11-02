@@ -610,6 +610,9 @@ export async function saveProspectReport(
     force?: boolean;
     // Which pipeline it belongs to. Left out: unchanged (new rows: RepSuites).
     product?: import("./sparkops").Product;
+    // Tell Accelur8 HQ about a new prospect (default yes). The homepage lead
+    // form sends its own lead_captured event instead.
+    hq?: boolean;
   } = {},
 ) {
   const [existing, found] = await Promise.all([
@@ -708,14 +711,43 @@ export async function saveProspectReport(
         method: "PATCH",
         body: { ...body, og_image_url: null },
       })
-    : await serviceWrite<unknown>("prospects", "", {
+    : await serviceWrite<{ id: string }[]>("prospects", "", {
         method: "POST",
+        headers: { Prefer: "return=representation" },
         body: { ...body, source, created_by: extra.createdBy ?? null },
       });
   if (w.error) return { ok: false as const, error: "Could not save the report." };
+  const newId = row ? null : ((w.data as { id: string }[] | null)?.[0]?.id ?? null);
+  // Accelur8 HQ: a new prospect (not a rebuild). Never fails the report.
+  if (newId && extra.hq !== false) {
+    const { prospectHqEvent } = await import("./hq");
+    const { hqAfter } = await import("./hq.server");
+    await hqAfter(() =>
+      prospectHqEvent(
+        "prospect_created",
+        {
+          id: newId,
+          name: body.name,
+          contact_name: extra.contactName ?? null,
+          phone: body.phone,
+          email: extra.email || foundEmail || null,
+          website: body.website,
+          town: body.town,
+          report_token: token,
+          product: extra.product ?? "repsuites",
+        },
+        {
+          source,
+          score: built.report.score,
+          ...(body.category ? { category: body.category } : {}),
+        },
+      ),
+    );
+  }
   return {
     ok: true as const,
     token,
+    ...(newId ? { prospectId: newId } : {}),
     score: built.report.score,
     name: built.meta.name,
     addPhrases,

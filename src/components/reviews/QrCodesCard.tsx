@@ -38,12 +38,12 @@ function OneCode({
       <div className="min-w-0 flex-1">
         <p className="font-semibold truncate">{c.label}</p>
         {c.working ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Opens your review page - {c.scans30} scan{c.scans30 === 1 ? "" : "s"} in the last 30
             days
           </p>
         ) : (
-          <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+          <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-base text-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
             <p className="font-semibold inline-flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5" /> Not linked to a Google listing yet
             </p>
@@ -57,7 +57,7 @@ function OneCode({
       <button
         type="button"
         onClick={() => setDesigning(true)}
-        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold"
+        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-semibold"
       >
         <Printer className="w-4 h-4" /> Design print
       </button>
@@ -76,7 +76,7 @@ function OneCode({
       <button
         type="button"
         onClick={download}
-        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm"
+        className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-base"
       >
         <Download className="w-4 h-4" /> QR only (image)
       </button>
@@ -101,13 +101,13 @@ export function QrCodesCard({ business }: { business: string }) {
       <h2 className="font-bold flex items-center gap-2 mb-1">
         <QrCode className="w-5 h-5" /> Review QR codes
       </h2>
-      <p className="text-sm text-muted-foreground mb-2">
+      <p className="text-base text-muted-foreground mb-2">
         Print your code on cards or stands and give it to customers. Tap Design print to make one.
       </p>
       {codes === null ? (
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-base text-muted-foreground">Loading...</p>
       ) : codes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No QR codes for this business yet.</p>
+        <p className="text-base text-muted-foreground">No QR codes for this business yet.</p>
       ) : (
         <ul className="divide-y divide-border">
           {codes.map((c) => (
@@ -163,14 +163,14 @@ export function PrintCardButton({ business }: { business: string }) {
   const { start, loading, designer } = useMainQrDesigner(business);
   return (
     <div className="rounded-xl border border-border bg-card px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-base text-muted-foreground">
         Want reviews from people you meet in person? Print your review code.
       </p>
       <button
         type="button"
         disabled={loading}
         onClick={() => void start()}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-base font-semibold disabled:opacity-50"
       >
         <Printer className="w-4 h-4" /> Make a printable review card
       </button>

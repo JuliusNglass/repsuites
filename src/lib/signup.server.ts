@@ -215,7 +215,23 @@ export async function signUpFree(
   }
 
   const to = (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
+  const { hqAfter } = await import("./hq.server");
   await Promise.all([
+    // Accelur8 HQ: a new business account (runs alongside the emails, never fails sign-up).
+    hqAfter(() => ({
+      event: "signed_up",
+      idempotency_key: `tenant:${tenantId}:signed_up`,
+      contact: { email, name, role: "owner" },
+      company: { name: business },
+      product_link: { type: "tenant", id: tenantId },
+      data: {
+        source: "self_serve",
+        plan: "free",
+        from_report: !!prospect,
+        ...(prospect ? { prospect_id: prospect.id } : {}),
+        ...(placeId ? { place_id: placeId } : {}),
+      },
+    })),
     sendEmail({
       to,
       subject: prospect

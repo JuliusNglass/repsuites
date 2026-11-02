@@ -183,7 +183,7 @@ export function insightsHtml(s: InsightSummary): string {
     items
       .map(
         (t) =>
-          `<li><b>${esc(t.theme)}</b> <span style="color:#6b7280">(${t.mentions} mention${t.mentions === 1 ? "" : "s"})</span>${t.quote ? `<br><i style="color:#374151">"${esc(t.quote)}"</i>` : ""}</li>`,
+          `<li><b>${esc(t.theme)}</b> <span style="color:#6b7280">(${t.mentions} mention${t.mentions === 1 ? "" : "s"})</span>${t.quote ? `<br><span style="color:#374151">"${esc(t.quote)}"</span>` : ""}</li>`,
       )
       .join("");
   return (

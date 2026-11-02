@@ -9,7 +9,7 @@ import { PublicLayout } from "../components/site/PublicLayout";
 import { BusinessSearch } from "../components/site/BusinessSearch";
 import type { BusinessDetails } from "../lib/places.functions";
 import { getSignupPrefill, signUpFreeFn } from "../lib/signup.functions";
-import { signupProblem } from "../lib/signup";
+import { signupProblemAt, type SignupField } from "../lib/signup";
 
 export const Route = createFileRoute("/start")({
   validateSearch: z.object({ r: z.string().max(64).optional() }),
@@ -53,6 +53,10 @@ function Start() {
   const [trap, setTrap] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A problem with one field is shown next to that field, not only at the end.
+  const [fieldError, setFieldError] = useState<{ field: SignupField; message: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!r) return;
@@ -68,13 +72,18 @@ function Start() {
   }, [r, prefill]);
 
   const businessName = fromReport ? business : (biz?.name ?? business);
+  const errFor = (f: SignupField) => (fieldError?.field === f ? fieldError.message : null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const input = { business: businessName, name, email, password, agree };
-    const problem = signupProblem(input);
-    if (problem) return setError(problem);
+    const problem = signupProblemAt(input);
     setError(null);
+    setFieldError(problem);
+    if (problem) {
+      document.getElementById(`s-${problem.field}`)?.focus();
+      return;
+    }
     setBusy(true);
     try {
       const res = await signUp({
@@ -119,7 +128,7 @@ function Start() {
                 </li>
               ))}
             </ul>
-            <p className="mt-6 text-sm text-muted-foreground">
+            <p className="mt-6 text-base text-muted-foreground">
               Want more later? RepSuites Growth writes your review replies, asks customers for
               reviews and gets you higher on Google Maps.{" "}
               <Link to="/pricing" className="underline underline-offset-2">
@@ -133,13 +142,20 @@ function Start() {
             className="order-1 md:order-2 rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm space-y-4"
           >
             <h2 className="text-xl font-bold">Create your free account</h2>
-            <p className="-mt-2 text-sm text-muted-foreground">
+            <p className="-mt-2 text-base text-muted-foreground">
               Then print your review QR card. Free, no card needed.
             </p>
-            <div>
-              <label className="text-sm font-semibold block mb-1.5">Your business</label>
+            <div id={fromReport ? undefined : "s-business"} tabIndex={fromReport ? undefined : -1}>
+              {fromReport ? (
+                <label className="text-base font-semibold block mb-1.5" htmlFor="s-business">
+                  Your business
+                </label>
+              ) : null}
               {fromReport ? (
                 <input
+                  id="s-business"
+                  aria-invalid={errFor("business") ? true : undefined}
+                  aria-describedby={errFor("business") ? "s-business-err" : undefined}
                   value={business}
                   onChange={(e) => setBusiness(e.target.value)}
                   className={field}
@@ -153,9 +169,10 @@ function Start() {
                   onConfirm={setBiz}
                 />
               )}
+              <FieldError id="s-business-err" message={errFor("business")} />
             </div>
             <div>
-              <label className="text-sm font-semibold block mb-1.5" htmlFor="s-name">
+              <label className="text-base font-semibold block mb-1.5" htmlFor="s-name">
                 Your name
               </label>
               <input
@@ -164,23 +181,30 @@ function Start() {
                 onChange={(e) => setName(e.target.value)}
                 className={field}
                 autoComplete="name"
+                aria-invalid={errFor("name") ? true : undefined}
+                aria-describedby={errFor("name") ? "s-name-err" : undefined}
               />
+              <FieldError id="s-name-err" message={errFor("name")} />
             </div>
             <div>
-              <label className="text-sm font-semibold block mb-1.5" htmlFor="s-email">
+              <label className="text-base font-semibold block mb-1.5" htmlFor="s-email">
                 Email
               </label>
               <input
                 id="s-email"
                 type="email"
+                inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={field}
                 autoComplete="email"
+                aria-invalid={errFor("email") ? true : undefined}
+                aria-describedby={errFor("email") ? "s-email-err" : undefined}
               />
+              <FieldError id="s-email-err" message={errFor("email")} />
             </div>
             <div>
-              <label className="text-sm font-semibold block mb-1.5" htmlFor="s-pass">
+              <label className="text-base font-semibold block mb-1.5" htmlFor="s-pass">
                 Choose a password
               </label>
               <input
@@ -190,11 +214,13 @@ function Start() {
                 onChange={(e) => setPassword(e.target.value)}
                 className={field}
                 autoComplete="new-password"
-                aria-describedby="s-pass-hint"
+                aria-describedby={errFor("password") ? "s-pass-hint s-pass-err" : "s-pass-hint"}
+                aria-invalid={errFor("password") ? true : undefined}
               />
-              <p id="s-pass-hint" className="mt-1.5 text-sm text-muted-foreground">
+              <p id="s-pass-hint" className="mt-1.5 text-base text-muted-foreground">
                 At least 10 characters
               </p>
+              <FieldError id="s-pass-err" message={errFor("password")} />
             </div>
             <input
               tabIndex={-1}
@@ -205,12 +231,15 @@ function Start() {
               className="hidden"
               name="website"
             />
-            <label className="flex gap-2.5 items-start text-sm">
+            <label className="flex gap-3 items-start text-base py-2 min-h-11">
               <input
+                id="s-agree"
                 type="checkbox"
                 checked={agree}
                 onChange={(e) => setAgree(e.target.checked)}
-                className="mt-1 w-4 h-4"
+                className="mt-0.5 w-6 h-6 shrink-0"
+                aria-invalid={errFor("agree") ? true : undefined}
+                aria-describedby={errFor("agree") ? "s-agree-err" : undefined}
               />
               <span>
                 I agree to the{" "}
@@ -224,8 +253,9 @@ function Start() {
                 .
               </span>
             </label>
+            <FieldError id="s-agree-err" message={errFor("agree")} />
             {error && (
-              <p className="text-sm text-destructive" role="alert">
+              <p className="text-base text-destructive" role="alert">
                 {error}{" "}
                 {error.includes("Sign in") && (
                   <Link to="/login" className="underline font-semibold">
@@ -242,7 +272,7 @@ function Start() {
               {busy && <Loader2 className="w-5 h-5 animate-spin" />}
               {busy ? "Setting up your account" : "Start free"}
             </button>
-            <p className="text-sm text-center text-muted-foreground">
+            <p className="text-base text-center text-muted-foreground">
               No card needed. Already have an account?{" "}
               <Link to="/login" className="underline">
                 Sign in
@@ -252,5 +282,15 @@ function Start() {
         </div>
       </section>
     </PublicLayout>
+  );
+}
+
+// A problem shown right under its field and read out by screen readers.
+function FieldError({ id, message }: { id: string; message: string | null }) {
+  if (!message) return null;
+  return (
+    <p id={id} role="alert" className="mt-1.5 text-base font-semibold text-destructive">
+      {message}
+    </p>
   );
 }

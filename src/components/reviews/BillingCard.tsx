@@ -44,13 +44,15 @@ export function BillingCard() {
       <CreditCard className="w-5 h-5 text-muted-foreground" />
       <div className="flex-1 min-w-0">
         <p className="font-bold">Your plan: {NAMES[b.plan] ?? b.plan}</p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           {paid
             ? b.status === "past_due"
               ? "Your last payment did not go through. Update your card to keep everything on."
-              : renews
-                ? `Renews on ${renews}. Change your card, switch to yearly or cancel any time.`
-                : "Change your card, switch to yearly or cancel any time."
+              : b.status === "trialing" && renews
+                ? `Free trial until ${renews}. Your first payment is taken that day and covers only the rest of that month, then billed on the 1st of each month. Cancel before then and you pay nothing.`
+                : renews
+                  ? `Renews on ${renews}. Change your card, switch to yearly or cancel any time.`
+                  : "Change your card, switch to yearly or cancel any time."
             : b.plan === "free"
               ? "Free for ever. Upgrade to get AI replies, review requests, Maps rankings and more."
               : "Managed by Accelur8."}
@@ -69,7 +71,7 @@ export function BillingCard() {
               toast.error(r?.error ?? "Could not open billing. Try again.");
             }
           }}
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+          className="rounded-lg border border-border px-3 py-2 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin" />}
           Manage or cancel plan
@@ -77,7 +79,7 @@ export function BillingCard() {
       ) : b.plan === "free" ? (
         <a
           href="/pricing"
-          className="rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm font-bold"
+          className="rounded-lg bg-primary text-primary-foreground px-3 py-2 text-base font-bold"
         >
           Upgrade
         </a>

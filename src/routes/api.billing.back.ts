@@ -18,11 +18,14 @@ export const Route = createFileRoute("/api/billing/back")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const paid = new URL(request.url).searchParams.get("paid") === "1";
+        const q = new URL(request.url).searchParams;
+        const paid = q.get("paid") === "1";
         const body = paid
           ? PAGE(
               "/dashboard?billing=done#settings",
-              "Payment done. Taking you to your dashboard...",
+              q.get("trial") === "1"
+                ? "Card details added. Your 14-day free trial is starting. Taking you to your dashboard..."
+                : "Payment done. Taking you to your dashboard...",
             )
           : PAGE("/dashboard#settings", "Taking you back to RepSuites...");
         return new Response(body, {

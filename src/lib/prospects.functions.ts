@@ -387,7 +387,7 @@ export const listProspects = createServerFn({ method: "GET" }).handler(async () 
       "",
     ),
     serviceRead<ProspectRowDb[]>(
-      `prospects?select=${PROSPECT_SELECT}&follow_up_on=lte.${today}&stage=not.in.(won,lost)&order=follow_up_on.asc`,
+      `prospects?select=${PROSPECT_SELECT}&follow_up_on=lte.${today}&stage=not.in.(won,lost)&order=follow_up_on.asc&limit=${LIST_LIMIT}`,
       "",
     ),
   ]);
@@ -529,9 +529,11 @@ export const markSent = createServerFn({ method: "POST" })
         email: string | null;
         report_token: string | null;
         product: string | null;
+        website: string | null;
+        town: string | null;
       }[]
     >(
-      `prospects?select=stage,sent_at,name,contact_name,phone,email,report_token,product&id=eq.${data.id}`,
+      `prospects?select=stage,sent_at,name,contact_name,phone,email,report_token,product,website,town&id=eq.${data.id}`,
       "",
     );
     const row = r.data?.[0];
@@ -553,10 +555,15 @@ export const markSent = createServerFn({ method: "POST" })
     });
     if (w.error) return { ok: false as const, error: "Could not save." };
     // Add them to the Accelur8 CRM so the follow-up sequence (with opt-out) runs.
-    if (data.via !== "manual") {
-      const { pushProspectToGhl } = await import("./ghl-prospect.server");
-      await pushProspectToGhl(row, data.via);
-    }
+    // GHL is being retired: it skips itself when GHL_PROSPECT_WEBHOOK_URL is "off".
+    const { pushProspectToGhl } = await import("./ghl-prospect.server");
+    const { prospectHqEvent } = await import("./hq");
+    const { hqAfter } = await import("./hq.server");
+    await Promise.all([
+      data.via !== "manual" ? pushProspectToGhl(row, data.via).catch(() => false) : false,
+      // Accelur8 HQ: the prospect was sent their report. Never fails the save.
+      hqAfter(() => prospectHqEvent("prospect_sent", { id: data.id, ...row }, { via: data.via })),
+    ]);
     return { ok: true as const };
   });
 
