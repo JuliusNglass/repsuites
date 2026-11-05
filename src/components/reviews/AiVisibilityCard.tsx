@@ -54,7 +54,8 @@ export function AiVisibilityCard() {
         <p className="text-base text-muted-foreground">
           More people now ask an AI assistant who to use. We ask an assistant that searches the web
           (Claude) the questions your customers would, and see who it recommends and where it
-          looked. Answers vary, so watch the trend month to month.
+          looked. Answers vary, so watch the trend month to month. This samples Claude only, not
+          every AI assistant.
         </p>
       </div>
       <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
@@ -138,8 +139,8 @@ export function AiVisibilityCard() {
                       ))}
                     </ul>
                     <p className="text-base text-muted-foreground mt-1.5">
-                      Being listed, with good reviews, on these sites makes you more likely to be
-                      recommended.
+                      These are sources used in this sample. Review their relevance and accuracy
+                      before changing any listings.
                     </p>
                   </div>
                 )}
@@ -157,6 +158,32 @@ export function AiVisibilityCard() {
                   )}
                   <div className="min-w-0">
                     <p className="font-medium">"{r.question}"</p>
+                    {r.evidence && (
+                      <details className="mt-2 text-base">
+                        <summary>How this was checked</summary>
+                        <p>
+                          {r.evidence.provider}, {r.evidence.model}. Checked {r.evidence.checkedAt}.
+                        </p>
+                        <p className="whitespace-pre-wrap">{r.evidence.excerpt}</p>
+                        <ul>
+                          {r.evidence.urls
+                            .filter((u) => /^https?:\/\//i.test(u))
+                            .map((u) => (
+                              <li key={u}>
+                                <a
+                                  className="underline break-all"
+                                  href={u}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {u}
+                                </a>
+                              </li>
+                            ))}
+                        </ul>
+                      </details>
+                    )}
+
                     <p className="text-base text-muted-foreground">
                       {r.named
                         ? `You were number ${r.position} of ${r.businesses.length} named.`
@@ -171,7 +198,7 @@ export function AiVisibilityCard() {
           </ul>
         </div>
       )}
-      {l && l.total === 0 && l.error && (
+      {l && l.error && (
         <p role="alert" className="text-base text-destructive">
           {l.error}
         </p>

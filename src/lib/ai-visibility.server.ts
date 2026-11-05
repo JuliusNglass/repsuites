@@ -79,14 +79,22 @@ export async function readAiVisibility() {
   };
 }
 
-type Asked = { text: string; sources: string[] } | { error: string };
+type Asked =
+  | { text: string; sources: string[]; evidence: NonNullable<AiAnswer["evidence"]> }
+  | { error: string };
 
 // Ask once; if the answer has no readable list, ask again (answers vary).
-async function ask(question: string, town: string): Promise<Asked> {
+export async function ask(question: string, town: string): Promise<Asked> {
   const first = await askOnce(question, town);
   if ("error" in first || hasList(first.text)) return first;
   const second = await askOnce(question, town);
-  return "error" in second ? first : second;
+  if ("error" in second) return second;
+  return hasList(second.text)
+    ? second
+    : {
+        error:
+          "The assistant did not return a usable business list. No visibility conclusion was recorded.",
+      };
 }
 
 async function askOnce(question: string, town: string): Promise<Asked> {
@@ -127,7 +135,7 @@ async function askOnce(question: string, town: string): Promise<Asked> {
         error: `AI check failed (${res.status}): ${String(b?.error?.message ?? "").slice(0, 140)}`,
       };
     }
-    const body = (await res.json()) as { content?: any[] };
+    const body = (await res.json()) as { content?: any[]; model?: string };
     const content = body.content ?? [];
     // The websites it read: search results and the pages it cited.
     const urls: string[] = [];
@@ -143,6 +151,19 @@ async function askOnce(question: string, town: string): Promise<Asked> {
         .map((c) => String(c.text ?? ""))
         .join("\n"),
       sources: urls.map(domainOf).filter((d): d is string => !!d),
+      evidence: {
+        provider: "Anthropic",
+        model: String(
+          body.model ?? process.env["REPSUITES_AI_SEARCH_MODEL"] ?? "claude-sonnet-5-5",
+        ),
+        checkedAt: new Date().toISOString(),
+        urls: [...new Set(urls)].filter((u) => /^https?:\/\//i.test(u)).slice(0, 12),
+        excerpt: content
+          .filter((c) => c?.type === "text")
+          .map((c) => String(c.text ?? ""))
+          .join("\n")
+          .slice(0, 3000),
+      },
     };
   } catch {
     return { error: "The AI check timed out. Try again shortly." };
@@ -179,8 +200,12 @@ export async function runAiVisibility(input: { service: string; town: string }) 
   const answers = await Promise.all(questions.map((q) => ask(q, town)));
   const failed = answers.find((a) => "error" in a) as { error: string } | undefined;
   const results: AiAnswer[] = answers
-    .map((a, i) => ("text" in a ? readAnswer(questions[i]!, a.text, business, a.sources) : null))
-    .filter((a): a is AiAnswer => !!a);
+    .map((a, i) =>
+      "text" in a
+        ? { ...readAnswer(questions[i]!, a.text, business, a.sources), evidence: a.evidence }
+        : null,
+    )
+    .filter((a): a is NonNullable<typeof a> => !!a);
   const named = results.filter((r) => r.named).length;
   await serviceWrite("ai_visibility_checks", "", {
     method: "POST",
@@ -189,7 +214,7 @@ export async function runAiVisibility(input: { service: string; town: string }) 
       results,
       named,
       total: results.length,
-      error: results.length ? null : (failed?.error ?? "No answer."),
+      error: failed?.error ?? (results.length ? null : "No answer."),
     },
   });
   if (!results.length) return { ok: false as const, error: failed?.error ?? "No answer." };

@@ -1,6 +1,13 @@
 // AI search visibility: pure helpers. Client-safe. No em dashes in copy.
 
 export interface AiAnswer {
+  evidence?: {
+    provider: string;
+    model: string;
+    checkedAt: string;
+    urls: string[];
+    excerpt: string;
+  };
   question: string;
   named: boolean;
   position: number | null; // 1 = first business the assistant named
@@ -74,7 +81,7 @@ export function sameBusiness(listed: string, business: string): boolean {
   if (a === b) return true;
   const short = a.length < b.length ? a : b;
   const long = a.length < b.length ? b : a;
-  return short.length >= 5 && long.includes(short);
+  return short.length >= 5 && ` ${long} `.includes(` ${short} `);
 }
 
 // Reads the assistant's list (JSON {"businesses": [...]}) and finds the business.
