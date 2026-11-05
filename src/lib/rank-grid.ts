@@ -51,7 +51,9 @@ export function summarisePoints(points: GridPoint[]): {
   average: number | null;
   top3: number;
 } {
-  const ranks = points.map((p) => p.rank).filter((r): r is number => r !== null);
+  const ranks = points
+    .map((p) => p.rank)
+    .filter((r): r is number => r !== null && Number.isInteger(r) && r >= 1 && r <= 20);
   return {
     found: ranks.length,
     top3: ranks.filter((r) => r <= 3).length,
@@ -104,4 +106,54 @@ const TRAVELS = [
 export function autoAreaSize(types: string[], serviceAreaOnly: boolean): AreaSize {
   if (serviceAreaOnly || types.some((t) => TRAVELS.includes(t))) return "large";
   return "medium";
+}
+
+// Compare businesses across the same successful searches, without more API calls.
+export interface GridCompetitor {
+  placeId: string;
+  name: string;
+  found: number;
+  top3: number;
+  average: number | null;
+}
+
+export function compareGridBusinesses(searches: any[][], ownPlaceId: string): GridCompetitor[] {
+  const businesses = new Map<string, { name: string; ranks: number[] }>();
+  for (const items of searches) {
+    const seen = new Set<string>();
+    for (const item of items) {
+      const id = String(item?.place_id ?? "");
+      const rank = Number(item?.rank_group);
+      if (
+        item?.type !== "maps_search" ||
+        !id ||
+        id === ownPlaceId ||
+        seen.has(id) ||
+        !Number.isInteger(rank) ||
+        rank < 1 ||
+        rank > 20
+      )
+        continue;
+      seen.add(id);
+      const b = businesses.get(id) ?? { name: String(item.title ?? "").slice(0, 200), ranks: [] };
+      b.ranks.push(rank);
+      businesses.set(id, b);
+    }
+  }
+  return [...businesses]
+    .map(([placeId, b]) => ({
+      placeId,
+      name: b.name,
+      found: b.ranks.length,
+      top3: b.ranks.filter((r) => r <= 3).length,
+      average: Math.round((b.ranks.reduce((a, r) => a + r, 0) / b.ranks.length) * 10) / 10,
+    }))
+    .sort(
+      (a, b) =>
+        b.top3 - a.top3 ||
+        b.found - a.found ||
+        a.average! - b.average! ||
+        a.placeId.localeCompare(b.placeId),
+    )
+    .slice(0, 5);
 }

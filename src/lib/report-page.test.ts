@@ -185,3 +185,57 @@ describe("what 1 more customer is worth", () => {
     expect(h).not.toContain("would add about");
   });
 });
+
+describe("diagnostic report evidence", () => {
+  it("includes competitor coverage and website observations in the printable report", () => {
+    const h = renderReport(
+      {
+        ...report,
+        grid: {
+          size: 5,
+          ranks: Array(25).fill(2),
+          found: 25,
+          top3: 25,
+          average: 2,
+          spacing: "1 km",
+        },
+        grids: [
+          {
+            keyword: "cafe",
+            size: 5,
+            ranks: Array(25).fill(2),
+            found: 25,
+            top3: 25,
+            average: 2,
+            spacing: "1 km",
+            competitors: [
+              { placeId: "other", name: "Other <Cafe>", found: 20, top3: 10, average: 3 },
+            ],
+          },
+        ],
+        websiteAudit: {
+          version: 1,
+          status: "checked",
+          checkedAt: "2026-11-05T12:00:00Z",
+          url: "https://example.com/",
+          findings: [
+            {
+              id: "title",
+              label: "Page title",
+              status: "review",
+              evidence: "No title found",
+              recommendation: "Review the title",
+            },
+          ],
+        },
+      },
+      { token: "a".repeat(24), snapshot: null, flash: "print" },
+    );
+    expect(h).toContain("Top 3 spots");
+    expect(h).toContain("Other &#60;Cafe&#62;");
+    expect(h).toContain("No title found");
+    expect(h).toContain("Review the title");
+    expect(h).toContain("Google profile audit evidence");
+    expect(h).toContain("print()");
+  });
+});

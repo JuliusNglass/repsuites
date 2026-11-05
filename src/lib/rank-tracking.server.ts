@@ -213,7 +213,12 @@ export async function mapsResults(auth: string, keyword: string, lat: number, ln
     });
     const body = (await r.json().catch(() => null)) as any;
     const task = body?.tasks?.[0];
-    if (!r.ok || !task || Number(task.status_code) >= 40000)
+    if (
+      !r.ok ||
+      !task ||
+      Number(task.status_code) !== 20000 ||
+      !Array.isArray(task.result?.[0]?.items)
+    )
       return {
         ok: false as const,
         error: String(task?.status_message ?? body?.status_message ?? r.status),
@@ -331,7 +336,7 @@ export async function runRankChecks(token: string) {
     method: "PATCH",
     body: { next_run_at: next },
   });
-  if (failures > grid.length / 2) {
+  if (failures > 0) {
     await setError(`The ranking check did not finish: ${lastErr}`.slice(0, 290));
     return { status: 200, body: { ok: false, failures } };
   }

@@ -124,6 +124,7 @@ function reach(p: any) {
 // ---------- the report ----------
 
 export interface Report {
+  websiteAudit?: import("./website-audit").WebsiteAudit;
   createdAt: string;
   business: {
     name: string;
@@ -159,6 +160,7 @@ export interface Report {
     average: number | null;
     center?: { lat: number; lng: number };
     spacingKm?: number;
+    competitors?: import("./rank-grid").GridCompetitor[];
   } | null;
   // The same heatmap for each search phrase checked (the first is grid).
   grids?: (NonNullable<Report["grid"]> & { keyword: string })[];
@@ -287,7 +289,7 @@ function mapsPoints(pos: number | null): number {
 // One 5 by 5 heatmap around the business for one search phrase: 25
 // searches about half a mile (or 1 km) apart. The middle spot is the
 // business's own street.
-async function runGrid(
+export async function runGrid(
   auth: string,
   keyword: string,
   at: { lat: number; lng: number },
@@ -300,11 +302,13 @@ async function runGrid(
   grid: NonNullable<Report["grid"]> | null;
 }> {
   const { mapsResults } = await import("./rank-tracking.server");
-  const { gridPoints, summarisePoints, rankIn } = await import("./rank-grid");
+  const { gridPoints, summarisePoints, rankIn, compareGridBusinesses } =
+    await import("./rank-grid");
   const { usesMiles, distanceLabel } = await import("./units");
   const miles = usesMiles(at.lat, at.lng);
   const pts = gridPoints(at, 5, spacingKm);
   const ranks: (number | null | undefined)[] = new Array(pts.length).fill(undefined);
+  const searches: any[][] = new Array(pts.length);
   let failed = 0;
   let error = "";
   let next = 0;
@@ -313,15 +317,18 @@ async function runGrid(
       const i = next++;
       const pt = pts[i]!;
       const r = await mapsResults(auth, keyword, pt.lat, pt.lng);
-      if (r.ok) ranks[i] = rankIn(r.items, placeId, name);
-      else {
+      if (r.ok) {
+        ranks[i] = rankIn(r.items, placeId, name);
+        searches[i] = r.items;
+      } else {
         failed++;
         if (!error) error = String(r.error).slice(0, 200);
       }
     }
   };
   await Promise.all(Array.from({ length: 6 }, worker));
-  if (failed > 5) return { middle: ranks[12], error, grid: null };
+  // Unknown points must not become evidence of poor visibility.
+  if (failed > 0) return { middle: ranks[12], error, grid: null };
   const sum = summarisePoints(
     pts.map((pt, i) => ({ lat: pt.lat, lng: pt.lng, rank: ranks[i] ?? null })),
   );
@@ -331,6 +338,7 @@ async function runGrid(
     grid: {
       size: 5,
       spacing: distanceLabel(spacingKm, miles),
+      competitors: compareGridBusinesses(searches, placeId),
       ranks: ranks.map((r) => (r === undefined ? -1 : r)),
       found: sum.found,
       top3: sum.top3,
@@ -537,8 +545,11 @@ export async function buildReport(
       }
     : null;
 
+  const { checkWebsite } = await import("./website-audit.server");
+  const websiteAudit = await checkWebsite(website);
   return {
     report: {
+      websiteAudit,
       createdAt: new Date().toISOString(),
       business: {
         name,
