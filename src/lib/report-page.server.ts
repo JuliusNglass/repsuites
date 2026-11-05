@@ -71,6 +71,9 @@ tr.you td{font-weight:700;background:#fffbeb}
 .total{margin:14px 0 0;background:#fffbeb;border:2px solid #f5b324;border-radius:14px;padding:14px;text-align:center}.total .big{font-size:2rem;font-weight:800;line-height:1.1;color:#0b1d3a}
 @media print{.cta,.noprint{display:none}body{background:#fff}.card{break-inside:avoid}}
 
+.print-grids{display:none}
+@media print{.screen-grids{display:none!important}.print-grids{display:block}.print-grids .rk{print-color-adjust:exact;-webkit-print-color-adjust:exact}.print-grids .card{break-inside:avoid}}
+
 /* Polish: crisper text, balanced headings, steady numbers, softer depth, tactile buttons, 40px targets */
 body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 h1,h2,h3,.biz{text-wrap:balance}p,li,.finding p{text-wrap:pretty}
@@ -227,6 +230,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
         return `<div class="rk rk-${d.b}" style="aspect-ratio:1;font-size:1rem">${d.t}</div>`;
       })
       .join("")}</div>`;
+  const printable = `<div class="print-grids"><h2>Ranking grids for every search phrase</h2><p class="small">Checked ${esc(r.createdAt)}. Each grid is read from north-west to south-east. The centre spot is the business. Numbers are observed positions in the top 20; a dash means not found and a question mark means not checked.</p>${grids.map((g) => `<section class="card"><h3>${esc(g.keyword)}</h3><p class="small">${g.size} by ${g.size} search spots, ${esc(g.spacing ?? "not recorded")} apart.</p>${dots(g)}<p>${summaryOf(g)}</p></section>`).join("")}${rankLegend()}</div>`;
   const tabs =
     grids.length > 1
       ? `<div class="kw noprint" role="group" aria-label="Search phrase">${grids.map((g, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0 ? "true" : "false"}"${i === 0 ? ' class="on"' : ""}>${esc(g.keyword)}</button>`).join("")}</div>`
@@ -235,7 +239,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const intro = `<p style="margin:0 0 8px">We searched Google Maps from 25 places around you, up to ${esc(furthest)} away. This is what a customer standing there would see.</p>
 <ul style="margin:0 0 12px;padding-left:1.2em"><li>Each pin shows where you came in the list from that place.</li><li>The house is you.</li><li>Pinch, or use + and −, to zoom in.</li></ul>`;
   if (!center || !extra)
-    return `<h2>Where you show up across your area</h2><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div>`;
+    return `${printable}<div class="screen-grids"><h2>Where you show up across your area</h2><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>`;
   const spots = gridSpots(center, 5, spacingKm).map((p) => [
     Math.round(p.lat * 1e6) / 1e6,
     Math.round(p.lng * 1e6) / 1e6,
@@ -257,9 +261,9 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const rivalKey = data.rivals.length
     ? `<p class="small" style="margin:8px 0 0">${data.rivals.map((x) => `<b class="rkey">${x.l}</b> ${esc(x.n)}`).join(" &nbsp; ")}</p>`
     : "";
-  return `<h2>Where you show up across your area</h2><div class="card">${intro}${tabs}
+  return `${printable}<div class="screen-grids"><h2>Where you show up across your area</h2><div class="card">${intro}${tabs}
 <div id="rmap" class="map" role="region" aria-label="Map of where you show up. The words under the map say the same thing."><div id="rmap-fallback" style="padding:16px">${dots(grids[0]!)}</div></div>
-${legend}${rivalKey}<p id="rmap-sum" aria-live="polite" style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div>
+${legend}${rivalKey}<p id="rmap-sum" aria-live="polite" style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>(function(){var D=${json};if(!window.L)return;var el=document.getElementById("rmap");document.getElementById("rmap-fallback").remove();
@@ -631,8 +635,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     : r.maps.position === null
       ? `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>not in the first 20</b> results on Google Maps.</p>`
       : `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>number ${r.maps.position}</b> on Google Maps.${r.maps.position <= 3 ? " That is the top 3. Well done." : " The first 3 are the ones most people tap."}</p>`;
-  const hm = r.grid;
-  const heat = hm ? heatMap(r, extra) : "";
+  const heat = gridsOf(r).length ? heatMap(r, extra) : "";
   const comparison = gridsOf(r)
     .filter((g) => g.competitors?.length)
     .map(

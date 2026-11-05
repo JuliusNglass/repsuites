@@ -157,3 +157,29 @@ export function compareGridBusinesses(searches: any[][], ownPlaceId: string): Gr
     )
     .slice(0, 5);
 }
+
+// Historical movement is meaningful only when the same search spots were checked.
+export function sameSearchSpots(
+  a: { gridSize: number; points: GridPoint[] },
+  b: { gridSize: number; points: GridPoint[] },
+): boolean {
+  const valid = (p: GridPoint) =>
+    Number.isFinite(p.lat) &&
+    Number.isFinite(p.lng) &&
+    (p.rank === null || (Number.isInteger(p.rank) && p.rank >= 1 && p.rank <= 20));
+  return (
+    a.gridSize === b.gridSize &&
+    a.points.length === a.gridSize ** 2 &&
+    a.points.length === b.points.length &&
+    a.points.length > 0 &&
+    a.points.every((p, i) => {
+      const previous = b.points[i]!;
+      return (
+        valid(p) &&
+        valid(previous) &&
+        Math.abs(p.lat - previous.lat) < 1e-7 &&
+        Math.abs(p.lng - previous.lng) < 1e-7
+      );
+    })
+  );
+}

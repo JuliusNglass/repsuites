@@ -11,7 +11,14 @@ import {
 } from "./auth.server";
 import { hasServiceRole, serviceRead, serviceWrite } from "./supabase-service.server";
 import { featureBlockedFor } from "./tenant-access.server";
-import { cleanKeyword, gridPoints, rankIn, summarisePoints, type GridPoint } from "./rank-grid";
+import {
+  cleanKeyword,
+  gridPoints,
+  rankIn,
+  summarisePoints,
+  sameSearchSpots,
+  type GridPoint,
+} from "./rank-grid";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const OWNERS = ["owner", "admin", "super_admin"];
@@ -95,6 +102,13 @@ export async function readRanking() {
             }
           : null;
       return {
+        comparable:
+          !!list[0] &&
+          !!list[1] &&
+          sameSearchSpots(
+            { gridSize: Number(list[0].grid_size), points: list[0].points ?? [] },
+            { gridSize: Number(list[1].grid_size), points: list[1].points ?? [] },
+          ),
         id: String(kw.id),
         keyword: String(kw.keyword),
         nextRunAt: String(kw.next_run_at),

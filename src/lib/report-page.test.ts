@@ -239,3 +239,29 @@ describe("diagnostic report evidence", () => {
     expect(h).toContain("print()");
   });
 });
+
+describe("all keyword grids in PDF", () => {
+  it("prints every phrase using static grids without requiring map tiles or a tab selection", () => {
+    const g = {
+      size: 5,
+      ranks: Array(25).fill(1),
+      top3: 25,
+      found: 25,
+      average: 1,
+      spacing: "1 km",
+    };
+    const html = renderReport({
+      ...report,
+      grid: null,
+      grids: [
+        { ...g, keyword: "cafe newport" },
+        { ...g, keyword: "cafe near me" },
+      ],
+    });
+    expect(html).toContain('class="print-grids"');
+    expect(html).toContain("<h3>cafe newport</h3>");
+    expect(html).toContain("<h3>cafe near me</h3>");
+    expect(html).toContain(".screen-grids{display:none!important}");
+    expect(html).toContain(".print-grids{display:block}");
+  });
+});
