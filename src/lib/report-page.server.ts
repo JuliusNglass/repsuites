@@ -97,7 +97,6 @@ tr.you td{font-weight:700;background:#fffbeb}
   td,th{padding:6px 5px}
   .map{max-width:155mm}
   .small{font-size:9pt}
-  body:after{content:"RepSuites  •  Confidential working report";display:block;text-align:center;color:#64748b;font-size:8pt;margin-top:8mm}
 }
 
 .print-grids{display:none}
