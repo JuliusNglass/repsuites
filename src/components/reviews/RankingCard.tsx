@@ -165,11 +165,21 @@ export function RankingCard() {
                 <div className="text-base font-semibold">{k.keyword}</div>
                 <div className="text-base text-muted-foreground">
                   {k.latest
-                    ? `Checked ${new Date(k.latest.runAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}. Shows at ${k.latest.found} of ${k.latest.points.length} points${k.latest.average !== null ? `, average position ${k.latest.average}` : ""}${k.previous?.average != null && k.latest.average !== null ? ` (was ${k.previous.average})` : ""}.`
+                    ? `Checked ${new Date(k.latest.runAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}. Shows at ${k.latest.found} of ${k.latest.points.length} points${k.latest.average !== null ? `, average position ${k.latest.average}` : ""}${k.comparable && k.previous?.average != null && k.latest.average !== null ? ` (was ${k.previous.average})` : ""}.`
                     : s.enabled
                       ? "First check within the hour."
                       : "Not checked yet."}
                 </div>
+                {k.latest && (
+                  <p className="text-base text-muted-foreground">
+                    Average position includes only spots where you appeared in the top 20.
+                  </p>
+                )}
+                {k.previous && !k.comparable && (
+                  <p className="text-base text-muted-foreground">
+                    The search spots changed or could not be verified. These scans are not compared.
+                  </p>
+                )}
               </div>
               {d.canEdit && (
                 <button
