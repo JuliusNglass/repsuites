@@ -54,3 +54,10 @@ describe("AI visibility extras", () => {
     expect(s.sites[0]).toEqual({ name: "tripadvisor.co.uk", count: 2 });
   });
 });
+
+describe("business identity evidence", () => {
+  it("does not match a substring inside a different business name", () => {
+    expect(sameBusiness("Ace Plumbing", "Space Plumbing")).toBe(false);
+    expect(sameBusiness("Ace Plumbing", "Ace Plumbing Newport")).toBe(true);
+  });
+});
