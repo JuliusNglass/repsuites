@@ -69,7 +69,35 @@ tr.you td{font-weight:700;background:#fffbeb}
 .seg{display:inline-flex;border:1px solid #64748b;border-radius:999px;overflow:hidden}.seg button{border:0;background:#fff;color:#0b1b33;font:inherit;font-size:1rem;padding:8px 18px;cursor:pointer}.seg button.on{background:#0f172a;color:#fff}
 .sum{margin:14px 0 0;padding:0 0 0 1.4em;font-size:1.0625rem}.sum li{padding:8px 0;border-bottom:1px dashed #e2e8f0}.sum li b{white-space:nowrap}
 .total{margin:14px 0 0;background:#fffbeb;border:2px solid #f5b324;border-radius:14px;padding:14px;text-align:center}.total .big{font-size:2rem;font-weight:800;line-height:1.1;color:#0b1d3a}
-@media print{.cta,.noprint{display:none}body{background:#fff}.card{break-inside:avoid}}
+@page{size:A4;margin:16mm 15mm 17mm}
+@media print{
+  html,body{background:#fff!important;color:#0f172a;font-size:10.5pt}
+  body{line-height:1.42}
+  main{max-width:none;width:100%;padding:0}
+  .cta,.noprint{display:none!important}
+  .top{margin-bottom:10mm;border-bottom:1px solid #cbd5e1;padding-bottom:4mm}
+  .brand img{width:22px;height:22px}
+  .kicker{font-size:11pt;margin-top:4mm}
+  .biz{font-size:25pt;max-width:150mm}
+  h2{font-size:17pt;margin:0 0 5mm;break-after:avoid}
+  h3{font-size:13pt;break-after:avoid}
+  p,li,td,th{font-size:10.5pt}
+  .card{break-inside:avoid;box-shadow:none;border:1px solid #cbd5e1;border-radius:8px;margin:0 0 5mm;padding:5mm}
+  .found{break-after:page}
+  #map{break-before:page}
+  .screen-grids{break-after:page}
+  .print-grids{break-before:page}
+  .print-grids h2{margin-top:0}
+  .print-grids .card{break-inside:avoid-page}
+  #worth{break-before:page}
+  #score{break-before:page}
+  .presentation-close{break-before:page}
+  .presentation-close .card{margin-bottom:4mm}
+  table{font-size:10pt}
+  td,th{padding:6px 5px}
+  .map{max-width:155mm}
+  .small{font-size:9pt}
+}
 
 .print-grids{display:none}
 @media print{.screen-grids{display:none!important}.print-grids{display:block}.print-grids .rk{print-color-adjust:exact;-webkit-print-color-adjust:exact}.print-grids .card{break-inside:avoid}}
@@ -477,6 +505,16 @@ ${growth}
 <p class="small noprint" style="text-align:center;margin:8px 0 0">No card needed. Takes 2 minutes.</p></div>${script}`;
 }
 
+function presentationClose(r: Report, b: Report["business"]): string {
+  const date = esc(r.createdAt);
+  return `<section class="presentation-close">
+<h2>90-day improvement plan</h2>
+<div class="card"><table><tr><th>Days 1 to 30</th><td>Fix the highest-impact profile and website gaps, then establish a review request routine.</td></tr><tr><th>Days 31 to 60</th><td>Improve the priority search phrases and track the same local search spots again.</td></tr><tr><th>Days 61 to 90</th><td>Compare the evidence, report the movement, and choose the next approved actions.</td></tr></table></div>
+<h2>Proof and next step</h2>
+<div class="card"><p><b>What this report proves:</b> how ${esc(b.name)} appeared in the checked Google searches and public profile evidence on ${date}.</p><p><b>What it does not prove:</b> private Google performance data, ownership status, conversion rate, or guaranteed future rankings.</p><p style="margin-bottom:0"><b>Recommended next step:</b> agree the first three fixes, record the baseline, and schedule the next comparable check.</p></div>
+</section>`;
+}
+
 export interface RenderExtra {
   token: string;
   snapshot: ProspectSnapshot | null;
@@ -701,6 +739,7 @@ ${view.fixes.length ? `<ol style="list-style:none;margin:0;padding:0">${view.fix
 <div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
 <p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
 <p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}" style="color:#334155">Or book a free 15-minute call</a></p></div>
+${presentationClose(r, b)}
 <h2 id="score">How we worked out your score</h2>
 <div class="card score"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
@@ -718,3 +757,4 @@ ${view.fixes.length ? `<ol style="list-style:none;margin:0;padding:0">${view.fix
 export function reportNotFound(): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main style="text-align:center"><h1>Report not found</h1><p class="muted">This link may have been replaced. Ask the person who sent it for a fresh one.</p></main></body></html>`;
 }
+
