@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareGridBusinesses, summarisePoints } from "./rank-grid";
+import { compareGridBusinesses, summarisePoints, sameSearchSpots } from "./rank-grid";
 import { gridInsight } from "./report-map";
 import { areaPoints } from "./report-page.server";
 
@@ -34,5 +34,38 @@ describe("ranking evidence", () => {
       { placeId: "B", name: "B", found: 2, top3: 1, average: 2.5 },
       { placeId: "A", name: "A", found: 2, top3: 1, average: 3.5 },
     ]);
+  });
+});
+
+describe("comparable ranking history", () => {
+  const scan = {
+    gridSize: 3,
+    points: Array.from({ length: 9 }, (_, i) => ({ lat: 51 + i * 0.001, lng: 0, rank: i + 1 })),
+  };
+  it("allows changed rankings at the same search spots", () => {
+    expect(
+      sameSearchSpots(scan, { ...scan, points: scan.points.map((p) => ({ ...p, rank: null })) }),
+    ).toBe(true);
+  });
+  it("rejects a moved centre, different spacing or grid size", () => {
+    expect(
+      sameSearchSpots(scan, {
+        ...scan,
+        points: scan.points.map((p) => ({ ...p, lat: p.lat + 0.01 })),
+      }),
+    ).toBe(false);
+    expect(sameSearchSpots(scan, { ...scan, gridSize: 5 })).toBe(false);
+    expect(
+      sameSearchSpots(scan, {
+        ...scan,
+        points: scan.points.map((p, i) => ({ ...p, lng: i * 0.002 })),
+      }),
+    ).toBe(false);
+  });
+  it("rejects incomplete or unknown observations", () => {
+    expect(sameSearchSpots(scan, { ...scan, points: scan.points.slice(1) })).toBe(false);
+    expect(
+      sameSearchSpots(scan, { ...scan, points: scan.points.map((p) => ({ ...p, rank: -1 })) }),
+    ).toBe(false);
   });
 });
