@@ -74,7 +74,7 @@ export function gridInsight(ranks: (number | null)[], size = 5) {
       const c = (i % size) - half;
       if (Math.max(Math.abs(r), Math.abs(c)) !== step) return;
       total++;
-      if (v !== null && v <= 3) top3++;
+      if (v !== null && v >= 1 && v <= 3) top3++;
     });
     return { top3, total };
   };
@@ -89,7 +89,12 @@ export function gridInsight(ranks: (number | null)[], size = 5) {
   ];
   for (const [side, on] of sides) {
     const cells = ranks.filter((_v, i) => on(Math.floor(i / size) - half, (i % size) - half));
-    if (cells.length && cells.filter(bad).length / cells.length >= 0.6) weak.push(side);
+    if (
+      cells.length &&
+      cells.every((v) => v !== -1) &&
+      cells.filter(bad).length / cells.length >= 0.6
+    )
+      weak.push(side);
   }
   return { home, near: ring(1), far: ring(2), weak };
 }

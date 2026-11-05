@@ -189,6 +189,8 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const step = distanceText(Math.round(spacingKm * 10) / 10, miles);
   const twoSteps = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
   const summaryOf = (g: (typeof grids)[number]) => {
+    if (g.ranks.includes(-1))
+      return `Some search spots could not be checked for "${esc(g.keyword)}". Unknown spots are not evidence of a low ranking. Rerun this check before drawing conclusions.`;
     const k = `"${esc(g.keyword)}"`;
     if (g.top3 >= 25)
       return `When people near you search ${k}, you are in the top 3 everywhere we checked, up to ${esc(twoSteps)} away. The job now is staying there: rivals catch up with fresh reviews.`;
@@ -276,11 +278,19 @@ draw(0);document.querySelectorAll(".kw button").forEach(function(b){b.addEventLi
 // and 4th to 10th in 10 more is (6 + 0.4 x 10) / 25 = 0.4 of the 25 points,
 // so 10 points.
 export function areaPoints(grids: { ranks: (number | null)[] }[]): number | null {
-  if (!grids.length) return null;
+  if (
+    !grids.length ||
+    grids.some(
+      (g) =>
+        !g.ranks.length ||
+        g.ranks.some((v) => v !== null && (!Number.isInteger(v) || v < 1 || v > 20)),
+    )
+  )
+    return null;
   const each = grids.map((g) => {
     const top3 = g.ranks.filter((v) => v !== null && v >= 1 && v <= 3).length;
     const near = g.ranks.filter((v) => v !== null && v >= 4 && v <= 10).length;
-    return (top3 + 0.4 * near) / 25;
+    return (top3 + 0.4 * near) / g.ranks.length;
   });
   return Math.round((each.reduce((t, x) => t + x, 0) / each.length) * 25);
 }
@@ -307,7 +317,7 @@ export function scoreView(r: Report) {
   const score = max ? Math.round((got / max) * 100) : r.score;
   const fixes = [...r.fixes];
   for (const g of grids.slice(1))
-    if (g.top3 < 13)
+    if (!g.ranks.includes(-1) && g.top3 < 13)
       fixes.push({
         title:
           g.top3 === 0
@@ -351,8 +361,10 @@ function findings(
 ): string {
   const items: { icon: string; text: string }[] = [];
   const grids = gridsOf(r);
-  if (grids.length) {
-    const worst = [...grids].sort((a, b) => a.top3 - b.top3)[0]!;
+  if (grids.some((g) => !g.ranks.includes(-1))) {
+    const worst = [...grids]
+      .filter((g) => !g.ranks.includes(-1))
+      .sort((a, b) => a.top3 - b.top3)[0]!;
     items.push({
       icon: worst.top3 >= 20 ? "&#9989;" : "&#128205;",
       text:
@@ -565,6 +577,29 @@ export function previewText(r: Report): { title: string; description: string } {
   };
 }
 
+export function profileEvidence(r: Report): string {
+  const b = r.business;
+  const rows = [
+    ["Website", b.website || "Not supplied by Google"],
+    ["Phone", b.phone || "Not supplied by Google"],
+    [
+      "Opening hours",
+      b.hasHours ? "Opening hours supplied by Google" : "No opening hours supplied by Google",
+    ],
+    ["Category", b.category || "Not supplied by Google"],
+  ];
+  return `<h2>Google profile audit evidence</h2><div class="card"><p class="small">Source: Google Places, recorded ${esc(r.createdAt)}. Public profile basics only. Missing information needs owner review, especially for service-area businesses.</p><table><tr><th>Check</th><th>Observation</th></tr>${rows.map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><p class="small">Profile ownership, suspension status, private performance, posts and service completeness were not checked here. Review counts and ratings describe the profile, not enquiry or conversion performance.</p></div>`;
+}
+
+export function websiteEvidence(r: Report): string {
+  const a = r.websiteAudit;
+  if (!a) return "";
+  const intro = `<h2>Website audit</h2><div class="card"><p class="small">Checked ${esc(a.checkedAt)}. Static homepage HTML only. JavaScript content, speed, accessibility and conversions were not measured.</p>`;
+  if (a.status !== "checked")
+    return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "The website could not be checked. No negative findings were inferred."}</p></div>`;
+  return `${intro}<p class="small">Source: ${esc(a.url)}</p>${a.findings.map((f) => `<div class="fix"><b>${esc(f.label)}: ${f.status === "pass" ? "Observed" : "Review"}</b><p>${esc(f.evidence)}</p>${f.status === "review" ? `<p><b>Suggested next step</b>${esc(f.recommendation)}</p>` : ""}</div>`).join("")}<p class="small">Review suggestions before changing the website. These observations do not establish lost customers or guarantee ranking changes.</p></div>`;
+}
+
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
   const b = r.business;
   const date = new Date(r.createdAt).toLocaleDateString("en-GB", {
@@ -598,6 +633,13 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
       : `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>number ${r.maps.position}</b> on Google Maps.${r.maps.position <= 3 ? " That is the top 3. Well done." : " The first 3 are the ones most people tap."}</p>`;
   const hm = r.grid;
   const heat = hm ? heatMap(r, extra) : "";
+  const comparison = gridsOf(r)
+    .filter((g) => g.competitors?.length)
+    .map(
+      (g) =>
+        `<h2>Who shows up for &quot;${esc(g.keyword)}&quot;</h2><div class="card"><p class="small">Same ${g.ranks.length} search spots, checked ${esc(date)}. Average position includes only spots where the business appeared in the top 20.</p><table><tr><th>Business</th><th>Top 3 spots</th><th>Found</th><th>Average</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g.competitors!.map((c) => `<tr><td>${esc(c.name)}</td><td>${c.top3}</td><td>${c.found}</td><td>${c.average ?? "-"}</td></tr>`).join("")}</table></div>`,
+    )
+    .join("");
   const g = r.reviewGap;
   const gap = g
     ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
@@ -629,6 +671,12 @@ ${headline}
 
 <div id="map"></div>
 ${heat || (mapsLine ? `<h2>Where you show up on Google Maps</h2><div class="card">${mapsLine}</div>` : "")}
+
+${comparison}
+
+${profileEvidence(r)}
+
+${websiteEvidence(r)}
 
 ${worthSection(r, sale, extra)}
 

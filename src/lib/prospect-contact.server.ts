@@ -75,12 +75,17 @@ export function safeSiteUrl(raw: string): string {
   }
   if (u.protocol !== "https:" && u.protocol !== "http:") return "";
   if (u.port && u.port !== "80" && u.port !== "443") return "";
-  const h = u.hostname.toLowerCase();
+  if (u.username || u.password) return "";
+  const h = u.hostname.toLowerCase().replace(/\.$/, "");
   if (
     !h.includes(".") ||
     /^[\d.]+$/.test(h) ||
     h.includes(":") ||
     h.endsWith(".local") ||
+    h.endsWith(".internal") ||
+    h.endsWith(".localhost") ||
+    h.endsWith(".test") ||
+    h.endsWith(".invalid") ||
     h === "localhost"
   )
     return "";
@@ -132,8 +137,25 @@ export async function getPage(
     const type = r.headers.get("content-type") ?? "";
     if (type && !/html|text\/plain/i.test(type)) return null;
     try {
-      const text = await r.text();
-      return { html: text.slice(0, MAX_BYTES), url: safe };
+      if (!r.body) return null;
+      const reader = r.body.getReader();
+      const decoder = new TextDecoder();
+      let bytes = 0;
+      let html = "";
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) return { html: html + decoder.decode(), url: safe };
+          bytes += value.byteLength;
+          if (bytes > MAX_BYTES) {
+            await reader.cancel();
+            return null; // A truncated page must not create missing-element findings.
+          }
+          html += decoder.decode(value, { stream: true });
+        }
+      } finally {
+        reader.releaseLock();
+      }
     } catch {
       return null;
     }
