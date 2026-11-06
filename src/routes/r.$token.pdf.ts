@@ -341,25 +341,34 @@ async function reportPdf(report: Report, brand: Brand) {
   newPage("02 / MARKET AND PROFILE EVIDENCE");
   heading("The businesses customers see before you", 21);
   para("We only include businesses that offer the same kind of service.");
+  const gridCompetitors = grid?.competitors ?? [];
   const tableRows = [
     {
       name: `${report.business.name} (you)`,
-      rating: report.business.rating,
-      reviews: report.business.reviews,
-      km: null,
+      top3: grid?.top3 ?? 0,
+      found: grid?.found ?? 0,
+      average: grid?.average ?? null,
     },
-    ...rivals.slice(0, 5),
+    ...gridCompetitors.slice(0, 5),
   ];
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor("#64748b");
+  doc.text("BUSINESS", M + 5, y);
+  doc.text("TOP 3", M + 118, y, { align: "center" });
+  doc.text("FOUND", M + 142, y, { align: "center" });
+  doc.text("AVERAGE", W - M - 5, y, { align: "right" });
+  y += 4;
   tableRows.forEach((row, index) => {
     box(M, y, CW, 15, index === 0 ? "#fffbeb" : "#f8fafc");
     doc.setFont("helvetica", index === 0 ? "bold" : "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(primary);
-    doc.text(doc.splitTextToSize(clean(row.name), 96).slice(0, 2), M + 5, y + 6);
+    doc.text(doc.splitTextToSize(clean(row.name), 100).slice(0, 2), M + 5, y + 6);
     doc.setTextColor("#526273");
-    doc.text(row.rating == null ? "-" : `${row.rating.toFixed(1)} stars`, M + 108, y + 8);
-    doc.text(`${row.reviews} reviews`, M + 136, y + 8);
-    doc.text(row.km == null ? "-" : `${row.km.toFixed(1)} km`, W - M - 5, y + 8, {
+    doc.text(String(row.top3), M + 118, y + 8, { align: "center" });
+    doc.text(String(row.found), M + 142, y + 8, { align: "center" });
+    doc.text(row.average == null ? "-" : row.average.toFixed(1), W - M - 5, y + 8, {
       align: "right",
     });
     y += 18;
