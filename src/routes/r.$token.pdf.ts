@@ -481,9 +481,9 @@ async function reportPdf(report: Report, brand: Brand) {
   });
   // 6. Commercial case and handoff.
   newPage("05 / OPPORTUNITY AND NEXT PROOF");
-  heading("Turn visibility into a measurable growth case", 21);
+  heading("What one more customer could be worth to you", 21);
   para(
-    "Use the business's real minimum sale value to model one additional customer. This is scenario planning, not a revenue forecast.",
+    "This example shows what one additional customer a week could add to your yearly sales. It is an example, not a promise.",
   );
   const pounds = !report.business.address.toLowerCase().includes("nigeria");
   const example = pounds ? 60 : 30000;
@@ -499,22 +499,22 @@ async function reportPdf(report: Report, brand: Brand) {
   doc.setFontSize(9);
   doc.setTextColor("#526273");
   doc.text(
-    `Example using ${symbol}${example.toLocaleString("en-GB")} per customer. Replace it with the owner's real value.`,
+    `This example uses ${symbol}${example.toLocaleString("en-GB")} per customer. Replace it with what one customer normally spends with you.`, 
     M + 8,
     y + 38,
   );
   y += 58;
-  heading("What this report proves", 16);
+  heading("What this report shows you", 16);
   para(
-    `It records how ${report.business.name} appeared in the checked Google searches, public profile and returned website evidence on ${new Date(report.createdAt).toLocaleDateString("en-GB")}.`,
+    `You can see how your business appeared in the Google searches we checked on ${new Date(report.createdAt).toLocaleDateString("en-GB")}, along with the public information on your Google profile and website.`, 
   );
-  heading("What it does not prove", 16);
+  heading("What this report cannot show you", 16);
   para(
-    "It does not establish private Google performance, ownership, conversion rate, lost revenue or guaranteed future rankings.",
+    "We cannot see your private Google figures, how many website visitors became customers or what your future position will be. No one can guarantee a Google ranking.",
   );
-  heading("Recommended next step", 16);
+  heading("Your next step", 16);
   para(
-    "Agree the first three actions, assign owners and dates, record the baseline, then schedule a comparable repeat check.",
+    "Choose the first three actions, decide who will do them and set a date for each one. Save these results, then run the same check again so you can see what changed.",
     true,
   );
   y += 7;
