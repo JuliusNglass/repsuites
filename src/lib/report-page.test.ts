@@ -235,7 +235,7 @@ describe("diagnostic report evidence", () => {
     expect(h).toContain("Other &#60;Cafe&#62;");
     expect(h).toContain("No title found");
     expect(h).toContain("Review the title");
-    expect(h).toContain("Google profile audit evidence");
+    expect(h).toContain("What Google shows about your business");
     expect(h).toContain("print()");
   });
 });
