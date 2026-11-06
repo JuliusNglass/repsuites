@@ -195,6 +195,26 @@ export function RankingCard() {
               )}
             </div>
             {k.latest && <Grid scan={k.latest} />}
+            {k.history.length > 1 && (
+              <div className="rounded-md bg-muted/60 p-2">
+                <p className="text-sm font-semibold">Ranking history</p>
+                <div className="mt-1 flex items-end gap-1 h-14" role="img" aria-label={`Average ranking history for ${k.keyword}`}>
+                  {[...k.history].reverse().map((scan) => {
+                    const score = scan.average === null ? 0 : Math.max(5, 105 - scan.average * 5);
+                    return <span key={scan.runAt} className="flex-1 max-w-8 rounded-t bg-primary" style={{ height: `${score}%` }} title={`${new Date(scan.runAt).toLocaleDateString("en-GB")}: ${scan.average === null ? "not found" : `average ${scan.average}`}`} />;
+                  })}
+                </div>
+                {k.comparable && k.previous?.average != null && k.latest?.average != null && (
+                  <p className={`text-sm mt-1 ${k.latest!.average! > k.previous.average ? "text-destructive" : "text-muted-foreground"}`}>
+                    {k.latest!.average! < k.previous.average
+                      ? `Improved by ${(k.previous.average - k.latest!.average!).toFixed(1)} positions.`
+                      : k.latest!.average! > k.previous.average
+                        ? `Dropped by ${(k.latest!.average! - k.previous.average).toFixed(1)} positions. Review the latest grid.`
+                        : "No movement since the previous comparable check."}
+                  </p>
+                )}
+              </div>
+            )}
             {d.canEdit && s.enabled && k.latest && (
               <button
                 type="button"
@@ -248,3 +268,4 @@ export function RankingCard() {
     </section>
   );
 }
+

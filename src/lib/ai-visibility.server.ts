@@ -48,7 +48,7 @@ async function businessName(tenantId: string) {
 export async function readAiVisibility() {
   const g = await guard(false);
   if (!g.ok) return g;
-  const [s, last] = await Promise.all([
+  const [s, checks] = await Promise.all([
     serviceRead<{ service: string | null; town: string | null }[]>(
       `ai_visibility_settings?select=service,town&tenant_id=eq.${g.tenantId}`,
       "",
@@ -62,11 +62,12 @@ export async function readAiVisibility() {
         error: string | null;
       }[]
     >(
-      `ai_visibility_checks?select=created_at,results,named,total,error&tenant_id=eq.${g.tenantId}&order=created_at.desc&limit=1`,
+      `ai_visibility_checks?select=created_at,results,named,total,error&tenant_id=eq.${g.tenantId}&order=created_at.desc&limit=6`,
       "",
     ),
   ]);
-  const l = last.data?.[0];
+  const history = checks.data ?? [];
+  const l = history[0];
   return {
     ok: true as const,
     business: await businessName(g.tenantId),
@@ -76,6 +77,12 @@ export async function readAiVisibility() {
     latest: l
       ? { at: l.created_at, results: l.results, named: l.named, total: l.total, error: l.error }
       : null,
+    history: history.map((x) => ({
+      at: x.created_at,
+      named: x.named,
+      total: x.total,
+      error: x.error,
+    })),
   };
 }
 
@@ -220,3 +227,4 @@ export async function runAiVisibility(input: { service: string; town: string }) 
   if (!results.length) return { ok: false as const, error: failed?.error ?? "No answer." };
   return { ok: true as const };
 }
+
