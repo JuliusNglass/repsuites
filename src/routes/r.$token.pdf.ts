@@ -85,12 +85,14 @@ function paeth(a: number, b: number, c: number) {
 }
 
 async function inflate(data: Uint8Array) {
-  const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate"));
+  const bytes = Uint8Array.from(data);
+  const stream = new Blob([bytes.buffer]).stream().pipeThrough(new DecompressionStream("deflate"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 async function deflate(data: Uint8Array) {
-  const stream = new Blob([data]).stream().pipeThrough(new CompressionStream("deflate"));
+  const bytes = Uint8Array.from(data);
+  const stream = new Blob([bytes.buffer]).stream().pipeThrough(new CompressionStream("deflate"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
