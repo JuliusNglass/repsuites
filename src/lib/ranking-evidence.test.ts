@@ -31,8 +31,14 @@ describe("ranking evidence", () => {
       "own",
     );
     expect(rivals).toEqual([
-      { placeId: "B", name: "B", found: 2, top3: 1, average: 2.5 },
-      { placeId: "A", name: "A", found: 2, top3: 1, average: 3.5 },
+      { placeId: "B", name: "B", found: 2, top3: 1, average: 2.5, ranks: [4, 1] },
+      { placeId: "A", name: "A", found: 2, top3: 1, average: 3.5, ranks: [2, 5] },
+    ]);
+  });
+  it("keeps a null for spots where a competitor was not found", () => {
+    expect(compareGridBusinesses([[item("A", 2)], [item("B", 3)]], "own")).toEqual([
+      { placeId: "A", name: "A", found: 1, top3: 1, average: 2, ranks: [2, null] },
+      { placeId: "B", name: "B", found: 1, top3: 1, average: 3, ranks: [null, 3] },
     ]);
   });
 });
@@ -69,3 +75,4 @@ describe("comparable ranking history", () => {
     ).toBe(false);
   });
 });
+

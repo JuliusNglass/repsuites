@@ -115,11 +115,15 @@ export interface GridCompetitor {
   found: number;
   top3: number;
   average: number | null;
+  // Position at every search spot. Null means the business was not in the
+  // first 20. Older reports do not have this field and still render the
+  // aggregate comparison table.
+  ranks?: (number | null)[];
 }
 
 export function compareGridBusinesses(searches: any[][], ownPlaceId: string): GridCompetitor[] {
-  const businesses = new Map<string, { name: string; ranks: number[] }>();
-  for (const items of searches) {
+  const businesses = new Map<string, { name: string; ranks: (number | null)[] }>();
+  for (const [spot, items] of searches.entries()) {
     const seen = new Set<string>();
     for (const item of items) {
       const id = String(item?.place_id ?? "");
@@ -135,8 +139,11 @@ export function compareGridBusinesses(searches: any[][], ownPlaceId: string): Gr
       )
         continue;
       seen.add(id);
-      const b = businesses.get(id) ?? { name: String(item.title ?? "").slice(0, 200), ranks: [] };
-      b.ranks.push(rank);
+      const b = businesses.get(id) ?? {
+        name: String(item.title ?? "").slice(0, 200),
+        ranks: new Array(searches.length).fill(null),
+      };
+      b.ranks[spot] = rank;
       businesses.set(id, b);
     }
   }
@@ -144,9 +151,15 @@ export function compareGridBusinesses(searches: any[][], ownPlaceId: string): Gr
     .map(([placeId, b]) => ({
       placeId,
       name: b.name,
-      found: b.ranks.length,
-      top3: b.ranks.filter((r) => r <= 3).length,
-      average: Math.round((b.ranks.reduce((a, r) => a + r, 0) / b.ranks.length) * 10) / 10,
+      found: b.ranks.filter((r): r is number => r !== null).length,
+      top3: b.ranks.filter((r) => r !== null && r <= 3).length,
+      average: (() => {
+        const found = b.ranks.filter((r): r is number => r !== null);
+        return found.length
+          ? Math.round((found.reduce((a, r) => a + r, 0) / found.length) * 10) / 10
+          : null;
+      })(),
+      ranks: b.ranks,
     }))
     .sort(
       (a, b) =>
@@ -183,3 +196,4 @@ export function sameSearchSpots(
     })
   );
 }
+
