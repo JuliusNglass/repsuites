@@ -147,7 +147,11 @@ describe("searchRegion", () => {
       code: "GB",
       keep: ["UK", "GB", "United Kingdom", "England", "Scotland", "Wales", "Northern Ireland"],
     });
-    expect(searchRegion("cleaning company Birmingham UK").keep).toContain("England");
+    expect(searchRegion("cleaning company Birmingham UK")).toEqual({ code: "GB", keep: null });
+    expect(searchRegion("cleaning company Birmingham England")).toEqual({
+      code: "GB",
+      keep: null,
+    });
   });
   it("searches Nigeria when named", () => {
     expect(searchRegion("restaurants in Lekki").code).toBe("NG");
