@@ -37,11 +37,15 @@ function bookingLink(name: string): string {
   return `mailto:julius@accelur8.com?subject=${subject}`;
 }
 
-function agencyBrand() {
+function agencyBrand(branding?: RenderExtra["branding"]) {
   const name = (process.env["REPSUITES_REPORT_BRAND_NAME"] ?? "RepSuites").trim().slice(0, 80);
   const phone = (process.env["REPSUITES_REPORT_BRAND_PHONE"] ?? "").trim().slice(0, 40);
   const email = (process.env["REPSUITES_REPORT_BRAND_EMAIL"] ?? "").trim().slice(0, 200);
-  return { name: name || "RepSuites", phone, email };
+  return {
+    name: branding?.agency_name?.trim().slice(0, 80) || name || "RepSuites",
+    phone: branding?.phone?.trim().slice(0, 40) || phone,
+    email: branding?.email?.trim().slice(0, 200) || email,
+  };
 }
 
 function scoreColour(n: number): string {
@@ -578,9 +582,12 @@ export interface RenderExtra {
   salePeriod?: string | null;
   competitorId?: string | null;
   branding?: {
+    agency_name: string | null;
     primary_hex: string | null;
     secondary_hex: string | null;
     logo_url: string | null;
+    phone: string | null;
+    email: string | null;
   } | null;
 }
 
@@ -730,9 +737,27 @@ export function websiteEvidence(r: Report): string {
   return `${intro}<p class="small">Source: ${esc(a.url)}</p>${a.findings.map((f) => `<div class="fix"><b>${esc(f.label)}: ${f.status === "pass" ? "Observed" : "Review"}</b><p>${esc(f.evidence)}</p>${f.status === "review" ? `<p><b>Suggested next step</b>${esc(f.recommendation)}</p>` : ""}</div>`).join("")}<p class="small">Review suggestions before changing the website. These observations do not establish lost customers or guarantee ranking changes.</p></div>`;
 }
 
+function richerEvidence(r: Report): string {
+  const visual = r.websiteVisuals?.business;
+  const website = visual
+    ? `<h2>What a customer sees on your website</h2><div class="card"><img src="${esc(visual.screenshot)}" alt="Mobile view of ${esc(r.business.name)} website" style="display:block;width:100%;max-height:520px;object-fit:contain;border-radius:10px;border:1px solid #cbd5e1"><p class="small">Lighthouse mobile capture from ${esc(visual.url)}${visual.performance == null ? "" : `. Performance score: ${visual.performance}/100`}. This is visual evidence, not a conversion claim.</p></div>`
+    : "";
+  const ai = r.aiVisibility;
+  const assistants = ai?.answers
+    .map(
+      (answer) =>
+        `<div class="fix ${answer.named ? "" : "high"}"><span class="tag">${answer.named ? "Named you" : "Did not name you"}</span><b>${esc(answer.question)}</b><span>${answer.businesses.length ? `Businesses named: ${esc(answer.businesses.join(", "))}` : "No usable business list was returned."}</span>${answer.evidence?.provider ? `<p class="small">${esc(answer.evidence.provider)} ${esc(answer.evidence.model)}, checked ${esc(answer.evidence.checkedAt)}.</p>` : ""}</div>`,
+    )
+    .join("");
+  const visibility = ai
+    ? `<h2>What AI assistants recommend</h2><div class="card"><p class="small">These are dated public-search observations. Answers vary, so they are evidence to monitor, not a promise of future visibility.</p>${assistants || `<p>${esc(ai.error || "No usable AI answer was recorded.")}</p>`}</div>`
+    : "";
+  return website + visibility;
+}
+
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
   const b = r.business;
-  const agency = agencyBrand();
+  const agency = agencyBrand(extra?.branding ?? undefined);
   const date = new Date(r.createdAt).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
@@ -810,7 +835,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
         : "/logo-mark.png";
   const reportUrl = extra ? `/r/${encodeURIComponent(extra.token)}` : "";
   const tools = extra
-    ? `<nav class="report-tools noprint" aria-label="Report actions"><button type="button" id="copy-report">Copy share link</button><a href="${reportUrl}?print=1" class="primary">Save as PDF</a><button type="button" id="present-report">Presentation mode</button></nav>`
+    ? `<nav class="report-tools noprint" aria-label="Report actions"><button type="button" id="copy-report">Copy share link</button><a href="${reportUrl}/pdf" class="primary">Download PDF</a><button type="button" id="present-report">Presentation mode</button></nav>`
     : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
@@ -833,6 +858,7 @@ ${comparison}
 ${profileEvidence(r)}
 
 ${websiteEvidence(r)}
+${richerEvidence(r)}
 
 ${worthSection(r, sale, extra)}
 
