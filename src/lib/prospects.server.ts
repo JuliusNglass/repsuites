@@ -125,6 +125,12 @@ function reach(p: any) {
 
 export interface Report {
   websiteAudit?: import("./website-audit").WebsiteAudit;
+  profileAudit?: {
+    description: string;
+    categories: number;
+    photos: number;
+    newestReviewDays: number | null;
+  };
   createdAt: string;
   business: {
     name: string;
@@ -550,6 +556,14 @@ export async function buildReport(
   return {
     report: {
       websiteAudit,
+      profileAudit: {
+        description: String(p.editorialSummary?.text ?? "").slice(0, 1000),
+        categories: new Set(
+          [p.primaryType, ...(p.types ?? [])].map(String).filter((x) => x && !GENERAL_TYPES.has(x)),
+        ).size,
+        photos: Array.isArray(p.photos) ? p.photos.length : 0,
+        newestReviewDays,
+      },
       createdAt: new Date().toISOString(),
       business: {
         name,
@@ -810,3 +824,4 @@ export async function addProspectGrid(placeId: string, keyword: string) {
     ? { ok: false as const, error: "Could not save the report." }
     : { ok: true as const };
 }
+
