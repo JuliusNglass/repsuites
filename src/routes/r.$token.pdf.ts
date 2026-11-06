@@ -34,13 +34,16 @@ async function osmMap(center?: { lat: number; lng: number } | null) {
   if (!center) return null;
   const zoom = 13;
   const point = mapPixel(center.lat, center.lng, zoom);
-  const baseX = Math.floor(point.x / 256) - 1;
-  const baseY = Math.floor(point.y / 256) - 1;
+  const viewportPixels = 256 * 3;
+  const topLeftX = point.x - viewportPixels / 2;
+  const topLeftY = point.y - viewportPixels / 2;
+  const baseX = Math.floor(topLeftX / 256);
+  const baseY = Math.floor(topLeftY / 256);
   const tiles = (
     await Promise.all(
-      Array.from({ length: 9 }, async (_, index): Promise<MapTile | null> => {
-        const col = index % 3;
-        const row = Math.floor(index / 3);
+      Array.from({ length: 16 }, async (_, index): Promise<MapTile | null> => {
+        const col = index % 4;
+        const row = Math.floor(index / 4);
         try {
           const response = await fetch(
             `https://tile.openstreetmap.org/${zoom}/${baseX + col}/${baseY + row}.png`,
@@ -54,7 +57,7 @@ async function osmMap(center?: { lat: number; lng: number } | null) {
       }),
     )
   ).filter((tile): tile is MapTile => tile !== null);
-  return tiles.length === 9 ? { tiles, zoom, baseX, baseY } : null;
+  return tiles.length === 16 ? { tiles, zoom, baseX, baseY, topLeftX, topLeftY } : null;
 }
 
 function serviceCategory(report: Report) {
@@ -83,8 +86,14 @@ async function reportPdf(report: Report, brand: Brand) {
   const grid = grids[0];
   const mapCenter = grid?.center ?? null;
   const map = await osmMap(mapCenter);
-  const rivals = report.rivals.filter((r) =>
-    relevantMapCompetitor({ title: r.name, category: r.kind }, report.maps.keyword),
+  const keywordTerms = report.maps.keyword
+    .toLocaleLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((term) => term.length > 3 && !["company", "service", "services", "near"].includes(term));
+  const rivals = report.rivals.filter(
+    (r) =>
+      relevantMapCompetitor({ title: r.name, category: r.kind }, report.maps.keyword) ||
+      keywordTerms.some((term) => r.name.toLocaleLowerCase().includes(term)),
   );
   const irrelevantNames = report.rivals
     .filter((r) => !relevantMapCompetitor({ title: r.name, category: r.kind }, report.maps.keyword))
@@ -253,24 +262,26 @@ async function reportPdf(report: Report, brand: Brand) {
     const mapSize = 150;
     const mapLeft = (W - mapSize) / 2;
     const mapTop = y + 2;
+    const viewportPixels = 256 * 3;
     const tileSize = mapSize / 3;
+    doc.saveGraphicsState();
+    doc.rect(mapLeft, mapTop, mapSize, mapSize);
+    doc.clip();
     map.tiles.forEach((tile) => {
       doc.addImage(
         tile.data,
         "PNG",
-        mapLeft + tile.col * tileSize,
-        mapTop + tile.row * tileSize,
+        mapLeft + (((map.baseX + tile.col) * 256 - map.topLeftX) / viewportPixels) * mapSize,
+        mapTop + (((map.baseY + tile.row) * 256 - map.topLeftY) / viewportPixels) * mapSize,
         tileSize,
         tileSize,
       );
     });
-    const topLeftX = map.baseX * 256;
-    const topLeftY = map.baseY * 256;
     const points = gridSpots(mapCenter, grid.size || 5, grid.spacingKm ?? 0.8);
     grid.ranks.forEach((rank, index) => {
       const point = mapPixel(points[index]!.lat, points[index]!.lng, map.zoom);
-      const x = mapLeft + ((point.x - topLeftX) / (256 * 3)) * mapSize;
-      const yy = mapTop + ((point.y - topLeftY) / (256 * 3)) * mapSize;
+      const x = mapLeft + ((point.x - map.topLeftX) / viewportPixels) * mapSize;
+      const yy = mapTop + ((point.y - map.topLeftY) / viewportPixels) * mapSize;
       const fill =
         rank == null ? "#64748b" : rank <= 3 ? "#15803d" : rank <= 10 ? "#f59e0b" : "#dc2626";
       doc.setFillColor(fill);
@@ -281,6 +292,9 @@ async function reportPdf(report: Report, brand: Brand) {
       doc.setFontSize(7);
       doc.text(rank == null ? "-" : String(rank), x, yy + 1.4, { align: "center" });
     });
+    doc.restoreGraphicsState();
+    doc.setDrawColor("#cbd5e1");
+    doc.rect(mapLeft, mapTop, mapSize, mapSize);
     doc.setFillColor("#ffffff");
     doc.setDrawColor("#cbd5e1");
     doc.roundedRect(mapLeft + 3, mapTop + mapSize - 10, 56, 7, 1.5, 1.5, "FD");
