@@ -16,6 +16,16 @@ describe("homepage audit evidence", () => {
     expect(audit.findings.every((f) => f.status === "pass")).toBe(true);
     expect(audit.findings.find((f) => f.id === "h1")?.evidence).not.toContain("Fake");
   });
+  it("decodes HTML entities in website evidence", () => {
+    const audit = auditHomepage(
+      `<title>Nita&#x27;s Cleaning</title><h1>Nita&amp;Co</h1><meta name="description" content="Nita&#39;s cleaners">`,
+      "https://example.com/",
+      "now",
+    );
+    expect(audit.findings.find((f) => f.id === "title")?.evidence).toBe("Nita's Cleaning");
+    expect(audit.findings.find((f) => f.id === "h1")?.evidence).toContain("Nita&Co");
+    expect(audit.findings.find((f) => f.id === "description")?.evidence).toBe("Nita's cleaners");
+  });
   it("does not treat invalid JSON-LD as valid evidence", () => {
     const audit = auditHomepage(
       '<script type="application/ld+json">oops</script>',
