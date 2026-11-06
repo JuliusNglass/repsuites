@@ -107,6 +107,31 @@ export function AiVisibilityCard() {
               {new Date(l.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })})
             </span>
           </p>
+          {d.history.length > 1 && (
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-base font-bold">AI visibility history</p>
+              <div className="mt-2 flex items-end gap-2 h-24" role="img" aria-label="AI visibility checks over time">
+                {[...d.history].reverse().map((x) => {
+                  const pct = x.total ? Math.round((x.named / x.total) * 100) : 0;
+                  return (
+                    <div key={x.at} className="flex-1 min-w-0 text-center">
+                      <div className="h-16 flex items-end justify-center">
+                        <span className="block w-full max-w-10 rounded-t bg-primary" style={{ height: `${Math.max(4, pct)}%` }} title={`${x.named} of ${x.total} answers`} />
+                      </div>
+                      <span className="text-sm text-muted-foreground">{new Date(x.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-base mt-2">
+                {d.history[1] && l.named > d.history[1].named
+                  ? "Visibility improved since the previous check."
+                  : d.history[1] && l.named < d.history[1].named
+                    ? "Visibility fell since the previous check. Review the evidence and priority actions."
+                    : "Visibility is unchanged since the previous check."}
+              </p>
+            </div>
+          )}
           {(() => {
             const sum = aiSummary(l.results, d.business);
             return (
@@ -206,3 +231,4 @@ export function AiVisibilityCard() {
     </section>
   );
 }
+
