@@ -16,6 +16,7 @@ import { addressCountry, phoneType, searchRegion } from "./prospect-contact";
 import { cachedContacts } from "./prospect-contact.server";
 import { ownerFresh } from "./prospect-owner";
 import { savedPhrases } from "./prospect-pipeline";
+import { chooseReportKeyword } from "./prospect-keyword";
 
 const PLACE_RE = /^[A-Za-z0-9_-]{10,300}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -415,17 +416,20 @@ export async function buildReport(
   // Some profiles have no Google category (only "point of interest"). Then use
   // its most specific Google type ("car_wash" -> "car wash"), or the niche the
   // search was for ("auto detailing"), so rivals and the map still work.
-  const fallback = (
-    category ||
-    rivalTypes(String(p.primaryType ?? ""), (p.types ?? []).map(String))[0]?.replace(/_/g, " ") ||
-    (keywordOverride ?? "").trim() ||
-    (topic ?? "").trim()
-  ).slice(0, 80);
+  const fallback = chooseReportKeyword({
+    keyword: keywordOverride,
+    topic,
+    category,
+    type: rivalTypes(String(p.primaryType ?? ""), (p.types ?? []).map(String))[0]?.replace(
+      /_/g,
+      " ",
+    ),
+  });
   const rivals = lat !== null && lng !== null ? await nearestRivals(p, lat, lng, fallback) : [];
 
   // Where it shows on Google Maps for its main search, from its own street,
   // and across a 5 by 5 grid. Extra search phrases get their own grid.
-  const keyword = (keywordOverride || fallback || "").toLowerCase().slice(0, 80);
+  const keyword = fallback;
   let position: number | null = null;
   let checked = false;
   let mapsError = "";
