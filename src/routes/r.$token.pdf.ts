@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { jsPDF } from "jspdf";
-import { PNG } from "pngjs";
 import { serviceRead } from "../lib/supabase-service.server";
 import type { Report } from "../lib/prospects.server";
 import { scoreView } from "../lib/report-page.server";
@@ -75,30 +74,129 @@ const PIN_GLYPHS: Record<string, string[]> = {
   "-": ["000", "000", "111", "000", "000"],
 };
 
-function setPixel(png: PNG, x: number, y: number, color: [number, number, number, number]) {
-  if (x < 0 || y < 0 || x >= png.width || y >= png.height) return;
-  const offset = (y * png.width + x) * 4;
-  png.data[offset] = color[0];
-  png.data[offset + 1] = color[1];
-  png.data[offset + 2] = color[2];
-  png.data[offset + 3] = color[3];
+type RgbaImage = { width: number; height: number; data: Uint8Array };
+
+function paeth(a: number, b: number, c: number) {
+  const p = a + b - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b);
+  const pc = Math.abs(p - c);
+  return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+}
+
+async function inflate(data: Uint8Array) {
+  const bytes = Uint8Array.from(data);
+  const stream = new Blob([bytes.buffer]).stream().pipeThrough(new DecompressionStream("deflate"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function deflate(data: Uint8Array) {
+  const bytes = Uint8Array.from(data);
+  const stream = new Blob([bytes.buffer]).stream().pipeThrough(new CompressionStream("deflate"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+function readUint32(data: Uint8Array, offset: number) {
+  return new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(offset);
+}
+
+async function decodePng(data: Uint8Array): Promise<RgbaImage> {
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let colorType = 6;
+  let bitDepth = 8;
+  let palette = new Uint8Array();
+  let transparency = new Uint8Array();
+  const idat: Uint8Array[] = [];
+  while (offset + 12 <= data.length) {
+    const length = readUint32(data, offset);
+    const type = String.fromCharCode(...data.slice(offset + 4, offset + 8));
+    const chunk = data.slice(offset + 8, offset + 8 + length);
+    if (type === "IHDR") {
+      width = readUint32(chunk, 0);
+      height = readUint32(chunk, 4);
+      bitDepth = chunk[8]!;
+      colorType = chunk[9]!;
+      if (chunk[12] !== 0) throw new Error("Interlaced map tiles are not supported");
+    } else if (type === "PLTE") palette = chunk;
+    else if (type === "tRNS") transparency = chunk;
+    else if (type === "IDAT") idat.push(chunk);
+    else if (type === "IEND") break;
+    offset += length + 12;
+  }
+  if (!width || !height || bitDepth !== 8) throw new Error("Unsupported map tile");
+  const compressed = new Uint8Array(idat.reduce((sum, part) => sum + part.length, 0));
+  let cursor = 0;
+  idat.forEach((part) => {
+    compressed.set(part, cursor);
+    cursor += part.length;
+  });
+  const raw = await inflate(compressed);
+  const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : colorType === 3 ? 1 : 0;
+  if (!channels) throw new Error("Unsupported map tile colour type");
+  const stride = width * channels;
+  const unfiltered = new Uint8Array(stride * height);
+  let input = 0;
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[input++]!;
+    for (let x = 0; x < stride; x += 1) {
+      const value = raw[input++]!;
+      const left = x >= channels ? unfiltered[y * stride + x - channels]! : 0;
+      const up = y > 0 ? unfiltered[(y - 1) * stride + x]! : 0;
+      const upperLeft = y > 0 && x >= channels ? unfiltered[(y - 1) * stride + x - channels]! : 0;
+      const resolved =
+        filter === 0
+          ? value
+          : filter === 1
+            ? value + left
+            : filter === 2
+              ? value + up
+              : filter === 3
+                ? value + Math.floor((left + up) / 2)
+                : value + paeth(left, up, upperLeft);
+      unfiltered[y * stride + x] = resolved & 255;
+    }
+  }
+  const rgba = new Uint8Array(width * height * 4);
+  for (let i = 0; i < width * height; i += 1) {
+    const target = i * 4;
+    if (colorType === 6) {
+      rgba.set(unfiltered.slice(i * 4, i * 4 + 4), target);
+    } else if (colorType === 2) {
+      rgba[target] = unfiltered[i * 3]!;
+      rgba[target + 1] = unfiltered[i * 3 + 1]!;
+      rgba[target + 2] = unfiltered[i * 3 + 2]!;
+      rgba[target + 3] = 255;
+    } else {
+      const index = unfiltered[i]!;
+      rgba[target] = palette[index * 3] ?? 0;
+      rgba[target + 1] = palette[index * 3 + 1] ?? 0;
+      rgba[target + 2] = palette[index * 3 + 2] ?? 0;
+      rgba[target + 3] = transparency[index] ?? 255;
+    }
+  }
+  return { width, height, data: rgba };
+}
+
+function setPixel(image: RgbaImage, x: number, y: number, color: [number, number, number, number]) {
+  if (x < 0 || y < 0 || x >= image.width || y >= image.height) return;
+  image.data.set(color, (y * image.width + x) * 4);
 }
 
 function disc(
-  png: PNG,
+  image: RgbaImage,
   cx: number,
   cy: number,
   radius: number,
   color: [number, number, number, number],
 ) {
-  for (let y = -radius; y <= radius; y += 1) {
-    for (let x = -radius; x <= radius; x += 1) {
-      if (x * x + y * y <= radius * radius) setPixel(png, cx + x, cy + y, color);
-    }
-  }
+  for (let y = -radius; y <= radius; y += 1)
+    for (let x = -radius; x <= radius; x += 1)
+      if (x * x + y * y <= radius * radius) setPixel(image, cx + x, cy + y, color);
 }
 
-function pinText(png: PNG, text: string, cx: number, cy: number) {
+function pinText(image: RgbaImage, text: string, cx: number, cy: number) {
   const scale = 3;
   const glyphWidth = 3 * scale;
   const gap = scale;
@@ -107,48 +205,102 @@ function pinText(png: PNG, text: string, cx: number, cy: number) {
   const startY = Math.round(cy - (5 * scale) / 2);
   [...text].forEach((character, index) => {
     const glyph = PIN_GLYPHS[character] ?? PIN_GLYPHS["-"]!;
-    glyph.forEach((row, rowIndex) => {
+    glyph.forEach((row, rowIndex) =>
       [...row].forEach((pixel, columnIndex) => {
         if (pixel !== "1") return;
-        for (let yy = 0; yy < scale; yy += 1) {
-          for (let xx = 0; xx < scale; xx += 1) {
+        for (let yy = 0; yy < scale; yy += 1)
+          for (let xx = 0; xx < scale; xx += 1)
             setPixel(
-              png,
+              image,
               startX + index * (glyphWidth + gap) + columnIndex * scale + xx,
               startY + rowIndex * scale + yy,
               [255, 255, 255, 255],
             );
-          }
-        }
-      });
-    });
+      }),
+    );
   });
 }
 
-function rasterRankMap(
+let crcTable: Uint32Array | null = null;
+function crc32(data: Uint8Array) {
+  if (!crcTable) {
+    crcTable = new Uint32Array(256);
+    for (let n = 0; n < 256; n += 1) {
+      let c = n;
+      for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+      crcTable[n] = c >>> 0;
+    }
+  }
+  let crc = 0xffffffff;
+  for (const byte of data) crc = crcTable[(crc ^ byte) & 0xff]! ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type: string, data: Uint8Array) {
+  const typeBytes = new TextEncoder().encode(type);
+  const result = new Uint8Array(data.length + 12);
+  const view = new DataView(result.buffer);
+  view.setUint32(0, data.length);
+  result.set(typeBytes, 4);
+  result.set(data, 8);
+  const crcInput = new Uint8Array(typeBytes.length + data.length);
+  crcInput.set(typeBytes);
+  crcInput.set(data, typeBytes.length);
+  view.setUint32(data.length + 8, crc32(crcInput));
+  return result;
+}
+
+async function encodePng(image: RgbaImage) {
+  const scanlines = new Uint8Array((image.width * 4 + 1) * image.height);
+  for (let y = 0; y < image.height; y += 1) {
+    const target = y * (image.width * 4 + 1);
+    scanlines[target] = 0;
+    scanlines.set(image.data.slice(y * image.width * 4, (y + 1) * image.width * 4), target + 1);
+  }
+  const header = new Uint8Array(13);
+  const view = new DataView(header.buffer);
+  view.setUint32(0, image.width);
+  view.setUint32(4, image.height);
+  header.set([8, 6, 0, 0, 0], 8);
+  const chunks = [
+    new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+    pngChunk("IHDR", header),
+    pngChunk("IDAT", await deflate(scanlines)),
+    pngChunk("IEND", new Uint8Array()),
+  ];
+  const output = new Uint8Array(chunks.reduce((sum, part) => sum + part.length, 0));
+  let cursor = 0;
+  chunks.forEach((part) => {
+    output.set(part, cursor);
+    cursor += part.length;
+  });
+  return output;
+}
+
+async function rasterRankMap(
   map: NonNullable<Awaited<ReturnType<typeof osmMap>>>,
   center: { lat: number; lng: number },
   grid: NonNullable<Report["grid"]>,
 ) {
   const viewportPixels = 256 * 3;
-  const output = new PNG({ width: viewportPixels, height: viewportPixels });
-  output.data.fill(255);
-  map.tiles.forEach((tile) => {
-    const decoded = PNG.sync.read(Buffer.from(tile.data));
+  const output: RgbaImage = {
+    width: viewportPixels,
+    height: viewportPixels,
+    data: new Uint8Array(viewportPixels * viewportPixels * 4).fill(255),
+  };
+  const decodedTiles = await Promise.all(map.tiles.map(async (tile) => ({ tile, image: await decodePng(tile.data) })));
+  decodedTiles.forEach(({ tile, image }) => {
     const offsetX = Math.round((map.baseX + tile.col) * 256 - map.topLeftX);
     const offsetY = Math.round((map.baseY + tile.row) * 256 - map.topLeftY);
-    for (let sourceY = 0; sourceY < decoded.height; sourceY += 1) {
+    for (let sourceY = 0; sourceY < image.height; sourceY += 1) {
       const targetY = offsetY + sourceY;
       if (targetY < 0 || targetY >= output.height) continue;
-      for (let sourceX = 0; sourceX < decoded.width; sourceX += 1) {
+      for (let sourceX = 0; sourceX < image.width; sourceX += 1) {
         const targetX = offsetX + sourceX;
         if (targetX < 0 || targetX >= output.width) continue;
-        const source = (sourceY * decoded.width + sourceX) * 4;
+        const source = (sourceY * image.width + sourceX) * 4;
         const target = (targetY * output.width + targetX) * 4;
-        output.data[target] = decoded.data[source]!;
-        output.data[target + 1] = decoded.data[source + 1]!;
-        output.data[target + 2] = decoded.data[source + 2]!;
-        output.data[target + 3] = 255;
+        output.data.set(image.data.slice(source, source + 4), target);
       }
     }
   });
@@ -169,7 +321,7 @@ function rasterRankMap(
     disc(output, x, y, 20, fill);
     pinText(output, rank == null ? "-" : String(rank), x, y);
   });
-  return PNG.sync.write(output);
+  return encodePng(output);
 }
 
 function serviceCategory(report: Report) {
@@ -374,7 +526,7 @@ async function reportPdf(report: Report, brand: Brand) {
     const mapSize = 150;
     const mapLeft = (W - mapSize) / 2;
     const mapTop = y + 2;
-    const mapImage = rasterRankMap(map, mapCenter, grid);
+    const mapImage = await rasterRankMap(map, mapCenter, grid);
     doc.addImage(mapImage, "PNG", mapLeft, mapTop, mapSize, mapSize);
     doc.setDrawColor("#cbd5e1");
     doc.rect(mapLeft, mapTop, mapSize, mapSize);
