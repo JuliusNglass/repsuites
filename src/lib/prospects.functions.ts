@@ -143,6 +143,9 @@ export const buildProspectReport = createServerFn({ method: "POST" })
       force?: boolean;
       topic?: string;
       product?: "repsuites" | "sparkops";
+      gridSize?: 5 | 7;
+      includeAi?: boolean;
+      includeScreenshots?: boolean;
     }) =>
       z
         .object({
@@ -158,6 +161,9 @@ export const buildProspectReport = createServerFn({ method: "POST" })
           topic: z.string().trim().max(80).optional(),
           // Which pipeline: left out keeps the prospect's own (new: RepSuites).
           product: z.enum(PRODUCTS).optional(),
+          gridSize: z.union([z.literal(5), z.literal(7)]).optional(),
+          includeAi: z.boolean().optional(),
+          includeScreenshots: z.boolean().optional(),
         })
         .parse(d),
   )
@@ -172,6 +178,9 @@ export const buildProspectReport = createServerFn({ method: "POST" })
       guardRecent: true,
       force: data.force === true,
       ...(data.product ? { product: data.product } : {}),
+      ...(data.gridSize ? { gridSize: data.gridSize } : {}),
+      includeAi: data.includeAi === true,
+      includeScreenshots: data.includeScreenshots === true,
     });
   });
 
@@ -659,3 +668,4 @@ export const setProspectOgImage = createServerFn({ method: "POST" })
     const { setOgImage } = await import("./prospect-video.server");
     return setOgImage(data.id, data.path);
   });
+
