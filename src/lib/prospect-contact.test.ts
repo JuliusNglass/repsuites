@@ -145,8 +145,9 @@ describe("searchRegion", () => {
   it("defaults to the UK", () => {
     expect(searchRegion("car detailing in Newport")).toEqual({
       code: "GB",
-      keep: ["UK", "United Kingdom"],
+      keep: ["UK", "GB", "United Kingdom", "England", "Scotland", "Wales", "Northern Ireland"],
     });
+    expect(searchRegion("cleaning company Birmingham UK").keep).toContain("England");
   });
   it("searches Nigeria when named", () => {
     expect(searchRegion("restaurants in Lekki").code).toBe("NG");
@@ -155,3 +156,4 @@ describe("searchRegion", () => {
     expect(searchRegion("car detailing Newport Oregon").keep).toBeNull();
   });
 });
+
