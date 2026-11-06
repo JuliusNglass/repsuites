@@ -41,7 +41,8 @@ describe("postcodes", () => {
     expect(postcodeMatch("", "Newport NP20 1AA, UK")).toBe("none");
   });
   it("knows a UK address", () => {
-    expect(isUkAddress("1 High St, Newport NP20 1AA, UK")).toBe(true);\n    expect(isUkAddress("67 Booth St, Birmingham B21 0NH")).toBe(true);
+    expect(isUkAddress("1 High St, Newport NP20 1AA, UK")).toBe(true);
+    expect(isUkAddress("67 Booth St, Birmingham B21 0NH")).toBe(true);
     expect(isUkAddress("12 Allen Ave, Lagos, Nigeria")).toBe(false);
   });
 });
