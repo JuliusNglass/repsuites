@@ -144,12 +144,12 @@ describe("what 1 more customer is worth", () => {
     },
     grids: [{ keyword: "car wash", ranks: Array(25).fill(null), top3: 4, found: 4, size: 5 }],
   };
-  it("shows the default sum after the map, with the Growth price for the UK", () => {
+  it("shows the default sum after the map without introducing plan pricing", () => {
     const h = renderReport(wash, base);
     expect(h).toContain("What 1 more customer is worth");
     expect(h).toContain("312</b> days a year");
     expect(h).toContain("£4,680");
-    expect(h).toContain("RepSuites Growth is £49 a month (£588 a year).");
+    expect(h).not.toContain("RepSuites Growth is £49 a month (£588 a year).");
     expect(h).toContain('id="ws-range"');
     expect(h.indexOf("What 1 more customer is worth")).toBeGreaterThan(
       h.indexOf("Where you show up across your area"),

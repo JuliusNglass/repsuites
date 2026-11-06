@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { compareGridBusinesses, summarisePoints, sameSearchSpots } from "./rank-grid";
+import {
+  compareGridBusinesses,
+  relevantMapCompetitor,
+  summarisePoints,
+  sameSearchSpots,
+} from "./rank-grid";
 import { gridInsight } from "./report-map";
 import { areaPoints } from "./report-page.server";
 
@@ -10,6 +15,20 @@ const item = (id: string, rank: number, name = id) => ({
   rank_group: rank,
 });
 describe("ranking evidence", () => {
+  it("excludes dry cleaners and shoe repair businesses from cleaning comparisons", () => {
+    expect(
+      relevantMapCompetitor(
+        { title: "Five Star Dry Cleaning & Shoe Repairs", category: "Dry cleaner" },
+        "cleaning company",
+      ),
+    ).toBe(false);
+    expect(
+      relevantMapCompetitor(
+        { title: "Nita's Cleaning", category: "House cleaning service" },
+        "cleaning company",
+      ),
+    ).toBe(true);
+  });
   it("never counts unknown or malformed ranks as visibility", () => {
     expect(
       summarisePoints([-1, 0, 21, 1.5, 2, null].map((rank) => ({ lat: 0, lng: 0, rank }))),

@@ -121,7 +121,35 @@ export interface GridCompetitor {
   ranks?: (number | null)[];
 }
 
-export function compareGridBusinesses(searches: any[][], ownPlaceId: string): GridCompetitor[] {
+export function relevantMapCompetitor(item: any, keyword: string): boolean {
+  const query = norm(keyword);
+  if (!/\b(clean|cleaner|cleaning|maid|housekeeping|janitorial)\b/.test(query)) return true;
+  const name = norm(String(item?.title ?? ""));
+  const categories = norm(
+    [
+      item?.category,
+      ...(Array.isArray(item?.additional_categories) ? item.additional_categories : []),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+  // These frequently appear for "cleaning" but compete in different markets.
+  if (
+    /\b(dry clean(?:er|ing)?|laundry|laundrette|shoe repair|service station)\b/.test(
+      `${name} ${categories}`,
+    )
+  )
+    return false;
+  return (
+    !categories || /\b(clean|cleaner|cleaning|maid|housekeeping|janitorial)\b/.test(categories)
+  );
+}
+
+export function compareGridBusinesses(
+  searches: any[][],
+  ownPlaceId: string,
+  keyword = "",
+): GridCompetitor[] {
   const businesses = new Map<string, { name: string; ranks: (number | null)[] }>();
   for (const [spot, items] of searches.entries()) {
     const seen = new Set<string>();
@@ -130,6 +158,7 @@ export function compareGridBusinesses(searches: any[][], ownPlaceId: string): Gr
       const rank = Number(item?.rank_group);
       if (
         item?.type !== "maps_search" ||
+        !relevantMapCompetitor(item, keyword) ||
         !id ||
         id === ownPlaceId ||
         seen.has(id) ||

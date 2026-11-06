@@ -28,6 +28,7 @@ import {
   MoreHorizontal,
   PhoneCall,
   RefreshCw,
+  UserPlus,
 } from "lucide-react";
 import { Logo } from "../components/site/Logo";
 import {
@@ -40,6 +41,7 @@ import {
   prospectVideoThumb,
   removeProspectVideo,
   saveProspectVideo,
+  saveProspect,
   searchProspects,
   setProspectOgImage,
   startProspectUpload,
@@ -71,7 +73,13 @@ import { makeOgCard, videoFrame } from "../lib/og-card";
 import { matchesReach, PHONE_TYPE_LABEL, type ReachFilter } from "../lib/prospect-contact";
 import { ownerFirstName, ownerFresh, ownerLine } from "../lib/prospect-owner";
 import { money, saleOneLine, saleSymbol, type SalePeriod } from "../lib/sale-value";
-import { getReportBranding, saveReportBranding, listProspectActions, syncProspectActions, updateProspectAction } from "../lib/report-workspace.functions";
+import {
+  getReportBranding,
+  saveReportBranding,
+  listProspectActions,
+  syncProspectActions,
+  updateProspectAction,
+} from "../lib/report-workspace.functions";
 import {
   nicheQuery,
   PRODUCT_LABEL,
@@ -178,8 +186,42 @@ function Prospects() {
   const list = useServerFn(listProspects);
   const search = useServerFn(searchProspects);
   const build = useServerFn(buildProspectReport);
+  const saveFound = useServerFn(saveProspect);
   const addPhrase = useServerFn(addProspectPhrase);
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  async function saveOne(h: Hit): Promise<boolean> {
+    if (h.saved) return true;
+    setSaving(h.placeId);
+    try {
+      const r = await saveFound({
+        data: {
+          placeId: h.placeId,
+          name: h.name,
+          address: h.address,
+          ...(h.category ? { category: h.category } : {}),
+          ...(h.phone ? { phone: h.phone } : {}),
+          ...(h.website ? { website: h.website } : {}),
+          ...(h.email ? { email: h.email } : {}),
+          product,
+        },
+      }).catch(() => ({ ok: false as const, error: FAILED }));
+      if (!r.ok) {
+        toast.error(r.error);
+        return false;
+      }
+      setHits(
+        (cur) =>
+          cur?.map((x) => (x.placeId === h.placeId ? { ...x, saved: true, product } : x)) ?? null,
+      );
+      toast.success(r.already ? "Already in your prospect list" : "Added to your prospect list");
+      await load();
+      return true;
+    } finally {
+      setSaving(null);
+    }
+  }
 
   // Builds one report (plus any extra search phrases). Returns true if it worked.
   async function buildOne(
@@ -198,7 +240,11 @@ function Prospects() {
           placeId: h.placeId,
           ...(force ? { force: true } : {}),
           product,
-          ...(words.trim() ? { keyword: words.trim() } : searchedTopic ? { keyword: searchedTopic } : {}),
+          ...(words.trim()
+            ? { keyword: words.trim() }
+            : searchedTopic
+              ? { keyword: searchedTopic }
+              : {}),
           ...(area ? { area } : {}),
           niche: !query.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
           ...(searchedTopic ? { topic: searchedTopic } : {}),
@@ -764,15 +810,39 @@ function Prospects() {
                       </div>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      disabled={building !== null || batch !== null}
-                      onClick={() => void buildOne(h)}
-                      className="rounded-lg border border-border px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                      {building === h.placeId ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                      Build report
-                    </button>
+                    <div className="flex flex-col items-end gap-1.5">
+                      {h.saved && (
+                        <p className="text-base font-semibold text-emerald-700">In prospect list</p>
+                      )}
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        {!h.saved && (
+                          <button
+                            type="button"
+                            disabled={saving !== null || building !== null || batch !== null}
+                            onClick={() => void saveOne(h)}
+                            className="rounded-lg border border-border px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            {saving === h.placeId ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <UserPlus className="w-4 h-4" />
+                            )}
+                            Add prospect
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={building !== null || batch !== null || saving !== null}
+                          onClick={() => void buildOne(h)}
+                          className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-base font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          {building === h.placeId ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : null}
+                          Build report
+                        </button>
+                      </div>
+                    </div>
                   )}
                   {confirm?.placeId === h.placeId && (
                     <RebuildConfirm
@@ -1720,16 +1790,49 @@ const ProspectRow = memo(function ProspectRow({
           />
           <div className="grid sm:grid-cols-3 gap-2">
             <label className="rounded-lg border border-amber-200 bg-white p-2 flex gap-2 items-start">
-              <input type="checkbox" checked={detailedGrid} onChange={(e) => setDetailedGrid(e.target.checked)} className="mt-1" />
-              <span><b>Detailed 7 x 7 grid</b><br /><span className="text-muted-foreground">49 spots per phrase instead of 25. About twice the map-check usage.</span></span>
+              <input
+                type="checkbox"
+                checked={detailedGrid}
+                onChange={(e) => setDetailedGrid(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                <b>Detailed 7 x 7 grid</b>
+                <br />
+                <span className="text-muted-foreground">
+                  49 spots per phrase instead of 25. About twice the map-check usage.
+                </span>
+              </span>
             </label>
             <label className="rounded-lg border border-amber-200 bg-white p-2 flex gap-2 items-start">
-              <input type="checkbox" checked={includeAi} onChange={(e) => setIncludeAi(e.target.checked)} className="mt-1" />
-              <span><b>AI visibility evidence</b><br /><span className="text-muted-foreground">Runs three live web-search questions and may use paid AI credits.</span></span>
+              <input
+                type="checkbox"
+                checked={includeAi}
+                onChange={(e) => setIncludeAi(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                <b>AI visibility evidence</b>
+                <br />
+                <span className="text-muted-foreground">
+                  Runs three live web-search questions and may use paid AI credits.
+                </span>
+              </span>
             </label>
             <label className="rounded-lg border border-amber-200 bg-white p-2 flex gap-2 items-start">
-              <input type="checkbox" checked={includeVisual} onChange={(e) => setIncludeVisual(e.target.checked)} className="mt-1" />
-              <span><b>Website visual</b><br /><span className="text-muted-foreground">Adds a current mobile Lighthouse capture when available.</span></span>
+              <input
+                type="checkbox"
+                checked={includeVisual}
+                onChange={(e) => setIncludeVisual(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                <b>Website visual</b>
+                <br />
+                <span className="text-muted-foreground">
+                  Adds a current mobile Lighthouse capture when available.
+                </span>
+              </span>
             </label>
           </div>
           <div className="flex gap-2">
@@ -1756,7 +1859,9 @@ const ProspectRow = memo(function ProspectRow({
       {videoOpen && p.link && <VideoPanel p={p} makeOg={makeOg} onRefresh={onRefresh} />}
       {open && (
         <div className="grid sm:grid-cols-2 gap-2 pt-1">
-          <div className="sm:col-span-2"><ActionWorkflow prospectId={p.id} /></div>
+          <div className="sm:col-span-2">
+            <ActionWorkflow prospectId={p.id} />
+          </div>
           <label className="text-base space-y-1">
             <span className="sr-only">Contact name</span>
             <input
@@ -2097,40 +2202,155 @@ function VideoPanel({
 function BrandingStudio() {
   const read = useServerFn(getReportBranding);
   const save = useServerFn(saveReportBranding);
-  const [form, setForm] = useState({ agencyName: "RepSuites", primaryHex: "#0b1d3a", secondaryHex: "#f5b324", logoUrl: "", phone: "", email: "" });
+  const [form, setForm] = useState({
+    agencyName: "RepSuites",
+    primaryHex: "#0b1d3a",
+    secondaryHex: "#f5b324",
+    logoUrl: "",
+    phone: "",
+    email: "",
+  });
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     void read().then((result) => {
       if (!result.ok || !result.branding) return;
       const b = result.branding;
-      setForm({ agencyName: b.agency_name || "RepSuites", primaryHex: b.primary_hex || "#0b1d3a", secondaryHex: b.secondary_hex || "#f5b324", logoUrl: b.logo_url || "", phone: b.phone || "", email: b.email || "" });
+      setForm({
+        agencyName: b.agency_name || "RepSuites",
+        primaryHex: b.primary_hex || "#0b1d3a",
+        secondaryHex: b.secondary_hex || "#f5b324",
+        logoUrl: b.logo_url || "",
+        phone: b.phone || "",
+        email: b.email || "",
+      });
     });
   }, [read]);
-  const change = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  return <section className="space-y-5">
-    <div className="rounded-2xl border border-border bg-gradient-to-br from-slate-950 to-slate-800 p-6 text-white shadow-xl">
-      <p className="text-sm font-bold uppercase tracking-[.18em] text-amber-300">Report studio</p>
-      <h1 className="mt-2 text-3xl font-black">Make every report unmistakably yours</h1>
-      <p className="mt-2 max-w-2xl text-slate-300">Your logo, colours and contact details flow into the live report and downloadable PDF without changing the evidence.</p>
-    </div>
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <div className="rounded-xl border p-5" style={{ borderTopWidth: 6, borderTopColor: form.secondaryHex }}>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">{form.logoUrl ? <img src={form.logoUrl} alt="" className="h-10 w-10 rounded-lg object-contain" /> : <div className="h-10 w-10 rounded-lg" style={{ background: form.primaryHex }} />}<div><p className="text-xl font-black" style={{ color: form.primaryHex }}>{form.agencyName}</p><p className="text-sm text-muted-foreground">Website and Google visibility report</p></div></div>
-          <p className="text-sm text-right text-muted-foreground">{form.phone}<br />{form.email}</p>
+  const change = (key: keyof typeof form, value: string) =>
+    setForm((current) => ({ ...current, [key]: value }));
+  return (
+    <section className="space-y-5">
+      <div className="rounded-2xl border border-border bg-gradient-to-br from-slate-950 to-slate-800 p-6 text-white shadow-xl">
+        <p className="text-sm font-bold uppercase tracking-[.18em] text-amber-300">Report studio</p>
+        <h1 className="mt-2 text-3xl font-black">Make every report unmistakably yours</h1>
+        <p className="mt-2 max-w-2xl text-slate-300">
+          Your logo, colours and contact details flow into the live report and downloadable PDF
+          without changing the evidence.
+        </p>
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div
+          className="rounded-xl border p-5"
+          style={{ borderTopWidth: 6, borderTopColor: form.secondaryHex }}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {form.logoUrl ? (
+                <img src={form.logoUrl} alt="" className="h-10 w-10 rounded-lg object-contain" />
+              ) : (
+                <div className="h-10 w-10 rounded-lg" style={{ background: form.primaryHex }} />
+              )}
+              <div>
+                <p className="text-xl font-black" style={{ color: form.primaryHex }}>
+                  {form.agencyName}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Website and Google visibility report
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-right text-muted-foreground">
+              {form.phone}
+              <br />
+              {form.email}
+            </p>
+          </div>
         </div>
+        <div className="mt-5 grid sm:grid-cols-2 gap-4">
+          <label className="space-y-1">
+            <span className="font-semibold">Agency name</span>
+            <input
+              className={field}
+              value={form.agencyName}
+              onChange={(e) => change("agencyName", e.target.value)}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="font-semibold">Logo URL</span>
+            <input
+              className={field}
+              value={form.logoUrl}
+              onChange={(e) => change("logoUrl", e.target.value)}
+              placeholder="https://..."
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="font-semibold">Primary colour</span>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={form.primaryHex}
+                onChange={(e) => change("primaryHex", e.target.value)}
+                className="h-11 w-14 rounded-lg border"
+              />
+              <input
+                className={field}
+                value={form.primaryHex}
+                onChange={(e) => change("primaryHex", e.target.value)}
+              />
+            </div>
+          </label>
+          <label className="space-y-1">
+            <span className="font-semibold">Accent colour</span>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={form.secondaryHex}
+                onChange={(e) => change("secondaryHex", e.target.value)}
+                className="h-11 w-14 rounded-lg border"
+              />
+              <input
+                className={field}
+                value={form.secondaryHex}
+                onChange={(e) => change("secondaryHex", e.target.value)}
+              />
+            </div>
+          </label>
+          <label className="space-y-1">
+            <span className="font-semibold">Phone</span>
+            <input
+              className={field}
+              value={form.phone}
+              onChange={(e) => change("phone", e.target.value)}
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="font-semibold">Email</span>
+            <input
+              type="email"
+              className={field}
+              value={form.email}
+              onChange={(e) => change("email", e.target.value)}
+            />
+          </label>
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            const result = await save({ data: form }).catch(() => null);
+            setBusy(false);
+            result?.ok
+              ? toast.success("Report branding saved")
+              : toast.error(result && !result.ok ? result.error : FAILED);
+          }}
+          className="mt-5 min-h-11 rounded-xl bg-primary px-5 font-bold text-primary-foreground disabled:opacity-50"
+        >
+          {busy ? "Saving..." : "Save branding"}
+        </button>
       </div>
-      <div className="mt-5 grid sm:grid-cols-2 gap-4">
-        <label className="space-y-1"><span className="font-semibold">Agency name</span><input className={field} value={form.agencyName} onChange={(e) => change("agencyName", e.target.value)} /></label>
-        <label className="space-y-1"><span className="font-semibold">Logo URL</span><input className={field} value={form.logoUrl} onChange={(e) => change("logoUrl", e.target.value)} placeholder="https://..." /></label>
-        <label className="space-y-1"><span className="font-semibold">Primary colour</span><div className="flex gap-2"><input type="color" value={form.primaryHex} onChange={(e) => change("primaryHex", e.target.value)} className="h-11 w-14 rounded-lg border" /><input className={field} value={form.primaryHex} onChange={(e) => change("primaryHex", e.target.value)} /></div></label>
-        <label className="space-y-1"><span className="font-semibold">Accent colour</span><div className="flex gap-2"><input type="color" value={form.secondaryHex} onChange={(e) => change("secondaryHex", e.target.value)} className="h-11 w-14 rounded-lg border" /><input className={field} value={form.secondaryHex} onChange={(e) => change("secondaryHex", e.target.value)} /></div></label>
-        <label className="space-y-1"><span className="font-semibold">Phone</span><input className={field} value={form.phone} onChange={(e) => change("phone", e.target.value)} /></label>
-        <label className="space-y-1"><span className="font-semibold">Email</span><input type="email" className={field} value={form.email} onChange={(e) => change("email", e.target.value)} /></label>
-      </div>
-      <button type="button" disabled={busy} onClick={async () => { setBusy(true); const result = await save({ data: form }).catch(() => null); setBusy(false); result?.ok ? toast.success("Report branding saved") : toast.error(result && !result.ok ? result.error : FAILED); }} className="mt-5 min-h-11 rounded-xl bg-primary px-5 font-bold text-primary-foreground disabled:opacity-50">{busy ? "Saving..." : "Save branding"}</button>
-    </div>
-  </section>;
+    </section>
+  );
 }
 
 function ActionWorkflow({ prospectId }: { prospectId: string }) {
@@ -2143,12 +2363,69 @@ function ActionWorkflow({ prospectId }: { prospectId: string }) {
     const result = await list({ data: { prospectId } }).catch(() => null);
     if (result?.ok) setActions(result.actions);
   }, [list, prospectId]);
-  useEffect(() => { void loadActions(); }, [loadActions]);
-  const statuses = ["proposed", "approved", "in_progress", "completed", "verified", "rejected"] as const;
-  return <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-2">
-    <div className="flex items-center justify-between gap-2"><div><p className="font-bold">Recommendation workflow</p><p className="text-sm text-muted-foreground">Approve, assign, complete and verify each evidence-led action.</p></div><button type="button" disabled={busy} onClick={async () => { setBusy(true); await sync({ data: { prospectId } }); await loadActions(); setBusy(false); }} className="min-h-9 rounded-lg border bg-background px-3 font-semibold">{actions.length ? "Refresh from report" : "Create from report"}</button></div>
-    {actions.map((action) => <div key={action.id} className="rounded-lg border bg-background p-2 grid sm:grid-cols-[1fr_auto] gap-2 items-center"><div><p className="font-semibold">{action.title}</p><p className="text-sm text-muted-foreground">{action.evidence}</p></div><select aria-label={`Status for ${action.title}`} value={action.status} onChange={async (event) => { const status = event.target.value as typeof statuses[number]; await updateAction({ data: { id: action.id, status } }); await loadActions(); }} className="min-h-10 rounded-lg border bg-background px-2">{statuses.map((status) => <option value={status} key={status}>{status.replace("_", " ")}</option>)}</select></div>)}
-  </div>;
+  useEffect(() => {
+    void loadActions();
+  }, [loadActions]);
+  const statuses = [
+    "proposed",
+    "approved",
+    "in_progress",
+    "completed",
+    "verified",
+    "rejected",
+  ] as const;
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="font-bold">Recommendation workflow</p>
+          <p className="text-sm text-muted-foreground">
+            Approve, assign, complete and verify each evidence-led action.
+          </p>
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            await sync({ data: { prospectId } });
+            await loadActions();
+            setBusy(false);
+          }}
+          className="min-h-9 rounded-lg border bg-background px-3 font-semibold"
+        >
+          {actions.length ? "Refresh from report" : "Create from report"}
+        </button>
+      </div>
+      {actions.map((action) => (
+        <div
+          key={action.id}
+          className="rounded-lg border bg-background p-2 grid sm:grid-cols-[1fr_auto] gap-2 items-center"
+        >
+          <div>
+            <p className="font-semibold">{action.title}</p>
+            <p className="text-sm text-muted-foreground">{action.evidence}</p>
+          </div>
+          <select
+            aria-label={`Status for ${action.title}`}
+            value={action.status}
+            onChange={async (event) => {
+              const status = event.target.value as (typeof statuses)[number];
+              await updateAction({ data: { id: action.id, status } });
+              await loadActions();
+            }}
+            className="min-h-10 rounded-lg border bg-background px-2"
+          >
+            {statuses.map((status) => (
+              <option value={status} key={status}>
+                {status.replace("_", " ")}
+              </option>
+            ))}
+          </select>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function ReachBadges({

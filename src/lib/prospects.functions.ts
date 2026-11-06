@@ -85,6 +85,64 @@ export const searchProspects = createServerFn({ method: "POST" })
     };
   });
 
+// Save a search result to the pipeline without running or paying for a report.
+// place_id is unique in Postgres, so repeat clicks and repeat searches cannot
+// create duplicate prospects.
+export const saveProspect = createServerFn({ method: "POST" })
+  .validator(
+    (d: {
+      placeId: string;
+      name: string;
+      address: string;
+      category?: string;
+      phone?: string;
+      website?: string;
+      email?: string;
+      product?: "repsuites" | "sparkops";
+    }) =>
+      z
+        .object({
+          placeId: z.string().regex(PLACE_RE),
+          name: z.string().trim().min(1).max(200),
+          address: z.string().trim().max(300),
+          category: z.string().trim().max(120).optional(),
+          phone: z.string().trim().max(40).optional(),
+          website: z.string().trim().max(300).optional(),
+          email: z.string().trim().email().max(320).optional(),
+          product: z.enum(PRODUCTS).optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const existing = await serviceRead<{ id: string }[]>(
+      `prospects?select=id&place_id=eq.${encodeURIComponent(data.placeId)}&limit=1`,
+      "",
+    );
+    if (existing.data?.length) return { ok: true as const, already: true as const };
+    const w = await serviceWrite<unknown>("prospects", "", {
+      method: "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: {
+        place_id: data.placeId,
+        name: data.name,
+        address: data.address || null,
+        category: data.category || null,
+        phone: data.phone || null,
+        website: data.website || null,
+        email: data.email || null,
+        source: "search",
+        product: data.product ?? "repsuites",
+        created_by: g.userId,
+        updated_at: new Date().toISOString(),
+      },
+    });
+    if (w.error && !/duplicate|conflict|23505/i.test(w.error))
+      return { ok: false as const, error: "Could not add this prospect. Try again." };
+    return { ok: true as const, already: !!w.error };
+  });
+
 // The email finder: reads the websites of up to 8 search results for an
 // email and Facebook/Instagram links. Called from the page in batches so each
 // request stays inside the 50 outside calls the Worker may make.

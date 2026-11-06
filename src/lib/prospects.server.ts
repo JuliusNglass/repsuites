@@ -17,6 +17,7 @@ import { cachedContacts } from "./prospect-contact.server";
 import { ownerFresh } from "./prospect-owner";
 import { savedPhrases } from "./prospect-pipeline";
 import { chooseReportKeyword } from "./prospect-keyword";
+import { reviewSample } from "./review-evidence";
 
 const PLACE_RE = /^[A-Za-z0-9_-]{10,300}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -140,6 +141,9 @@ export interface Report {
     categories: number;
     photos: number;
     newestReviewDays: number | null;
+    newestReviewAt?: string | null;
+    returnedReviewDates?: number;
+    reviewsLast90Days?: number;
   };
   createdAt: string;
   business: {
@@ -270,7 +274,7 @@ async function nearestRivals(
     }
   }
   // Fallback: a text search for its category, kept within 15 km.
-  const category = String(p.primaryTypeDisplayName?.text ?? "") || fallback;
+  const category = fallback || String(p.primaryTypeDisplayName?.text ?? "");
   if (!category) return [];
   const j = await places("places:searchText", mask, {
     textQuery: category,
@@ -317,6 +321,7 @@ export async function runGrid(
   middle: number | null | undefined;
   error: string;
   grid: NonNullable<Report["grid"]> | null;
+  observedPhotos: number;
 }> {
   const { mapsResults } = await import("./rank-tracking.server");
   const { gridPoints, summarisePoints, rankIn, compareGridBusinesses } =
@@ -329,6 +334,7 @@ export async function runGrid(
   const searches: any[][] = new Array(pts.length);
   let failed = 0;
   let error = "";
+  let observedPhotos = 0;
   let next = 0;
   const worker = async () => {
     while (next < pts.length) {
@@ -338,6 +344,10 @@ export async function runGrid(
       if (r.ok) {
         ranks[i] = rankIn(r.items, placeId, name);
         searches[i] = r.items;
+        const own = r.items.find(
+          (item: any) => item?.type === "maps_search" && item?.place_id === placeId,
+        );
+        observedPhotos = Math.max(observedPhotos, Number(own?.total_photos ?? 0) || 0);
       } else {
         failed++;
         if (!error) error = String(r.error).slice(0, 200);
@@ -346,7 +356,7 @@ export async function runGrid(
   };
   await Promise.all(Array.from({ length: 6 }, worker));
   // Unknown points must not become evidence of poor visibility.
-  if (failed > 0) return { middle: ranks[middleIndex], error, grid: null };
+  if (failed > 0) return { middle: ranks[middleIndex], error, grid: null, observedPhotos };
   const sum = summarisePoints(
     pts.map((pt, i) => ({ lat: pt.lat, lng: pt.lng, rank: ranks[i] ?? null })),
   );
@@ -356,7 +366,7 @@ export async function runGrid(
     grid: {
       size: gridSize,
       spacing: distanceLabel(spacingKm, miles),
-      competitors: compareGridBusinesses(searches, placeId),
+      competitors: compareGridBusinesses(searches, placeId, keyword),
       ranks: ranks.map((r) => (r === undefined ? -1 : r)),
       found: sum.found,
       top3: sum.top3,
@@ -364,6 +374,7 @@ export async function runGrid(
       center: at,
       spacingKm,
     },
+    observedPhotos,
   };
 }
 
@@ -403,11 +414,8 @@ export async function buildReport(
   const lng = typeof p.location?.longitude === "number" ? p.location.longitude : null;
   const rating = typeof p.rating === "number" ? p.rating : null;
   const reviews = Number(p.userRatingCount ?? 0);
-  const newest = (p.reviews ?? [])
-    .map((r: any) => Date.parse(r.publishTime ?? ""))
-    .filter((t: number) => Number.isFinite(t))
-    .sort((a: number, b: number) => b - a)[0];
-  const newestReviewDays = newest ? Math.floor((Date.now() - newest) / 86400000) : null;
+  const reviewEvidence = reviewSample(p.reviews);
+  const newestReviewDays = reviewEvidence.newestReviewDays;
 
   // Nearest rivals: businesses of the same kind (any of its specific Google
   // types, e.g. burger, fast food or American restaurant), closest first,
@@ -435,6 +443,7 @@ export async function buildReport(
   let mapsError = "";
   let grid: Report["grid"] = null;
   const grids: NonNullable<Report["grids"]> = [];
+  let observedPhotos = 0;
   if (keyword && lat !== null && lng !== null) {
     const { creds } = await import("./rank-tracking.server");
     const auth = creds();
@@ -454,6 +463,7 @@ export async function buildReport(
         ),
       );
       const first = results[0]!;
+      observedPhotos = first.observedPhotos;
       if (first.middle !== undefined) {
         checked = true;
         position = first.middle;
@@ -613,8 +623,11 @@ export async function buildReport(
         categories: new Set(
           [p.primaryType, ...(p.types ?? [])].map(String).filter((x) => x && !GENERAL_TYPES.has(x)),
         ).size,
-        photos: Array.isArray(p.photos) ? p.photos.length : 0,
+        photos: Math.max(Array.isArray(p.photos) ? p.photos.length : 0, observedPhotos),
         newestReviewDays,
+        newestReviewAt: reviewEvidence.newestReviewAt,
+        returnedReviewDates: reviewEvidence.returnedReviewDates,
+        reviewsLast90Days: reviewEvidence.reviewsLast90Days,
       },
       createdAt: new Date().toISOString(),
       business: {

@@ -54,7 +54,7 @@ function Pricing() {
   const portal = useServerFn(openBillingPortal);
   const [signedIn, setSignedIn] = useState(false);
   const [busy, setBusy] = useState<CheckoutPlan | null>(null);
-  const [interval, setInterval] = useState<BillingInterval>("month");
+  const [interval, setInterval] = useState<BillingInterval>("year");
 
   useEffect(() => {
     session()
@@ -249,3 +249,4 @@ function Pricing() {
     </PublicLayout>
   );
 }
+

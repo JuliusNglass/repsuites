@@ -16,15 +16,7 @@ import {
   rankWords,
   readingToggle,
 } from "./reading";
-import {
-  money,
-  saleFor,
-  saleRange,
-  saleSumLines,
-  saleSymbol,
-  showsGrowthPrice,
-  yearlyValue,
-} from "./sale-value";
+import { money, saleFor, saleRange, saleSumLines, saleSymbol, yearlyValue } from "./sale-value";
 
 export function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -501,9 +493,6 @@ function worthSection(r: Report, sale: Sale, extra: RenderExtra | null): string 
   const max = Math.max(range.max, sale.amount);
   const lines = saleSumLines(sale.amount, sale.period, cur);
   const total = money(yearlyValue(sale.amount, sale.period), cur);
-  const growth = showsGrowthPrice(r.business.address)
-    ? `<p style="margin:12px 0 0">RepSuites Growth is £49 a month (£588 a year).</p>`
-    : "";
   const print = extra?.flash === "print";
   const start = extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start";
   const controls = print
@@ -531,13 +520,12 @@ document.querySelectorAll(".worth .seg button").forEach(function(b){b.addEventLi
 ${controls}
 <ol id="ws-sum" class="sum" aria-live="polite">${lines.map((l) => `<li>${bold(l)}</li>`).join("")}</ol>
 <div class="total"><div class="big" id="ws-total">${total}</div><div>a year in extra sales, from 1 more customer</div></div>
-${growth}
 <p class="small" style="margin:12px 0 0">This is not a forecast. It shows what one extra customer would add at the price you set. Change the price to match yours.</p>
 <h3 style="margin:18px 0 8px;font-size:1rem">How we help you win that customer</h3>
 <ul class="small" style="margin:0;padding-left:18px;font-size:1rem;line-height:1.5">
 <li>Your own review page and QR code, so happy customers leave reviews in seconds.</li>
 <li>Unhappy customers message you privately first, not on Google.</li>
-<li>With Growth, we check this map again every month, so you can see yourself move up.</li>
+<li>Repeat the same map check later to measure whether visibility improved.</li>
 </ul>
 <a class="cta noprint" href="${start}">Start free</a>
 <p class="small noprint" style="text-align:center;margin:8px 0 0">No card needed. Takes 2 minutes.</p></div>${script}`;
@@ -563,7 +551,7 @@ function presentationClose(
     })
     .join("");
   return `<section class="presentation-close">
-<h2>Your evidence-led action plan</h2>
+<h2>Do this first: Your evidence-led action plan</h2>
 <div class="card"><table>${actionRows || `<tr><th>This month</th><td>Keep reviews and profile evidence current, then repeat the same local search check.</td></tr>`}</table><p class="small"><b>Approval rule:</b> review every recommendation before changing a website or Google profile. Record the baseline first, then verify the result against comparable evidence.</p></div>
 <h2>Proof and next step</h2>
 <div class="card"><p><b>What this report proves:</b> how ${esc(b.name)} appeared in the checked Google searches and public profile evidence on ${date}.</p><p><b>What it does not prove:</b> private Google performance data, ownership status, conversion rate, or guaranteed future rankings.</p><p style="margin-bottom:0"><b>Recommended next step:</b> agree the first three fixes, record the baseline, and schedule the next comparable check.</p></div>
@@ -686,6 +674,13 @@ export function previewText(r: Report): { title: string; description: string } {
 export function profileEvidence(r: Report): string {
   const b = r.business;
   const a = r.profileAudit;
+  const reviewEvidence = !a
+    ? ""
+    : a.newestReviewAt
+      ? `Newest returned review: ${new Date(a.newestReviewAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })}${a.newestReviewDays === null ? "" : a.newestReviewDays === 0 ? " (today)" : ` (${a.newestReviewDays} day${a.newestReviewDays === 1 ? "" : "s"} ago)`}. ${a.reviewsLast90Days ?? 0} of ${a.returnedReviewDates ?? 0} returned reviews were published in the last 90 days. Google returns a public sample, so this is an indicator rather than complete review velocity.`
+      : b.reviews > 0
+        ? `Google reports ${b.reviews} reviews, but returned no review dates in this check. Recency and review velocity could not be measured from the public response.`
+        : "No reviews or review dates were returned by Google.";
   const rows = [
     ["Website", b.website || "Not supplied by Google"],
     ["Phone", b.phone || "Not supplied by Google"],
@@ -713,16 +708,9 @@ export function profileEvidence(r: Report): string {
           "Photos",
           a.photos
             ? `${a.photos} public photo references returned by Google`
-            : "No photo references returned by Google",
+            : "Google returned no photo count in this check. This does not mean the profile has no photos.",
         ],
-        [
-          "Review recency",
-          a.newestReviewDays === null
-            ? "Not available"
-            : a.newestReviewDays === 0
-              ? "A review was published today"
-              : `Newest returned review was ${a.newestReviewDays} day${a.newestReviewDays === 1 ? "" : "s"} old`,
-        ],
+        ["Review recency and sample velocity", reviewEvidence],
       ]
     : [];
   return `<h2>Google profile audit evidence</h2><div class="card"><p class="small">Source: Google Places, recorded ${esc(r.createdAt)}. Public profile evidence only. Missing information needs owner review, especially for service-area businesses.</p><table><tr><th>Check</th><th>Observation</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>Not established by this public check</h3><p class="small">Ownership and verification, suspension status, private performance, services, review reply rate and post activity. Connect the profile or confirm these with the owner before recommending a change.</p><p class="small">Review counts and ratings describe the profile, not enquiry or conversion performance.</p></div>`;
@@ -862,20 +850,21 @@ ${richerEvidence(r)}
 
 ${worthSection(r, sale, extra)}
 
-<h2>You and your nearest rivals</h2>
+${
+  comparison
+    ? ""
+    : `<h2>You and your nearest rivals</h2>
 <div class="card"><table><tr><th>Business</th><th>Rating</th><th>Google reviews</th></tr>
 ${rows
   .map(
     (x) =>
       `<tr class="${x.you ? "you" : ""}"><td>${esc(x.name)}${x.kind || x.away ? `<div class="small">${esc([x.kind, x.away ? `${x.away} away` : ""].filter(Boolean).join(", "))}</div>` : ""}</td><td>${x.rating === null ? "-" : x.rating.toFixed(1)}</td><td>${x.reviews}</td></tr>`,
   )
-  .join("")}</table></div>
+  .join("")}</table></div>`
+}
 ${gap}
 
 ${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
-
-<h2>What to fix first</h2>
-${view.fixes.length ? `<ol style="list-style:none;margin:0;padding:0">${view.fixes.map((f) => `<li class="fix ${f.priority}" style="max-width:none"><span class="tag">${f.priority === "high" ? "Do this first" : "Worth doing"}</span><b>${esc(f.title)}</b><span>${esc(f.why)}</span></li>`).join("")}</ol>` : `<div class="card">Your Google profile is in good shape. The next step is a steady flow of new reviews.</div>`}
 
 <div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
 <p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
