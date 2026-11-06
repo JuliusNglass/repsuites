@@ -525,6 +525,7 @@ export interface RenderExtra {
   ogImage?: string | null;
   minSalePence?: number | null;
   salePeriod?: string | null;
+  branding?: { primary_hex: string | null; secondary_hex: string | null; logo_url: string | null } | null;
 }
 
 // Julius's WhatsApp, used when REPSUITES_SALES_WHATSAPP is not set.
@@ -698,10 +699,19 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     extra?.ogImage && /^https:\/\//.test(extra.ogImage)
       ? extra.ogImage
       : "https://repsuites.com/og-image.png?v=2";
+  const primary = extra?.branding?.primary_hex && /^#[0-9a-f]{6}$/i.test(extra.branding.primary_hex)
+    ? extra.branding.primary_hex
+    : "#0b1d3a";
+  const secondary = extra?.branding?.secondary_hex && /^#[0-9a-f]{6}$/i.test(extra.branding.secondary_hex)
+    ? extra.branding.secondary_hex
+    : "#f5b324";
+  const logo = extra?.branding?.logo_url && /^https:\/\//i.test(extra.branding.logo_url)
+    ? extra.branding.logo_url
+    : "/logo-mark.png";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}">${READING_HEAD}<style>${STYLE}${video ? VIDEO_STYLE : ""}</style></head><body><main>
-<div class="top"><div class="brand"><img src="/logo-mark.png" alt=""> RepSuites</div>${readingToggle()}</div>
+<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}">${READING_HEAD}<style>:root{--report-primary:${primary};--report-accent:${secondary}}${STYLE}${video ? VIDEO_STYLE : ""}.biz{color:var(--report-primary);border-left-color:var(--report-accent)}.cta{background:var(--report-accent)}.found{border-color:var(--report-accent)}</style></head><body><main>
+<div class="top"><div class="brand"><img src="${esc(logo)}" alt=""> RepSuites</div>${readingToggle()}</div>
 ${video}
 <p class="kicker">How you show up on Google</p>
 ${video ? `<h2 class="biz">${esc(b.name)}</h2>` : `<h1 class="biz">${esc(b.name)}</h1>`}
