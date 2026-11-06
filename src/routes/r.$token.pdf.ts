@@ -44,7 +44,7 @@ function reportPdf(report: Report, brand: Brand) {
       return !irrelevantNames.some((name) => copy.includes(name));
     }),
     ...(report.websiteAudit?.findings ?? [])
-      .filter((finding) => finding.status !== "pass")
+      .filter((finding) => ["title", "h1", "description", "phone", "schema"].includes(finding.id))
       .map((finding) => ({
         title: `Improve ${finding.label.toLocaleLowerCase()}`,
         why: finding.recommendation,
