@@ -42,8 +42,8 @@ describe("homepage audit evidence", () => {
     );
     const html = websiteEvidence({ websiteAudit: audit } as Report);
     expect(html).not.toContain("<img>");
-    expect(html).toContain("JavaScript content");
-    expect(html).toContain("Suggested next step");
+    expect(html).toContain("Page speed, ease of use and completed enquiries need separate checks");
+    expect(html).toContain("Next step");
   });
   it("does not infer failures when a fetch or redirect is unsafe", async () => {
     const fetcher = vi.fn(
@@ -67,3 +67,4 @@ describe("homepage audit evidence", () => {
     expect((await checkWebsite("https://example.com/")).status).toBe("unavailable");
   });
 });
+
