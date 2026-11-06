@@ -41,6 +41,7 @@ import { Route as ApiMetaDataDeletionRouteImport } from './routes/api.meta.data-
 import { Route as ApiResendWebhookRouteImport } from './routes/api.resend.webhook'
 import { Route as ApiReviewTriggerTokenRouteImport } from './routes/api.review-trigger.$token'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as RTokenPdfRouteImport } from './routes/r.$token.pdf'
 import { Route as ApiAccountingCallbackProviderRouteImport } from './routes/api.accounting.callback.$provider'
 import { Route as ApiAccountingWebhookQuickbooksRouteImport } from './routes/api.accounting.webhook.quickbooks'
 import { Route as ApiAccountingWebhookXeroRouteImport } from './routes/api.accounting.webhook.xero'
@@ -209,6 +210,11 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   path: '/api/stripe/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RTokenPdfRoute = RTokenPdfRouteImport.update({
+  id: '/pdf',
+  path: '/pdf',
+  getParentRoute: () => RTokenRoute,
+} as any)
 const ApiAccountingCallbackProviderRoute =
   ApiAccountingCallbackProviderRouteImport.update({
     id: '/api/accounting/callback/$provider',
@@ -258,7 +264,7 @@ export interface FileRoutesByFullPath {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/q/$token': typeof QTokenRoute
-  '/r/$token': typeof RTokenRoute
+  '/r/$token': typeof RTokenRouteWithChildren
   '/cards/': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -297,7 +304,7 @@ export interface FileRoutesByTo {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/q/$token': typeof QTokenRoute
-  '/r/$token': typeof RTokenRoute
+  '/r/$token': typeof RTokenRouteWithChildren
   '/cards': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
@@ -310,6 +317,7 @@ export interface FileRoutesByTo {
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -337,7 +345,7 @@ export interface FileRoutesById {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/q/$token': typeof QTokenRoute
-  '/r/$token': typeof RTokenRoute
+  '/r/$token': typeof RTokenRouteWithChildren
   '/cards/': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
@@ -350,6 +358,7 @@ export interface FileRoutesById {
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -496,7 +508,7 @@ export interface RootRouteChildren {
   CardsThanksRoute: typeof CardsThanksRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
   QTokenRoute: typeof QTokenRoute
-  RTokenRoute: typeof RTokenRoute
+  RTokenRoute: typeof RTokenRouteWithChildren
   CardsIndexRoute: typeof CardsIndexRoute
   ApiBillingBackRoute: typeof ApiBillingBackRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
@@ -742,6 +754,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$token/pdf': {
+      id: '/r/$token/pdf'
+      path: '/pdf'
+      fullPath: '/r/$token/pdf'
+      preLoaderRoute: typeof RTokenPdfRouteImport
+      parentRoute: typeof RTokenRoute
+    }
     '/api/accounting/callback/$provider': {
       id: '/api/accounting/callback/$provider'
       path: '/api/accounting/callback/$provider'
@@ -780,6 +799,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface RTokenRouteChildren {
+  RTokenPdfRoute: typeof RTokenPdfRoute
+}
+
+const RTokenRouteChildren: RTokenRouteChildren = {
+  RTokenPdfRoute: RTokenPdfRoute,
+}
+
+const RTokenRouteWithChildren =
+  RTokenRoute._addFileChildren(RTokenRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
@@ -800,7 +830,7 @@ const rootRouteChildren: RootRouteChildren = {
   CardsThanksRoute: CardsThanksRoute,
   FeedbackIdRoute: FeedbackIdRoute,
   QTokenRoute: QTokenRoute,
-  RTokenRoute: RTokenRoute,
+  RTokenRoute: RTokenRouteWithChildren,
   CardsIndexRoute: CardsIndexRoute,
   ApiBillingBackRoute: ApiBillingBackRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
@@ -832,3 +862,4 @@ declare module '@tanstack/react-start' {
     config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }
+
