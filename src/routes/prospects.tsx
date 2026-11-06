@@ -798,7 +798,7 @@ function Prospects() {
                 </li>
               ))}
             </ul>
-            {hits && nextPage && (
+            {hits && hits.length > 0 && nextPage && (
               <button
                 type="button"
                 disabled={moreLoading}
