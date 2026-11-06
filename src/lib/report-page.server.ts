@@ -559,7 +559,7 @@ function presentationClose(
       return !irrelevantNames.some((name) => copy.includes(name));
     }),
     ...(r.websiteAudit?.findings ?? [])
-      .filter((finding) => finding.status !== "pass")
+      .filter((finding) => ["title", "h1", "description", "phone", "schema"].includes(finding.id))
       .map((finding) => ({
         title: `Improve ${finding.label.toLocaleLowerCase()}`,
         why: finding.recommendation,
