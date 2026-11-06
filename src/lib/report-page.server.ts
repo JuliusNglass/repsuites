@@ -17,6 +17,7 @@ import {
   readingToggle,
 } from "./reading";
 import { money, saleFor, saleRange, saleSumLines, saleSymbol, yearlyValue } from "./sale-value";
+import { relevantMapCompetitor } from "./rank-grid";
 
 export function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -46,7 +47,8 @@ function scoreColour(n: number): string {
 
 export const STYLE = `
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0f172a;line-height:1.5}
-main{max-width:42rem;margin:0 auto;padding:24px 18px 40px}
+main{max-width:1180px;margin:0 auto;padding:28px 28px 64px}
+.report-shell{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px;align-items:start}.report-main{min-width:0}.report-aside{position:sticky;top:82px}.report-aside .card{padding:16px}.report-aside a{display:block;color:#334155;text-decoration:none;padding:8px 0;border-bottom:1px solid #e2e8f0;font-weight:650}.report-aside a:last-child{border-bottom:0}.method{font-size:.875rem;letter-spacing:.12em;color:#64748b;font-weight:800}.hero{padding:28px;border-radius:24px;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%);box-shadow:0 18px 55px rgba(15,29,58,.09);border:1px solid #dbe5ef;margin-bottom:24px}.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0 4px}.metric{background:#fff;border:1px solid #dbe5ef;border-radius:16px;padding:15px}.metric strong{display:block;font-size:1.55rem;line-height:1.1;color:var(--report-primary);font-variant-numeric:tabular-nums}.metric span{display:block;margin-top:6px;color:#526273;font-size:.875rem}.chapter{scroll-margin-top:90px}.chapter-head{display:flex;align-items:center;gap:10px;margin-top:42px}.chapter-no{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--report-primary);color:#fff;font-size:.875rem;font-weight:850}.audit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.audit-card{border:1px solid #dbe5ef;border-radius:16px;background:#fff;padding:17px;box-shadow:0 8px 24px rgba(15,29,58,.05)}.audit-card h3{margin:8px 0 6px;font-size:1.05rem}.audit-card p{margin:7px 0}.audit-card .verdict{display:flex;justify-content:space-between;gap:8px;align-items:center}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:.875rem;font-weight:800}.pill.good{background:#dcfce7;color:#166534}.pill.improve{background:#fef3c7;color:#92400e}.pill.verify{background:#e0f2fe;color:#075985}.prescription{margin-top:12px;padding:12px;border-radius:12px;background:#f8fafc;border-left:4px solid var(--report-accent)}.prescription b{display:block;margin-bottom:4px}.proof{font-size:.875rem;color:#526273}.diagnosis{font-size:1.1rem;line-height:1.55;color:#25364a}.stage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.stage .card{margin:0}.stage .when{color:#2563eb;font-weight:850;font-size:.875rem;letter-spacing:.08em}
 .brand{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:20px}.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px}.top .brand{margin:0}.brand img{width:28px;height:28px;border-radius:6px}
 h1{font-size:1.55rem;line-height:1.2;margin:0 0 4px}.kicker{margin:0 0 4px;font-size:1rem;font-weight:700;color:#7a5200}.biz{font-size:2rem;font-weight:800;line-height:1.15;margin:0 0 6px;color:#0b1d3a;border-left:6px solid #f5b324;padding-left:12px}h2{font-size:1.3rem;line-height:1.3;margin:28px 0 10px}
 .muted{color:#475569;font-size:1rem}
@@ -77,6 +79,7 @@ tr.you td{font-weight:700;background:#fffbeb}
   html,body{background:#fff!important;color:#0f172a;font-size:10.5pt}
   body{line-height:1.42}
   main{max-width:none;width:100%;padding:0}
+  .report-shell{display:block}.report-aside{display:none!important}.hero{box-shadow:none;border:0;padding:0;margin-bottom:8mm}.metric-grid{grid-template-columns:repeat(4,1fr)}.metric{break-inside:avoid;padding:4mm}.audit-grid{grid-template-columns:1fr 1fr}.audit-card{break-inside:avoid}.stage{grid-template-columns:1fr 1fr}
   .cta,.noprint{display:none!important}
   .top{margin-bottom:10mm;border-bottom:1px solid #cbd5e1;padding-bottom:4mm}
   .brand img{width:22px;height:22px}
@@ -105,7 +108,8 @@ tr.you td{font-weight:700;background:#fffbeb}
 .print-grids{display:none}
 .grid-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8mm}.grid-pair h4{text-align:center;margin:0 0 3mm}
 .report-tools{position:sticky;top:8px;z-index:999;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 18px;padding:8px;background:rgba(246,250,249,.96);border:1px solid #cbd5e1;border-radius:14px;backdrop-filter:blur(8px)}.report-tools button,.report-tools a{min-height:40px;border:1px solid #64748b;border-radius:10px;background:#fff;color:#0f172a;padding:8px 12px;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}.report-tools .primary{background:var(--report-primary);color:#fff;border-color:var(--report-primary)}
-@media(max-width:620px){.grid-pair{grid-template-columns:1fr}}
+@media(max-width:900px){main{max-width:48rem;padding:22px 18px 48px}.report-shell{display:block}.report-aside{display:none}.metric-grid,.audit-grid,.stage{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.grid-pair,.metric-grid,.audit-grid,.stage{grid-template-columns:1fr}.hero{padding:20px}.metric-grid{gap:8px}}
 @media print{.screen-grids{display:none!important}.print-grids{display:block}.print-grids .rk{print-color-adjust:exact;-webkit-print-color-adjust:exact}.print-grids .card{break-inside:avoid}.grid-pair>div>div[role=img]{max-width:68mm!important;gap:1.5mm!important}}
 
 /* Polish: crisper text, balanced headings, steady numbers, softer depth, tactile buttons, 40px targets */
@@ -445,9 +449,10 @@ function findings(
   // The top card shows the nearby rival with the MOST reviews (the real
   // threat); "Catching the next business up" further down keeps the
   // reachable next target.
-  const leader = r.rivals
-    .filter((x) => x.reviews > r.business.reviews)
-    .sort((a, b) => b.reviews - a.reviews)[0];
+  const leaderName = rows
+    .filter((x) => !x.you && x.reviews > r.business.reviews)
+    .sort((a, b) => b.reviews - a.reviews)[0]?.name;
+  const leader = r.rivals.find((x) => x.name === leaderName);
   if (leader) {
     const rival = rows.find((x) => !x.you && x.name === leader.name);
     items.push({
@@ -538,21 +543,21 @@ function presentationClose(
 ): string {
   const date = esc(r.createdAt);
   const actions = view.fixes.slice(0, 6);
-  const actionRows = actions
+  const actionCards = actions
     .map((a, i) => {
-      const timing = i < 2 ? "This week" : i < 4 ? "This month" : "Every month";
+      const timing = i < 2 ? "Days 1-14" : i < 4 ? "Days 15-45" : "Days 46-90";
       const effort = /reviews?|posts?|reply/i.test(a.title) ? "Ongoing" : "Low to medium";
       const proof = /review/i.test(a.title)
         ? "Review count, recency and response evidence"
         : /maps|google/i.test(a.title)
           ? "A repeat scan at the same search spots"
           : "A repeat evidence check";
-      return `<tr><th>${timing}</th><td><b>${esc(a.title)}</b><br><span class="small">Why: ${esc(a.why)}<br>Effort: ${effort}. Confidence: evidence-led recommendation, not a guarantee.<br>Verify with: ${proof}.</span></td></tr>`;
+      return `<article class="card"><div class="when">${timing}</div><h3>${esc(a.title)}</h3><p>${esc(a.why)}</p><p class="small"><b>Owner:</b> Assign before approval<br><b>Effort:</b> ${effort}<br><b>Verify:</b> ${proof}</p></article>`;
     })
     .join("");
-  return `<section class="presentation-close">
-<h2>Do this first: Your evidence-led action plan</h2>
-<div class="card"><table>${actionRows || `<tr><th>This month</th><td>Keep reviews and profile evidence current, then repeat the same local search check.</td></tr>`}</table><p class="small"><b>Approval rule:</b> review every recommendation before changing a website or Google profile. Record the baseline first, then verify the result against comparable evidence.</p></div>
+  return `<section class="presentation-close chapter" id="action-plan">
+<div class="chapter-head"><span class="chapter-no">07</span><h2>Do this first: Your evidence-led action plan (90 days)</h2></div>
+<div class="stage">${actionCards || `<article class="card"><div class="when">This month</div><h3>Protect the baseline</h3><p>Keep reviews and profile evidence current, then repeat the same local search check.</p></article>`}</div><div class="card"><p class="small"><b>Approval rule:</b> review every recommendation before changing a website or Google profile. Record the baseline first, assign an owner and due date, then verify the result against comparable evidence.</p></div>
 <h2>Proof and next step</h2>
 <div class="card"><p><b>What this report proves:</b> how ${esc(b.name)} appeared in the checked Google searches and public profile evidence on ${date}.</p><p><b>What it does not prove:</b> private Google performance data, ownership status, conversion rate, or guaranteed future rankings.</p><p style="margin-bottom:0"><b>Recommended next step:</b> agree the first three fixes, record the baseline, and schedule the next comparable check.</p></div>
 </section>`;
@@ -719,10 +724,75 @@ export function profileEvidence(r: Report): string {
 export function websiteEvidence(r: Report): string {
   const a = r.websiteAudit;
   if (!a) return "";
-  const intro = `<h2>Website audit</h2><div class="card"><p class="small">Checked ${esc(a.checkedAt)}. Static homepage HTML only. JavaScript content, speed, accessibility and conversions were not measured.</p>`;
+  const business = r.business ?? ({ name: "the business", category: "", town: "", address: "", phone: "" } as Report["business"]);
+  const topic = r.maps?.keyword || business.category || "your main service";
+  const town = business.town || business.address.split(",").slice(-2, -1)[0]?.trim() || "your area";
+  const guidance: Record<string, { verdict: string; level: string; action: string; example: string; proof: string; priority: string }> = {
+    title: {
+      verdict: "Search relevance",
+      level: "improve",
+      action: `Make the primary service and location unmistakable, without repeating words or stuffing variants.`,
+      example: `${topic.replace(/\b\w/g, (c) => c.toUpperCase())} ${town} | ${business.name}`,
+      proof: "Publish the title, request indexing, then compare search impressions after 28 days.",
+      priority: "High priority · Low effort",
+    },
+    h1: {
+      verdict: "On-page clarity",
+      level: "improve",
+      action: "Use one visible main heading that tells both customers and search engines exactly what the page offers and where.",
+      example: `${topic.replace(/\b\w/g, (c) => c.toUpperCase())} in ${town}`,
+      proof: "Confirm one rendered H1 on mobile and desktop, then re-run the website check.",
+      priority: "High priority · Low effort",
+    },
+    description: {
+      verdict: "Search result message",
+      level: "improve",
+      action: "Lead with the service and area, add the strongest reason to choose the business, and finish with a clear next step.",
+      example: `${business.name} provides ${topic} in ${town}. See services, proof and availability, then request a quote.`,
+      proof: "Check the live source and review the snippet Google chooses after recrawling.",
+      priority: "Medium priority · Low effort",
+    },
+    viewport: {
+      verdict: "Mobile foundation",
+      level: "good",
+      action: "Keep the mobile viewport. Manually check text size, tap targets and the quote journey on a real phone.",
+      example: "No code change is recommended from this evidence alone.",
+      proof: "Complete one enquiry on a phone and record any friction.",
+      priority: "Verified strength · Manual check",
+    },
+    phone: {
+      verdict: "Conversion path",
+      level: "good",
+      action: "Keep tap-to-call visible. Confirm the number exactly matches the Google Business Profile and works on a phone.",
+      example: business.phone ? `Expected profile number: ${business.phone}` : "Confirm the preferred sales number with the owner.",
+      proof: "Tap the link, compare the dialled number with Google and record the result.",
+      priority: "High value · Five-minute check",
+    },
+    schema: {
+      verdict: "Machine-readable identity",
+      level: "verify",
+      action: "Validate the structured data and confirm its business name, URL, phone, service area and category match the real business.",
+      example: "Use Google's Rich Results Test and Schema.org validator; fix errors, not harmless warnings.",
+      proof: "Save the validation result and recheck after the next deployment.",
+      priority: "Medium priority · Specialist review",
+    },
+  };
+  const intro = `<section id="website" class="chapter"><div class="chapter-head"><span class="chapter-no">04</span><h2>Website diagnosis and prescribed changes</h2></div><div class="card"><p class="diagnosis"><b>The question is not simply whether an element exists.</b> We assess whether it clearly supports the target service, location, trust and enquiry journey. Every recommendation below includes a verification step.</p><p class="small">Checked ${esc(a.checkedAt)}. Static homepage HTML only. JavaScript content, speed, accessibility and conversions require separate verification.</p>`;
   if (a.status !== "checked")
-    return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "The website could not be checked. No negative findings were inferred."}</p></div>`;
-  return `${intro}<p class="small">Source: ${esc(a.url)}</p>${a.findings.map((f) => `<div class="fix"><b>${esc(f.label)}: ${f.status === "pass" ? "Observed" : "Review"}</b><p>${esc(f.evidence)}</p>${f.status === "review" ? `<p><b>Suggested next step</b>${esc(f.recommendation)}</p>` : ""}</div>`).join("")}<p class="small">Review suggestions before changing the website. These observations do not establish lost customers or guarantee ranking changes.</p></div>`;
+    return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "The website could not be checked. No negative findings were inferred."}</p></div></section>`;
+  return `${intro}<p class="small">Source: ${esc(a.url)}</p><div class="audit-grid">${a.findings
+    .map((f) => {
+      const g = guidance[f.id] ?? {
+        verdict: f.label,
+        level: f.status === "pass" ? "good" : "improve",
+        action: f.recommendation,
+        example: "Review this with the website owner before publishing a change.",
+        proof: "Re-run the same evidence check after approval.",
+        priority: f.status === "pass" ? "Observed strength" : "Needs review",
+      };
+      return `<article class="audit-card"><div class="verdict"><span class="pill ${f.status === "review" ? "improve" : g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(f.label)}</h3><p class="small"><b>Observed:</b> ${esc(f.evidence)}</p><div class="prescription"><b>Recommended change</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Suggested next step:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>Verify:</b> ${esc(g.proof)}</p></article>`;
+    })
+    .join("")}</div><p class="small">Recommendations require approval before publishing. They are evidence-led hypotheses, not guarantees of ranking or revenue.</p></div></section>`;
 }
 
 function richerEvidence(r: Report): string {
@@ -743,6 +813,23 @@ function richerEvidence(r: Report): string {
   return website + visibility;
 }
 
+function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
+  const grids = gridsOf(r).filter((g) => g.ranks.length);
+  const lead = grids[0];
+  const spots = lead?.ranks.length ?? 0;
+  const coverage = spots ? Math.round(((lead?.top3 ?? 0) / spots) * 100) : null;
+  const average = lead?.average == null ? "Not visible" : lead.average.toFixed(1);
+  const priorities = view.fixes.filter((f) => f.priority === "high").length || view.fixes.length;
+  const diagnosis = !lead
+    ? "This report establishes the public profile and website baseline. A comparable area scan is needed to diagnose geographic visibility."
+    : lead.top3 >= Math.ceil(spots * 0.75)
+      ? `Visibility is strong across the checked area for \"${lead.keyword}\". The next opportunity is to protect that lead and improve conversion evidence.`
+      : lead.top3 > 0
+        ? `The business is visible close to its strongest locations but loses prominence across most of the checked area for \"${lead.keyword}\". The priority is broader local relevance, proof and review momentum.`
+        : `The business did not reach the top three at any checked location for \"${lead.keyword}\". Customers are consistently being shown alternatives first.`;
+  return `<section id="summary" class="hero chapter"><div class="method">RepSuites local visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>top-three map positions</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>local top-three coverage</span></div><div class="metric"><strong>${average}</strong><span>average visible position</span></div><div class="metric"><strong>${priorities}</strong><span>priority actions</span></div></div><p class="small" style="margin:15px 0 0">Local visibility score: <b>${view.score}/100</b>. This score summarises the evidence; the observed positions above are the primary decision metrics.</p></section>`;
+}
+
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
   const b = r.business;
   const agency = agencyBrand(extra?.branding ?? undefined);
@@ -751,6 +838,9 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     month: "long",
     year: "numeric",
   });
+  const relevantRivals = r.rivals.filter((x) =>
+    relevantMapCompetitor({ title: x.name, category: x.kind }, r.maps.keyword),
+  );
   const rows = [
     {
       name: `${b.name} (you)`,
@@ -760,7 +850,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
       away: "",
       kind: "",
     },
-    ...r.rivals.map((x) => ({
+    ...relevantRivals.map((x) => ({
       name: x.name,
       rating: x.rating,
       reviews: x.reviews,
@@ -780,11 +870,14 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     .filter((g) => g.competitors?.length)
     .map(
       (g) =>
-        `<h2>Who shows up for &quot;${esc(g.keyword)}&quot;</h2><div class="card"><p class="small">Same ${g.ranks.length} search spots, checked ${esc(date)}. Average position includes only spots where the business appeared in the top 20.</p><table><tr><th>Business</th><th>Top 3 spots</th><th>Found</th><th>Average</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g.competitors!.map((c) => `<tr><td>${esc(c.name)}</td><td>${c.top3}</td><td>${c.found}</td><td>${c.average ?? "-"}</td></tr>`).join("")}</table></div>`,
+        `<h2>Who shows up for &quot;${esc(g.keyword)}&quot;</h2><div class="card"><p class="small">Same ${g.ranks.length} search spots, checked ${esc(date)}. Average position includes only spots where the business appeared in the top 20.</p><table><tr><th>Business</th><th>Top 3 spots</th><th>Found</th><th>Average</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g.competitors!
+          .filter((c) => relevantMapCompetitor({ title: c.name }, g.keyword))
+          .map((c) => `<tr><td>${esc(c.name)}</td><td>${c.top3}</td><td>${c.found}</td><td>${c.average ?? "-"}</td></tr>`)
+          .join("")}</table></div>`,
     )
     .join("");
   const g = r.reviewGap;
-  const gap = g
+  const gap = g && relevantMapCompetitor({ title: g.leader, category: relevantRivals.find((x) => x.name === g.leader)?.kind }, r.maps.keyword)
     ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
 <p class="muted" style="margin:6px 0 0">To catch them in a year, you need about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b>. The easy way: ask every customer, every day.</p></div>`
     : "";
@@ -831,11 +924,9 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
 <div class="top"><div class="brand"><img src="${esc(logo)}" alt=""> ${esc(agency.name)}</div>${readingToggle()}</div>
 ${tools}
 ${video}
-<p class="kicker">How you show up on Google</p>
-${video ? `<h2 class="biz">${esc(b.name)}</h2>` : `<h1 class="biz">${esc(b.name)}</h1>`}
-<p style="margin:10px 0 0">RepSuites helps local businesses get found and chosen on Google. We checked how <b>${esc(b.name)}</b> shows up when people nearby search for what you do. Here is what we found, what it could be worth, and how to fix it.</p>
-<p class="muted">${esc(b.address)}<br>Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
-
+${executiveBrief(r, view)}
+<p class="muted">${esc(b.address)} &middot; Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
+<div class="report-shell"><div class="report-main">
 ${headline}
 
 <div id="map"></div>
@@ -882,7 +973,8 @@ ${presentationClose(r, b, view)}
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#334155">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time.</p>
 ${agency.phone || agency.email ? `<p class="small"><b>${esc(agency.name)}</b>${agency.phone ? ` · ${esc(agency.phone)}` : ""}${agency.email ? ` · ${esc(agency.email)}` : ""}</p>` : ""}
-</main>${extra ? actionTracker(extra.token) : ""}${extra ? `<script>(function(){var copy=document.getElementById("copy-report"),present=document.getElementById("present-report");if(copy)copy.addEventListener("click",function(){navigator.clipboard.writeText(location.origin+${JSON.stringify(reportUrl)}).then(function(){copy.textContent="Link copied";setTimeout(function(){copy.textContent="Copy share link"},1600)}).catch(function(){prompt("Copy this report link",location.origin+${JSON.stringify(reportUrl)})});});if(present)present.addEventListener("click",function(){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});document.querySelector(".found")?.scrollIntoView({behavior:"smooth"});});})();</script>` : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
+</div><aside class="report-aside noprint" aria-label="Report chapters"><div class="card"><div class="method">Report chapters</div><a href="#summary">Executive diagnosis</a><a href="#map">Local visibility</a><a href="#website">Website diagnosis</a><a href="#worth">Commercial opportunity</a><a href="#action-plan">90-day action plan</a><a href="#score">Scoring method</a></div><div class="card"><b>Discover. Diagnose. Prioritise. Prove.</b><p class="small">Every recommendation is tied to dated evidence and a verification step.</p></div></aside></div>
+</main>${extra ? actionTracker(extra.token) : ""}${extra ? `<script>(function(){var copy=document.getElementById("copy-report"),present=document.getElementById("present-report");if(copy)copy.addEventListener("click",function(){navigator.clipboard.writeText(location.origin+${JSON.stringify(reportUrl)}).then(function(){copy.textContent="Link copied";setTimeout(function(){copy.textContent="Copy share link"},1600)}).catch(function(){prompt("Copy this report link",location.origin+${JSON.stringify(reportUrl)})});});if(present)present.addEventListener("click",function(){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});document.querySelector("#summary")?.scrollIntoView({behavior:"smooth"});});})();</script>` : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
 }
 
 export function reportNotFound(): string {
