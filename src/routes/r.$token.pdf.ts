@@ -277,6 +277,7 @@ async function reportPdf(report: Report, brand: Brand) {
         tileSize,
       );
     });
+    doc.restoreGraphicsState();
     const points = gridSpots(mapCenter, grid.size || 5, grid.spacingKm ?? 0.8);
     grid.ranks.forEach((rank, index) => {
       const point = mapPixel(points[index]!.lat, points[index]!.lng, map.zoom);
@@ -292,7 +293,6 @@ async function reportPdf(report: Report, brand: Brand) {
       doc.setFontSize(7);
       doc.text(rank == null ? "-" : String(rank), x, yy + 1.4, { align: "center" });
     });
-    doc.restoreGraphicsState();
     doc.setDrawColor("#cbd5e1");
     doc.rect(mapLeft, mapTop, mapSize, mapSize);
     doc.setFillColor("#ffffff");
