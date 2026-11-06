@@ -38,10 +38,23 @@ function reportPdf(report: Report, brand: Brand) {
   const irrelevantNames = report.rivals
     .filter((r) => !relevantMapCompetitor({ title: r.name, category: r.kind }, report.maps.keyword))
     .map((r) => r.name.toLocaleLowerCase());
-  const fixes = view.fixes.filter((fix) => {
-    const copy = `${fix.title} ${fix.why}`.toLocaleLowerCase();
-    return !irrelevantNames.some((name) => copy.includes(name));
-  });
+  const fixes = [
+    ...view.fixes.filter((fix) => {
+      const copy = `${fix.title} ${fix.why}`.toLocaleLowerCase();
+      return !irrelevantNames.some((name) => copy.includes(name));
+    }),
+    ...(report.websiteAudit?.findings ?? [])
+      .filter((finding) => finding.status !== "pass")
+      .map((finding) => ({
+        title: `Improve ${finding.label.toLocaleLowerCase()}`,
+        why: finding.recommendation,
+      })),
+  ].filter(
+    (fix, index, all) =>
+      all.findIndex(
+        (candidate) => candidate.title.toLocaleLowerCase() === fix.title.toLocaleLowerCase(),
+      ) === index,
+  );
   const W = 210;
   const M = 16;
   const CW = W - M * 2;
@@ -80,19 +93,19 @@ function reportPdf(report: Report, brand: Brand) {
     if (y + height > 279) newPage("LOCAL VISIBILITY GROWTH PLAN");
   };
   const heading = (text: string, size = 20) => {
-    const lines = doc.splitTextToSize(clean(text), CW);
-    ensure(lines.length * size * 0.4 + 7);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(size);
+    const lines = doc.splitTextToSize(clean(text), CW);
+    ensure(lines.length * size * 0.4 + 7);
     doc.setTextColor(primary);
     doc.text(lines, M, y);
     y += lines.length * size * 0.4 + 5;
   };
   const para = (text: string, bold = false, size = 10) => {
-    const lines = doc.splitTextToSize(clean(text), CW);
-    ensure(lines.length * 4.6 + 3);
     doc.setFont("helvetica", bold ? "bold" : "normal");
     doc.setFontSize(size);
+    const lines = doc.splitTextToSize(clean(text), CW);
+    ensure(lines.length * 4.6 + 3);
     doc.setTextColor("#26364a");
     doc.text(lines, M, y);
     y += lines.length * 4.6 + 3;

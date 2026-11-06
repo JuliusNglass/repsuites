@@ -553,11 +553,25 @@ function presentationClose(
   const irrelevantNames = r.rivals
     .filter((x) => !relevantMapCompetitor({ title: x.name, category: x.kind }, r.maps.keyword))
     .map((x) => x.name.toLocaleLowerCase());
-  const actions = view.fixes
-    .filter((fix) => {
+  const actions = [
+    ...view.fixes.filter((fix) => {
       const copy = `${fix.title} ${fix.why}`.toLocaleLowerCase();
       return !irrelevantNames.some((name) => copy.includes(name));
-    })
+    }),
+    ...(r.websiteAudit?.findings ?? [])
+      .filter((finding) => finding.status !== "pass")
+      .map((finding) => ({
+        title: `Improve ${finding.label.toLocaleLowerCase()}`,
+        why: finding.recommendation,
+        priority: "medium" as const,
+      })),
+  ]
+    .filter(
+      (fix, index, all) =>
+        all.findIndex(
+          (candidate) => candidate.title.toLocaleLowerCase() === fix.title.toLocaleLowerCase(),
+        ) === index,
+    )
     .slice(0, 6);
   const actionCards = actions
     .map((a, i) => {
