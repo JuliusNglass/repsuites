@@ -36,9 +36,10 @@ export const Route = createFileRoute("/r/$token")({
             min_sale_pence: number | null;
             sale_period: string | null;
             product: string | null;
+            created_by: string | null;
           }[]
         >(
-          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product&report_token=eq.${token}`,
+          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product,created_by&report_token=eq.${token}`,
           "",
         );
         const row = r.data?.[0];
@@ -55,6 +56,12 @@ export const Route = createFileRoute("/r/$token")({
         const q = new URL(request.url).searchParams;
         const flash = q.get("print") ? "print" : (q.get("google") ?? "");
         const competitorId = (q.get("competitor") ?? "").slice(0, 300);
+        const brand = row?.created_by
+          ? await serviceRead<any[]>(
+              `agency_report_branding?select=agency_name,primary_hex,secondary_hex,logo_url,phone,email&user_id=eq.${row.created_by}`,
+              "",
+            )
+          : null;
         // Each product has its own report at the same kind of link.
         const render = row?.product === "sparkops" ? renderSparkReport : renderReport;
         return new Response(
@@ -72,6 +79,7 @@ export const Route = createFileRoute("/r/$token")({
             minSalePence: row?.min_sale_pence ?? null,
             salePeriod: row?.sale_period ?? null,
             competitorId: /^[A-Za-z0-9_-]{10,300}$/.test(competitorId) ? competitorId : null,
+            branding: brand?.data?.[0] ?? null,
           }),
           { status: 200, headers: HTML },
         );
