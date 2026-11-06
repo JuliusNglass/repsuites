@@ -48,7 +48,7 @@ function scoreColour(n: number): string {
 export const STYLE = `
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6faf9;color:#0f172a;line-height:1.5}
 main{max-width:1180px;margin:0 auto;padding:28px 28px 64px}
-.report-shell{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px;align-items:start}.report-main{min-width:0}.report-aside{position:sticky;top:82px}.report-aside .card{padding:16px}.report-aside a{display:block;color:#334155;text-decoration:none;padding:8px 0;border-bottom:1px solid #e2e8f0;font-weight:650}.report-aside a:last-child{border-bottom:0}.method{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:#64748b;font-weight:800}.hero{padding:28px;border-radius:24px;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%);box-shadow:0 18px 55px rgba(15,29,58,.09);border:1px solid #dbe5ef;margin-bottom:24px}.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0 4px}.metric{background:#fff;border:1px solid #dbe5ef;border-radius:16px;padding:15px}.metric strong{display:block;font-size:1.55rem;line-height:1.1;color:var(--report-primary);font-variant-numeric:tabular-nums}.metric span{display:block;margin-top:6px;color:#526273;font-size:.88rem}.chapter{scroll-margin-top:90px}.chapter-head{display:flex;align-items:center;gap:10px;margin-top:42px}.chapter-no{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--report-primary);color:#fff;font-size:.8rem;font-weight:850}.audit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.audit-card{border:1px solid #dbe5ef;border-radius:16px;background:#fff;padding:17px;box-shadow:0 8px 24px rgba(15,29,58,.05)}.audit-card h3{margin:8px 0 6px;font-size:1.05rem}.audit-card p{margin:7px 0}.audit-card .verdict{display:flex;justify-content:space-between;gap:8px;align-items:center}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:.75rem;font-weight:800}.pill.good{background:#dcfce7;color:#166534}.pill.improve{background:#fef3c7;color:#92400e}.pill.verify{background:#e0f2fe;color:#075985}.prescription{margin-top:12px;padding:12px;border-radius:12px;background:#f8fafc;border-left:4px solid var(--report-accent)}.prescription b{display:block;margin-bottom:4px}.proof{font-size:.86rem;color:#526273}.diagnosis{font-size:1.1rem;line-height:1.55;color:#25364a}.stage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.stage .card{margin:0}.stage .when{color:#2563eb;font-weight:850;text-transform:uppercase;font-size:.78rem;letter-spacing:.08em}
+.report-shell{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px;align-items:start}.report-main{min-width:0}.report-aside{position:sticky;top:82px}.report-aside .card{padding:16px}.report-aside a{display:block;color:#334155;text-decoration:none;padding:8px 0;border-bottom:1px solid #e2e8f0;font-weight:650}.report-aside a:last-child{border-bottom:0}.method{font-size:.875rem;letter-spacing:.12em;text-transform:uppercase;color:#64748b;font-weight:800}.hero{padding:28px;border-radius:24px;background:linear-gradient(135deg,#fff 0%,#f8fbff 100%);box-shadow:0 18px 55px rgba(15,29,58,.09);border:1px solid #dbe5ef;margin-bottom:24px}.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0 4px}.metric{background:#fff;border:1px solid #dbe5ef;border-radius:16px;padding:15px}.metric strong{display:block;font-size:1.55rem;line-height:1.1;color:var(--report-primary);font-variant-numeric:tabular-nums}.metric span{display:block;margin-top:6px;color:#526273;font-size:.875rem}.chapter{scroll-margin-top:90px}.chapter-head{display:flex;align-items:center;gap:10px;margin-top:42px}.chapter-no{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--report-primary);color:#fff;font-size:.875rem;font-weight:850}.audit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.audit-card{border:1px solid #dbe5ef;border-radius:16px;background:#fff;padding:17px;box-shadow:0 8px 24px rgba(15,29,58,.05)}.audit-card h3{margin:8px 0 6px;font-size:1.05rem}.audit-card p{margin:7px 0}.audit-card .verdict{display:flex;justify-content:space-between;gap:8px;align-items:center}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:.875rem;font-weight:800}.pill.good{background:#dcfce7;color:#166534}.pill.improve{background:#fef3c7;color:#92400e}.pill.verify{background:#e0f2fe;color:#075985}.prescription{margin-top:12px;padding:12px;border-radius:12px;background:#f8fafc;border-left:4px solid var(--report-accent)}.prescription b{display:block;margin-bottom:4px}.proof{font-size:.875rem;color:#526273}.diagnosis{font-size:1.1rem;line-height:1.55;color:#25364a}.stage{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.stage .card{margin:0}.stage .when{color:#2563eb;font-weight:850;text-transform:uppercase;font-size:.875rem;letter-spacing:.08em}
 .brand{display:flex;align-items:center;gap:8px;font-weight:800;margin-bottom:20px}.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:20px}.top .brand{margin:0}.brand img{width:28px;height:28px;border-radius:6px}
 h1{font-size:1.55rem;line-height:1.2;margin:0 0 4px}.kicker{margin:0 0 4px;font-size:1rem;font-weight:700;color:#7a5200}.biz{font-size:2rem;font-weight:800;line-height:1.15;margin:0 0 6px;color:#0b1d3a;border-left:6px solid #f5b324;padding-left:12px}h2{font-size:1.3rem;line-height:1.3;margin:28px 0 10px}
 .muted{color:#475569;font-size:1rem}
@@ -556,7 +556,7 @@ function presentationClose(
     })
     .join("");
   return `<section class="presentation-close chapter" id="action-plan">
-<div class="chapter-head"><span class="chapter-no">07</span><h2>Your 90-day local visibility plan</h2></div>
+<div class="chapter-head"><span class="chapter-no">07</span><h2>Do this first: Your evidence-led action plan (90 days)</h2></div>
 <div class="stage">${actionCards || `<article class="card"><div class="when">This month</div><h3>Protect the baseline</h3><p>Keep reviews and profile evidence current, then repeat the same local search check.</p></article>`}</div><div class="card"><p class="small"><b>Approval rule:</b> review every recommendation before changing a website or Google profile. Record the baseline first, assign an owner and due date, then verify the result against comparable evidence.</p></div>
 <h2>Proof and next step</h2>
 <div class="card"><p><b>What this report proves:</b> how ${esc(b.name)} appeared in the checked Google searches and public profile evidence on ${date}.</p><p><b>What it does not prove:</b> private Google performance data, ownership status, conversion rate, or guaranteed future rankings.</p><p style="margin-bottom:0"><b>Recommended next step:</b> agree the first three fixes, record the baseline, and schedule the next comparable check.</p></div>
@@ -724,14 +724,15 @@ export function profileEvidence(r: Report): string {
 export function websiteEvidence(r: Report): string {
   const a = r.websiteAudit;
   if (!a) return "";
-  const topic = r.maps.keyword || r.business.category || "your main service";
-  const town = r.business.town || r.business.address.split(",").slice(-2, -1)[0]?.trim() || "your area";
+  const business = r.business ?? ({ name: "the business", category: "", town: "", address: "", phone: "" } as Report["business"]);
+  const topic = r.maps?.keyword || business.category || "your main service";
+  const town = business.town || business.address.split(",").slice(-2, -1)[0]?.trim() || "your area";
   const guidance: Record<string, { verdict: string; level: string; action: string; example: string; proof: string; priority: string }> = {
     title: {
       verdict: "Search relevance",
       level: "improve",
       action: `Make the primary service and location unmistakable, without repeating words or stuffing variants.`,
-      example: `${topic.replace(/\b\w/g, (c) => c.toUpperCase())} ${town} | ${r.business.name}`,
+      example: `${topic.replace(/\b\w/g, (c) => c.toUpperCase())} ${town} | ${business.name}`,
       proof: "Publish the title, request indexing, then compare search impressions after 28 days.",
       priority: "High priority · Low effort",
     },
@@ -747,7 +748,7 @@ export function websiteEvidence(r: Report): string {
       verdict: "Search result message",
       level: "improve",
       action: "Lead with the service and area, add the strongest reason to choose the business, and finish with a clear next step.",
-      example: `${r.business.name} provides ${topic} in ${town}. See services, proof and availability, then request a quote.`,
+      example: `${business.name} provides ${topic} in ${town}. See services, proof and availability, then request a quote.`,
       proof: "Check the live source and review the snippet Google chooses after recrawling.",
       priority: "Medium priority · Low effort",
     },
@@ -763,7 +764,7 @@ export function websiteEvidence(r: Report): string {
       verdict: "Conversion path",
       level: "good",
       action: "Keep tap-to-call visible. Confirm the number exactly matches the Google Business Profile and works on a phone.",
-      example: r.business.phone ? `Expected profile number: ${r.business.phone}` : "Confirm the preferred sales number with the owner.",
+      example: business.phone ? `Expected profile number: ${business.phone}` : "Confirm the preferred sales number with the owner.",
       proof: "Tap the link, compare the dialled number with Google and record the result.",
       priority: "High value · Five-minute check",
     },
@@ -789,7 +790,7 @@ export function websiteEvidence(r: Report): string {
         proof: "Re-run the same evidence check after approval.",
         priority: f.status === "pass" ? "Observed strength" : "Needs review",
       };
-      return `<article class="audit-card"><div class="verdict"><span class="pill ${g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(f.label)}</h3><p class="small"><b>Observed:</b> ${esc(f.evidence)}</p><div class="prescription"><b>Recommended change</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div><p class="proof"><b>Verify:</b> ${esc(g.proof)}</p></article>`;
+      return `<article class="audit-card"><div class="verdict"><span class="pill ${g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(f.label)}</h3><p class="small"><b>Observed:</b> ${esc(f.evidence)}</p><div class="prescription"><b>Recommended change</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Audit note:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>Verify:</b> ${esc(g.proof)}</p></article>`;
     })
     .join("")}</div><p class="small">Recommendations require approval before publishing. They are evidence-led hypotheses, not guarantees of ranking or revenue.</p></div></section>`;
 }
