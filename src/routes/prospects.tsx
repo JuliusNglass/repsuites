@@ -83,6 +83,7 @@ import {
 } from "../lib/sparkops";
 import { isUkAddress } from "../lib/prospect-owner";
 import { fieldClass } from "../components/ui/field";
+import { prospectSearchTopic } from "../lib/prospect-search-topic";
 
 export const Route = createFileRoute("/prospects")({
   head: () => ({
@@ -102,16 +103,6 @@ type Patch = {
   minSalePence?: number | null;
   salePeriod?: SalePeriod | null;
 };
-// The niche part of a search like "auto detailing in Newport" ("auto
-// detailing"), unless the search was for this business by name.
-function nicheTopic(q: string, name: string): string {
-  if (q.toLowerCase().includes(name.toLowerCase().slice(0, 6))) return "";
-  return q
-    .replace(/\s+(in|near|around|at)\s+.*$/i, "")
-    .trim()
-    .slice(0, 80);
-}
-
 type Hit = Extract<Awaited<ReturnType<typeof searchProspects>>, { ok: true }>["hits"][number];
 
 const STAGE_IDS = ["new", "sent", "opened", "replied", "booked", "won", "lost"] as const;
@@ -192,7 +183,7 @@ function Prospects() {
 
   // Builds one report (plus any extra search phrases). Returns true if it worked.
   async function buildOne(
-    h: { placeId: string; name: string },
+    h: { placeId: string; name: string; address: string },
     quiet = false,
     force = false,
   ): Promise<boolean> {
@@ -201,15 +192,16 @@ function Prospects() {
     try {
       // The search that found these results, not whatever is in the box now.
       const query = lastQ || q;
+      const searchedTopic = prospectSearchTopic(query, h.name, h.address);
       const r = await build({
         data: {
           placeId: h.placeId,
           ...(force ? { force: true } : {}),
           product,
-          ...(words.trim() ? { keyword: words.trim() } : {}),
+          ...(words.trim() ? { keyword: words.trim() } : searchedTopic ? { keyword: searchedTopic } : {}),
           ...(area ? { area } : {}),
           niche: !query.toLowerCase().includes(h.name.toLowerCase().slice(0, 6)),
-          ...(nicheTopic(query, h.name) ? { topic: nicheTopic(query, h.name) } : {}),
+          ...(searchedTopic ? { topic: searchedTopic } : {}),
         },
       }).catch(() => ({ ok: false as const, error: FAILED }));
       if (r.ok) {
