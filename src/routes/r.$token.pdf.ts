@@ -385,13 +385,6 @@ function reportPdf(report: Report, brand: Brand) {
     doc.text(doc.splitTextToSize(`Verify: ${verify}`, 56).slice(0, 2), M + 120, y + 22);
     y += 36;
   });
-  y += 2;
-  heading("The proof cycle", 16);
-  para(
-    "Record baseline > approve change > assign owner and date > publish > repeat comparable evidence > retain, revise or reverse.",
-    true,
-  );
-
   // 6. Commercial case and handoff.
   newPage("05 / OPPORTUNITY AND NEXT PROOF");
   heading("Turn visibility into a measurable growth case", 21);
