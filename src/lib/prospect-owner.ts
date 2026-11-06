@@ -94,7 +94,7 @@ export function postcodeMatch(a: string, b: string): PostcodeMatch {
 // True for a UK Google address.
 export function isUkAddress(address: string): boolean {
   const last = (address ?? "").split(",").pop()?.trim().toLowerCase() ?? "";
-  return ["uk", "united kingdom", "gb"].includes(last) || (!last && !!ukPostcode(address));
+  return ["uk", "united kingdom", "gb"].includes(last) || !!ukPostcode(address);
 }
 
 const NAME_NOISE =
