@@ -249,6 +249,16 @@ describe("all keyword grids in PDF", () => {
       found: 25,
       average: 1,
       spacing: "1 km",
+      competitors: [
+        {
+          placeId: "competitor_place_1",
+          name: "Rival Cafe",
+          found: 25,
+          top3: 20,
+          average: 2,
+          ranks: Array(25).fill(2),
+        },
+      ],
     };
     const html = renderReport({
       ...report,
@@ -261,6 +271,8 @@ describe("all keyword grids in PDF", () => {
     expect(html).toContain('class="print-grids"');
     expect(html).toContain("<h3>cafe newport</h3>");
     expect(html).toContain("<h3>cafe near me</h3>");
+    expect(html).toContain("Rival Cafe");
+    expect(html).toContain('class="grid-pair"');
     expect(html).toContain(".screen-grids{display:none!important}");
     expect(html).toContain(".print-grids{display:block}");
   });
