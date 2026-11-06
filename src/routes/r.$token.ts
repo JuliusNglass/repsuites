@@ -36,9 +36,10 @@ export const Route = createFileRoute("/r/$token")({
             min_sale_pence: number | null;
             sale_period: string | null;
             product: string | null;
+            tenant_id: string;
           }[]
         >(
-          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product&report_token=eq.${token}`,
+          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product,tenant_id&report_token=eq.${token}`,
           "",
         );
         const row = r.data?.[0];
@@ -53,6 +54,12 @@ export const Route = createFileRoute("/r/$token")({
             body: { p_token: token },
           }).catch(() => null);
         const q = new URL(request.url).searchParams;
+        const branding = row?.tenant_id
+          ? await serviceRead<{ primary_hex: string | null; secondary_hex: string | null; logo_url: string | null }[]>(
+              `business_branding?select=primary_hex,secondary_hex,logo_url&tenant_id=eq.${row.tenant_id}`,
+              "",
+            ).then((x) => x.data?.[0] ?? null).catch(() => null)
+          : null;
         const flash = q.get("print") ? "print" : (q.get("google") ?? "");
         // Each product has its own report at the same kind of link.
         const render = row?.product === "sparkops" ? renderSparkReport : renderReport;
@@ -70,6 +77,7 @@ export const Route = createFileRoute("/r/$token")({
             ogImage: row?.og_image_url ?? null,
             minSalePence: row?.min_sale_pence ?? null,
             salePeriod: row?.sale_period ?? null,
+            branding,
           }),
           { status: 200, headers: HTML },
         );
@@ -77,3 +85,4 @@ export const Route = createFileRoute("/r/$token")({
     },
   },
 });
+
