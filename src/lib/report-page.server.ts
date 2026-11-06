@@ -37,6 +37,13 @@ function bookingLink(name: string): string {
   return `mailto:julius@accelur8.com?subject=${subject}`;
 }
 
+function agencyBrand() {
+  const name = (process.env["REPSUITES_REPORT_BRAND_NAME"] ?? "RepSuites").trim().slice(0, 80);
+  const phone = (process.env["REPSUITES_REPORT_BRAND_PHONE"] ?? "").trim().slice(0, 40);
+  const email = (process.env["REPSUITES_REPORT_BRAND_EMAIL"] ?? "").trim().slice(0, 200);
+  return { name: name || "RepSuites", phone, email };
+}
+
 function scoreColour(n: number): string {
   return n >= 75 ? "#047857" : n >= 50 ? "#b45309" : "#b91c1c";
 }
@@ -100,7 +107,10 @@ tr.you td{font-weight:700;background:#fffbeb}
 }
 
 .print-grids{display:none}
-@media print{.screen-grids{display:none!important}.print-grids{display:block}.print-grids .rk{print-color-adjust:exact;-webkit-print-color-adjust:exact}.print-grids .card{break-inside:avoid}}
+.grid-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8mm}.grid-pair h4{text-align:center;margin:0 0 3mm}
+.report-tools{position:sticky;top:8px;z-index:999;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 18px;padding:8px;background:rgba(246,250,249,.96);border:1px solid #cbd5e1;border-radius:14px;backdrop-filter:blur(8px)}.report-tools button,.report-tools a{min-height:40px;border:1px solid #64748b;border-radius:10px;background:#fff;color:#0f172a;padding:8px 12px;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}.report-tools .primary{background:var(--report-primary);color:#fff;border-color:var(--report-primary)}
+@media(max-width:620px){.grid-pair{grid-template-columns:1fr}}
+@media print{.screen-grids{display:none!important}.print-grids{display:block}.print-grids .rk{print-color-adjust:exact;-webkit-print-color-adjust:exact}.print-grids .card{break-inside:avoid}.grid-pair>div>div[role=img]{max-width:68mm!important;gap:1.5mm!important}}
 
 /* Polish: crisper text, balanced headings, steady numbers, softer depth, tactile buttons, 40px targets */
 body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
@@ -209,6 +219,11 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const grids =
     r.grids && r.grids.length ? r.grids : r.grid ? [{ keyword: r.maps.keyword, ...r.grid }] : [];
   if (!grids.length) return "";
+  const competitors = grids
+    .flatMap((g) => g.competitors ?? [])
+    .filter((c, i, all) => !!c.ranks && all.findIndex((x) => x.placeId === c.placeId) === i);
+  const selectedCompetitor =
+    competitors.find((c) => c.placeId === extra?.competitorId) ?? competitors[0] ?? null;
   const center = grids[0]!.center ?? extra?.center ?? null;
   const miles = usesMiles(center?.lat, center?.lng);
   const spacingKm = grids[0]!.spacingKm ?? (miles ? 0.8 : 1);
@@ -258,11 +273,21 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
         return `<div class="rk rk-${d.b}" style="aspect-ratio:1;font-size:1rem">${d.t}</div>`;
       })
       .join("")}</div>`;
-  const printable = `<div class="print-grids"><h2>Ranking grids for every search phrase</h2><p class="small">Checked ${esc(r.createdAt)}. Each grid is read from north-west to south-east. The centre spot is the business. Numbers are observed positions in the top 20; a dash means not found and a question mark means not checked.</p>${grids.map((g) => `<section class="card"><h3>${esc(g.keyword)}</h3><p class="small">${g.size} by ${g.size} search spots, ${esc(g.spacing ?? "not recorded")} apart.</p>${dots(g)}<p>${summaryOf(g)}</p></section>`).join("")}${rankLegend()}</div>`;
+  const printable = `<div class="print-grids"><h2>Ranking grids for every search phrase</h2><p class="small">Checked ${esc(r.createdAt)}. Each grid is read from north-west to south-east. The centre spot is the business. Numbers are observed positions in the top 20; a dash means not found and a question mark means not checked.</p>${grids
+    .map((g) => {
+      const rival = selectedCompetitor
+        ? g.competitors?.find((c) => c.placeId === selectedCompetitor.placeId && c.ranks)
+        : null;
+      return `<section class="card"><h3>${esc(g.keyword)}</h3><p class="small">${g.size} by ${g.size} search spots, ${esc(g.spacing ?? "not recorded")} apart.</p><div class="grid-pair"><div><h4>${esc(b.name)} (you)</h4>${dots(g)}</div>${rival ? `<div><h4>${esc(rival.name)}</h4>${dots({ ...g, ranks: rival.ranks! })}</div>` : ""}</div><p>${summaryOf(g)}</p></section>`;
+    })
+    .join("")}${rankLegend()}</div>`;
   const tabs =
     grids.length > 1
       ? `<div class="kw noprint" role="group" aria-label="Search phrase">${grids.map((g, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0 ? "true" : "false"}"${i === 0 ? ' class="on"' : ""}>${esc(g.keyword)}</button>`).join("")}</div>`
       : "";
+  const competitorTabs = competitors.length
+    ? `<div class="cmp noprint"><p class="small" style="margin:12px 0 6px"><b>Compare with</b> - changing this uses the saved scan and does not run a paid check.</p><div class="kw" role="group" aria-label="Business shown on the map"><button type="button" data-cmp="" aria-pressed="true" class="on">${esc(b.name)} (you)</button>${competitors.map((c) => `<button type="button" data-cmp="${esc(c.placeId)}" aria-pressed="false">${esc(c.name)}</button>`).join("")}</div></div>`
+    : "";
   const furthest = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
   const intro = `<p style="margin:0 0 8px">We searched Google Maps from 25 places around you, up to ${esc(furthest)} away. This is what a customer standing there would see.</p>
 <ul style="margin:0 0 12px;padding-left:1.2em"><li>Each pin shows where you came in the list from that place.</li><li>The house is you.</li><li>Pinch, or use + and −, to zoom in.</li></ul>`;
@@ -280,6 +305,15 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
       k: g.keyword,
       pins: g.ranks.map((v) => rankPin(v)),
       s: summaryOf(g),
+      competitors: (g.competitors ?? [])
+        .filter((c) => c.ranks?.length === g.ranks.length)
+        .map((c) => ({
+          id: c.placeId,
+          name: c.name,
+          pins: c.ranks!.map((v) => rankPin(v)),
+          top3: c.top3,
+          found: c.found,
+        })),
     })),
     rivals: r.rivals
       .filter((x) => x.lat != null && x.lng != null)
@@ -289,7 +323,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const rivalKey = data.rivals.length
     ? `<p class="small" style="margin:8px 0 0">${data.rivals.map((x) => `<b class="rkey">${x.l}</b> ${esc(x.n)}`).join(" &nbsp; ")}</p>`
     : "";
-  return `${printable}<div class="screen-grids"><h2>Where you show up across your area</h2><div class="card">${intro}${tabs}
+  return `${printable}<div class="screen-grids"><h2>Where you show up across your area</h2><div class="card">${intro}${tabs}${competitorTabs}
 <div id="rmap" class="map" role="region" aria-label="Map of where you show up. The words under the map say the same thing."><div id="rmap-fallback" style="padding:16px">${dots(grids[0]!)}</div></div>
 ${legend}${rivalKey}<p id="rmap-sum" aria-live="polite" style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -298,11 +332,11 @@ ${legend}${rivalKey}<p id="rmap-sum" aria-live="polite" style="margin:14px 0 0">
 var m=L.map(el,{scrollWheelZoom:false,zoomSnap:0.5});L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap"}).addTo(m);
 m.fitBounds(L.latLngBounds(D.spots),{padding:[24,24]});el.addEventListener("wheel",function(e){if(e.ctrlKey){e.preventDefault();m.setZoom(m.getZoom()-e.deltaY*0.02);}},{passive:false});var layer=L.layerGroup().addTo(m);
 var house='<svg viewBox="0 0 24 24" width="18" height="18" fill="#fff"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>';
-function draw(i){layer.clearLayers();var g=D.grids[i];D.spots.forEach(function(p,j){var d=g.pins[j];var html=j===12?'<div class="pin home">'+house+'<span class="rank rk rk-'+d.b+'">'+d.t+'</span></div>':'<div class="pin rk rk-'+d.b+'">'+d.t+'</div>';
-L.marker(p,{icon:L.divIcon({className:"",html:html,iconSize:[0,0]}),zIndexOffset:j===12?1000:0,keyboard:false}).bindTooltip(j===12?D.name+": "+d.w:"From here: "+d.w).addTo(layer);});
+var keyword=0,target="";function draw(){layer.clearLayers();var g=D.grids[keyword],c=target&&g.competitors.find(function(x){return x.id===target}),pins=c?c.pins:g.pins,label=c?c.name:D.name;D.spots.forEach(function(p,j){var d=pins[j];var html=j===12?'<div class="pin home">'+house+'<span class="rank rk rk-'+d.b+'">'+d.t+'</span></div>':'<div class="pin rk rk-'+d.b+'">'+d.t+'</div>';
+L.marker(p,{icon:L.divIcon({className:"",html:html,iconSize:[0,0]}),zIndexOffset:j===12?1000:0,keyboard:false}).bindTooltip(j===12?label+": "+d.w:"From here: "+d.w).addTo(layer);});
 D.rivals.forEach(function(x){L.marker(x.at,{icon:L.divIcon({className:"",html:'<div class="rpin"><span>'+x.l+'</span></div>',iconSize:[0,0]}),keyboard:false}).bindTooltip(x.n).addTo(layer);});
-document.getElementById("rmap-sum").innerHTML=g.s;}
-draw(0);document.querySelectorAll(".kw button").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".kw button").forEach(function(x){x.classList.remove("on");x.setAttribute("aria-pressed","false");});b.classList.add("on");b.setAttribute("aria-pressed","true");draw(+b.getAttribute("data-i"));});});})();</script>`;
+document.getElementById("rmap-sum").innerHTML=c?'<b>'+c.name+'</b> is in the top 3 in <b>'+c.top3+' of '+pins.length+' spots</b> and appears in the top 20 in '+c.found+'. This is the same saved search used for your grid.':g.s;}
+draw();document.querySelectorAll(".kw button[data-i]").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".kw button[data-i]").forEach(function(x){x.classList.remove("on");x.setAttribute("aria-pressed","false");});b.classList.add("on");b.setAttribute("aria-pressed","true");keyword=+b.getAttribute("data-i");draw();});});document.querySelectorAll(".cmp button").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".cmp button").forEach(function(x){x.classList.remove("on");x.setAttribute("aria-pressed","false");});b.classList.add("on");b.setAttribute("aria-pressed","true");target=b.getAttribute("data-cmp")||"";draw();});});})();</script>`;
 }
 
 // The Maps part of the score uses the whole area (all search phrases), not
@@ -505,11 +539,28 @@ ${growth}
 <p class="small noprint" style="text-align:center;margin:8px 0 0">No card needed. Takes 2 minutes.</p></div>${script}`;
 }
 
-function presentationClose(r: Report, b: Report["business"]): string {
+function presentationClose(
+  r: Report,
+  b: Report["business"],
+  view: ReturnType<typeof scoreView>,
+): string {
   const date = esc(r.createdAt);
+  const actions = view.fixes.slice(0, 6);
+  const actionRows = actions
+    .map((a, i) => {
+      const timing = i < 2 ? "This week" : i < 4 ? "This month" : "Every month";
+      const effort = /reviews?|posts?|reply/i.test(a.title) ? "Ongoing" : "Low to medium";
+      const proof = /review/i.test(a.title)
+        ? "Review count, recency and response evidence"
+        : /maps|google/i.test(a.title)
+          ? "A repeat scan at the same search spots"
+          : "A repeat evidence check";
+      return `<tr><th>${timing}</th><td><b>${esc(a.title)}</b><br><span class="small">Why: ${esc(a.why)}<br>Effort: ${effort}. Confidence: evidence-led recommendation, not a guarantee.<br>Verify with: ${proof}.</span></td></tr>`;
+    })
+    .join("");
   return `<section class="presentation-close">
-<h2>90-day improvement plan</h2>
-<div class="card"><table><tr><th>Days 1 to 30</th><td>Fix the highest-impact profile and website gaps, then establish a review request routine.</td></tr><tr><th>Days 31 to 60</th><td>Improve the priority search phrases and track the same local search spots again.</td></tr><tr><th>Days 61 to 90</th><td>Compare the evidence, report the movement, and choose the next approved actions.</td></tr></table></div>
+<h2>Your evidence-led action plan</h2>
+<div class="card"><table>${actionRows || `<tr><th>This month</th><td>Keep reviews and profile evidence current, then repeat the same local search check.</td></tr>`}</table><p class="small"><b>Approval rule:</b> review every recommendation before changing a website or Google profile. Record the baseline first, then verify the result against comparable evidence.</p></div>
 <h2>Proof and next step</h2>
 <div class="card"><p><b>What this report proves:</b> how ${esc(b.name)} appeared in the checked Google searches and public profile evidence on ${date}.</p><p><b>What it does not prove:</b> private Google performance data, ownership status, conversion rate, or guaranteed future rankings.</p><p style="margin-bottom:0"><b>Recommended next step:</b> agree the first three fixes, record the baseline, and schedule the next comparable check.</p></div>
 </section>`;
@@ -525,7 +576,12 @@ export interface RenderExtra {
   ogImage?: string | null;
   minSalePence?: number | null;
   salePeriod?: string | null;
-  branding?: { primary_hex: string | null; secondary_hex: string | null; logo_url: string | null } | null;
+  competitorId?: string | null;
+  branding?: {
+    primary_hex: string | null;
+    secondary_hex: string | null;
+    logo_url: string | null;
+  } | null;
 }
 
 // Julius's WhatsApp, used when REPSUITES_SALES_WHATSAPP is not set.
@@ -622,6 +678,7 @@ export function previewText(r: Report): { title: string; description: string } {
 
 export function profileEvidence(r: Report): string {
   const b = r.business;
+  const a = r.profileAudit;
   const rows = [
     ["Website", b.website || "Not supplied by Google"],
     ["Phone", b.phone || "Not supplied by Google"],
@@ -631,7 +688,37 @@ export function profileEvidence(r: Report): string {
     ],
     ["Category", b.category || "Not supplied by Google"],
   ];
-  return `<h2>Google profile audit evidence</h2><div class="card"><p class="small">Source: Google Places, recorded ${esc(r.createdAt)}. Public profile basics only. Missing information needs owner review, especially for service-area businesses.</p><table><tr><th>Check</th><th>Observation</th></tr>${rows.map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><p class="small">Profile ownership, suspension status, private performance, posts and service completeness were not checked here. Review counts and ratings describe the profile, not enquiry or conversion performance.</p></div>`;
+  const detailed = a
+    ? [
+        [
+          "Business description",
+          a.description
+            ? `${a.description.length} characters observed`
+            : "No public description observed",
+        ],
+        [
+          "Categories",
+          a.categories
+            ? `${a.categories} relevant categor${a.categories === 1 ? "y" : "ies"} observed`
+            : "No specific category observed",
+        ],
+        [
+          "Photos",
+          a.photos
+            ? `${a.photos} public photo references returned by Google`
+            : "No photo references returned by Google",
+        ],
+        [
+          "Review recency",
+          a.newestReviewDays === null
+            ? "Not available"
+            : a.newestReviewDays === 0
+              ? "A review was published today"
+              : `Newest returned review was ${a.newestReviewDays} day${a.newestReviewDays === 1 ? "" : "s"} old`,
+        ],
+      ]
+    : [];
+  return `<h2>Google profile audit evidence</h2><div class="card"><p class="small">Source: Google Places, recorded ${esc(r.createdAt)}. Public profile evidence only. Missing information needs owner review, especially for service-area businesses.</p><table><tr><th>Check</th><th>Observation</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>Not established by this public check</h3><p class="small">Ownership and verification, suspension status, private performance, services, review reply rate and post activity. Connect the profile or confirm these with the owner before recommending a change.</p><p class="small">Review counts and ratings describe the profile, not enquiry or conversion performance.</p></div>`;
 }
 
 export function websiteEvidence(r: Report): string {
@@ -645,6 +732,7 @@ export function websiteEvidence(r: Report): string {
 
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
   const b = r.business;
+  const agency = agencyBrand();
   const date = new Date(r.createdAt).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
@@ -699,19 +787,36 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     extra?.ogImage && /^https:\/\//.test(extra.ogImage)
       ? extra.ogImage
       : "https://repsuites.com/og-image.png?v=2";
-  const primary = extra?.branding?.primary_hex && /^#[0-9a-f]{6}$/i.test(extra.branding.primary_hex)
-    ? extra.branding.primary_hex
-    : "#0b1d3a";
-  const secondary = extra?.branding?.secondary_hex && /^#[0-9a-f]{6}$/i.test(extra.branding.secondary_hex)
-    ? extra.branding.secondary_hex
-    : "#f5b324";
-  const logo = extra?.branding?.logo_url && /^https:\/\//i.test(extra.branding.logo_url)
-    ? extra.branding.logo_url
-    : "/logo-mark.png";
+  const envPrimary = (process.env["REPSUITES_REPORT_PRIMARY"] ?? "").trim();
+  const envSecondary = (process.env["REPSUITES_REPORT_SECONDARY"] ?? "").trim();
+  const envLogo = (process.env["REPSUITES_REPORT_LOGO"] ?? "").trim();
+  const primary =
+    extra?.branding?.primary_hex && /^#[0-9a-f]{6}$/i.test(extra.branding.primary_hex)
+      ? extra.branding.primary_hex
+      : /^#[0-9a-f]{6}$/i.test(envPrimary)
+        ? envPrimary
+        : "#0b1d3a";
+  const secondary =
+    extra?.branding?.secondary_hex && /^#[0-9a-f]{6}$/i.test(extra.branding.secondary_hex)
+      ? extra.branding.secondary_hex
+      : /^#[0-9a-f]{6}$/i.test(envSecondary)
+        ? envSecondary
+        : "#f5b324";
+  const logo =
+    extra?.branding?.logo_url && /^https:\/\//i.test(extra.branding.logo_url)
+      ? extra.branding.logo_url
+      : /^https:\/\//i.test(envLogo)
+        ? envLogo
+        : "/logo-mark.png";
+  const reportUrl = extra ? `/r/${encodeURIComponent(extra.token)}` : "";
+  const tools = extra
+    ? `<nav class="report-tools noprint" aria-label="Report actions"><button type="button" id="copy-report">Copy share link</button><a href="${reportUrl}?print=1" class="primary">Save as PDF</a><button type="button" id="present-report">Presentation mode</button></nav>`
+    : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}">${READING_HEAD}<style>:root{--report-primary:${primary};--report-accent:${secondary}}${STYLE}${video ? VIDEO_STYLE : ""}.biz{color:var(--report-primary);border-left-color:var(--report-accent)}.cta{background:var(--report-accent)}.found{border-color:var(--report-accent)}</style></head><body><main>
-<div class="top"><div class="brand"><img src="${esc(logo)}" alt=""> RepSuites</div>${readingToggle()}</div>
+<div class="top"><div class="brand"><img src="${esc(logo)}" alt=""> ${esc(agency.name)}</div>${readingToggle()}</div>
+${tools}
 ${video}
 <p class="kicker">How you show up on Google</p>
 ${video ? `<h2 class="biz">${esc(b.name)}</h2>` : `<h1 class="biz">${esc(b.name)}</h1>`}
@@ -749,7 +854,7 @@ ${view.fixes.length ? `<ol style="list-style:none;margin:0;padding:0">${view.fix
 <div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
 <p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
 <p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}" style="color:#334155">Or book a free 15-minute call</a></p></div>
-${presentationClose(r, b)}
+${presentationClose(r, b, view)}
 <h2 id="score">How we worked out your score</h2>
 <div class="card score"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
@@ -761,7 +866,8 @@ ${presentationClose(r, b)}
     .join("")}</div>
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#334155">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time.</p>
-</main>${extra ? actionTracker(extra.token) : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
+${agency.phone || agency.email ? `<p class="small"><b>${esc(agency.name)}</b>${agency.phone ? ` · ${esc(agency.phone)}` : ""}${agency.email ? ` · ${esc(agency.email)}` : ""}</p>` : ""}
+</main>${extra ? actionTracker(extra.token) : ""}${extra ? `<script>(function(){var copy=document.getElementById("copy-report"),present=document.getElementById("present-report");if(copy)copy.addEventListener("click",function(){navigator.clipboard.writeText(location.origin+${JSON.stringify(reportUrl)}).then(function(){copy.textContent="Link copied";setTimeout(function(){copy.textContent="Copy share link"},1600)}).catch(function(){prompt("Copy this report link",location.origin+${JSON.stringify(reportUrl)})});});if(present)present.addEventListener("click",function(){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});document.querySelector(".found")?.scrollIntoView({behavior:"smooth"});});})();</script>` : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
 }
 
 export function reportNotFound(): string {
