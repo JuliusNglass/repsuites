@@ -14,8 +14,25 @@ export interface WebsiteAudit {
   findings: WebsiteFinding[];
 }
 
+function decodeHtml(value: string): string {
+  return value
+    .replace(/&#x([0-9a-f]+);/gi, (_m, hex: string) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_m, decimal: string) => String.fromCodePoint(parseInt(decimal, 10)))
+    .replace(/&(amp|lt|gt|quot|apos|nbsp);/gi, (entity) => {
+      const decoded: Record<string, string> = {
+        "&amp;": "&",
+        "&lt;": "<",
+        "&gt;": ">",
+        "&quot;": '"',
+        "&apos;": "'",
+        "&nbsp;": " ",
+      };
+      return decoded[entity.toLowerCase()] ?? entity;
+    });
+}
+
 const text = (s: string) =>
-  s
+  decodeHtml(s)
     .replace(/<[^>]*>/g, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -39,9 +56,11 @@ export function auditHomepage(html: string, url: string, checkedAt: string): Web
     .filter(Boolean);
   const metas = [...visible.matchAll(/<meta\b[^>]*>/gi)].map((m) => m[0]);
   const meta = (name: string) =>
-    attribute(
-      metas.find((t) => attribute(t, "name").toLowerCase() === name) ?? "",
-      "content",
+    decodeHtml(
+      attribute(
+        metas.find((t) => attribute(t, "name").toLowerCase() === name) ?? "",
+        "content",
+      ),
     ).trim();
   const phone = [...visible.matchAll(/<a\b[^>]*>/gi)].some((m) =>
     /^tel:\+?[\d ()-]+$/i.test(attribute(m[0], "href")),
