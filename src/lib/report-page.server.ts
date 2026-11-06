@@ -551,7 +551,7 @@ function presentationClose(
     })
     .join("");
   return `<section class="presentation-close">
-<h2>Do this first — Your evidence-led action plan</h2>
+<h2>Do this first: Your evidence-led action plan</h2>
 <div class="card"><table>${actionRows || `<tr><th>This month</th><td>Keep reviews and profile evidence current, then repeat the same local search check.</td></tr>`}</table><p class="small"><b>Approval rule:</b> review every recommendation before changing a website or Google profile. Record the baseline first, then verify the result against comparable evidence.</p></div>
 <h2>Proof and next step</h2>
 <div class="card"><p><b>What this report proves:</b> how ${esc(b.name)} appeared in the checked Google searches and public profile evidence on ${date}.</p><p><b>What it does not prove:</b> private Google performance data, ownership status, conversion rate, or guaranteed future rankings.</p><p style="margin-bottom:0"><b>Recommended next step:</b> agree the first three fixes, record the baseline, and schedule the next comparable check.</p></div>
