@@ -221,6 +221,13 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   if (!grids.length) return "";
   const competitors = grids
     .flatMap((g) => g.competitors ?? [])
+    .filter((c) =>
+      relevantMapCompetitor(
+        { title: c.name },
+        grids.find((g) => g.competitors?.some((x) => x.placeId === c.placeId))?.keyword ??
+          r.maps.keyword,
+      ),
+    )
     .filter((c, i, all) => !!c.ranks && all.findIndex((x) => x.placeId === c.placeId) === i);
   const selectedCompetitor =
     competitors.find((c) => c.placeId === extra?.competitorId) ?? competitors[0] ?? null;
@@ -316,6 +323,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
         })),
     })),
     rivals: r.rivals
+      .filter((x) => relevantMapCompetitor({ title: x.name, category: x.kind }, r.maps.keyword))
       .filter((x) => x.lat != null && x.lng != null)
       .map((x, i) => ({ l: "ABC"[i], n: x.name, at: [x.lat, x.lng] })),
   };
@@ -542,7 +550,15 @@ function presentationClose(
   view: ReturnType<typeof scoreView>,
 ): string {
   const date = esc(r.createdAt);
-  const actions = view.fixes.slice(0, 6);
+  const irrelevantNames = r.rivals
+    .filter((x) => !relevantMapCompetitor({ title: x.name, category: x.kind }, r.maps.keyword))
+    .map((x) => x.name.toLocaleLowerCase());
+  const actions = view.fixes
+    .filter((fix) => {
+      const copy = `${fix.title} ${fix.why}`.toLocaleLowerCase();
+      return !irrelevantNames.some((name) => copy.includes(name));
+    })
+    .slice(0, 6);
   const actionCards = actions
     .map((a, i) => {
       const timing = i < 2 ? "Days 1-14" : i < 4 ? "Days 15-45" : "Days 46-90";
@@ -724,10 +740,28 @@ export function profileEvidence(r: Report): string {
 export function websiteEvidence(r: Report): string {
   const a = r.websiteAudit;
   if (!a) return "";
-  const business = r.business ?? ({ name: "the business", category: "", town: "", address: "", phone: "" } as Report["business"]);
+  const business =
+    r.business ??
+    ({
+      name: "the business",
+      category: "",
+      town: "",
+      address: "",
+      phone: "",
+    } as Report["business"]);
   const topic = r.maps?.keyword || business.category || "your main service";
   const town = business.town || business.address.split(",").slice(-2, -1)[0]?.trim() || "your area";
-  const guidance: Record<string, { verdict: string; level: string; action: string; example: string; proof: string; priority: string }> = {
+  const guidance: Record<
+    string,
+    {
+      verdict: string;
+      level: string;
+      action: string;
+      example: string;
+      proof: string;
+      priority: string;
+    }
+  > = {
     title: {
       verdict: "Search relevance",
       level: "improve",
@@ -739,7 +773,8 @@ export function websiteEvidence(r: Report): string {
     h1: {
       verdict: "On-page clarity",
       level: "improve",
-      action: "Use one visible main heading that tells both customers and search engines exactly what the page offers and where.",
+      action:
+        "Use one visible main heading that tells both customers and search engines exactly what the page offers and where.",
       example: `${topic.replace(/\b\w/g, (c) => c.toUpperCase())} in ${town}`,
       proof: "Confirm one rendered H1 on mobile and desktop, then re-run the website check.",
       priority: "High priority · Low effort",
@@ -747,7 +782,8 @@ export function websiteEvidence(r: Report): string {
     description: {
       verdict: "Search result message",
       level: "improve",
-      action: "Lead with the service and area, add the strongest reason to choose the business, and finish with a clear next step.",
+      action:
+        "Lead with the service and area, add the strongest reason to choose the business, and finish with a clear next step.",
       example: `${business.name} provides ${topic} in ${town}. See services, proof and availability, then request a quote.`,
       proof: "Check the live source and review the snippet Google chooses after recrawling.",
       priority: "Medium priority · Low effort",
@@ -755,7 +791,8 @@ export function websiteEvidence(r: Report): string {
     viewport: {
       verdict: "Mobile foundation",
       level: "good",
-      action: "Keep the mobile viewport. Manually check text size, tap targets and the quote journey on a real phone.",
+      action:
+        "Keep the mobile viewport. Manually check text size, tap targets and the quote journey on a real phone.",
       example: "No code change is recommended from this evidence alone.",
       proof: "Complete one enquiry on a phone and record any friction.",
       priority: "Verified strength · Manual check",
@@ -763,16 +800,21 @@ export function websiteEvidence(r: Report): string {
     phone: {
       verdict: "Conversion path",
       level: "good",
-      action: "Keep tap-to-call visible. Confirm the number exactly matches the Google Business Profile and works on a phone.",
-      example: business.phone ? `Expected profile number: ${business.phone}` : "Confirm the preferred sales number with the owner.",
+      action:
+        "Keep tap-to-call visible. Confirm the number exactly matches the Google Business Profile and works on a phone.",
+      example: business.phone
+        ? `Expected profile number: ${business.phone}`
+        : "Confirm the preferred sales number with the owner.",
       proof: "Tap the link, compare the dialled number with Google and record the result.",
       priority: "High value · Five-minute check",
     },
     schema: {
       verdict: "Machine-readable identity",
       level: "verify",
-      action: "Validate the structured data and confirm its business name, URL, phone, service area and category match the real business.",
-      example: "Use Google's Rich Results Test and Schema.org validator; fix errors, not harmless warnings.",
+      action:
+        "Validate the structured data and confirm its business name, URL, phone, service area and category match the real business.",
+      example:
+        "Use Google's Rich Results Test and Schema.org validator; fix errors, not harmless warnings.",
       proof: "Save the validation result and recheck after the next deployment.",
       priority: "Medium priority · Specialist review",
     },
@@ -792,7 +834,9 @@ export function websiteEvidence(r: Report): string {
       };
       return `<article class="audit-card"><div class="verdict"><span class="pill ${f.status === "review" ? "improve" : g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(f.label)}</h3><p class="small"><b>Observed:</b> ${esc(f.evidence)}</p><div class="prescription"><b>Recommended change</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Suggested next step:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>Verify:</b> ${esc(g.proof)}</p></article>`;
     })
-    .join("")}</div><p class="small">Recommendations require approval before publishing. They are evidence-led hypotheses, not guarantees of ranking or revenue.</p></div></section>`;
+    .join(
+      "",
+    )}</div><p class="small">Recommendations require approval before publishing. They are evidence-led hypotheses, not guarantees of ranking or revenue.</p></div></section>`;
 }
 
 function richerEvidence(r: Report): string {
@@ -870,17 +914,25 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     .filter((g) => g.competitors?.length)
     .map(
       (g) =>
-        `<h2>Who shows up for &quot;${esc(g.keyword)}&quot;</h2><div class="card"><p class="small">Same ${g.ranks.length} search spots, checked ${esc(date)}. Average position includes only spots where the business appeared in the top 20.</p><table><tr><th>Business</th><th>Top 3 spots</th><th>Found</th><th>Average</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g.competitors!
-          .filter((c) => relevantMapCompetitor({ title: c.name }, g.keyword))
-          .map((c) => `<tr><td>${esc(c.name)}</td><td>${c.top3}</td><td>${c.found}</td><td>${c.average ?? "-"}</td></tr>`)
+        `<h2>Who shows up for &quot;${esc(g.keyword)}&quot;</h2><div class="card"><p class="small">Same ${g.ranks.length} search spots, checked ${esc(date)}. Average position includes only spots where the business appeared in the top 20.</p><table><tr><th>Business</th><th>Top 3 spots</th><th>Found</th><th>Average</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g
+          .competitors!.filter((c) => relevantMapCompetitor({ title: c.name }, g.keyword))
+          .map(
+            (c) =>
+              `<tr><td>${esc(c.name)}</td><td>${c.top3}</td><td>${c.found}</td><td>${c.average ?? "-"}</td></tr>`,
+          )
           .join("")}</table></div>`,
     )
     .join("");
   const g = r.reviewGap;
-  const gap = g && relevantMapCompetitor({ title: g.leader, category: relevantRivals.find((x) => x.name === g.leader)?.kind }, r.maps.keyword)
-    ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
+  const gap =
+    g &&
+    relevantMapCompetitor(
+      { title: g.leader, category: relevantRivals.find((x) => x.name === g.leader)?.kind },
+      r.maps.keyword,
+    )
+      ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
 <p class="muted" style="margin:6px 0 0">To catch them in a year, you need about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b>. The easy way: ask every customer, every day.</p></div>`
-    : "";
+      : "";
   const view = scoreView(r);
   const sale = saleFor(r, {
     minSalePence: extra?.minSalePence ?? null,
