@@ -4,6 +4,7 @@ import { serviceRead } from "../lib/supabase-service.server";
 import type { Report } from "../lib/prospects.server";
 import { scoreView } from "../lib/report-page.server";
 import { relevantMapCompetitor } from "../lib/rank-grid";
+import { gridSpots } from "../lib/report-map";
 
 const clean = (value: unknown) =>
   String(value ?? "")
@@ -18,7 +19,55 @@ type Brand = {
   email?: string | null;
 };
 
-function reportPdf(report: Report, brand: Brand) {
+type MapTile = { data: Uint8Array; col: number; row: number };
+
+function mapPixel(lat: number, lng: number, zoom: number) {
+  const scale = 256 * 2 ** zoom;
+  const sin = Math.sin((lat * Math.PI) / 180);
+  return {
+    x: ((lng + 180) / 360) * scale,
+    y: (0.5 - Math.log((1 + sin) / (1 - sin)) / (4 * Math.PI)) * scale,
+  };
+}
+
+async function osmMap(center?: { lat: number; lng: number } | null) {
+  if (!center) return null;
+  const zoom = 13;
+  const point = mapPixel(center.lat, center.lng, zoom);
+  const baseX = Math.floor(point.x / 256) - 1;
+  const baseY = Math.floor(point.y / 256) - 1;
+  const tiles = (
+    await Promise.all(
+      Array.from({ length: 9 }, async (_, index): Promise<MapTile | null> => {
+        const col = index % 3;
+        const row = Math.floor(index / 3);
+        try {
+          const response = await fetch(
+            `https://tile.openstreetmap.org/${zoom}/${baseX + col}/${baseY + row}.png`,
+            { headers: { "User-Agent": "RepSuites/1.0 (https://repsuites.com)" } },
+          );
+          if (!response.ok) return null;
+          return { data: new Uint8Array(await response.arrayBuffer()), col, row };
+        } catch {
+          return null;
+        }
+      }),
+    )
+  ).filter((tile): tile is MapTile => tile !== null);
+  return tiles.length === 9 ? { tiles, zoom, baseX, baseY } : null;
+}
+
+function serviceCategory(report: Report) {
+  const category = clean(report.business.category).trim();
+  if (!category || /^(service|services|establishment|business)$/i.test(category)) {
+    return clean(report.maps.keyword || "Main service").replace(/\b\w/g, (letter) =>
+      letter.toUpperCase(),
+    );
+  }
+  return category;
+}
+
+async function reportPdf(report: Report, brand: Brand) {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const primary = /^#[0-9a-f]{6}$/i.test(brand.primary_hex ?? "") ? brand.primary_hex! : "#0b1d3a";
   const accent = /^#[0-9a-f]{6}$/i.test(brand.secondary_hex ?? "")
@@ -32,6 +81,8 @@ function reportPdf(report: Report, brand: Brand) {
       ? [{ ...report.grid, keyword: report.maps.keyword }]
       : [];
   const grid = grids[0];
+  const mapCenter = grid?.center ?? null;
+  const map = await osmMap(mapCenter);
   const rivals = report.rivals.filter((r) =>
     relevantMapCompetitor({ title: r.name, category: r.kind }, report.maps.keyword),
   );
@@ -150,31 +201,31 @@ function reportPdf(report: Report, brand: Brand) {
     9,
   );
   y += 4;
-  label("Executive diagnosis");
+  label("Your Google visibility at a glance");
   const spots = grid?.ranks.length ?? 0;
   const coverage = spots ? Math.round(((grid?.top3 ?? 0) / spots) * 100) : 0;
   para(
     grid
       ? grid.top3 > 0
-        ? `The business is visible near its strongest location but loses prominence across most of the checked area for "${grid.keyword}". The priority is broader local relevance, proof and review momentum.`
-        : `The business did not reach the top three at any checked location for "${grid.keyword}". Customers are consistently being shown alternatives first.`
-      : "This report establishes the public profile and website baseline. A comparable area scan is needed to diagnose geographic visibility.",
+        ? `You show up well near your strongest location, but customers across most of the area see other businesses first for "${grid.keyword}". Make your service and location clearer, build recent reviews and check the same area again.`
+        : `You did not reach the top three anywhere we checked for "${grid.keyword}". Customers are seeing other businesses first.`
+      : "This report records what customers can see today. Run an area search to see where your business appears across town.",
     true,
     12,
   );
   const gap = 4;
   const mw = (CW - gap * 3) / 4;
   const mt = y + 2;
-  metric(M, mt, mw, grid ? `${grid.top3}/${spots}` : "-", "top-three map positions");
-  metric(M + mw + gap, mt, mw, grid ? `${coverage}%` : "-", "local top-three coverage");
+  metric(M, mt, mw, grid ? `${grid.top3}/${spots}` : "-", "places where you are top 3");
+  metric(M + mw + gap, mt, mw, grid ? `${coverage}%` : "-", "of the area is top 3");
   metric(
     M + (mw + gap) * 2,
     mt,
     mw,
     grid?.average == null ? "-" : grid.average.toFixed(1),
-    "average visible position",
+    "average place when found",
   );
-  metric(M + (mw + gap) * 3, mt, mw, `${view.score}/100`, "evidence score");
+  metric(M + (mw + gap) * 3, mt, mw, `${view.score}/100`, "overall visibility score");
   y = mt + 37;
   heading("What matters first", 16);
   fixes.slice(0, 3).forEach((fix, index) => {
@@ -192,13 +243,56 @@ function reportPdf(report: Report, brand: Brand) {
 
   // 2. Visual ranking evidence.
   newPage("01 / LOCAL MAP VISIBILITY");
-  heading("Where customers find you on Google Maps", 21);
+  heading("Where customers see you on Google Maps", 21);
   para(
     grid
-      ? `We checked ${spots} equally spaced search locations for "${grid.keyword}". Each square shows the position seen from that location.`
-      : "No area grid was recorded for this report.",
+      ? `We searched Google Maps from ${spots} places around your business for "${grid.keyword}". Each circle shows where you appeared from that place.`
+      : "We do not have an area map for this report yet.",
   );
-  if (grid) {
+  if (grid && map && mapCenter) {
+    const mapSize = 150;
+    const mapLeft = (W - mapSize) / 2;
+    const mapTop = y + 2;
+    const tileSize = mapSize / 3;
+    map.tiles.forEach((tile) => {
+      doc.addImage(
+        tile.data,
+        "PNG",
+        mapLeft + tile.col * tileSize,
+        mapTop + tile.row * tileSize,
+        tileSize,
+        tileSize,
+      );
+    });
+    const topLeftX = map.baseX * 256;
+    const topLeftY = map.baseY * 256;
+    const points = gridSpots(mapCenter, grid.size || 5, grid.spacingKm ?? 0.8);
+    grid.ranks.forEach((rank, index) => {
+      const point = mapPixel(points[index]!.lat, points[index]!.lng, map.zoom);
+      const x = mapLeft + ((point.x - topLeftX) / (256 * 3)) * mapSize;
+      const yy = mapTop + ((point.y - topLeftY) / (256 * 3)) * mapSize;
+      const fill =
+        rank == null ? "#64748b" : rank <= 3 ? "#15803d" : rank <= 10 ? "#f59e0b" : "#dc2626";
+      doc.setFillColor(fill);
+      doc.setDrawColor("#ffffff");
+      doc.circle(x, yy, 4.1, "FD");
+      doc.setTextColor("#ffffff");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text(rank == null ? "-" : String(rank), x, yy + 1.4, { align: "center" });
+    });
+    doc.setFillColor("#ffffff");
+    doc.setDrawColor("#cbd5e1");
+    doc.roundedRect(mapLeft + 3, mapTop + mapSize - 10, 56, 7, 1.5, 1.5, "FD");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor("#475569");
+    doc.text("Map data © OpenStreetMap contributors", mapLeft + 5, mapTop + mapSize - 5.5);
+    y = mapTop + mapSize + 7;
+    para(
+      "Green 1-3: customers see you first   Amber 4-10: customers may need to scroll   Red 11-20: hard to find   Grey: not found",
+    );
+  } else if (grid) {
     const size = grid.size || Math.round(Math.sqrt(grid.ranks.length));
     const cell = 18;
     const left = (W - size * cell) / 2;
@@ -231,8 +325,8 @@ function reportPdf(report: Report, brand: Brand) {
 
   // 3. Competition and profile evidence.
   newPage("02 / MARKET AND PROFILE EVIDENCE");
-  heading("Your competitive position", 21);
-  para("Only businesses relevant to the target service are included.");
+  heading("The businesses customers see before you", 21);
+  para("We only include businesses that offer the same kind of service.");
   const tableRows = [
     {
       name: `${report.business.name} (you)`,
@@ -257,23 +351,23 @@ function reportPdf(report: Report, brand: Brand) {
     y += 18;
   });
   y += 5;
-  heading("Google Business Profile evidence", 17);
+  heading("What Google shows about your business", 17);
   const profile = report.profileAudit;
   const evidence: Array<[string, string]> = [
-    ["Category", report.business.category || "Needs owner confirmation"],
-    ["Phone", report.business.phone || "No public phone returned"],
-    ["Opening hours", report.business.hasHours ? "Returned by Google" : "No hours returned"],
+    ["Main service", serviceCategory(report)],
+    ["Phone", report.business.phone || "No phone shown on Google"],
+    ["Opening hours", report.business.hasHours ? "Shown on Google" : "Not shown on Google"],
     [
       "Photos",
       profile?.photos
-        ? `${profile.photos} public photo references`
-        : "No reliable count returned; verify in the profile",
+        ? `${profile.photos} photos found`
+        : "Google did not return a reliable count; check your profile",
     ],
     [
       "Review recency",
       profile?.newestReviewAt
         ? new Date(profile.newestReviewAt).toLocaleDateString("en-GB")
-        : `${report.business.reviews} reviews; dates not returned`,
+        : `${report.business.reviews} reviews; Google did not return the review dates`,
     ],
   ];
   evidence.forEach(([name, value]) => {
@@ -290,9 +384,9 @@ function reportPdf(report: Report, brand: Brand) {
 
   // 4. Prescriptive website diagnosis.
   newPage("03 / WEBSITE DIAGNOSIS");
-  heading("What the website should do next", 21);
+  heading("What to improve on your website", 21);
   para(
-    "We assess service relevance, location relevance, trust and the enquiry journey - not merely whether an HTML element exists.",
+    "We checked whether your website clearly says what you do, where you work, why customers should trust you and how they can contact you.",
   );
   const topic = report.maps.keyword || report.business.category || "main service";
   const town = report.business.town || "the service area";
@@ -324,8 +418,8 @@ function reportPdf(report: Report, brand: Brand) {
     ],
     schema: [
       "MEDIUM / SPECIALIST",
-      "Validate name, URL, phone, category and service area.",
-      "Use Rich Results Test and Schema.org Validator.",
+      "Check the hidden business details that Google reads: your name, website, phone, service and area.",
+      "Ask your website expert to test the business details Google reads.",
     ],
   };
   (report.websiteAudit?.findings ?? []).forEach((finding) => {
@@ -361,7 +455,7 @@ function reportPdf(report: Report, brand: Brand) {
   newPage("04 / PRIORITISED ACTION PLAN");
   heading("Your 90-day local visibility plan", 21);
   para(
-    "Approve each action, assign an owner and due date, then verify it against the recorded baseline.",
+    "Choose who will do each action and by when. Then run the same checks again to see what changed.",
   );
   fixes.slice(0, 6).forEach((fix, index) => {
     const when = index < 2 ? "DAYS 1-14" : index < 4 ? "DAYS 15-45" : "DAYS 46-90";
@@ -461,7 +555,7 @@ export const Route = createFileRoute("/r/$token/pdf")({
               "",
             )
           : null;
-        const bytes = reportPdf(row.report, branding?.data?.[0] ?? {});
+        const bytes = await reportPdf(row.report, branding?.data?.[0] ?? {});
         const filename =
           clean(row.report.business.name)
             .replace(/[^a-z0-9]+/gi, "-")
