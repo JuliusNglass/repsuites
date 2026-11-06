@@ -790,7 +790,7 @@ export function websiteEvidence(r: Report): string {
         proof: "Re-run the same evidence check after approval.",
         priority: f.status === "pass" ? "Observed strength" : "Needs review",
       };
-      return `<article class="audit-card"><div class="verdict"><span class="pill ${f.status === "review" ? "improve" : g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(f.label)}</h3><p class="small"><b>Observed:</b> ${esc(f.evidence)}</p><div class="prescription"><b>Recommended change</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Audit note:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>Verify:</b> ${esc(g.proof)}</p></article>`;
+      return `<article class="audit-card"><div class="verdict"><span class="pill ${f.status === "review" ? "improve" : g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(f.label)}</h3><p class="small"><b>Observed:</b> ${esc(f.evidence)}</p><div class="prescription"><b>Recommended change</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Suggested next step:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>Verify:</b> ${esc(g.proof)}</p></article>`;
     })
     .join("")}</div><p class="small">Recommendations require approval before publishing. They are evidence-led hypotheses, not guarantees of ranking or revenue.</p></div></section>`;
 }
