@@ -114,6 +114,10 @@ export async function readRanking() {
         nextRunAt: String(kw.next_run_at),
         latest: toScan(list[0]),
         previous: toScan(list[1]),
+        history: list
+          .slice(0, 8)
+          .map(toScan)
+          .filter((x): x is NonNullable<ReturnType<typeof toScan>> => x !== null),
       };
     }),
   };
@@ -374,3 +378,4 @@ export async function runRankChecks(token: string) {
   await setError(null);
   return { status: 200, body: { ok: true, checked: 1, found: sum.found, cost } };
 }
+
