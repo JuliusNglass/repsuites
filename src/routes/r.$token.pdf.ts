@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { jsPDF } from "jspdf";
+import { PNG } from "pngjs";
 import { serviceRead } from "../lib/supabase-service.server";
 import type { Report } from "../lib/prospects.server";
 import { scoreView } from "../lib/report-page.server";
@@ -58,6 +59,117 @@ async function osmMap(center?: { lat: number; lng: number } | null) {
     )
   ).filter((tile): tile is MapTile => tile !== null);
   return tiles.length === 16 ? { tiles, zoom, baseX, baseY, topLeftX, topLeftY } : null;
+}
+
+const PIN_GLYPHS: Record<string, string[]> = {
+  "0": ["111", "101", "101", "101", "111"],
+  "1": ["010", "110", "010", "010", "111"],
+  "2": ["111", "001", "111", "100", "111"],
+  "3": ["111", "001", "111", "001", "111"],
+  "4": ["101", "101", "111", "001", "001"],
+  "5": ["111", "100", "111", "001", "111"],
+  "6": ["111", "100", "111", "101", "111"],
+  "7": ["111", "001", "010", "010", "010"],
+  "8": ["111", "101", "111", "101", "111"],
+  "9": ["111", "101", "111", "001", "111"],
+  "-": ["000", "000", "111", "000", "000"],
+};
+
+function setPixel(png: PNG, x: number, y: number, color: [number, number, number, number]) {
+  if (x < 0 || y < 0 || x >= png.width || y >= png.height) return;
+  const offset = (y * png.width + x) * 4;
+  png.data[offset] = color[0];
+  png.data[offset + 1] = color[1];
+  png.data[offset + 2] = color[2];
+  png.data[offset + 3] = color[3];
+}
+
+function disc(
+  png: PNG,
+  cx: number,
+  cy: number,
+  radius: number,
+  color: [number, number, number, number],
+) {
+  for (let y = -radius; y <= radius; y += 1) {
+    for (let x = -radius; x <= radius; x += 1) {
+      if (x * x + y * y <= radius * radius) setPixel(png, cx + x, cy + y, color);
+    }
+  }
+}
+
+function pinText(png: PNG, text: string, cx: number, cy: number) {
+  const scale = 3;
+  const glyphWidth = 3 * scale;
+  const gap = scale;
+  const width = text.length * glyphWidth + Math.max(0, text.length - 1) * gap;
+  const startX = Math.round(cx - width / 2);
+  const startY = Math.round(cy - (5 * scale) / 2);
+  [...text].forEach((character, index) => {
+    const glyph = PIN_GLYPHS[character] ?? PIN_GLYPHS["-"]!;
+    glyph.forEach((row, rowIndex) => {
+      [...row].forEach((pixel, columnIndex) => {
+        if (pixel !== "1") return;
+        for (let yy = 0; yy < scale; yy += 1) {
+          for (let xx = 0; xx < scale; xx += 1) {
+            setPixel(
+              png,
+              startX + index * (glyphWidth + gap) + columnIndex * scale + xx,
+              startY + rowIndex * scale + yy,
+              [255, 255, 255, 255],
+            );
+          }
+        }
+      });
+    });
+  });
+}
+
+function rasterRankMap(
+  map: NonNullable<Awaited<ReturnType<typeof osmMap>>>,
+  center: { lat: number; lng: number },
+  grid: NonNullable<Report["grid"]>,
+) {
+  const viewportPixels = 256 * 3;
+  const output = new PNG({ width: viewportPixels, height: viewportPixels });
+  output.data.fill(255);
+  map.tiles.forEach((tile) => {
+    const decoded = PNG.sync.read(Buffer.from(tile.data));
+    const offsetX = Math.round((map.baseX + tile.col) * 256 - map.topLeftX);
+    const offsetY = Math.round((map.baseY + tile.row) * 256 - map.topLeftY);
+    for (let sourceY = 0; sourceY < decoded.height; sourceY += 1) {
+      const targetY = offsetY + sourceY;
+      if (targetY < 0 || targetY >= output.height) continue;
+      for (let sourceX = 0; sourceX < decoded.width; sourceX += 1) {
+        const targetX = offsetX + sourceX;
+        if (targetX < 0 || targetX >= output.width) continue;
+        const source = (sourceY * decoded.width + sourceX) * 4;
+        const target = (targetY * output.width + targetX) * 4;
+        output.data[target] = decoded.data[source]!;
+        output.data[target + 1] = decoded.data[source + 1]!;
+        output.data[target + 2] = decoded.data[source + 2]!;
+        output.data[target + 3] = 255;
+      }
+    }
+  });
+  const points = gridSpots(center, grid.size || 5, grid.spacingKm ?? 0.8);
+  grid.ranks.forEach((rank, index) => {
+    const point = mapPixel(points[index]!.lat, points[index]!.lng, map.zoom);
+    const x = Math.round(point.x - map.topLeftX);
+    const y = Math.round(point.y - map.topLeftY);
+    const fill: [number, number, number, number] =
+      rank == null
+        ? [100, 116, 139, 255]
+        : rank <= 3
+          ? [21, 128, 61, 255]
+          : rank <= 10
+            ? [245, 158, 11, 255]
+            : [220, 38, 38, 255];
+    disc(output, x, y, 23, [255, 255, 255, 255]);
+    disc(output, x, y, 20, fill);
+    pinText(output, rank == null ? "-" : String(rank), x, y);
+  });
+  return PNG.sync.write(output);
 }
 
 function serviceCategory(report: Report) {
@@ -262,37 +374,8 @@ async function reportPdf(report: Report, brand: Brand) {
     const mapSize = 150;
     const mapLeft = (W - mapSize) / 2;
     const mapTop = y + 2;
-    const viewportPixels = 256 * 3;
-    const tileSize = mapSize / 3;
-    doc.saveGraphicsState();
-    doc.rect(mapLeft, mapTop, mapSize, mapSize);
-    doc.clip();
-    map.tiles.forEach((tile) => {
-      doc.addImage(
-        tile.data,
-        "PNG",
-        mapLeft + (((map.baseX + tile.col) * 256 - map.topLeftX) / viewportPixels) * mapSize,
-        mapTop + (((map.baseY + tile.row) * 256 - map.topLeftY) / viewportPixels) * mapSize,
-        tileSize,
-        tileSize,
-      );
-    });
-    doc.restoreGraphicsState();
-    const points = gridSpots(mapCenter, grid.size || 5, grid.spacingKm ?? 0.8);
-    grid.ranks.forEach((rank, index) => {
-      const point = mapPixel(points[index]!.lat, points[index]!.lng, map.zoom);
-      const x = mapLeft + ((point.x - map.topLeftX) / viewportPixels) * mapSize;
-      const yy = mapTop + ((point.y - map.topLeftY) / viewportPixels) * mapSize;
-      const fill =
-        rank == null ? "#64748b" : rank <= 3 ? "#15803d" : rank <= 10 ? "#f59e0b" : "#dc2626";
-      doc.setFillColor(fill);
-      doc.setDrawColor("#ffffff");
-      doc.circle(x, yy, 4.1, "FD");
-      doc.setTextColor("#ffffff");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
-      doc.text(rank == null ? "-" : String(rank), x, yy + 1.4, { align: "center" });
-    });
+    const mapImage = rasterRankMap(map, mapCenter, grid);
+    doc.addImage(mapImage, "PNG", mapLeft, mapTop, mapSize, mapSize);
     doc.setDrawColor("#cbd5e1");
     doc.rect(mapLeft, mapTop, mapSize, mapSize);
     doc.setFillColor("#ffffff");
