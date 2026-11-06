@@ -582,14 +582,14 @@ function presentationClose(
         : /maps|google/i.test(a.title)
           ? "A repeat scan at the same search spots"
           : "A repeat evidence check";
-      return `<article class="card"><div class="when">${timing}</div><h3>${esc(a.title)}</h3><p>${esc(a.why)}</p><p class="small"><b>Owner:</b> Assign before approval<br><b>Effort:</b> ${effort}<br><b>Verify:</b> ${proof}</p></article>`;
+      return `<article class="card"><div class="when">${timing}</div><h3>${esc(a.title)}</h3><p>${esc(a.why)}</p><p class="small"><b>Who will do it:</b> Choose a person<br><b>How much work:</b> ${effort}<br><b>How to check it:</b> ${proof}</p></article>`;
     })
     .join("");
   return `<section class="presentation-close chapter" id="action-plan">
 <div class="chapter-head"><span class="chapter-no">07</span><h2>Do this first: Your evidence-led action plan (90 days)</h2></div>
-<div class="stage">${actionCards || `<article class="card"><div class="when">This month</div><h3>Protect the baseline</h3><p>Keep reviews and profile evidence current, then repeat the same local search check.</p></article>`}</div><div class="card"><p class="small"><b>Approval rule:</b> review every recommendation before changing a website or Google profile. Record the baseline first, assign an owner and due date, then verify the result against comparable evidence.</p></div>
+<div class="stage">${actionCards || `<article class="card"><div class="when">This month</div><h3>Keep your current position</h3><p>Keep earning reviews, keep your Google profile up to date and run the same search again later.</p></article>`}</div><div class="card"><p class="small"><b>Before you make a change:</b> save a copy of what customers see today, choose who will make the change and set a date. Run the same check again afterwards so you can see whether it helped.</p></div>
 <h2>Proof and next step</h2>
-<div class="card"><p><b>What this report proves:</b> how ${esc(b.name)} appeared in the checked Google searches and public profile evidence on ${date}.</p><p><b>What it does not prove:</b> private Google performance data, ownership status, conversion rate, or guaranteed future rankings.</p><p style="margin-bottom:0"><b>Recommended next step:</b> agree the first three fixes, record the baseline, and schedule the next comparable check.</p></div>
+<div class="card"><p><b>What this report shows:</b> how your business appeared in the Google searches we checked on ${date}, plus the public information customers could see.</p><p><b>What it cannot show:</b> private account figures, how many visitors became customers, or a guaranteed future ranking.</p><p style="margin-bottom:0"><b>Your next step:</b> choose the first three actions, save what customers see today and set a date to run the same check again.</p></div>
 </section>`;
 }
 
@@ -706,6 +706,14 @@ export function previewText(r: Report): { title: string; description: string } {
   };
 }
 
+function serviceCategory(r: Report): string {
+  const category = (r.business.category || "").trim();
+  if (!category || /^(service|services|establishment|business)$/i.test(category)) {
+    return (r.maps.keyword || "Main service").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+  return category;
+}
+
 export function profileEvidence(r: Report): string {
   const b = r.business;
   const a = r.profileAudit;
@@ -723,7 +731,7 @@ export function profileEvidence(r: Report): string {
       "Opening hours",
       b.hasHours ? "Opening hours supplied by Google" : "No opening hours supplied by Google",
     ],
-    ["Category", b.category || "Not supplied by Google"],
+    ["Main service", serviceCategory(r)],
   ];
   const detailed = a
     ? [
@@ -742,13 +750,13 @@ export function profileEvidence(r: Report): string {
         [
           "Photos",
           a.photos
-            ? `${a.photos} public photo references returned by Google`
+            ? `${a.photos} photos found on Google`
             : "Google returned no photo count in this check. This does not mean the profile has no photos.",
         ],
         ["Review recency and sample velocity", reviewEvidence],
       ]
     : [];
-  return `<h2>Google profile audit evidence</h2><div class="card"><p class="small">Source: Google Places, recorded ${esc(r.createdAt)}. Public profile evidence only. Missing information needs owner review, especially for service-area businesses.</p><table><tr><th>Check</th><th>Observation</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>Not established by this public check</h3><p class="small">Ownership and verification, suspension status, private performance, services, review reply rate and post activity. Connect the profile or confirm these with the owner before recommending a change.</p><p class="small">Review counts and ratings describe the profile, not enquiry or conversion performance.</p></div>`;
+  return `<h2>What Google shows about your business</h2><div class="card"><p class="small">Checked ${esc(r.createdAt)} using information customers can see on Google. Some account-only details cannot be checked here.</p><table><tr><th>Check</th><th>What we found</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>What you should confirm</h3><p class="small">Please confirm that you control the profile, that the business is not restricted, and that your services, review replies and posts are up to date.</p><p class="small">Your review numbers and rating show what customers see. They do not tell us how many enquiries you receive.</p></div>`;
 }
 
 export function websiteEvidence(r: Report): string {
@@ -777,20 +785,20 @@ export function websiteEvidence(r: Report): string {
     }
   > = {
     title: {
-      verdict: "Search relevance",
+      verdict: "Google search wording",
       level: "improve",
-      action: `Make the primary service and location unmistakable, without repeating words or stuffing variants.`,
+      action: `Put your main service and area first. Keep the wording natural and avoid repeating the same words.`,
       example: `${topic.replace(/\b\w/g, (c) => c.toUpperCase())} ${town} | ${business.name}`,
-      proof: "Publish the title, request indexing, then compare search impressions after 28 days.",
+      proof:
+        "Publish the change, ask Google to check the page again, then review your search figures after 28 days.",
       priority: "High priority · Low effort",
     },
     h1: {
-      verdict: "On-page clarity",
+      verdict: "Main page heading",
       level: "improve",
-      action:
-        "Use one visible main heading that tells both customers and search engines exactly what the page offers and where.",
+      action: "Use one clear main heading that tells customers what you do and where you work.",
       example: `${topic.replace(/\b\w/g, (c) => c.toUpperCase())} in ${town}`,
-      proof: "Confirm one rendered H1 on mobile and desktop, then re-run the website check.",
+      proof: "Check the heading on a phone and computer, then run this website check again.",
       priority: "High priority · Low effort",
     },
     description: {
@@ -799,20 +807,21 @@ export function websiteEvidence(r: Report): string {
       action:
         "Lead with the service and area, add the strongest reason to choose the business, and finish with a clear next step.",
       example: `${business.name} provides ${topic} in ${town}. See services, proof and availability, then request a quote.`,
-      proof: "Check the live source and review the snippet Google chooses after recrawling.",
+      proof:
+        "After Google checks the page again, see which description it shows in search results.",
       priority: "Medium priority · Low effort",
     },
     viewport: {
-      verdict: "Mobile foundation",
+      verdict: "Phone-friendly page",
       level: "good",
       action:
-        "Keep the mobile viewport. Manually check text size, tap targets and the quote journey on a real phone.",
-      example: "No code change is recommended from this evidence alone.",
-      proof: "Complete one enquiry on a phone and record any friction.",
+        "Keep the phone-friendly setting. Check that the text is easy to read, buttons are easy to tap and the quote form works on a real phone.",
+      example: "No change is needed from this check alone.",
+      proof: "Send one test enquiry from a phone and note anything that is difficult.",
       priority: "Verified strength · Manual check",
     },
     phone: {
-      verdict: "Conversion path",
+      verdict: "Tap-to-call",
       level: "good",
       action:
         "Keep tap-to-call visible. Confirm the number exactly matches the Google Business Profile and works on a phone.",
@@ -823,17 +832,16 @@ export function websiteEvidence(r: Report): string {
       priority: "High value · Five-minute check",
     },
     schema: {
-      verdict: "Machine-readable identity",
+      verdict: "Business details Google reads",
       level: "verify",
       action:
-        "Validate the structured data and confirm its business name, URL, phone, service area and category match the real business.",
-      example:
-        "Use Google's Rich Results Test and Schema.org validator; fix errors, not harmless warnings.",
-      proof: "Save the validation result and recheck after the next deployment.",
-      priority: "Medium priority · Specialist review",
+        "Ask your website expert to check the hidden business details Google reads. Your name, website, phone, service and area should all match your Google profile.",
+      example: "Ask them to use Google's website testing tool and fix genuine errors.",
+      proof: "Save the test result and check it again after the website is updated.",
+      priority: "Medium priority · Website expert",
     },
   };
-  const intro = `<section id="website" class="chapter"><div class="chapter-head"><span class="chapter-no">04</span><h2>Website diagnosis and prescribed changes</h2></div><div class="card"><p class="diagnosis"><b>The question is not simply whether an element exists.</b> We assess whether it clearly supports the target service, location, trust and enquiry journey. Every recommendation below includes a verification step.</p><p class="small">Checked ${esc(a.checkedAt)}. Static homepage HTML only. JavaScript content, speed, accessibility and conversions require separate verification.</p>`;
+  const intro = `<section id="website" class="chapter"><div class="chapter-head"><span class="chapter-no">04</span><h2>What to improve on your website</h2></div><div class="card"><p class="diagnosis">We checked whether your website clearly says <b>what you do, where you work, why customers should trust you and how they can contact you.</b> Each recommendation tells you what to change and how to check it afterwards.</p><p class="small">Checked ${esc(a.checkedAt)}. We checked the information available on the homepage. Page speed, ease of use and completed enquiries need separate checks.</p>`;
   if (a.status !== "checked")
     return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "The website could not be checked. No negative findings were inferred."}</p></div></section>`;
   return `${intro}<p class="small">Source: ${esc(a.url)}</p><div class="audit-grid">${a.findings
@@ -846,11 +854,17 @@ export function websiteEvidence(r: Report): string {
         proof: "Re-run the same evidence check after approval.",
         priority: f.status === "pass" ? "Observed strength" : "Needs review",
       };
-      return `<article class="audit-card"><div class="verdict"><span class="pill ${f.status === "review" ? "improve" : g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(f.label)}</h3><p class="small"><b>Observed:</b> ${esc(f.evidence)}</p><div class="prescription"><b>Recommended change</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Suggested next step:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>Verify:</b> ${esc(g.proof)}</p></article>`;
+      const label =
+        f.id === "schema"
+          ? "Business details Google reads"
+          : f.id === "viewport"
+            ? "Phone-friendly page"
+            : f.label;
+      return `<article class="audit-card"><div class="verdict"><span class="pill ${f.status === "review" ? "improve" : g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(label)}</h3><p class="small"><b>What we found:</b> ${esc(f.evidence)}</p><div class="prescription"><b>What to do</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Next step:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>How to check it:</b> ${esc(g.proof)}</p></article>`;
     })
     .join(
       "",
-    )}</div><p class="small">Recommendations require approval before publishing. They are evidence-led hypotheses, not guarantees of ranking or revenue.</p></div></section>`;
+    )}</div><p class="small">Review each change before it is published. These actions are sensible next steps based on what we found, but no one can promise a particular ranking or amount of revenue.</p></div></section>`;
 }
 
 function richerEvidence(r: Report): string {
@@ -879,13 +893,13 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
   const average = lead?.average == null ? "Not visible" : lead.average.toFixed(1);
   const priorities = view.fixes.filter((f) => f.priority === "high").length || view.fixes.length;
   const diagnosis = !lead
-    ? "This report establishes the public profile and website baseline. A comparable area scan is needed to diagnose geographic visibility."
+    ? "This report records what customers can see today. Run an area search to see where your business appears across town."
     : lead.top3 >= Math.ceil(spots * 0.75)
-      ? `Visibility is strong across the checked area for \"${lead.keyword}\". The next opportunity is to protect that lead and improve conversion evidence.`
+      ? `Customers can find you across most of the checked area for \"${lead.keyword}\". Keep your information accurate, continue earning reviews and make it easy to contact you.`
       : lead.top3 > 0
-        ? `The business is visible close to its strongest locations but loses prominence across most of the checked area for \"${lead.keyword}\". The priority is broader local relevance, proof and review momentum.`
-        : `The business did not reach the top three at any checked location for \"${lead.keyword}\". Customers are consistently being shown alternatives first.`;
-  return `<section id="summary" class="hero chapter"><div class="method">RepSuites local visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>top-three map positions</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>local top-three coverage</span></div><div class="metric"><strong>${average}</strong><span>average visible position</span></div><div class="metric"><strong>${priorities}</strong><span>priority actions</span></div></div><p class="small" style="margin:15px 0 0">Local visibility score: <b>${view.score}/100</b>. This score summarises the evidence; the observed positions above are the primary decision metrics.</p></section>`;
+        ? `You show up well near your strongest location, but customers across most of the area see other businesses first for \"${lead.keyword}\". Make your service and location clearer, build recent reviews and check the same area again.`
+        : `You did not reach the top three anywhere we checked for \"${lead.keyword}\". Customers are seeing other businesses first.`;
+  return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Your overall visibility score is <b>${view.score}/100</b>. The map positions above show where customers are most and least likely to see you.</p></section>`;
 }
 
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
