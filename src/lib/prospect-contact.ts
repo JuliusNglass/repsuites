@@ -410,5 +410,12 @@ const OTHER_WORDS =
 export function searchRegion(query: string): { code: string | null; keep: string[] | null } {
   if (NG_WORDS.test(query)) return { code: "NG", keep: ["Nigeria"] };
   if (OTHER_WORDS.test(query)) return { code: null, keep: null };
-  return { code: "GB", keep: ["UK", "United Kingdom"] };
+  // Google does not use one consistent suffix for British addresses. Places
+  // may end in "UK", "United Kingdom", a home nation, or occasionally "GB".
+  // Treat all of those as the same region instead of discarding valid results.
+  return {
+    code: "GB",
+    keep: ["UK", "GB", "United Kingdom", "England", "Scotland", "Wales", "Northern Ireland"],
+  };
 }
+
