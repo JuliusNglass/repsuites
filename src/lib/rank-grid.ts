@@ -135,7 +135,9 @@ export function relevantMapCompetitor(item: any, keyword: string): boolean {
   );
   // These frequently appear for "cleaning" but compete in different markets.
   if (
-    /\b(dry clean|laundry|laundrette|shoe repair|service station)\b/.test(`${name} ${categories}`)
+    /\b(dry clean(?:er|ing)?|laundry|laundrette|shoe repair|service station)\b/.test(
+      `${name} ${categories}`,
+    )
   )
     return false;
   return (
