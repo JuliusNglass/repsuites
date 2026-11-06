@@ -20,9 +20,7 @@ type Brand = {
 
 function reportPdf(report: Report, brand: Brand) {
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
-  const primary = /^#[0-9a-f]{6}$/i.test(brand.primary_hex ?? "")
-    ? brand.primary_hex!
-    : "#0b1d3a";
+  const primary = /^#[0-9a-f]{6}$/i.test(brand.primary_hex ?? "") ? brand.primary_hex! : "#0b1d3a";
   const accent = /^#[0-9a-f]{6}$/i.test(brand.secondary_hex ?? "")
     ? brand.secondary_hex!
     : "#f5b324";
@@ -37,6 +35,13 @@ function reportPdf(report: Report, brand: Brand) {
   const rivals = report.rivals.filter((r) =>
     relevantMapCompetitor({ title: r.name, category: r.kind }, report.maps.keyword),
   );
+  const irrelevantNames = report.rivals
+    .filter((r) => !relevantMapCompetitor({ title: r.name, category: r.kind }, report.maps.keyword))
+    .map((r) => r.name.toLocaleLowerCase());
+  const fixes = view.fixes.filter((fix) => {
+    const copy = `${fix.title} ${fix.why}`.toLocaleLowerCase();
+    return !irrelevantNames.some((name) => copy.includes(name));
+  });
   const W = 210;
   const M = 16;
   const CW = W - M * 2;
@@ -119,7 +124,8 @@ function reportPdf(report: Report, brand: Brand) {
   // 1. Executive diagnosis.
   header();
   label("Prepared for");
-  heading(report.business.name, 25);
+  y += 1;
+  heading(report.business.name, 18);
   para(report.business.address);
   para(
     `Prepared ${new Date(report.createdAt).toLocaleDateString("en-GB", {
@@ -148,11 +154,17 @@ function reportPdf(report: Report, brand: Brand) {
   const mt = y + 2;
   metric(M, mt, mw, grid ? `${grid.top3}/${spots}` : "-", "top-three map positions");
   metric(M + mw + gap, mt, mw, grid ? `${coverage}%` : "-", "local top-three coverage");
-  metric(M + (mw + gap) * 2, mt, mw, grid?.average == null ? "-" : grid.average.toFixed(1), "average visible position");
+  metric(
+    M + (mw + gap) * 2,
+    mt,
+    mw,
+    grid?.average == null ? "-" : grid.average.toFixed(1),
+    "average visible position",
+  );
   metric(M + (mw + gap) * 3, mt, mw, `${view.score}/100`, "evidence score");
   y = mt + 37;
   heading("What matters first", 16);
-  view.fixes.slice(0, 3).forEach((fix, index) => {
+  fixes.slice(0, 3).forEach((fix, index) => {
     box(M, y, CW, 28, index === 0 ? "#fff7ed" : "#f8fafc");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -181,7 +193,8 @@ function reportPdf(report: Report, brand: Brand) {
     grid.ranks.forEach((rank, index) => {
       const x = left + (index % size) * cell;
       const yy = top + Math.floor(index / size) * cell;
-      const fill = rank == null ? "#eef2f7" : rank <= 3 ? "#15803d" : rank <= 10 ? "#f59e0b" : "#dc2626";
+      const fill =
+        rank == null ? "#eef2f7" : rank <= 3 ? "#15803d" : rank <= 10 ? "#f59e0b" : "#dc2626";
       doc.setFillColor(fill);
       doc.setDrawColor("#ffffff");
       doc.roundedRect(x, yy, cell - 1, cell - 1, 2, 2, "FD");
@@ -208,7 +221,12 @@ function reportPdf(report: Report, brand: Brand) {
   heading("Your competitive position", 21);
   para("Only businesses relevant to the target service are included.");
   const tableRows = [
-    { name: `${report.business.name} (you)`, rating: report.business.rating, reviews: report.business.reviews, km: null },
+    {
+      name: `${report.business.name} (you)`,
+      rating: report.business.rating,
+      reviews: report.business.reviews,
+      km: null,
+    },
     ...rivals.slice(0, 5),
   ];
   tableRows.forEach((row, index) => {
@@ -220,7 +238,9 @@ function reportPdf(report: Report, brand: Brand) {
     doc.setTextColor("#526273");
     doc.text(row.rating == null ? "-" : `${row.rating.toFixed(1)} stars`, M + 108, y + 8);
     doc.text(`${row.reviews} reviews`, M + 136, y + 8);
-    doc.text(row.km == null ? "-" : `${row.km.toFixed(1)} km`, W - M - 5, y + 8, { align: "right" });
+    doc.text(row.km == null ? "-" : `${row.km.toFixed(1)} km`, W - M - 5, y + 8, {
+      align: "right",
+    });
     y += 18;
   });
   y += 5;
@@ -230,7 +250,12 @@ function reportPdf(report: Report, brand: Brand) {
     ["Category", report.business.category || "Needs owner confirmation"],
     ["Phone", report.business.phone || "No public phone returned"],
     ["Opening hours", report.business.hasHours ? "Returned by Google" : "No hours returned"],
-    ["Photos", profile?.photos ? `${profile.photos} public photo references` : "No reliable count returned; verify in the profile"],
+    [
+      "Photos",
+      profile?.photos
+        ? `${profile.photos} public photo references`
+        : "No reliable count returned; verify in the profile",
+    ],
     [
       "Review recency",
       profile?.newestReviewAt
@@ -253,19 +278,49 @@ function reportPdf(report: Report, brand: Brand) {
   // 4. Prescriptive website diagnosis.
   newPage("03 / WEBSITE DIAGNOSIS");
   heading("What the website should do next", 21);
-  para("We assess service relevance, location relevance, trust and the enquiry journey - not merely whether an HTML element exists.");
+  para(
+    "We assess service relevance, location relevance, trust and the enquiry journey - not merely whether an HTML element exists.",
+  );
   const topic = report.maps.keyword || report.business.category || "main service";
   const town = report.business.town || "the service area";
   const advice: Record<string, [string, string, string]> = {
-    title: ["HIGH / LOW EFFORT", "Put the primary service and location first, remove repetition and retain the brand.", `${topic} ${town} | ${report.business.name}`],
-    h1: ["HIGH / LOW EFFORT", "Use one visible main heading that identifies the service and location.", `${topic} in ${town}`],
-    description: ["MEDIUM / LOW EFFORT", "Lead with service and area, add proof and finish with a clear next step.", `${report.business.name} provides ${topic} in ${town}. See proof and request a quote.`],
-    viewport: ["VERIFY MANUALLY", "Keep the mobile viewport; test text size, tap targets and one full enquiry.", "Complete an enquiry on a real phone."],
-    phone: ["HIGH VALUE / 5 MINUTES", "Keep tap-to-call visible and confirm the number matches Google.", report.business.phone || "Confirm the preferred sales number."],
-    schema: ["MEDIUM / SPECIALIST", "Validate name, URL, phone, category and service area.", "Use Rich Results Test and Schema.org Validator."],
+    title: [
+      "HIGH / LOW EFFORT",
+      "Put the primary service and location first, remove repetition and retain the brand.",
+      `${topic} ${town} | ${report.business.name}`,
+    ],
+    h1: [
+      "HIGH / LOW EFFORT",
+      "Use one visible main heading that identifies the service and location.",
+      `${topic} in ${town}`,
+    ],
+    description: [
+      "MEDIUM / LOW EFFORT",
+      "Lead with service and area, add proof and finish with a clear next step.",
+      `${report.business.name} provides ${topic} in ${town}. See proof and request a quote.`,
+    ],
+    viewport: [
+      "VERIFY MANUALLY",
+      "Keep the mobile viewport; test text size, tap targets and one full enquiry.",
+      "Complete an enquiry on a real phone.",
+    ],
+    phone: [
+      "HIGH VALUE / 5 MINUTES",
+      "Keep tap-to-call visible and confirm the number matches Google.",
+      report.business.phone || "Confirm the preferred sales number.",
+    ],
+    schema: [
+      "MEDIUM / SPECIALIST",
+      "Validate name, URL, phone, category and service area.",
+      "Use Rich Results Test and Schema.org Validator.",
+    ],
   };
   (report.websiteAudit?.findings ?? []).forEach((finding) => {
-    const item = advice[finding.id] ?? ["REVIEW", finding.recommendation, "Repeat the same evidence check after approval."];
+    const item = advice[finding.id] ?? [
+      "REVIEW",
+      finding.recommendation,
+      "Repeat the same evidence check after approval.",
+    ];
     box(M, y, CW, 35, finding.status === "pass" ? "#f8fafc" : "#fff7ed");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
@@ -277,7 +332,11 @@ function reportPdf(report: Report, brand: Brand) {
     doc.setFont("helvetica", "normal");
     doc.setTextColor("#526273");
     doc.setFontSize(8);
-    doc.text(doc.splitTextToSize(`Observed: ${clean(finding.evidence)}`, 78).slice(0, 3), M + 5, y + 19);
+    doc.text(
+      doc.splitTextToSize(`Observed: ${clean(finding.evidence)}`, 78).slice(0, 3),
+      M + 5,
+      y + 19,
+    );
     doc.setTextColor("#26364a");
     doc.text(doc.splitTextToSize(`Action: ${clean(item[1])}`, 82).slice(0, 3), M + 91, y + 7);
     doc.setFont("helvetica", "bold");
@@ -288,8 +347,10 @@ function reportPdf(report: Report, brand: Brand) {
   // 5. Approved 90-day plan.
   newPage("04 / PRIORITISED ACTION PLAN");
   heading("Your 90-day local visibility plan", 21);
-  para("Approve each action, assign an owner and due date, then verify it against the recorded baseline.");
-  view.fixes.slice(0, 6).forEach((fix, index) => {
+  para(
+    "Approve each action, assign an owner and due date, then verify it against the recorded baseline.",
+  );
+  fixes.slice(0, 6).forEach((fix, index) => {
     const when = index < 2 ? "DAYS 1-14" : index < 4 ? "DAYS 15-45" : "DAYS 46-90";
     const verify = /review/i.test(fix.title)
       ? "Review count, latest review date and response evidence."
@@ -313,12 +374,17 @@ function reportPdf(report: Report, brand: Brand) {
   });
   y += 2;
   heading("The proof cycle", 16);
-  para("Record baseline > approve change > assign owner and date > publish > repeat comparable evidence > retain, revise or reverse.", true);
+  para(
+    "Record baseline > approve change > assign owner and date > publish > repeat comparable evidence > retain, revise or reverse.",
+    true,
+  );
 
   // 6. Commercial case and handoff.
   newPage("05 / OPPORTUNITY AND NEXT PROOF");
   heading("Turn visibility into a measurable growth case", 21);
-  para("Use the business's real minimum sale value to model one additional customer. This is scenario planning, not a revenue forecast.");
+  para(
+    "Use the business's real minimum sale value to model one additional customer. This is scenario planning, not a revenue forecast.",
+  );
   const pounds = !report.business.address.toLowerCase().includes("nigeria");
   const example = pounds ? 60 : 30000;
   const symbol = pounds ? "£" : "N";
@@ -332,14 +398,25 @@ function reportPdf(report: Report, brand: Brand) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor("#526273");
-  doc.text(`Example using ${symbol}${example.toLocaleString("en-GB")} per customer. Replace it with the owner's real value.`, M + 8, y + 38);
+  doc.text(
+    `Example using ${symbol}${example.toLocaleString("en-GB")} per customer. Replace it with the owner's real value.`,
+    M + 8,
+    y + 38,
+  );
   y += 58;
   heading("What this report proves", 16);
-  para(`It records how ${report.business.name} appeared in the checked Google searches, public profile and returned website evidence on ${new Date(report.createdAt).toLocaleDateString("en-GB")}.`);
+  para(
+    `It records how ${report.business.name} appeared in the checked Google searches, public profile and returned website evidence on ${new Date(report.createdAt).toLocaleDateString("en-GB")}.`,
+  );
   heading("What it does not prove", 16);
-  para("It does not establish private Google performance, ownership, conversion rate, lost revenue or guaranteed future rankings.");
+  para(
+    "It does not establish private Google performance, ownership, conversion rate, lost revenue or guaranteed future rankings.",
+  );
   heading("Recommended next step", 16);
-  para("Agree the first three actions, assign owners and dates, record the baseline, then schedule a comparable repeat check.", true);
+  para(
+    "Agree the first three actions, assign owners and dates, record the baseline, then schedule a comparable repeat check.",
+    true,
+  );
   y += 7;
   box(M, y, CW, 35, primary);
   doc.setTextColor("#ffffff");
@@ -348,7 +425,13 @@ function reportPdf(report: Report, brand: Brand) {
   doc.text("Discover. Diagnose. Prioritise. Prove.", M + 7, y + 11);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(clean(`${agency}${brand.phone ? ` | ${brand.phone}` : ""}${brand.email ? ` | ${brand.email}` : ""}`), M + 7, y + 23);
+  doc.text(
+    clean(
+      `${agency}${brand.phone ? ` | ${brand.phone}` : ""}${brand.email ? ` | ${brand.email}` : ""}`,
+    ),
+    M + 7,
+    y + 23,
+  );
   footer();
   return doc.output("arraybuffer");
 }
