@@ -125,6 +125,15 @@ function reach(p: any) {
 
 export interface Report {
   websiteAudit?: import("./website-audit").WebsiteAudit;
+  websiteVisuals?: {
+    business?: { url: string; screenshot: string; performance: number | null };
+    competitor?: { name: string; url: string; screenshot: string; performance: number | null };
+  };
+  aiVisibility?: {
+    checkedAt: string;
+    answers: import("./ai-visibility").AiAnswer[];
+    error?: string;
+  };
   profileAudit?: {
     description: string;
     categories: number;
@@ -302,6 +311,7 @@ export async function runGrid(
   placeId: string,
   name: string,
   spacingKm: number,
+  gridSize: 5 | 7 = 5,
 ): Promise<{
   middle: number | null | undefined;
   error: string;
@@ -312,7 +322,8 @@ export async function runGrid(
     await import("./rank-grid");
   const { usesMiles, distanceLabel } = await import("./units");
   const miles = usesMiles(at.lat, at.lng);
-  const pts = gridPoints(at, 5, spacingKm);
+  const pts = gridPoints(at, gridSize, spacingKm);
+  const middleIndex = Math.floor(pts.length / 2);
   const ranks: (number | null | undefined)[] = new Array(pts.length).fill(undefined);
   const searches: any[][] = new Array(pts.length);
   let failed = 0;
@@ -334,15 +345,15 @@ export async function runGrid(
   };
   await Promise.all(Array.from({ length: 6 }, worker));
   // Unknown points must not become evidence of poor visibility.
-  if (failed > 0) return { middle: ranks[12], error, grid: null };
+  if (failed > 0) return { middle: ranks[middleIndex], error, grid: null };
   const sum = summarisePoints(
     pts.map((pt, i) => ({ lat: pt.lat, lng: pt.lng, rank: ranks[i] ?? null })),
   );
   return {
-    middle: ranks[12],
+    middle: ranks[middleIndex],
     error,
     grid: {
-      size: 5,
+      size: gridSize,
       spacing: distanceLabel(spacingKm, miles),
       competitors: compareGridBusinesses(searches, placeId),
       ranks: ranks.map((r) => (r === undefined ? -1 : r)),
@@ -361,6 +372,7 @@ export async function buildReport(
   extraKeywords: string[] = [],
   areaOverride?: import("./rank-grid").AreaSize,
   topic?: string,
+  options: { gridSize?: 5 | 7; includeAi?: boolean; includeScreenshots?: boolean } = {},
 ): Promise<{
   report: Report;
   meta: {
@@ -433,7 +445,9 @@ export async function buildReport(
         .filter((k, i, a) => k && a.indexOf(k) === i)
         .slice(0, 3);
       const results = await Promise.all(
-        phrases.map((k) => runGrid(auth, k, { lat, lng }, p.id, name, spacingKm)),
+        phrases.map((k) =>
+          runGrid(auth, k, { lat, lng }, p.id, name, spacingKm, options.gridSize ?? 5),
+        ),
       );
       const first = results[0]!;
       if (first.middle !== undefined) {
@@ -553,9 +567,43 @@ export async function buildReport(
 
   const { checkWebsite } = await import("./website-audit.server");
   const websiteAudit = await checkWebsite(website);
+  let aiVisibility: Report["aiVisibility"];
+  if (options.includeAi && name && fallback && town) {
+    try {
+      const { ask } = await import("./ai-visibility.server");
+      const { aiQuestions, readAnswer } = await import("./ai-visibility");
+      const questions = aiQuestions(fallback, town);
+      const asked = await Promise.all(questions.map((q) => ask(q, town)));
+      const answers = asked.flatMap((a, i) =>
+        "text" in a
+          ? [{ ...readAnswer(questions[i]!, a.text, name, a.sources), evidence: a.evidence }]
+          : [],
+      );
+      const failed = asked.find((a) => "error" in a) as { error: string } | undefined;
+      aiVisibility = {
+        checkedAt: new Date().toISOString(),
+        answers,
+        ...(failed ? { error: failed.error } : {}),
+      };
+    } catch {
+      aiVisibility = {
+        checkedAt: new Date().toISOString(),
+        answers: [],
+        error: "The AI visibility check was unavailable.",
+      };
+    }
+  }
+  let websiteVisuals: Report["websiteVisuals"];
+  if (options.includeScreenshots && website) {
+    const { captureWebsiteVisual } = await import("./website-visual.server");
+    const businessVisual = await captureWebsiteVisual(website);
+    if (businessVisual) websiteVisuals = { business: businessVisual };
+  }
   return {
     report: {
       websiteAudit,
+      ...(websiteVisuals ? { websiteVisuals } : {}),
+      ...(aiVisibility ? { aiVisibility } : {}),
       profileAudit: {
         description: String(p.editorialSummary?.text ?? "").slice(0, 1000),
         categories: new Set(
@@ -631,6 +679,9 @@ export async function saveProspectReport(
     keywords?: string[];
     area?: import("./rank-grid").AreaSize;
     topic?: string;
+    gridSize?: 5 | 7;
+    includeAi?: boolean;
+    includeScreenshots?: boolean;
     guardRecent?: boolean;
     force?: boolean;
     // Which pipeline it belongs to. Left out: unchanged (new rows: RepSuites).
@@ -677,7 +728,13 @@ export async function saveProspectReport(
   const saved = savedPhrases(row);
   const keyword = extra.keyword || saved[0] || undefined;
   const addPhrases = extra.keyword ? [] : saved.slice(1);
-  const built = await buildReport(placeId, keyword, [], extra.area, extra.topic || undefined);
+  const built = await buildReport(placeId, keyword, [], extra.area, extra.topic || undefined, {
+    ...(extra.gridSize ? { gridSize: extra.gridSize } : {}),
+    ...(extra.includeAi !== undefined ? { includeAi: extra.includeAi } : {}),
+    ...(extra.includeScreenshots !== undefined
+      ? { includeScreenshots: extra.includeScreenshots }
+      : {}),
+  });
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
   // SparkOps: review problems (free, from the reviews we already have) and
