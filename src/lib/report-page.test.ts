@@ -282,7 +282,7 @@ describe("all keyword grids in PDF", () => {
     expect(html).toContain("Your evidence-led action plan");
     expect(html).toContain("Proof and next step");
     expect(html).toContain("Copy share link");
-    expect(html).toContain("Save as PDF");
+    expect(html).toContain("Download PDF");
     expect(html).toContain("Presentation mode");
     expect(html).toContain("@page{size:A4");
     expect(html).toContain(".presentation-close{break-before:page}");

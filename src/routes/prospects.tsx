@@ -71,6 +71,7 @@ import { makeOgCard, videoFrame } from "../lib/og-card";
 import { matchesReach, PHONE_TYPE_LABEL, type ReachFilter } from "../lib/prospect-contact";
 import { ownerFirstName, ownerFresh, ownerLine } from "../lib/prospect-owner";
 import { money, saleOneLine, saleSymbol, type SalePeriod } from "../lib/sale-value";
+import { getReportBranding, saveReportBranding, listProspectActions, syncProspectActions, updateProspectAction } from "../lib/report-workspace.functions";
 import {
   nicheQuery,
   PRODUCT_LABEL,
@@ -309,7 +310,7 @@ function Prospects() {
   // SparkOps is for UK cleaning businesses: hide results outside the UK.
   const [ukOnly, setUkOnly] = useState(false);
   const [totals, setTotals] = useState<Record<Product, number>>({ repsuites: 0, sparkops: 0 });
-  const [tab, setTab] = useState<"find" | "pipeline" | "due">("find");
+  const [tab, setTab] = useState<"find" | "pipeline" | "due" | "branding">("find");
   const [items, setItems] = useState<List | null>(null);
   const [total, setTotal] = useState(0);
   const [fixPhrase, setFixPhrase] = useState("");
@@ -528,6 +529,7 @@ function Prospects() {
               ["find", "Find prospects"],
               ["pipeline", `Pipeline (${pipelineTotal})`],
               ["due", `Follow up today (${due.length})`],
+              ["branding", "Branding"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -546,6 +548,7 @@ function Prospects() {
       </nav>
 
       <main className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
+        {tab === "branding" && <BrandingStudio />}
         {tab === "find" && (
           <>
             <form
@@ -824,7 +827,7 @@ function Prospects() {
           </>
         )}
 
-        {tab !== "find" && (
+        {tab !== "find" && tab !== "branding" && (
           <>
             {tab === "pipeline" &&
               (() => {
@@ -1243,6 +1246,9 @@ const ProspectRow = memo(function ProspectRow({
   const [rebuild, setRebuild] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
   const [phrases, setPhrases] = useState(p.phrases);
+  const [detailedGrid, setDetailedGrid] = useState(false);
+  const [includeAi, setIncludeAi] = useState(false);
+  const [includeVisual, setIncludeVisual] = useState(false);
   const build = useServerFn(buildProspectReport);
   const addPhrase = useServerFn(addProspectPhrase);
   // Rebuild from the pipeline: no new search needed. The first phrase runs
@@ -1263,6 +1269,9 @@ const ProspectRow = memo(function ProspectRow({
           force: true,
           product: p.product,
           ...(list[0] ? { keyword: list[0] } : {}),
+          gridSize: detailedGrid ? 7 : 5,
+          includeAi,
+          includeScreenshots: includeVisual,
         },
       }).catch(() => ({ ok: false as const, error: FAILED }));
       if (!r.ok) {
@@ -1717,6 +1726,20 @@ const ProspectRow = memo(function ProspectRow({
             aria-label="Search phrases for the rebuild, with commas"
             className={fieldPlain}
           />
+          <div className="grid sm:grid-cols-3 gap-2">
+            <label className="rounded-lg border border-amber-200 bg-white p-2 flex gap-2 items-start">
+              <input type="checkbox" checked={detailedGrid} onChange={(e) => setDetailedGrid(e.target.checked)} className="mt-1" />
+              <span><b>Detailed 7 x 7 grid</b><br /><span className="text-muted-foreground">49 spots per phrase instead of 25. About twice the map-check usage.</span></span>
+            </label>
+            <label className="rounded-lg border border-amber-200 bg-white p-2 flex gap-2 items-start">
+              <input type="checkbox" checked={includeAi} onChange={(e) => setIncludeAi(e.target.checked)} className="mt-1" />
+              <span><b>AI visibility evidence</b><br /><span className="text-muted-foreground">Runs three live web-search questions and may use paid AI credits.</span></span>
+            </label>
+            <label className="rounded-lg border border-amber-200 bg-white p-2 flex gap-2 items-start">
+              <input type="checkbox" checked={includeVisual} onChange={(e) => setIncludeVisual(e.target.checked)} className="mt-1" />
+              <span><b>Website visual</b><br /><span className="text-muted-foreground">Adds a current mobile Lighthouse capture when available.</span></span>
+            </label>
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -1741,6 +1764,7 @@ const ProspectRow = memo(function ProspectRow({
       {videoOpen && p.link && <VideoPanel p={p} makeOg={makeOg} onRefresh={onRefresh} />}
       {open && (
         <div className="grid sm:grid-cols-2 gap-2 pt-1">
+          <div className="sm:col-span-2"><ActionWorkflow prospectId={p.id} /></div>
           <label className="text-base space-y-1">
             <span className="sr-only">Contact name</span>
             <input
@@ -2078,6 +2102,63 @@ function VideoPanel({
 
 // Small badges: mobile (WhatsApp likely) or landline, email found (the
 // address shows on hover or tap), and Facebook/Instagram links for a DM.
+function BrandingStudio() {
+  const read = useServerFn(getReportBranding);
+  const save = useServerFn(saveReportBranding);
+  const [form, setForm] = useState({ agencyName: "RepSuites", primaryHex: "#0b1d3a", secondaryHex: "#f5b324", logoUrl: "", phone: "", email: "" });
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    void read().then((result) => {
+      if (!result.ok || !result.branding) return;
+      const b = result.branding;
+      setForm({ agencyName: b.agency_name || "RepSuites", primaryHex: b.primary_hex || "#0b1d3a", secondaryHex: b.secondary_hex || "#f5b324", logoUrl: b.logo_url || "", phone: b.phone || "", email: b.email || "" });
+    });
+  }, [read]);
+  const change = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  return <section className="space-y-5">
+    <div className="rounded-2xl border border-border bg-gradient-to-br from-slate-950 to-slate-800 p-6 text-white shadow-xl">
+      <p className="text-sm font-bold uppercase tracking-[.18em] text-amber-300">Report studio</p>
+      <h1 className="mt-2 text-3xl font-black">Make every report unmistakably yours</h1>
+      <p className="mt-2 max-w-2xl text-slate-300">Your logo, colours and contact details flow into the live report and downloadable PDF without changing the evidence.</p>
+    </div>
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-xl border p-5" style={{ borderTopWidth: 6, borderTopColor: form.secondaryHex }}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">{form.logoUrl ? <img src={form.logoUrl} alt="" className="h-10 w-10 rounded-lg object-contain" /> : <div className="h-10 w-10 rounded-lg" style={{ background: form.primaryHex }} />}<div><p className="text-xl font-black" style={{ color: form.primaryHex }}>{form.agencyName}</p><p className="text-sm text-muted-foreground">Website and Google visibility report</p></div></div>
+          <p className="text-sm text-right text-muted-foreground">{form.phone}<br />{form.email}</p>
+        </div>
+      </div>
+      <div className="mt-5 grid sm:grid-cols-2 gap-4">
+        <label className="space-y-1"><span className="font-semibold">Agency name</span><input className={field} value={form.agencyName} onChange={(e) => change("agencyName", e.target.value)} /></label>
+        <label className="space-y-1"><span className="font-semibold">Logo URL</span><input className={field} value={form.logoUrl} onChange={(e) => change("logoUrl", e.target.value)} placeholder="https://..." /></label>
+        <label className="space-y-1"><span className="font-semibold">Primary colour</span><div className="flex gap-2"><input type="color" value={form.primaryHex} onChange={(e) => change("primaryHex", e.target.value)} className="h-11 w-14 rounded-lg border" /><input className={field} value={form.primaryHex} onChange={(e) => change("primaryHex", e.target.value)} /></div></label>
+        <label className="space-y-1"><span className="font-semibold">Accent colour</span><div className="flex gap-2"><input type="color" value={form.secondaryHex} onChange={(e) => change("secondaryHex", e.target.value)} className="h-11 w-14 rounded-lg border" /><input className={field} value={form.secondaryHex} onChange={(e) => change("secondaryHex", e.target.value)} /></div></label>
+        <label className="space-y-1"><span className="font-semibold">Phone</span><input className={field} value={form.phone} onChange={(e) => change("phone", e.target.value)} /></label>
+        <label className="space-y-1"><span className="font-semibold">Email</span><input type="email" className={field} value={form.email} onChange={(e) => change("email", e.target.value)} /></label>
+      </div>
+      <button type="button" disabled={busy} onClick={async () => { setBusy(true); const result = await save({ data: form }).catch(() => null); setBusy(false); result?.ok ? toast.success("Report branding saved") : toast.error(result && !result.ok ? result.error : FAILED); }} className="mt-5 min-h-11 rounded-xl bg-primary px-5 font-bold text-primary-foreground disabled:opacity-50">{busy ? "Saving..." : "Save branding"}</button>
+    </div>
+  </section>;
+}
+
+function ActionWorkflow({ prospectId }: { prospectId: string }) {
+  const list = useServerFn(listProspectActions);
+  const sync = useServerFn(syncProspectActions);
+  const updateAction = useServerFn(updateProspectAction);
+  const [actions, setActions] = useState<any[]>([]);
+  const [busy, setBusy] = useState(false);
+  const loadActions = useCallback(async () => {
+    const result = await list({ data: { prospectId } }).catch(() => null);
+    if (result?.ok) setActions(result.actions);
+  }, [list, prospectId]);
+  useEffect(() => { void loadActions(); }, [loadActions]);
+  const statuses = ["proposed", "approved", "in_progress", "completed", "verified", "rejected"] as const;
+  return <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-2">
+    <div className="flex items-center justify-between gap-2"><div><p className="font-bold">Recommendation workflow</p><p className="text-sm text-muted-foreground">Approve, assign, complete and verify each evidence-led action.</p></div><button type="button" disabled={busy} onClick={async () => { setBusy(true); await sync({ data: { prospectId } }); await loadActions(); setBusy(false); }} className="min-h-9 rounded-lg border bg-background px-3 font-semibold">{actions.length ? "Refresh from report" : "Create from report"}</button></div>
+    {actions.map((action) => <div key={action.id} className="rounded-lg border bg-background p-2 grid sm:grid-cols-[1fr_auto] gap-2 items-center"><div><p className="font-semibold">{action.title}</p><p className="text-sm text-muted-foreground">{action.evidence}</p></div><select aria-label={`Status for ${action.title}`} value={action.status} onChange={async (event) => { const status = event.target.value as typeof statuses[number]; await updateAction({ data: { id: action.id, status } }); await loadActions(); }} className="min-h-10 rounded-lg border bg-background px-2">{statuses.map((status) => <option value={status} key={status}>{status.replace("_", " ")}</option>)}</select></div>)}
+  </div>;
+}
+
 function ReachBadges({
   h,
   finding,
@@ -2158,3 +2239,4 @@ function ReachBadges({
     </div>
   );
 }
+
