@@ -110,7 +110,18 @@ async function serviceRest<T>(
     }
   } catch (err: any) {
     if (err?.name === "AbortError") return { data: null, error: "timeout", status: 504 };
-    return { data: null, error: "network_error", status: 500 };
+    // Log the real reason (e.g. "Too many subrequests") so it can be fixed.
+    console.error(
+      "serviceRest network_error",
+      endpoint.split("?")[0],
+      String(err?.message ?? err).slice(0, 200),
+    );
+    return {
+      data: null,
+      error: "network_error",
+      status: 500,
+      message: String(err?.message ?? "").slice(0, 160),
+    };
   } finally {
     clearTimeout(timer);
   }
