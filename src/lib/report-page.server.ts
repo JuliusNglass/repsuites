@@ -1210,7 +1210,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
         : "/logo-mark.png";
   const reportUrl = extra ? `/r/${encodeURIComponent(extra.token)}` : "";
   const tools = extra
-    ? `<nav class="report-tools noprint" aria-label="Report actions"><button type="button" id="copy-report">Copy share link</button><a href="${reportUrl}/pdf" class="primary">Download PDF</a><button type="button" id="present-report">Presentation mode</button></nav>`
+    ? `<nav class="report-tools noprint" aria-label="Report actions"><button type="button" id="copy-report">Copy share link</button><a href="${reportUrl}?print=1" class="primary" title="Opens the print window: choose Save as PDF">Download PDF</a><button type="button" id="present-report">Presentation mode</button></nav>`
     : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
