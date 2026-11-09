@@ -126,6 +126,17 @@ function reach(p: any) {
 // ---------- the report ----------
 
 export interface Report {
+  // The first comparable scan, kept when the report is rebuilt (before and after).
+  baseline?: {
+    keyword: string;
+    checkedAt: string;
+    ranks: (number | null)[];
+    top3: number;
+    found: number;
+    average: number | null;
+    center?: { lat: number; lng: number };
+    spacingKm?: number;
+  };
   websiteAudit?: import("./website-audit").WebsiteAudit;
   websiteVisuals?: {
     business?: { url: string; screenshot: string; performance: number | null };
@@ -157,6 +168,7 @@ export interface Report {
     website: string;
     hasHours: boolean;
     mapsUrl: string;
+    placeId?: string;
     newestReviewDays: number | null;
   };
   rivals: {
@@ -580,20 +592,30 @@ export async function buildReport(
     : null;
 
   const { checkWebsite } = await import("./website-audit.server");
-  const websiteAudit = await checkWebsite(website);
+  const websiteAudit = await checkWebsite(website, {
+    phone,
+    address: String(p.formattedAddress ?? ""),
+    service: fallback,
+    town,
+  });
   let aiVisibility: Report["aiVisibility"];
   if (options.includeAi && name && fallback && town) {
     try {
-      const { ask } = await import("./ai-visibility.server");
+      const { ask, askProvider, otherProviders } = await import("./ai-visibility.server");
       const { aiQuestions, readAnswer } = await import("./ai-visibility");
       const questions = aiQuestions(fallback, town);
-      const asked = await Promise.all(questions.map((q) => ask(q, town)));
-      const answers = asked.flatMap((a, i) =>
-        "text" in a
-          ? [{ ...readAnswer(questions[i]!, a.text, name, a.sources), evidence: a.evidence }]
-          : [],
+      // Claude answers every question; ChatGPT, Gemini and Perplexity (when
+      // their keys are set) answer the first, so the report shows each assistant.
+      const others = otherProviders();
+      const asked = await Promise.all([
+        ...questions.map((q) => ask(q, town).then((a) => ({ q, a }))),
+        ...others.map((p) => askProvider(p, questions[0]!).then((a) => ({ q: questions[0]!, a }))),
+      ]);
+      const answers = asked.flatMap(({ q, a }) =>
+        "text" in a ? [{ ...readAnswer(q, a.text, name, a.sources), evidence: a.evidence }] : [],
       );
-      const failed = asked.find((a) => "error" in a) as { error: string } | undefined;
+      const failed = asked.map(({ a }) => a).find((a) => "error" in a) as
+        { error: string } | undefined;
       aiVisibility = {
         checkedAt: new Date().toISOString(),
         answers,
@@ -641,6 +663,7 @@ export async function buildReport(
         website,
         hasHours,
         mapsUrl: String(p.googleMapsUri ?? "").slice(0, 500),
+        ...(p.id ? { placeId: String(p.id).slice(0, 300) } : {}),
         newestReviewDays,
       },
       rivals,
@@ -668,6 +691,28 @@ export async function buildReport(
         .filter(Boolean)
         .slice(0, 5),
     },
+  };
+}
+
+// The "before" picture: an earlier baseline if there is one, otherwise the
+// previous report's first grid (only if it was a complete scan).
+export function baselineFrom(
+  oldBase: Report["baseline"] | null,
+  oldGrid: (NonNullable<Report["grid"]> & { keyword: string }) | null,
+  oldAt: string | undefined,
+): Report["baseline"] | undefined {
+  if (oldBase?.ranks?.length) return oldBase;
+  if (!oldGrid?.ranks?.length || !oldGrid.keyword || oldGrid.ranks.some((x) => x === -1))
+    return undefined;
+  return {
+    keyword: oldGrid.keyword,
+    checkedAt: oldAt || new Date().toISOString(),
+    ranks: oldGrid.ranks,
+    top3: oldGrid.top3,
+    found: oldGrid.found,
+    average: oldGrid.average,
+    ...(oldGrid.center ? { center: oldGrid.center } : {}),
+    ...(oldGrid.spacingKm != null ? { spacingKm: oldGrid.spacingKm } : {}),
   };
 }
 
@@ -720,9 +765,12 @@ export async function saveProspectReport(
         g0: string | null;
         g1: string | null;
         g2: string | null;
+        old_base: Report["baseline"] | null;
+        old_g0: (NonNullable<Report["grid"]> & { keyword: string }) | null;
+        old_at: string | null;
       }[]
     >(
-      `prospects?select=id,report_token,email,report_at,owner_looked_up_at,prev_kw:report->maps->>keyword,g0:report->grids->0->>keyword,g1:report->grids->1->>keyword,g2:report->grids->2->>keyword&place_id=eq.${encodeURIComponent(placeId)}`,
+      `prospects?select=id,report_token,email,report_at,owner_looked_up_at,prev_kw:report->maps->>keyword,g0:report->grids->0->>keyword,g1:report->grids->1->>keyword,g2:report->grids->2->>keyword,old_base:report->baseline,old_g0:report->grids->0,old_at:report->>createdAt&place_id=eq.${encodeURIComponent(placeId)}`,
       "",
     ),
     cachedContacts([placeId]),
@@ -754,6 +802,9 @@ export async function saveProspectReport(
   });
   if (!built)
     return { ok: false as const, error: "Google could not find that business. Try again." };
+  // Keep the first real scan so the report can show before and after.
+  const keep = baselineFrom(row?.old_base ?? null, row?.old_g0 ?? null, row?.old_at ?? undefined);
+  if (keep) built.report.baseline = keep;
   // SparkOps: review problems (free, from the reviews we already have) and
   // one look at the website (at most 6 fetches). Fails quietly.
   if (extra.product === "sparkops") {
@@ -898,4 +949,3 @@ export async function addProspectGrid(placeId: string, keyword: string) {
     ? { ok: false as const, error: "Could not save the report." }
     : { ok: true as const };
 }
-

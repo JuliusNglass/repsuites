@@ -9,6 +9,7 @@ import type { Report } from "../lib/prospects.server";
 import type { ProspectSnapshot } from "../lib/prospect-connect.server";
 import type { VideoKind } from "../lib/prospect-video";
 import { isLinkBot } from "../lib/link-bots";
+import { alertReportOpened, shouldAlertOpen } from "../lib/prospect-video.server";
 
 const HTML = {
   "Content-Type": "text/html; charset=utf-8",
@@ -37,9 +38,14 @@ export const Route = createFileRoute("/r/$token")({
             sale_period: string | null;
             product: string | null;
             created_by: string | null;
+            name: string | null;
+            phone: string | null;
+            sent_at: string | null;
+            opens: number | null;
+            last_opened_at: string | null;
           }[]
         >(
-          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product,created_by&report_token=eq.${token}`,
+          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product,created_by,name,phone,sent_at,opens,last_opened_at&report_token=eq.${token}`,
           "",
         );
         const row = r.data?.[0];
@@ -48,11 +54,19 @@ export const Route = createFileRoute("/r/$token")({
         // Do not count our own team opening it (they are signed in).
         const ours = (request.headers.get("cookie") ?? "").includes("repsuites_session=");
         const bot = isLinkBot(request.method, request.headers.get("user-agent"));
-        if (!ours && !bot)
+        if (!ours && !bot) {
           await serviceWrite("rpc/repsuites_report_opened", "", {
             method: "POST",
             body: { p_token: token },
           }).catch(() => null);
+          const alert = row ? shouldAlertOpen(row) : null;
+          if (alert)
+            await alertReportOpened(
+              token,
+              { name: row!.name || "A prospect", phone: row!.phone },
+              alert,
+            );
+        }
         const q = new URL(request.url).searchParams;
         const flash = q.get("print") ? "print" : (q.get("google") ?? "");
         const competitorId = (q.get("competitor") ?? "").slice(0, 300);
@@ -87,4 +101,3 @@ export const Route = createFileRoute("/r/$token")({
     },
   },
 });
-
