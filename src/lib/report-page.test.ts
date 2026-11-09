@@ -69,7 +69,7 @@ describe("score uses the whole area", async () => {
     expect(v.fixes.some((f) => f.title.includes("fast food"))).toBe(true);
     const h = renderReport(r, { token: "a".repeat(24), snapshot: null, flash: "" });
     expect(h).toContain("What we found");
-    expect(h.indexOf("What we found")).toBeLessThan(h.indexOf("How we worked out your score"));
+    expect(h.indexOf("What we found")).toBeLessThan(h.indexOf("How we checked, and how your score"));
   });
 });
 
@@ -83,7 +83,7 @@ describe("personal video at the top", () => {
     });
     expect(h).toContain("Sam, I recorded this for you");
     expect(h).toContain("https://www.loom.com/embed/0123456789abcdef0123456789abcdef");
-    expect(h.indexOf("I recorded this")).toBeLessThan(h.indexOf("You and your nearest rivals"));
+    expect(h.indexOf("I recorded this")).toBeLessThan(h.indexOf("Who is beating you"));
     expect(h).toContain("Type your email and a password");
     expect(h).toContain("Print your QR code");
     expect(h).toContain(`/start?r=${"a".repeat(24)}`);
@@ -154,8 +154,8 @@ describe("what 1 more customer is worth", () => {
     expect(h.indexOf("What 1 more customer is worth")).toBeGreaterThan(
       h.indexOf("Where you show up across your area"),
     );
-    expect(h.indexOf("What 1 more customer is worth")).toBeLessThan(
-      h.indexOf("You and your nearest rivals"),
+    expect(h.indexOf("What 1 more customer is worth")).toBeGreaterThan(
+      h.indexOf("Who is beating you"),
     );
     // The money is revealed under the map, not in "What we found".
     expect(h).not.toContain("Just <b>1 more customer a day</b>");
@@ -279,7 +279,7 @@ describe("all keyword grids in PDF", () => {
 
   it("adds a presentation narrative and deliberate A4 print layout", () => {
     const html = renderReport(report, { token: "a".repeat(24), snapshot: null, flash: "print" });
-    expect(html).toContain("Your evidence-led action plan");
+    expect(html).toContain("Your 90-day action plan");
     expect(html).toContain("Proof and next step");
     expect(html).toContain("Copy share link");
     expect(html).toContain("Download PDF");

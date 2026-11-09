@@ -135,6 +135,20 @@ td:nth-child(n+2),th:nth-child(n+2){text-align:right}
 .brand img{outline:1px solid rgba(15,23,42,.08);outline-offset:-1px}
 @media (prefers-reduced-motion:reduce){.cta,.seg button,.kw button{transition:none}}
 ${READING_STYLE}${RANK_PIN_STYLE}
+
+/* Chapters */
+.chapter-open{margin:72px 0 18px;scroll-margin-top:90px}.chapter-open .eyebrow{margin:0;color:var(--ink-3);font-weight:600;font-size:.95rem}.chapter-open h2{margin:2px 0 0;font-size:1.9rem;letter-spacing:-.022em}
+h3.sub{font-size:1.2rem;margin:28px 0 10px;letter-spacing:-.01em}
+.top3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.top3 .card{margin:0}.top3 h3{margin:12px 0 6px;font-size:1.15rem;line-height:1.3}.top3 p{margin:0;color:var(--ink-2)}
+.pill.big{background:#fde8e8;color:#9b1c1c}
+.check-list{padding:6px 22px}.check-row{border-bottom:1px solid var(--line)}.check-row:last-child{border-bottom:0}
+.check-row>summary{list-style:none;cursor:pointer;min-height:56px;display:flex;align-items:center;gap:12px;padding:6px 0}.check-row>summary::-webkit-details-marker{display:none}
+.check-row .pill{min-width:64px;justify-content:center}.check-title{flex:1;font-weight:650}.see{color:var(--ink-3);font-size:.95rem;white-space:nowrap}.check-row[open] .see{visibility:hidden}
+.check-body{padding:0 0 16px 76px}.check-body p{margin:6px 0}
+.closing{background:var(--navy);color:#fff;border:0;padding:28px;margin-top:28px}.closing h3{margin:0 0 6px;font-size:1.35rem;color:#fff}.closing p,.closing .small{color:rgba(255,255,255,.85)}.closing a.book{background:transparent;color:#fff!important;border-color:rgba(255,255,255,.4)}
+details.how>summary{list-style:none;cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:650}details.how>summary::-webkit-details-marker{display:none}
+@media(max-width:760px){.top3{grid-template-columns:1fr}.check-body{padding-left:0}.chapter-open h2{font-size:1.5rem}}
+@media print{.chapter-open{break-before:page;margin-top:0}#summary.chapter-open{break-before:auto}.check-body{padding-left:0}.top3{grid-template-columns:repeat(3,1fr)}details.how,details.how>*{display:block}}
 /* ===== Premium layer: agency-grade type, rhythm and controls ===== */
 :root{--ink:#0b1424;--ink-2:#334155;--ink-3:#5b6b80;--line:#e6eaf0;--paper:#ffffff;--canvas:#f4f6f9;--gold:var(--report-accent,#f5b324);--navy:var(--report-primary,#0b1d3a);--radius:18px;--shadow:0 1px 2px rgba(11,20,36,.04),0 8px 28px rgba(11,20,36,.06)}
 body{background:var(--canvas);color:var(--ink);font-family:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.6;letter-spacing:-.003em}
@@ -354,7 +368,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const intro = `<p style="margin:0 0 8px">We searched Google Maps from 25 places around you, up to ${esc(furthest)} away. This is what a customer standing there would see.</p>
 <ul style="margin:0 0 12px;padding-left:1.2em"><li>Each pin shows where you came in the list from that place.</li><li>The house is you.</li><li>Pinch, or use + and −, to zoom in.</li></ul>`;
   if (!center || !extra)
-    return `${printable}<div class="screen-grids"><h2>Where you show up across your area</h2><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>`;
+    return `${printable}<div class="screen-grids"><h3 class="sub">Where you show up across your area</h3><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>`;
   const spots = gridSpots(center, 5, spacingKm).map((p) => [
     Math.round(p.lat * 1e6) / 1e6,
     Math.round(p.lng * 1e6) / 1e6,
@@ -386,7 +400,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const rivalKey = data.rivals.length
     ? `<p class="small" style="margin:8px 0 0">${data.rivals.map((x) => `<b class="rkey">${x.l}</b> ${esc(x.n)}`).join(" &nbsp; ")}</p>`
     : "";
-  return `${printable}<div class="screen-grids"><h2>Where you show up across your area</h2><div class="card">${intro}${tabs}${competitorTabs}
+  return `${printable}<div class="screen-grids"><h3 class="sub">Where you show up across your area</h3><div class="card">${intro}${tabs}${competitorTabs}
 <div id="rmap" class="map" role="region" aria-label="Map of where you show up. The words under the map say the same thing."><div id="rmap-fallback" style="padding:16px">${dots(grids[0]!)}</div></div>
 ${legend}${rivalKey}<p id="rmap-sum" aria-live="polite" style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -595,8 +609,7 @@ ${controls}
 <li>Unhappy customers message you privately first, not on Google.</li>
 <li>Repeat the same map check later to measure whether visibility improved.</li>
 </ul>
-<a class="cta noprint" href="${start}">Start free</a>
-<p class="small noprint" style="text-align:center;margin:8px 0 0">No card needed. Takes 2 minutes.</p></div>${script}`;
+</div>${script}`;
 }
 
 // Website fixes in the order they matter most: wrong details first.
@@ -663,7 +676,7 @@ function presentationClose(
     })
     .join("");
   return `<section class="presentation-close chapter" id="action-plan">
-<div class="chapter-head"><span class="chapter-no">07</span><h2>Do this first: Your evidence-led action plan (90 days)</h2></div>
+<h3 class="sub">Your 90-day action plan</h3>
 <div class="stage">${actionCards || `<article class="card"><div class="when">This month</div><h3>Keep your current position</h3><p>Keep earning reviews, keep your Google profile up to date and run the same search again later.</p></article>`}</div><div class="card"><p class="small"><b>Before you make a change:</b> save a copy of what customers see today, choose who will make the change and set a date. Run the same check again afterwards so you can see whether it helped.</p></div>
 <h2>Proof and next step</h2>
 <div class="card"><p><b>What this report shows:</b> how your business appeared in the Google searches we checked on ${date}, plus the public information customers could see.</p><p><b>What it cannot show:</b> private account figures, how many visitors became customers, or a guaranteed future ranking.</p><p style="margin-bottom:0"><b>Your next step:</b> choose the first three actions, save what customers see today and set a date to run the same check again.</p></div>
@@ -954,7 +967,7 @@ export function websiteEvidence(r: Report): string {
       priority: "Medium priority · Website expert",
     },
   };
-  const intro = `<section id="website" class="chapter"><div class="chapter-head"><span class="chapter-no">04</span><h2>What to improve on your website</h2></div><div class="card"><p class="diagnosis">We checked whether your website clearly says <b>what you do, where you work, why customers should trust you and how they can contact you.</b> Each recommendation tells you what to change and how to check it afterwards.</p><p class="small">Checked ${esc(a.checkedAt)}. We checked the information available on the homepage. Page speed, ease of use and completed enquiries need separate checks.</p>`;
+  const intro = `<section id="website" class="chapter"><div class="card"><p class="diagnosis">We checked whether your website clearly says <b>what you do, where you work, why customers should trust you and how they can contact you.</b> Each recommendation tells you what to change and how to check it afterwards.</p><p class="small">Checked ${esc(a.checkedAt)}. We checked the information available on the homepage. Page speed, ease of use and completed enquiries need separate checks.</p>`;
   if (a.status !== "checked")
     return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "The website could not be checked. No negative findings were inferred."}</p></div></section>`;
   const ws = websiteScore(a);
@@ -963,7 +976,7 @@ export function websiteEvidence(r: Report): string {
     ws == null
       ? ""
       : `<div class="card score"><div class="dial" style="background:${scoreColour(ws)}">${ws}</div><div><b>Website score, out of 100</b><p class="muted" style="margin:4px 0 0">${passed} of ${a.findings.length} checks passed. ${ws < 40 ? "Most visitors are likely to leave without calling." : ws < 70 ? "A few fixes would help Google and customers understand you." : "Your homepage is in good shape."}</p></div></div>`;
-  return `${intro}<p class="small">Source: ${esc(a.url)}</p>${scoreLine}<div class="audit-grid">${a.findings
+  return `${intro}<p class="small">Source: ${esc(a.url)}</p>${scoreLine}<div class="card check-list">${[...a.findings].sort((x, y) => (x.status === "review" ? 0 : 1) - (y.status === "review" ? 0 : 1))
     .map((f) => {
       const g = guidance[f.id] ?? {
         verdict: f.label,
@@ -979,12 +992,35 @@ export function websiteEvidence(r: Report): string {
           : f.id === "viewport"
             ? "Phone-friendly page"
             : f.label;
-      return `<article class="audit-card"><div class="verdict"><span class="pill ${f.status === "review" ? "improve" : g.level}">${esc(g.verdict)}</span><span class="small">${esc(g.priority)}</span></div><h3>${esc(label)}</h3><p class="small"><b>What we found:</b> ${esc(f.evidence)}</p><div class="prescription"><b>What to do</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Next step:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>How to check it:</b> ${esc(g.proof)}</p></article>`;
+      // One row per check; the full advice opens with "See how" (printed open).
+      return `<details class="check-row"${f.status === "review" ? "" : ""}><summary><span class="pill ${f.status === "review" ? "improve" : g.level}">${f.status === "review" ? "Fix" : "Good"}</span><span class="check-title">${esc(label)}</span><span class="see">See how</span></summary><div class="check-body"><p class="small">${esc(g.priority)}</p><p><b>What we found:</b> ${esc(f.evidence)}</p><div class="prescription"><b>What to do</b><p>${esc(g.action)}</p><b>Suggested wording or check</b><p>${esc(g.example)}</p></div>${f.status === "review" ? `<p class="proof"><b>Next step:</b> ${esc(f.recommendation)}</p>` : ""}<p class="proof"><b>How to check it:</b> ${esc(g.proof)}</p></div></details>`;
     })
     .join(
       "",
     )}</div><p class="small">Review each change before it is published. These actions are sensible next steps based on what we found, but no one can promise a particular ranking or amount of revenue.</p></div></section>`;
 }
+
+// Chapter 1: the three biggest fixes, from the same evidence as the plan.
+export function topThree(r: Report): string {
+  const items: { title: string; why: string; big: boolean }[] = [];
+  for (const f of r.fixes ?? []) items.push({ title: f.title, why: f.why, big: f.priority === "high" });
+  const order = ["phone_match", "address_match", "local_wording", "title", "h1", "phone"];
+  for (const f of [...(r.websiteAudit?.findings ?? [])]
+    .filter((x) => x.status === "review" && order.includes(x.id))
+    .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)))
+    items.push({ title: f.label, why: f.recommendation, big: f.id === "phone_match" || f.id === "address_match" });
+  const top = [...items.filter((i) => i.big), ...items.filter((i) => !i.big)].slice(0, 3);
+  if (!top.length) return "";
+  return `<div class="top3">${top
+    .map(
+      (i) =>
+        `<div class="card"><span class="pill ${i.big ? "big" : "improve"}">${i.big ? "Big impact" : "Quick win"}</span><h3>${esc(i.title)}</h3><p>${esc(i.why)}</p></div>`,
+    )
+    .join("")}</div><p class="small">Every other fix is in your plan in chapter 6, with who does it and how to check it worked.</p>`;
+}
+
+const chapter = (n: number, id: string, title: string) =>
+  `<div class="chapter-open" id="${id}"><p class="eyebrow">Chapter ${n}</p><h2>${esc(title)}</h2></div>`;
 
 // Customers know the assistant, not the company: "OpenAI" is shown as ChatGPT.
 export function assistantName(provider: string | undefined): string {
@@ -1039,10 +1075,16 @@ export function reviewStand(r: Report, extra: RenderExtra | null): string {
   return `<h2 id="stand">Your review stand</h2><div class="card" style="display:flex;flex-wrap:wrap;gap:18px;align-items:center"><div style="background:#0f172a;color:#fff;border-radius:16px;padding:16px;text-align:center;width:190px"><b style="display:block;font-size:1.05rem">Enjoyed your visit?</b><span style="font-size:.95rem">Scan to leave a review</span><div style="background:#fff;border-radius:10px;padding:8px;margin:10px auto 8px;width:148px">${qr}</div><span style="font-size:.95rem;font-weight:700">${esc(r.business.name)}</span></div><div style="flex:1;min-width:200px"><p>Customers scan this and land straight on your Google review page. Try it now with your phone camera.</p><p class="noprint"><a class="book" href="${order}">Get this stand</a></p></div></div>`;
 }
 
-function richerEvidence(r: Report): string {
+function websitePicture(r: Report): string {
+  return richerEvidence(r, "website");
+}
+function aiSection(r: Report): string {
+  return richerEvidence(r, "ai");
+}
+function richerEvidence(r: Report, part: "website" | "ai" | "both" = "both"): string {
   const visual = r.websiteVisuals?.business;
   const website = visual
-    ? `<h2>What a customer sees on your website</h2><div class="card"><img src="${esc(visual.screenshot)}" alt="Mobile view of ${esc(r.business.name)} website" style="display:block;width:100%;max-height:520px;object-fit:contain;border-radius:10px;border:1px solid #cbd5e1"><p class="small">Lighthouse mobile capture from ${esc(visual.url)}${visual.performance == null ? "" : `. Performance score: ${visual.performance}/100`}. This is visual evidence, not a conversion claim.</p></div>`
+    ? `<h3 class="sub">What a customer sees on your website</h3><div class="card"><img src="${esc(visual.screenshot)}" alt="Mobile view of ${esc(r.business.name)} website" style="display:block;width:100%;max-height:520px;object-fit:contain;border-radius:10px;border:1px solid #cbd5e1"><p class="small">Lighthouse mobile capture from ${esc(visual.url)}${visual.performance == null ? "" : `. Performance score: ${visual.performance}/100`}. This is visual evidence, not a conversion claim.</p></div>`
     : "";
   const ai = r.aiVisibility;
   const assistants = ai?.answers
@@ -1052,9 +1094,9 @@ function richerEvidence(r: Report): string {
     )
     .join("");
   const visibility = ai
-    ? `<h2>What AI assistants recommend</h2><div class="card"><p class="small">These are dated public-search observations. Answers vary, so they are evidence to monitor, not a promise of future visibility.</p>${assistants || `<p>${esc(ai.error || "No usable AI answer was recorded.")}</p>`}${assistants && ai.error ? `<p class="small">Not checked this time: ${esc(ai.error)}</p>` : ""}</div>`
+    ? `<h3 class="sub">What AI assistants recommend</h3><div class="card"><p class="small">These are dated public-search observations. Answers vary, so they are evidence to monitor, not a promise of future visibility.</p>${assistants || `<p>${esc(ai.error || "No usable AI answer was recorded.")}</p>`}${assistants && ai.error ? `<p class="small">Not checked this time: ${esc(ai.error)}</p>` : ""}</div>`
     : "";
-  return website + visibility;
+  return part === "website" ? website : part === "ai" ? visibility : website + visibility;
 }
 
 function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
@@ -1179,27 +1221,20 @@ ${video}
 ${executiveBrief(r, view)}
 <p class="muted">${esc(b.address)} &middot; Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
 <div class="report-shell"><div class="report-main">
+${chapter(1, "summary", "Do these three things first")}
+${topThree(r)}
 ${headline}
 
-<div id="map"></div>
-${heat || (mapsLine ? `<h2>Where you show up on Google Maps</h2><div class="card">${mapsLine}</div>` : "")}
-
-${comparison}
-
-${profileEvidence(r)}
-
-${websiteEvidence(r)}
-${richerEvidence(r)}
+${chapter(2, "map", "Where customers can find you on Google Maps")}
+${heat || (mapsLine ? `<div class="card">${mapsLine}</div>` : "")}
 ${beforeAfter(r)}
-${reviewStand(r, extra)}
 
-${worthSection(r, sale, extra)}
-
+${chapter(3, "rivals", "Who is beating you, and why")}
+${comparison}
 ${
   comparison
     ? ""
-    : `<h2>You and your nearest rivals</h2>
-<div class="card"><table><tr><th>Business</th><th>Rating</th><th>Google reviews</th></tr>
+    : `<div class="card"><table><tr><th>Business</th><th>Rating</th><th>Google reviews</th></tr>
 ${rows
   .map(
     (x) =>
@@ -1208,26 +1243,36 @@ ${rows
   .join("")}</table></div>`
 }
 ${gap}
+${profileEvidence(r)}
 
-${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
+${chapter(4, "website-ch", "Your website")}
+${websitePicture(r)}
+${websiteEvidence(r)}
 
-<div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
-<p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
-<p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}" style="color:#334155">Or book a free 15-minute call</a></p></div>
+${r.aiVisibility ? chapter(5, "ai", "Do AI assistants recommend you?") : ""}
+${aiSection(r)}
+
+${chapter(6, "plan", "Your plan, and what it is worth")}
 ${presentationClose(r, b, view, extra)}
-<h2 id="score">How we worked out your score</h2>
-<div class="card score"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
+${worthSection(r, sale, extra)}
+${reviewStand(r, extra)}
+${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
+<div class="noprint closing card"><h3>Want us to do all of this for you?</h3><p>We handle reviews, your Google profile and website fixes every month, and rerun this check so you can see the dots change.</p><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
+<p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
+<p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}">Or book a free 15-minute call</a></p></div>
+<details class="card how" id="score"><summary>How we checked, and how your score of ${view.score}/100 works</summary>
+<div class="score" style="margin-top:12px"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
-<div class="card">${view.parts
+${view.parts
     .map(
       (p) =>
         `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:1rem"><span>${esc(p.label)}</span><b>${p.got} / ${p.max}</b></div><div class="bar"><span style="width:${Math.round((p.got / p.max) * 100)}%"></span></div></div>`,
     )
-    .join("")}</div>
+    .join("")}</details>
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#334155">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time.</p>
 ${agency.phone || agency.email ? `<p class="small"><b>${esc(agency.name)}</b>${agency.phone ? ` · ${esc(agency.phone)}` : ""}${agency.email ? ` · ${esc(agency.email)}` : ""}</p>` : ""}
-</div><aside class="report-aside noprint" aria-label="Report chapters"><div class="card"><div class="method">Report chapters</div><a href="#summary">Executive diagnosis</a><a href="#map">Local visibility</a><a href="#website">Website diagnosis</a><a href="#worth">Commercial opportunity</a><a href="#action-plan">90-day action plan</a><a href="#score">Scoring method</a></div><div class="card"><b>Discover. Diagnose. Prioritise. Prove.</b><p class="small">Every recommendation is tied to dated evidence and a verification step.</p></div></aside></div>
+</div><aside class="report-aside noprint" aria-label="Report chapters"><div class="card"><div class="method">In this report</div><a href="#summary">1. Fix first</a><a href="#map">2. Google Maps</a><a href="#rivals">3. Rivals and reviews</a><a href="#website-ch">4. Your website</a>${r.aiVisibility ? `<a href="#ai">5. AI assistants</a>` : ""}<a href="#plan">6. Plan and value</a></div></aside></div>
 </main>${extra ? actionTracker(extra.token) : ""}${extra ? `<script>(function(){var copy=document.getElementById("copy-report"),present=document.getElementById("present-report");if(copy)copy.addEventListener("click",function(){navigator.clipboard.writeText(location.origin+${JSON.stringify(reportUrl)}).then(function(){copy.textContent="Link copied";setTimeout(function(){copy.textContent="Copy share link"},1600)}).catch(function(){prompt("Copy this report link",location.origin+${JSON.stringify(reportUrl)})});});if(present)present.addEventListener("click",function(){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});document.querySelector("#summary")?.scrollIntoView({behavior:"smooth"});});})();</script>` : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
 }
 
