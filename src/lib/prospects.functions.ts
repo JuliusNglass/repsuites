@@ -741,3 +741,21 @@ export const setProspectOgImage = createServerFn({ method: "POST" })
     const { setOgImage } = await import("./prospect-video.server");
     return setOgImage(data.id, data.path);
   });
+
+// One step of a map grid (GRID_STEP spots). The page calls it until done.
+export const prospectGridStep = createServerFn({ method: "POST" })
+  .validator((d: { placeId: string; keyword: string; size?: 5 | 7 }) =>
+    z
+      .object({
+        placeId: z.string().regex(PLACE_RE),
+        keyword: z.string().trim().min(2).max(80),
+        size: z.union([z.literal(5), z.literal(7)]).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const { gridStep } = await import("./prospects.server");
+    return gridStep(data.placeId, data.keyword, data.size ?? 5);
+  });
