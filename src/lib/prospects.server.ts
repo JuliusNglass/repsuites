@@ -866,7 +866,16 @@ export async function saveProspectReport(
         headers: { Prefer: "return=representation" },
         body: { ...body, source, created_by: extra.createdBy ?? null },
       });
-  if (w.error) return { ok: false as const, error: "Could not save the report." };
+  if (w.error) {
+    // Say why, so a failed save can be fixed rather than guessed at.
+    // "network_error" before the database is reached usually means the
+    // Worker ran out of its 50 outside calls for this request.
+    console.error("saveProspectReport write failed", w.error, w.message ?? "");
+    return {
+      ok: false as const,
+      error: `Could not save the report (${w.error}${w.message ? `: ${String(w.message).slice(0, 120)}` : ""}).`,
+    };
+  }
   const newId = row ? null : ((w.data as { id: string }[] | null)?.[0]?.id ?? null);
   // Accelur8 HQ: a new prospect (not a rebuild). Never fails the report.
   if (newId && extra.hq !== false) {
