@@ -717,8 +717,9 @@ export async function reportAi(
     const answers = asked.flatMap(({ q, a }) =>
       "text" in a ? [{ ...readAnswer(q, a.text, name, a.sources), evidence: a.evidence }] : [],
     );
-    const failed = asked.map(({ a }) => a).find((a) => "error" in a) as
-      { error: string } | undefined;
+    // Every assistant that could not be checked, so none quietly disappears.
+    const errors = [...new Set(asked.flatMap(({ a }) => ("error" in a ? [a.error] : [])))];
+    const failed = errors.length ? { error: errors.join(" ") } : undefined;
     return {
       checkedAt: new Date().toISOString(),
       answers,

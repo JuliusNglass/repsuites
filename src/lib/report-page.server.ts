@@ -1001,7 +1001,7 @@ function richerEvidence(r: Report): string {
     )
     .join("");
   const visibility = ai
-    ? `<h2>What AI assistants recommend</h2><div class="card"><p class="small">These are dated public-search observations. Answers vary, so they are evidence to monitor, not a promise of future visibility.</p>${assistants || `<p>${esc(ai.error || "No usable AI answer was recorded.")}</p>`}</div>`
+    ? `<h2>What AI assistants recommend</h2><div class="card"><p class="small">These are dated public-search observations. Answers vary, so they are evidence to monitor, not a promise of future visibility.</p>${assistants || `<p>${esc(ai.error || "No usable AI answer was recorded.")}</p>`}${assistants && ai.error ? `<p class="small">Not checked this time: ${esc(ai.error)}</p>` : ""}</div>`
     : "";
   return website + visibility;
 }
@@ -1020,7 +1020,7 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
       : lead.top3 > 0
         ? `You show up well near your strongest location, but customers across most of the area see other businesses first for \"${lead.keyword}\". Make your service and location clearer, build recent reviews and check the same area again.`
         : `You did not reach the top three anywhere we checked for \"${lead.keyword}\". Customers are seeing other businesses first.`;
-  return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Your overall visibility score is <b>${view.score}/100</b>. The map positions above show where customers are most and least likely to see you.</p></section>`;
+  return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Your overall visibility score is <b>${view.score}/100</b>${r.maps?.checked ? "" : " (Google Maps position not checked yet, so it is left out of this score)"}. The map positions above show where customers are most and least likely to see you.</p></section>`;
 }
 
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
