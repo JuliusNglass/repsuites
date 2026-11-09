@@ -134,7 +134,55 @@ td:nth-child(n+2),th:nth-child(n+2){text-align:right}
 .worth input[type=range]::-webkit-slider-thumb{width:26px;height:26px}
 .brand img{outline:1px solid rgba(15,23,42,.08);outline-offset:-1px}
 @media (prefers-reduced-motion:reduce){.cta,.seg button,.kw button{transition:none}}
-${READING_STYLE}${RANK_PIN_STYLE}`;
+${READING_STYLE}${RANK_PIN_STYLE}
+/* ===== Premium layer: agency-grade type, rhythm and controls ===== */
+:root{--ink:#0b1424;--ink-2:#334155;--ink-3:#5b6b80;--line:#e6eaf0;--paper:#ffffff;--canvas:#f4f6f9;--gold:var(--report-accent,#f5b324);--navy:var(--report-primary,#0b1d3a);--radius:18px;--shadow:0 1px 2px rgba(11,20,36,.04),0 8px 28px rgba(11,20,36,.06)}
+body{background:var(--canvas);color:var(--ink);font-family:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.6;letter-spacing:-.003em}
+main{padding-top:20px}
+.top{padding:10px 0 18px;border-bottom:1px solid var(--line);margin-bottom:24px}.brand{font-weight:750;letter-spacing:-.01em}.brand img{width:32px;height:32px;border-radius:8px}
+.report-tools{top:10px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:999px;padding:6px;box-shadow:var(--shadow);gap:6px;width:max-content;max-width:100%;margin:0 auto 24px}
+.report-tools button,.report-tools a{min-height:44px;border-radius:999px;border:0;background:transparent;color:var(--ink);padding:10px 18px;font-weight:650;font-size:.95rem}
+.report-tools button:hover,.report-tools a:hover{background:#eef1f5}
+.report-tools .primary{background:var(--navy);color:#fff}
+.hero{position:relative;overflow:hidden;background:var(--navy);color:#fff;border:0;border-radius:28px;padding:44px 40px 36px;box-shadow:0 30px 60px -20px rgba(11,29,58,.45)}
+.hero::after{content:"";position:absolute;right:-120px;top:-120px;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(245,179,36,.28),rgba(245,179,36,0) 70%)}
+.hero .method{color:var(--gold);letter-spacing:.04em;font-size:.875rem}
+.hero .biz{color:#fff!important;border:0!important;padding:0;margin:10px 0 12px;font-size:2.6rem;letter-spacing:-.03em;line-height:1.05}
+.hero .diagnosis{color:rgba(255,255,255,.86);font-size:1.12rem;max-width:62ch}
+.hero .small,.hero p.small{color:rgba(255,255,255,.75)}.hero b{color:#fff}
+.metric-grid{gap:14px;margin-top:28px}
+.metric{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:18px}
+.metric strong{color:#fff;font-size:2rem;letter-spacing:-.02em}.metric span{color:rgba(255,255,255,.72);font-size:.9rem}
+h2{font-size:1.55rem;font-weight:750;letter-spacing:-.022em;line-height:1.2;margin:56px 0 16px;color:var(--ink)}
+h3{letter-spacing:-.01em}
+.chapter-head{gap:14px;margin-top:64px}.chapter-head h2{margin:0}
+.chapter-no{width:auto;height:auto;padding:6px 10px;border-radius:999px;background:transparent;color:var(--ink-3);border:1px solid var(--line);font-size:.875rem;letter-spacing:.02em}
+.card{border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid var(--line);margin:14px 0}
+.small,.muted,.proof{color:var(--ink-3)}
+.diagnosis{color:var(--ink-2)}
+.audit-grid{gap:16px}.audit-card{border-radius:var(--radius);padding:22px;border-color:var(--line);box-shadow:var(--shadow)}
+.audit-card h3{font-size:1.1rem;margin-top:12px}
+.prescription{background:#f7f8fa;border-left:3px solid var(--gold);border-radius:12px;padding:14px 16px}
+.pill{font-size:.875rem;font-weight:700;letter-spacing:.01em;padding:5px 11px}
+.fix{border-radius:14px;padding:16px 18px;border-left-width:3px}
+.fix .tag{font-size:.875rem;letter-spacing:.01em}
+table{font-size:.98rem}th{color:var(--ink-3);font-weight:650;font-size:.875rem;letter-spacing:.01em}td,th{padding:13px 8px;border-bottom:1px solid var(--line)}tr.you td{background:#fff8e6}
+.cta{border-radius:999px;padding:17px 28px;font-weight:750;letter-spacing:-.005em;box-shadow:0 10px 24px -8px rgba(245,179,36,.6)}
+a.book,.book{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink)!important;font-weight:650;text-decoration:none}
+a.fixit{border-radius:999px!important}
+.switch{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 14px}
+.switch-label{font-size:.875rem;font-weight:700;letter-spacing:.02em;color:var(--ink-3);min-width:9.5em}
+.switch .kw{margin:0;gap:6px;background:#eef1f5;border-radius:999px;padding:4px;flex-wrap:nowrap;overflow-x:auto;overscroll-x:contain;max-width:100%;scrollbar-width:none}.kw button,.kw .chip{white-space:nowrap;flex-shrink:0}.pill{white-space:nowrap}.report-aside .method{letter-spacing:.02em}
+.kw button,.kw .chip{border:0;border-radius:999px;background:transparent;color:var(--ink-2);padding:10px 16px;font-weight:650;font-size:.95rem;min-height:44px;display:inline-flex;align-items:center}
+.kw button.on,.kw .chip{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(11,20,36,.08),0 2px 8px rgba(11,20,36,.08)}
+.kw button:focus-visible,.report-tools button:focus-visible,.cta:focus-visible,a.book:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.map{border-radius:16px;box-shadow:inset 0 0 0 1px rgba(11,20,36,.06)}
+.dial{box-shadow:0 8px 20px -6px rgba(11,20,36,.35)}
+.total{border-radius:16px}
+.report-aside .card{padding:18px}.report-aside a{font-weight:600;color:var(--ink-2)}
+@media(max-width:620px){body{font-size:16px}.hero{padding:30px 22px 24px;border-radius:22px}.hero .biz{font-size:2rem}h2{font-size:1.35rem;margin-top:44px}.card{padding:18px}.report-tools{width:100%;border-radius:18px}.switch-label{min-width:0;width:100%}}
+@media print{.hero{background:var(--navy)!important;color:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;padding:10mm!important;border-radius:6mm}.hero::after{display:none}.metric{print-color-adjust:exact;-webkit-print-color-adjust:exact}h2{margin-top:0}.chapter-head{margin-top:0}}
+`;
 
 const FLASH: Record<string, string> = {
   connected: "Done. Your real numbers from Google are below.",
@@ -292,12 +340,15 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
       return `<section class="card"><h3>${esc(g.keyword)}</h3><p class="small">${g.size} by ${g.size} search spots, ${esc(g.spacing ?? "not recorded")} apart.</p><div class="grid-pair"><div><h4>${esc(b.name)} (you)</h4>${dots(g)}</div>${rival ? `<div><h4>${esc(rival.name)}</h4>${dots({ ...g, ranks: rival.ranks! })}</div>` : ""}</div><p>${summaryOf(g)}</p></section>`;
     })
     .join("")}${rankLegend()}</div>`;
-  const tabs =
+  // The search term switch sits on top of the map, labelled, even when there
+  // is only one term (so it is clear which search the map shows).
+  const tabs = `<div class="switch noprint"><span class="switch-label">Search term</span>${
     grids.length > 1
-      ? `<div class="kw noprint" role="group" aria-label="Search phrase">${grids.map((g, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0 ? "true" : "false"}"${i === 0 ? ' class="on"' : ""}>${esc(g.keyword)}</button>`).join("")}</div>`
-      : "";
+      ? `<div class="kw" role="group" aria-label="Search term">${grids.map((g, i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0 ? "true" : "false"}"${i === 0 ? ' class="on"' : ""}>${esc(g.keyword)}</button>`).join("")}</div>`
+      : `<div class="kw"><span class="chip">${esc(grids[0]?.keyword ?? "")}</span></div>`
+  }</div>`;
   const competitorTabs = competitors.length
-    ? `<div class="cmp noprint"><p class="small" style="margin:12px 0 6px"><b>Compare with</b> - changing this uses the saved scan and does not run a paid check.</p><div class="kw" role="group" aria-label="Business shown on the map"><button type="button" data-cmp="" aria-pressed="true" class="on">${esc(b.name)} (you)</button>${competitors.map((c) => `<button type="button" data-cmp="${esc(c.placeId)}" aria-pressed="false">${esc(c.name)}</button>`).join("")}</div></div>`
+    ? `<div class="cmp switch noprint"><span class="switch-label">Show the map for</span><div class="kw" role="group" aria-label="Business shown on the map"><button type="button" data-cmp="" aria-pressed="true" class="on">${esc(b.name)} (you)</button>${competitors.map((c) => `<button type="button" data-cmp="${esc(c.placeId)}" aria-pressed="false">${esc(c.name)}</button>`).join("")}</div></div>`
     : "";
   const furthest = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
   const intro = `<p style="margin:0 0 8px">We searched Google Maps from 25 places around you, up to ${esc(furthest)} away. This is what a customer standing there would see.</p>
