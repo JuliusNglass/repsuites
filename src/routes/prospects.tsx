@@ -187,6 +187,7 @@ function Prospects() {
   const list = useServerFn(listProspects);
   const search = useServerFn(searchProspects);
   const build = useServerFn(buildProspectReport);
+  const addExtrasTop = useServerFn(addProspectExtras);
   const saveFound = useServerFn(saveProspect);
   const addPhrase = useServerFn(addProspectPhrase);
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
@@ -252,6 +253,8 @@ function Prospects() {
         },
       }).catch(() => ({ ok: false as const, error: FAILED }));
       if (r.ok) {
+        // The website check runs as its own request after the save.
+        await addExtrasTop({ data: { placeId: h.placeId, what: "site" } }).catch(() => null);
         // Extra search phrases: the typed ones, or (on a rebuild with none
         // typed) the ones the last report had. One at a time: 25 map
         // searches each.
@@ -1348,7 +1351,8 @@ const ProspectRow = memo(function ProspectRow({
         if (!a?.ok) failed.push(w);
       }
       // AI check and website picture: one request each, after the save.
-      const extras: { what: "ai" | "visual"; label: string }[] = [
+      const extras: { what: "ai" | "visual" | "site"; label: string }[] = [
+        { what: "site", label: "website check" },
         ...(includeAi ? [{ what: "ai" as const, label: "AI check" }] : []),
         ...(includeVisual ? [{ what: "visual" as const, label: "website picture" }] : []),
       ];

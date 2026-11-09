@@ -115,6 +115,10 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
       if (r?.ok) {
         reportLink = `https://repsuites.com/r/${r.token}`;
         prospectId = r.prospectId ?? null;
+        // Website check after the save: if the 50 outside calls run out
+        // here, the report is still saved, just without that section.
+        const { addProspectExtra } = await import("./prospects.server");
+        await addProspectExtra(p.placeId, "site").catch(() => null);
       }
     }
     const leadId = w.data?.[0]?.id ?? null;

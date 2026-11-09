@@ -245,8 +245,10 @@ export const buildProspectReport = createServerFn({ method: "POST" })
   });
 
 export const addProspectExtras = createServerFn({ method: "POST" })
-  .validator((d: { placeId: string; what: "ai" | "visual" }) =>
-    z.object({ placeId: z.string().regex(PLACE_RE), what: z.enum(["ai", "visual"]) }).parse(d),
+  .validator((d: { placeId: string; what: "ai" | "visual" | "site" }) =>
+    z
+      .object({ placeId: z.string().regex(PLACE_RE), what: z.enum(["ai", "visual", "site"]) })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const g = await agencyGuard(true);
