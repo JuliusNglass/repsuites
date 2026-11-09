@@ -177,6 +177,145 @@ async function askOnce(question: string, town: string): Promise<Asked> {
   }
 }
 
+// The same question to the other assistants customers use. Each one is
+// optional: with no key it is left out, never guessed. Only the first
+// question goes to these (each answer costs money).
+const LIST_RULE =
+  'Answer in a few short lines. Then, ALWAYS, finish with one line of JSON exactly like {"businesses": ["Business name", "Business name"]} listing every business you recommended, best first (use [] if you recommended none). Nothing after the JSON.';
+
+type Provider = {
+  name: string;
+  key: string;
+  model: string;
+  call: (
+    key: string,
+    model: string,
+    question: string,
+  ) => Promise<{ text: string; urls: string[]; model?: string }>;
+};
+
+export function otherProviders(): Provider[] {
+  const env = (k: string) => (process.env[k] ?? "").trim();
+  const list: Provider[] = [
+    {
+      name: "OpenAI",
+      key: env("REPSUITES_OPENAI_API_KEY"),
+      model: env("REPSUITES_OPENAI_SEARCH_MODEL") || "gpt-4o-mini-search-preview",
+      call: async (key, model, question) => {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+          signal: AbortSignal.timeout(60000),
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: `You help a member of the public find a local business. Search the web. ${LIST_RULE}`,
+              },
+              { role: "user", content: question },
+            ],
+          }),
+        });
+        if (!res.ok) throw new Error(`OpenAI ${res.status}`);
+        const b = (await res.json()) as any;
+        const msg = b.choices?.[0]?.message ?? {};
+        const urls = (msg.annotations ?? [])
+          .map((a: any) => a?.url_citation?.url)
+          .filter((u: unknown): u is string => typeof u === "string");
+        return { text: String(msg.content ?? ""), urls, model: b.model };
+      },
+    },
+    {
+      name: "Google Gemini",
+      key: env("REPSUITES_GEMINI_API_KEY"),
+      model: env("REPSUITES_GEMINI_MODEL") || "gemini-2.5-flash",
+      call: async (key, model, question) => {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+          {
+            method: "POST",
+            headers: { "x-goog-api-key": key, "content-type": "application/json" },
+            signal: AbortSignal.timeout(60000),
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [
+                  { text: `You help a member of the public find a local business. ${LIST_RULE}` },
+                ],
+              },
+              contents: [{ role: "user", parts: [{ text: question }] }],
+              tools: [{ google_search: {} }],
+            }),
+          },
+        );
+        if (!res.ok) throw new Error(`Gemini ${res.status}`);
+        const b = (await res.json()) as any;
+        const cand = b.candidates?.[0] ?? {};
+        const urls = (cand.groundingMetadata?.groundingChunks ?? [])
+          .map((c: any) => c?.web?.uri)
+          .filter((u: unknown): u is string => typeof u === "string");
+        return {
+          text: (cand.content?.parts ?? []).map((p: any) => String(p?.text ?? "")).join("\n"),
+          urls,
+          model: b.modelVersion,
+        };
+      },
+    },
+    {
+      name: "Perplexity",
+      key: env("REPSUITES_PERPLEXITY_API_KEY"),
+      model: env("REPSUITES_PERPLEXITY_MODEL") || "sonar",
+      call: async (key, model, question) => {
+        const res = await fetch("https://api.perplexity.ai/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+          signal: AbortSignal.timeout(60000),
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: "system",
+                content: `You help a member of the public find a local business. ${LIST_RULE}`,
+              },
+              { role: "user", content: question },
+            ],
+          }),
+        });
+        if (!res.ok) throw new Error(`Perplexity ${res.status}`);
+        const b = (await res.json()) as any;
+        const urls = (b.citations ?? b.search_results?.map((r: any) => r?.url) ?? []).filter(
+          (u: unknown): u is string => typeof u === "string",
+        );
+        return { text: String(b.choices?.[0]?.message?.content ?? ""), urls, model: b.model };
+      },
+    },
+  ];
+  return list.filter((p) => p.key);
+}
+
+export async function askProvider(p: Provider, question: string): Promise<Asked> {
+  try {
+    const r = await p.call(p.key, p.model, question);
+    if (!hasList(r.text))
+      return {
+        error: `${p.name} did not return a usable business list. No conclusion was recorded.`,
+      };
+    return {
+      text: r.text,
+      sources: r.urls.map(domainOf).filter((d): d is string => !!d),
+      evidence: {
+        provider: p.name,
+        model: String(r.model || p.model),
+        checkedAt: new Date().toISOString(),
+        urls: [...new Set(r.urls)].filter((u) => /^https?:\/\//i.test(u)).slice(0, 12),
+        excerpt: r.text.slice(0, 3000),
+      },
+    };
+  } catch {
+    return { error: `The ${p.name} check failed or timed out.` };
+  }
+}
+
 export async function runAiVisibility(input: { service: string; town: string }) {
   const g = await guard(true);
   if (!g.ok) return g;
@@ -227,4 +366,3 @@ export async function runAiVisibility(input: { service: string; town: string }) 
   if (!results.length) return { ok: false as const, error: failed?.error ?? "No answer." };
   return { ok: true as const };
 }
-

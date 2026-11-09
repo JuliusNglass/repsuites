@@ -18,6 +18,10 @@ import {
 } from "./reading";
 import { money, saleFor, saleRange, saleSumLines, saleSymbol, yearlyValue } from "./sale-value";
 import { relevantMapCompetitor } from "./rank-grid";
+import { websiteScore } from "./website-audit";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { QRCodeSVG } from "qrcode.react";
 
 export function esc(s: string): string {
   return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -544,11 +548,32 @@ ${controls}
 <p class="small noprint" style="text-align:center;margin:8px 0 0">No card needed. Takes 2 minutes.</p></div>${script}`;
 }
 
+// Website fixes in the order they matter most: wrong details first.
+const WEBSITE_FIX_ORDER = [
+  "phone_match",
+  "address_match",
+  "local_wording",
+  "title",
+  "h1",
+  "phone",
+  "description",
+  "map",
+  "schema",
+];
+
 function presentationClose(
   r: Report,
   b: Report["business"],
   view: ReturnType<typeof scoreView>,
+  extra: RenderExtra | null = null,
 ): string {
+  // "Ask us to fix this" opens WhatsApp to the agency (or RepSuites sales)
+  // with the fix already typed, so the owner never has to learn how.
+  const wa = salesWhatsApp(extra?.branding?.phone || undefined);
+  const fixLink = (title: string) =>
+    wa
+      ? `<p class="noprint" style="margin:10px 0 0"><a class="wa fixit" href="https://wa.me/${wa}?text=${encodeURIComponent(`Hi, I've seen the report for ${b.name}. Can you fix this for me: ${title}`)}" style="display:inline-block;color:#065f46;border:2px solid #25d366;border-radius:12px;padding:10px 16px;min-height:44px;text-decoration:none;font-weight:700;margin-top:6px">Ask us to fix this</a></p>`
+      : "";
   const date = esc(r.createdAt);
   const irrelevantNames = r.rivals
     .filter((x) => !relevantMapCompetitor({ title: x.name, category: x.kind }, r.maps.keyword))
@@ -559,7 +584,8 @@ function presentationClose(
       return !irrelevantNames.some((name) => copy.includes(name));
     }),
     ...(r.websiteAudit?.findings ?? [])
-      .filter((finding) => ["title", "h1", "description", "phone", "schema"].includes(finding.id))
+      .filter((finding) => finding.status === "review" && WEBSITE_FIX_ORDER.includes(finding.id))
+      .sort((x, y) => WEBSITE_FIX_ORDER.indexOf(x.id) - WEBSITE_FIX_ORDER.indexOf(y.id))
       .map((finding) => ({
         title: `Improve ${finding.label.toLocaleLowerCase()}`,
         why: finding.recommendation,
@@ -582,7 +608,7 @@ function presentationClose(
         : /maps|google/i.test(a.title)
           ? "A repeat scan at the same search spots"
           : "A repeat evidence check";
-      return `<article class="card"><div class="when">${timing}</div><h3>${esc(a.title)}</h3><p>${esc(a.why)}</p><p class="small"><b>Who will do it:</b> Choose a person<br><b>How much work:</b> ${effort}<br><b>How to check it:</b> ${proof}</p></article>`;
+      return `<article class="card"><div class="when">${timing}</div><h3>${esc(a.title)}</h3><p>${esc(a.why)}</p><p class="small"><b>Who will do it:</b> Choose a person, or ask us<br><b>How much work:</b> ${effort}<br><b>How to check it:</b> ${proof}</p>${fixLink(a.title)}</article>`;
     })
     .join("");
   return `<section class="presentation-close chapter" id="action-plan">
@@ -831,6 +857,42 @@ export function websiteEvidence(r: Report): string {
       proof: "Tap the link, compare the dialled number with Google and record the result.",
       priority: "High value · Five-minute check",
     },
+    local_wording: {
+      verdict: "Says what and where",
+      level: "improve",
+      action: "Put your main service and your town in the page title or the main heading.",
+      example: `${topic.replace(/\b\w/g, (c) => c.toUpperCase())} in ${town}`,
+      proof: "Run this website check again after the change is published.",
+      priority: "High priority · Low effort",
+    },
+    phone_match: {
+      verdict: "Same phone as Google",
+      level: "improve",
+      action:
+        "Use exactly the same phone number on the website and Google. If you use a tracking number, keep the main number on Google the same as the site.",
+      example: business.phone
+        ? `Number on Google: ${business.phone}`
+        : "Confirm the main number with the owner.",
+      proof: "Compare the website footer with the Google profile, digit by digit.",
+      priority: "High priority · Five-minute fix",
+    },
+    address_match: {
+      verdict: "Same address as Google",
+      level: "improve",
+      action:
+        "Show the same name, address and phone number as Google, for example in the website footer.",
+      example: business.address || "Use the address shown on Google.",
+      proof: "Check the footer on every page shows the same details as Google.",
+      priority: "High priority · Low effort",
+    },
+    map: {
+      verdict: "Map on the site",
+      level: "improve",
+      action: "Add a Google map to the contact page so customers can see where you are.",
+      example: "Use the Share, Embed a map option on your Google Maps listing.",
+      proof: "Open the contact page on a phone and check the map loads.",
+      priority: "Medium priority · Low effort",
+    },
     schema: {
       verdict: "Business details Google reads",
       level: "verify",
@@ -844,7 +906,13 @@ export function websiteEvidence(r: Report): string {
   const intro = `<section id="website" class="chapter"><div class="chapter-head"><span class="chapter-no">04</span><h2>What to improve on your website</h2></div><div class="card"><p class="diagnosis">We checked whether your website clearly says <b>what you do, where you work, why customers should trust you and how they can contact you.</b> Each recommendation tells you what to change and how to check it afterwards.</p><p class="small">Checked ${esc(a.checkedAt)}. We checked the information available on the homepage. Page speed, ease of use and completed enquiries need separate checks.</p>`;
   if (a.status !== "checked")
     return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "The website could not be checked. No negative findings were inferred."}</p></div></section>`;
-  return `${intro}<p class="small">Source: ${esc(a.url)}</p><div class="audit-grid">${a.findings
+  const ws = websiteScore(a);
+  const passed = a.findings.filter((f) => f.status === "pass").length;
+  const scoreLine =
+    ws == null
+      ? ""
+      : `<div class="card score"><div class="dial" style="background:${scoreColour(ws)}">${ws}</div><div><b>Website score, out of 100</b><p class="muted" style="margin:4px 0 0">${passed} of ${a.findings.length} checks passed. ${ws < 40 ? "Most visitors are likely to leave without calling." : ws < 70 ? "A few fixes would help Google and customers understand you." : "Your homepage is in good shape."}</p></div></div>`;
+  return `${intro}<p class="small">Source: ${esc(a.url)}</p>${scoreLine}<div class="audit-grid">${a.findings
     .map((f) => {
       const g = guidance[f.id] ?? {
         verdict: f.label,
@@ -867,6 +935,59 @@ export function websiteEvidence(r: Report): string {
     )}</div><p class="small">Review each change before it is published. These actions are sensible next steps based on what we found, but no one can promise a particular ranking or amount of revenue.</p></div></section>`;
 }
 
+// Customers know the assistant, not the company: "OpenAI" is shown as ChatGPT.
+export function assistantName(provider: string | undefined): string {
+  const p = (provider ?? "").toLowerCase();
+  if (p.includes("anthropic") || p.includes("claude")) return "Claude";
+  if (p.includes("openai") || p.includes("chatgpt")) return "ChatGPT";
+  if (p.includes("gemini") || p.includes("google")) return "Google Gemini";
+  if (p.includes("perplexity")) return "Perplexity";
+  return provider || "AI assistant";
+}
+
+// The first real scan, kept when a report is rebuilt. Shown only when the new
+// scan used the same phrase, grid size, centre and spacing, so the two are
+// fairly comparable. Worked example: 2 top-3 spots before, 7 now = 5 more.
+export function beforeAfter(r: Report): string {
+  const base = r.baseline;
+  const now = gridsOf(r).find((g) => g.keyword === base?.keyword);
+  if (!base || !now || !now.ranks.length) return "";
+  const sameSpots =
+    base.ranks.length === now.ranks.length &&
+    base.spacingKm === now.spacingKm &&
+    !!base.center &&
+    !!now.center &&
+    Math.abs(base.center.lat - now.center.lat) < 0.0005 &&
+    Math.abs(base.center.lng - now.center.lng) < 0.0005;
+  if (!sameSpots) return "";
+  const diff = now.top3 - base.top3;
+  const line =
+    diff > 0
+      ? `You are now in the top 3 in ${diff} more ${diff === 1 ? "place" : "places"} than on ${esc(base.checkedAt.slice(0, 10))}.`
+      : diff < 0
+        ? `You are in the top 3 in ${-diff} fewer ${diff === -1 ? "place" : "places"} than on ${esc(base.checkedAt.slice(0, 10))}.`
+        : `Your top 3 places are the same as on ${esc(base.checkedAt.slice(0, 10))}.`;
+  const avg = (v: number | null) => (v == null ? "Not found" : v.toFixed(1));
+  return `<h2 id="progress">Before and after</h2><div class="card"><p>${line}</p><table><tr><th>&quot;${esc(base.keyword)}&quot;</th><th>Before</th><th>Now</th></tr><tr><th>Top 3 places</th><td>${base.top3} of ${base.ranks.length}</td><td>${now.top3} of ${now.ranks.length}</td></tr><tr><th>Found in the top 20</th><td>${base.found}</td><td>${now.found}</td></tr><tr><th>Average place when found</th><td>${avg(base.average)}</td><td>${avg(now.average)}</td></tr></table><p class="small">Same ${now.ranks.length} search spots both times.</p></div>`;
+}
+
+// A preview of the table stand with this business's own Google review link.
+export function reviewStand(r: Report, extra: RenderExtra | null): string {
+  const id = r.business.placeId;
+  if (!id) return "";
+  const url = `https://search.google.com/local/writereview?placeid=${encodeURIComponent(id)}`;
+  const qr = renderToStaticMarkup(
+    createElement(QRCodeSVG, {
+      value: url,
+      size: 132,
+      level: "M",
+      title: `Google review QR code for ${r.business.name}`,
+    }),
+  );
+  const order = extra ? `/cards?r=${encodeURIComponent(extra.token)}` : "/cards";
+  return `<h2 id="stand">Your review stand</h2><div class="card" style="display:flex;flex-wrap:wrap;gap:18px;align-items:center"><div style="background:#0f172a;color:#fff;border-radius:16px;padding:16px;text-align:center;width:190px"><b style="display:block;font-size:1.05rem">Enjoyed your visit?</b><span style="font-size:.95rem">Scan to leave a review</span><div style="background:#fff;border-radius:10px;padding:8px;margin:10px auto 8px;width:148px">${qr}</div><span style="font-size:.95rem;font-weight:700">${esc(r.business.name)}</span></div><div style="flex:1;min-width:200px"><p>Customers scan this and land straight on your Google review page. Try it now with your phone camera.</p><p class="noprint"><a class="book" href="${order}">Get this stand</a></p></div></div>`;
+}
+
 function richerEvidence(r: Report): string {
   const visual = r.websiteVisuals?.business;
   const website = visual
@@ -876,7 +997,7 @@ function richerEvidence(r: Report): string {
   const assistants = ai?.answers
     .map(
       (answer) =>
-        `<div class="fix ${answer.named ? "" : "high"}"><span class="tag">${answer.named ? "Named you" : "Did not name you"}</span><b>${esc(answer.question)}</b><span>${answer.businesses.length ? `Businesses named: ${esc(answer.businesses.join(", "))}` : "No usable business list was returned."}</span>${answer.evidence?.provider ? `<p class="small">${esc(answer.evidence.provider)} ${esc(answer.evidence.model)}, checked ${esc(answer.evidence.checkedAt)}.</p>` : ""}</div>`,
+        `<div class="fix ${answer.named ? "" : "high"}"><span class="tag">${esc(assistantName(answer.evidence?.provider))}: ${answer.named ? "Named you" : "Did not name you"}</span><b>${esc(answer.question)}</b><span>${answer.businesses.length ? `Businesses named: ${esc(answer.businesses.join(", "))}` : "No usable business list was returned."}</span>${answer.evidence?.provider ? `<p class="small">${esc(answer.evidence.provider)} ${esc(answer.evidence.model)}, checked ${esc(answer.evidence.checkedAt)}.</p>` : ""}</div>`,
     )
     .join("");
   const visibility = ai
@@ -1018,6 +1139,8 @@ ${profileEvidence(r)}
 
 ${websiteEvidence(r)}
 ${richerEvidence(r)}
+${beforeAfter(r)}
+${reviewStand(r, extra)}
 
 ${worthSection(r, sale, extra)}
 
@@ -1040,7 +1163,7 @@ ${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
 <div class="noprint"><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
 <p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
 <p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}" style="color:#334155">Or book a free 15-minute call</a></p></div>
-${presentationClose(r, b, view)}
+${presentationClose(r, b, view, extra)}
 <h2 id="score">How we worked out your score</h2>
 <div class="card score"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
@@ -1060,4 +1183,3 @@ ${agency.phone || agency.email ? `<p class="small"><b>${esc(agency.name)}</b>${a
 export function reportNotFound(): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main style="text-align:center"><h1>Report not found</h1><p class="muted">This link may have been replaced. Ask the person who sent it for a fresh one.</p></main></body></html>`;
 }
-

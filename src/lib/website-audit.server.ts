@@ -1,7 +1,10 @@
 import { getPage, safeSiteUrl } from "./prospect-contact.server";
-import { auditHomepage, type WebsiteAudit } from "./website-audit";
+import { auditHomepage, type GoogleDetails, type WebsiteAudit } from "./website-audit";
 
-export async function checkWebsite(website: string): Promise<WebsiteAudit> {
+export async function checkWebsite(
+  website: string,
+  google: GoogleDetails = {},
+): Promise<WebsiteAudit> {
   const checkedAt = new Date().toISOString();
   const empty = (status: WebsiteAudit["status"]): WebsiteAudit => ({
     version: 1,
@@ -13,5 +16,5 @@ export async function checkWebsite(website: string): Promise<WebsiteAudit> {
   if (!website) return empty("no_website");
   if (!safeSiteUrl(website)) return empty("unavailable");
   const page = await getPage(website, { left: 4 });
-  return page ? auditHomepage(page.html, page.url, checkedAt) : empty("unavailable");
+  return page ? auditHomepage(page.html, page.url, checkedAt, google) : empty("unavailable");
 }

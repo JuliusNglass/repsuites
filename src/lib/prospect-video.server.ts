@@ -286,3 +286,36 @@ export async function trackAction(token: string, action: "chat" | "call") {
 <p><a href="${SHARED_ORIGIN}/r/${token}">Open their report</a> &middot; <a href="${SHARED_ORIGIN}/prospects">Prospects</a></p>`,
   }).catch(() => null);
 }
+
+// The prospect opened their report: tell the team on the first open, and again
+// if they come back after 3 days or more (a sign they are thinking about it).
+// Call with the prospect as it was BEFORE this open was counted.
+export const REOPEN_ALERT_DAYS = 3;
+export function shouldAlertOpen(
+  before: { sent_at: string | null; opens: number | null; last_opened_at: string | null },
+  now = Date.now(),
+): "first" | "back" | null {
+  if (!before.sent_at) return null;
+  // Opens within a minute of sending are link scanners (see the database rule).
+  if (now - Date.parse(before.sent_at) < 60_000) return null;
+  if (!before.opens) return "first";
+  const last = before.last_opened_at ? Date.parse(before.last_opened_at) : NaN;
+  return Number.isFinite(last) && now - last >= REOPEN_ALERT_DAYS * 86_400_000 ? "back" : null;
+}
+
+export async function alertReportOpened(
+  token: string,
+  p: { name: string; phone: string | null },
+  kind: "first" | "back",
+) {
+  if (!TOKEN_RE.test(token)) return;
+  const to = (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
+  const what = kind === "first" ? "just opened their report" : "came back to their report";
+  await sendEmail({
+    to,
+    subject: `${p.name} ${what}`,
+    html: `<p><b>${esc(p.name)}</b> ${what}. Now is a good time to follow up.</p>
+<p>${p.phone ? `Phone: <a href="tel:${esc(p.phone.replace(/[^\d+]/g, ""))}">${esc(p.phone)}</a>` : ""}</p>
+<p><a href="${SHARED_ORIGIN}/r/${token}">Open their report</a> &middot; <a href="${SHARED_ORIGIN}/prospects">Prospects</a></p>`,
+  }).catch(() => null);
+}
