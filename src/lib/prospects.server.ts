@@ -125,7 +125,27 @@ function reach(p: any) {
 
 // ---------- the report ----------
 
+// A map grid being checked a few spots at a time (gridStep), so no single
+// request goes over the Worker's 50 outside calls.
+export interface PendingGrid {
+  keyword: string;
+  size: 5 | 7;
+  spacingKm: number;
+  ranks: (number | null | -1)[]; // -1 = not checked yet
+  items: {
+    place_id: string;
+    rank_group: number;
+    type: string;
+    title: string;
+    category?: string;
+    additional_categories?: string[];
+  }[][];
+  failed: number;
+  error: string;
+}
+
 export interface Report {
+  pendingGrids?: PendingGrid[];
   // The first comparable scan, kept when the report is rebuilt (before and after).
   baseline?: {
     keyword: string;
@@ -863,7 +883,9 @@ export async function saveProspectReport(
   // Worker's 50 outside calls: 25 map searches, Google and the save itself.
   const built = await buildReport(placeId, keyword, [], extra.area, extra.topic || undefined, {
     skipWebsite: true,
-    ...(extra.gridSize ? { gridSize: extra.gridSize } : {}),
+    // A detailed 7 by 7 grid is 49 map searches: too many for one request, so
+    // the report is built with the 5 by 5 grid and the page then upgrades it
+    // a few spots at a time (gridStep).
     ...(extra.includeAi !== undefined ? { includeAi: extra.includeAi } : {}),
     ...(extra.includeScreenshots !== undefined
       ? { includeScreenshots: extra.includeScreenshots }
@@ -979,6 +1001,7 @@ export async function saveProspectReport(
     score: built.report.score,
     name: built.meta.name,
     addPhrases,
+    keyword: built.report.maps?.keyword ?? keyword ?? "",
   };
 }
 
@@ -991,6 +1014,136 @@ export function isUuid(s: string): boolean {
 }
 
 // Adds (or redoes) the heatmap for one more search phrase on a saved report.
+// Spots checked per request. Worked example: a 7x7 grid is 49 spots, so
+// 49 / 12 = about 4 requests of at most 12 map searches each, plus a few
+// calls for sign-in, reading and saving: well under 50 per request.
+export const GRID_STEP = 12;
+
+// One step of a map grid for a saved report. The first call starts the grid;
+// each call checks the next GRID_STEP spots and saves them; the last call
+// turns the spots into a finished grid (same shape as runGrid) and stores it.
+export async function gridStep(placeId: string, keyword: string, size: 5 | 7 = 5) {
+  const k = keyword.toLowerCase().trim().slice(0, 80);
+  if (!k) return { ok: false as const, error: "Add a search phrase." };
+  const r = await serviceRead<
+    { id: string; name: string; lat: number | null; lng: number | null; report: Report | null }[]
+  >(`prospects?select=id,name,lat,lng,report&place_id=eq.${encodeURIComponent(placeId)}`, "");
+  const row = r.data?.[0];
+  if (!row?.report || row.lat === null || row.lng === null)
+    return { ok: false as const, error: "Build the report first." };
+  const { creds, mapsResults } = await import("./rank-tracking.server");
+  const auth = creds();
+  if (!auth) return { ok: false as const, error: "DataForSEO login not set" };
+  const { gridPoints, summarisePoints, rankIn, compareGridBusinesses } =
+    await import("./rank-grid");
+  const { usesMiles, distanceLabel } = await import("./units");
+  const report = row.report;
+  const at = { lat: row.lat, lng: row.lng };
+  const spacingKm =
+    report.grids?.[0]?.spacingKm ?? report.grid?.spacingKm ?? (usesMiles(at.lat, at.lng) ? 0.8 : 1);
+  const pts = gridPoints(at, size, spacingKm);
+  const pending = (report.pendingGrids ?? []).filter((g) => !(g.keyword === k && g.size !== size));
+  let job = pending.find((g) => g.keyword === k);
+  if (!job) {
+    job = {
+      keyword: k,
+      size,
+      spacingKm,
+      ranks: new Array(pts.length).fill(-1),
+      items: new Array(pts.length).fill([]),
+      failed: 0,
+      error: "",
+    };
+    pending.push(job);
+  }
+  const todo = job.ranks
+    .map((x, i) => (x === -1 ? i : -1))
+    .filter((i) => i >= 0)
+    .slice(0, GRID_STEP);
+  let next = 0;
+  const worker = async () => {
+    while (next < todo.length) {
+      const i = todo[next++]!;
+      const pt = pts[i]!;
+      const res = await mapsResults(auth, k, pt.lat, pt.lng);
+      if (res.ok) {
+        job!.ranks[i] = rankIn(res.items, placeId, row.name);
+        job!.items[i] = res.items
+          .filter((it: any) => it?.type === "maps_search")
+          .slice(0, 20)
+          .map((it: any) => ({
+            place_id: String(it.place_id ?? ""),
+            rank_group: Number(it.rank_group),
+            type: String(it.type),
+            title: String(it.title ?? "").slice(0, 200),
+            ...(it.category ? { category: String(it.category).slice(0, 120) } : {}),
+            ...(Array.isArray(it.additional_categories)
+              ? { additional_categories: it.additional_categories.slice(0, 5).map(String) }
+              : {}),
+          }));
+      } else {
+        job!.failed++;
+        job!.error ||= String(res.error).slice(0, 200);
+        job!.ranks[i] = null;
+        job!.items[i] = [];
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: 6 }, worker));
+  const left = job.ranks.filter((x) => x === -1).length;
+  let done = false;
+  let error = "";
+  if (left === 0) {
+    done = true;
+    report.pendingGrids = pending.filter((g) => g !== job);
+    // Unknown spots must not become evidence of poor visibility.
+    if (job.failed > 0) {
+      error = job.error || "Google Maps check failed.";
+    } else {
+      const ranks = job.ranks as (number | null)[];
+      const sum = summarisePoints(
+        pts.map((pt, i) => ({ lat: pt.lat, lng: pt.lng, rank: ranks[i] ?? null })),
+      );
+      const finished = {
+        keyword: k,
+        size,
+        spacing: distanceLabel(spacingKm, usesMiles(at.lat, at.lng)),
+        competitors: compareGridBusinesses(job.items, placeId, k),
+        ranks,
+        found: sum.found,
+        top3: sum.top3,
+        average: sum.average,
+        center: at,
+        spacingKm,
+      };
+      const others = (
+        report.grids?.length
+          ? report.grids
+          : report.grid
+            ? [{ keyword: report.maps.keyword, ...report.grid }]
+            : []
+      ).filter((g) => g.keyword !== k);
+      const isMain = k === (report.maps?.keyword ?? "").toLowerCase();
+      report.grids = (isMain ? [finished, ...others] : [...others, finished]).slice(0, 3);
+      if (isMain) {
+        const { keyword: _kw, ...g } = finished;
+        report.grid = g;
+      }
+    }
+  } else report.pendingGrids = pending;
+  const w = await serviceWrite<unknown>(`prospects?id=eq.${row.id}`, "", {
+    method: "PATCH",
+    body: {
+      report,
+      updated_at: new Date().toISOString(),
+      ...(done && !error ? { og_image_url: null } : {}),
+    },
+  });
+  if (w.error) return { ok: false as const, error: `Could not save the map check (${w.error}).` };
+  if (error) return { ok: false as const, error };
+  return { ok: true as const, done, checked: job.ranks.length - left, total: job.ranks.length };
+}
+
 export async function addProspectGrid(placeId: string, keyword: string) {
   const k = keyword.toLowerCase().trim().slice(0, 80);
   if (!k) return { ok: false as const, error: "Add a search phrase." };

@@ -34,6 +34,7 @@ import { Logo } from "../components/site/Logo";
 import {
   buildProspectReport,
   addProspectExtras,
+  prospectGridStep,
   addProspectPhrase,
   findProspectContacts,
   findProspectOwner,
@@ -190,6 +191,7 @@ function Prospects() {
   const addExtrasTop = useServerFn(addProspectExtras);
   const saveFound = useServerFn(saveProspect);
   const addPhrase = useServerFn(addProspectPhrase);
+  const gridStepFn = useServerFn(prospectGridStep);
   const [batch, setBatch] = useState<{ done: number; total: number } | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -307,8 +309,8 @@ function Prospects() {
   async function addExtraPhrases(placeId: string, list: string[]): Promise<string[]> {
     const failed: string[] = [];
     for (const w of list) {
-      const a = await addPhrase({ data: { placeId, keyword: w } }).catch(() => null);
-      if (!a?.ok) failed.push(w);
+      const ok = await runGridSteps((d) => gridStepFn({ data: d }), placeId, w, 5);
+      if (!ok) failed.push(w);
     }
     return failed;
   }
@@ -1316,7 +1318,7 @@ const ProspectRow = memo(function ProspectRow({
   const [includeAi, setIncludeAi] = useState(false);
   const [includeVisual, setIncludeVisual] = useState(false);
   const build = useServerFn(buildProspectReport);
-  const addPhrase = useServerFn(addProspectPhrase);
+  const gridStep = useServerFn(prospectGridStep);
   const addExtras = useServerFn(addProspectExtras);
   // Rebuild from the pipeline: no new search needed. The first phrase runs
   // with the report; any others are added one at a time (25 map checks each).
@@ -1346,9 +1348,13 @@ const ProspectRow = memo(function ProspectRow({
         return;
       }
       const failed: string[] = [];
+      const step = (d: { placeId: string; keyword: string; size: 5 | 7 }) => gridStep({ data: d });
+      // Detailed 7 by 7 grid: upgrade the main phrase a few spots at a time.
+      if (detailedGrid && r.keyword) {
+        if (!(await runGridSteps(step, p.placeId, r.keyword, 7))) failed.push(`detailed grid`);
+      }
       for (const w of list.length ? list.slice(1) : (r.addPhrases ?? [])) {
-        const a = await addPhrase({ data: { placeId: p.placeId, keyword: w } }).catch(() => null);
-        if (!a?.ok) failed.push(w);
+        if (!(await runGridSteps(step, p.placeId, w, 5))) failed.push(w);
       }
       // AI check and website picture: one request each, after the save.
       const extras: { what: "ai" | "visual" | "site"; label: string }[] = [
@@ -2522,4 +2528,24 @@ function ReachBadges({
       )}
     </div>
   );
+}
+
+// Runs a map grid a few spots per request until it is finished (the Worker
+// allows 50 outside calls per request). True when the grid was saved.
+async function runGridSteps(
+  step: (d: {
+    placeId: string;
+    keyword: string;
+    size: 5 | 7;
+  }) => Promise<{ ok: true; done: boolean } | { ok: false; error: string }>,
+  placeId: string,
+  keyword: string,
+  size: 5 | 7,
+): Promise<boolean> {
+  for (let i = 0; i < 8; i++) {
+    const r = await step({ placeId, keyword, size }).catch(() => null);
+    if (!r?.ok) return false;
+    if (r.done) return true;
+  }
+  return false;
 }
