@@ -237,9 +237,22 @@ export const buildProspectReport = createServerFn({ method: "POST" })
       force: data.force === true,
       ...(data.product ? { product: data.product } : {}),
       ...(data.gridSize ? { gridSize: data.gridSize } : {}),
-      includeAi: data.includeAi === true,
-      includeScreenshots: data.includeScreenshots === true,
+      // The AI check and website picture run afterwards as their own
+      // requests (addProspectExtras), so this one stays inside 50 outside calls.
+      includeAi: false,
+      includeScreenshots: false,
     });
+  });
+
+export const addProspectExtras = createServerFn({ method: "POST" })
+  .validator((d: { placeId: string; what: "ai" | "visual" }) =>
+    z.object({ placeId: z.string().regex(PLACE_RE), what: z.enum(["ai", "visual"]) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const g = await agencyGuard(true);
+    if (!g.ok) return g;
+    const { addProspectExtra } = await import("./prospects.server");
+    return addProspectExtra(data.placeId, data.what);
   });
 
 export const addProspectPhrase = createServerFn({ method: "POST" })
@@ -726,4 +739,3 @@ export const setProspectOgImage = createServerFn({ method: "POST" })
     const { setOgImage } = await import("./prospect-video.server");
     return setOgImage(data.id, data.path);
   });
-

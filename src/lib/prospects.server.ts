@@ -599,36 +599,8 @@ export async function buildReport(
     town,
   });
   let aiVisibility: Report["aiVisibility"];
-  if (options.includeAi && name && fallback && town) {
-    try {
-      const { ask, askProvider, otherProviders } = await import("./ai-visibility.server");
-      const { aiQuestions, readAnswer } = await import("./ai-visibility");
-      const questions = aiQuestions(fallback, town);
-      // Claude answers every question; ChatGPT, Gemini and Perplexity (when
-      // their keys are set) answer the first, so the report shows each assistant.
-      const others = otherProviders();
-      const asked = await Promise.all([
-        ...questions.map((q) => ask(q, town).then((a) => ({ q, a }))),
-        ...others.map((p) => askProvider(p, questions[0]!).then((a) => ({ q: questions[0]!, a }))),
-      ]);
-      const answers = asked.flatMap(({ q, a }) =>
-        "text" in a ? [{ ...readAnswer(q, a.text, name, a.sources), evidence: a.evidence }] : [],
-      );
-      const failed = asked.map(({ a }) => a).find((a) => "error" in a) as
-        { error: string } | undefined;
-      aiVisibility = {
-        checkedAt: new Date().toISOString(),
-        answers,
-        ...(failed ? { error: failed.error } : {}),
-      };
-    } catch {
-      aiVisibility = {
-        checkedAt: new Date().toISOString(),
-        answers: [],
-        error: "The AI visibility check was unavailable.",
-      };
-    }
-  }
+  if (options.includeAi && name && fallback && town)
+    aiVisibility = await reportAi(name, fallback, town);
   let websiteVisuals: Report["websiteVisuals"];
   if (options.includeScreenshots && website) {
     const { captureWebsiteVisual } = await import("./website-visual.server");
@@ -714,6 +686,81 @@ export function baselineFrom(
     ...(oldGrid.center ? { center: oldGrid.center } : {}),
     ...(oldGrid.spacingKm != null ? { spacingKm: oldGrid.spacingKm } : {}),
   };
+}
+
+// The AI assistant check for a report. Claude answers every question;
+// ChatGPT, Gemini and Perplexity (when their keys are set) answer the first.
+// Up to 9 outside calls, so the page runs it as its own request after the
+// report is saved (addProspectAi) to stay inside the Worker's 50 calls.
+export async function reportAi(
+  name: string,
+  service: string,
+  town: string,
+): Promise<NonNullable<Report["aiVisibility"]>> {
+  try {
+    const { ask, askProvider, otherProviders } = await import("./ai-visibility.server");
+    const { aiQuestions, readAnswer } = await import("./ai-visibility");
+    const questions = aiQuestions(service, town);
+    const others = otherProviders();
+    const asked = await Promise.all([
+      ...questions.map((q) => ask(q, town).then((a) => ({ q, a }))),
+      ...others.map((p) => askProvider(p, questions[0]!).then((a) => ({ q: questions[0]!, a }))),
+    ]);
+    const answers = asked.flatMap(({ q, a }) =>
+      "text" in a ? [{ ...readAnswer(q, a.text, name, a.sources), evidence: a.evidence }] : [],
+    );
+    const failed = asked.map(({ a }) => a).find((a) => "error" in a) as
+      { error: string } | undefined;
+    return {
+      checkedAt: new Date().toISOString(),
+      answers,
+      ...(failed ? { error: failed.error } : {}),
+    };
+  } catch {
+    return {
+      checkedAt: new Date().toISOString(),
+      answers: [],
+      error: "The AI visibility check was unavailable.",
+    };
+  }
+}
+
+// Second step of a report build: add the AI check, or the website picture,
+// to a report that is already saved. Each runs as its own request.
+export async function addProspectExtra(placeId: string, what: "ai" | "visual") {
+  const r = await serviceRead<
+    {
+      id: string;
+      name: string;
+      town: string | null;
+      website: string | null;
+      report: Report | null;
+    }[]
+  >(`prospects?select=id,name,town,website,report&place_id=eq.${encodeURIComponent(placeId)}`, "");
+  const row = r.data?.[0];
+  if (!row?.report) return { ok: false as const, error: "Build the report first." };
+  const report = row.report;
+  if (what === "ai") {
+    const service = report.maps?.keyword || report.business?.category || "";
+    const town = report.business?.town || row.town || "";
+    if (!service || !town)
+      return { ok: false as const, error: "No search phrase or town to ask about." };
+    report.aiVisibility = await reportAi(report.business?.name || row.name, service, town);
+  } else {
+    const site = report.business?.website || row.website || "";
+    if (!site) return { ok: false as const, error: "No website to capture." };
+    const { captureWebsiteVisual } = await import("./website-visual.server");
+    const shot = await captureWebsiteVisual(site);
+    if (!shot) return { ok: false as const, error: "The website picture could not be taken." };
+    report.websiteVisuals = { ...(report.websiteVisuals ?? {}), business: shot };
+  }
+  const w = await serviceWrite<unknown>(`prospects?id=eq.${row.id}`, "", {
+    method: "PATCH",
+    body: { report, og_image_url: null, updated_at: new Date().toISOString() },
+  });
+  return w.error
+    ? { ok: false as const, error: `Could not save the report (${w.error}).` }
+    : { ok: true as const };
 }
 
 function newToken(): string {
