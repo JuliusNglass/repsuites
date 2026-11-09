@@ -200,7 +200,7 @@ export function otherProviders(): Provider[] {
     {
       name: "OpenAI",
       key: env("REPSUITES_OPENAI_API_KEY"),
-      model: env("REPSUITES_OPENAI_SEARCH_MODEL") || "gpt-4o-mini-search-preview",
+      model: env("REPSUITES_OPENAI_SEARCH_MODEL") || "gpt-5-search-api",
       call: async (key, model, question) => {
         const res = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
@@ -208,6 +208,7 @@ export function otherProviders(): Provider[] {
           signal: AbortSignal.timeout(60000),
           body: JSON.stringify({
             model,
+            web_search_options: {},
             messages: [
               {
                 role: "system",
@@ -217,7 +218,10 @@ export function otherProviders(): Provider[] {
             ],
           }),
         });
-        if (!res.ok) throw new Error(`OpenAI ${res.status}`);
+        if (!res.ok)
+          throw new Error(
+            `OpenAI ${res.status}: ${(await res.text().catch(() => "")).slice(0, 160)}`,
+          );
         const b = (await res.json()) as any;
         const msg = b.choices?.[0]?.message ?? {};
         const urls = (msg.annotations ?? [])
@@ -229,7 +233,7 @@ export function otherProviders(): Provider[] {
     {
       name: "Google Gemini",
       key: env("REPSUITES_GEMINI_API_KEY"),
-      model: env("REPSUITES_GEMINI_MODEL") || "gemini-2.5-flash",
+      model: env("REPSUITES_GEMINI_MODEL") || "gemini-3.5-flash",
       call: async (key, model, question) => {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
@@ -248,7 +252,10 @@ export function otherProviders(): Provider[] {
             }),
           },
         );
-        if (!res.ok) throw new Error(`Gemini ${res.status}`);
+        if (!res.ok)
+          throw new Error(
+            `Gemini ${res.status}: ${(await res.text().catch(() => "")).slice(0, 160)}`,
+          );
         const b = (await res.json()) as any;
         const cand = b.candidates?.[0] ?? {};
         const urls = (cand.groundingMetadata?.groundingChunks ?? [])
@@ -281,7 +288,10 @@ export function otherProviders(): Provider[] {
             ],
           }),
         });
-        if (!res.ok) throw new Error(`Perplexity ${res.status}`);
+        if (!res.ok)
+          throw new Error(
+            `Perplexity ${res.status}: ${(await res.text().catch(() => "")).slice(0, 160)}`,
+          );
         const b = (await res.json()) as any;
         const urls = (b.citations ?? b.search_results?.map((r: any) => r?.url) ?? []).filter(
           (u: unknown): u is string => typeof u === "string",
@@ -311,8 +321,10 @@ export async function askProvider(p: Provider, question: string): Promise<Asked>
         excerpt: r.text.slice(0, 3000),
       },
     };
-  } catch {
-    return { error: `The ${p.name} check failed or timed out.` };
+  } catch (err) {
+    const why = String((err as Error)?.message ?? err).slice(0, 220);
+    console.error("AI provider failed", p.name, p.model, why);
+    return { error: `${p.name} could not be checked (${why.slice(0, 120)}).` };
   }
 }
 

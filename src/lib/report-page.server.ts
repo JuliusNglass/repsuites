@@ -1001,7 +1001,7 @@ function richerEvidence(r: Report): string {
     )
     .join("");
   const visibility = ai
-    ? `<h2>What AI assistants recommend</h2><div class="card"><p class="small">These are dated public-search observations. Answers vary, so they are evidence to monitor, not a promise of future visibility.</p>${assistants || `<p>${esc(ai.error || "No usable AI answer was recorded.")}</p>`}</div>`
+    ? `<h2>What AI assistants recommend</h2><div class="card"><p class="small">These are dated public-search observations. Answers vary, so they are evidence to monitor, not a promise of future visibility.</p>${assistants || `<p>${esc(ai.error || "No usable AI answer was recorded.")}</p>`}${assistants && ai.error ? `<p class="small">Not checked this time: ${esc(ai.error)}</p>` : ""}</div>`
     : "";
   return website + visibility;
 }
