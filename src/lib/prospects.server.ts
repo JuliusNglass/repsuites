@@ -396,7 +396,13 @@ export async function buildReport(
   extraKeywords: string[] = [],
   areaOverride?: import("./rank-grid").AreaSize,
   topic?: string,
-  options: { gridSize?: 5 | 7; includeAi?: boolean; includeScreenshots?: boolean } = {},
+  options: {
+    gridSize?: 5 | 7;
+    includeAi?: boolean;
+    includeScreenshots?: boolean;
+    // Leave the website check for a second request (addProspectExtra "site").
+    skipWebsite?: boolean;
+  } = {},
 ): Promise<{
   report: Report;
   meta: {
@@ -592,12 +598,14 @@ export async function buildReport(
     : null;
 
   const { checkWebsite } = await import("./website-audit.server");
-  const websiteAudit = await checkWebsite(website, {
-    phone,
-    address: String(p.formattedAddress ?? ""),
-    service: fallback,
-    town,
-  });
+  const websiteAudit = options.skipWebsite
+    ? undefined
+    : await checkWebsite(website, {
+        phone,
+        address: String(p.formattedAddress ?? ""),
+        service: fallback,
+        town,
+      });
   let aiVisibility: Report["aiVisibility"];
   if (options.includeAi && name && fallback && town)
     aiVisibility = await reportAi(name, fallback, town);
@@ -609,7 +617,7 @@ export async function buildReport(
   }
   return {
     report: {
-      websiteAudit,
+      ...(websiteAudit ? { websiteAudit } : {}),
       ...(websiteVisuals ? { websiteVisuals } : {}),
       ...(aiVisibility ? { aiVisibility } : {}),
       profileAudit: {
@@ -727,7 +735,7 @@ export async function reportAi(
 
 // Second step of a report build: add the AI check, or the website picture,
 // to a report that is already saved. Each runs as its own request.
-export async function addProspectExtra(placeId: string, what: "ai" | "visual") {
+export async function addProspectExtra(placeId: string, what: "ai" | "visual" | "site") {
   const r = await serviceRead<
     {
       id: string;
@@ -740,7 +748,16 @@ export async function addProspectExtra(placeId: string, what: "ai" | "visual") {
   const row = r.data?.[0];
   if (!row?.report) return { ok: false as const, error: "Build the report first." };
   const report = row.report;
-  if (what === "ai") {
+  if (what === "site") {
+    const { checkWebsite } = await import("./website-audit.server");
+    const b = report.business;
+    report.websiteAudit = await checkWebsite(b?.website || row.website || "", {
+      phone: b?.phone || "",
+      address: b?.address || "",
+      service: report.maps?.keyword || b?.category || "",
+      town: b?.town || row.town || "",
+    });
+  } else if (what === "ai") {
     const service = report.maps?.keyword || report.business?.category || "";
     const town = report.business?.town || row.town || "";
     if (!service || !town)
@@ -840,7 +857,11 @@ export async function saveProspectReport(
   const saved = savedPhrases(row);
   const keyword = extra.keyword || saved[0] || undefined;
   const addPhrases = extra.keyword ? [] : saved.slice(1);
+  // The website check (up to 4 outside calls) runs as its own request after
+  // the save (addProspectExtra "site"), so this request stays inside the
+  // Worker's 50 outside calls: 25 map searches, Google and the save itself.
   const built = await buildReport(placeId, keyword, [], extra.area, extra.topic || undefined, {
+    skipWebsite: true,
     ...(extra.gridSize ? { gridSize: extra.gridSize } : {}),
     ...(extra.includeAi !== undefined ? { includeAi: extra.includeAi } : {}),
     ...(extra.includeScreenshots !== undefined
