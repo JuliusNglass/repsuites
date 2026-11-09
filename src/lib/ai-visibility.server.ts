@@ -194,8 +194,107 @@ type Provider = {
   ) => Promise<{ text: string; urls: string[]; model?: string }>;
 };
 
+// One OpenRouter key reaches ChatGPT, Gemini and Perplexity, each using its
+// own maker's web search ("native"), so the answer is what that assistant
+// would really say. Used instead of the direct keys when it is set.
+// The newest everyday model from a maker on OpenRouter: no batch, preview,
+// image, audio or top-price "pro" variants. Worked example: from
+// openai/gpt-6.1-sol, openai/gpt-6.1-sol-pro and openai/gpt-6.1-sol:batch it
+// keeps openai/gpt-6.1-sol. One outside call, cached for the request.
+let modelList: Promise<{ id: string; created: number }[]> | null = null;
+export function chooseModel(list: { id: string; created: number }[], maker: string): string | null {
+  const skip =
+    /:|pro\b|-pro|preview|image|audio|nano|banana|embed|tts|realtime|transcribe|deep-research|reasoning-pro|omni/i;
+  const family: Record<string, RegExp> = {
+    openai: /^openai\/gpt-/,
+    google: /^google\/gemini-/,
+    perplexity: /^perplexity\/sonar/,
+  };
+  const re = family[maker];
+  if (!re) return null;
+  const ok = list.filter((m) => re.test(m.id) && !skip.test(m.id.split("/")[1]!));
+  ok.sort((a, b) => b.created - a.created);
+  return ok[0]?.id ?? null;
+}
+async function pickOpenRouterModel(maker: string): Promise<string | null> {
+  modelList ??= fetch("https://openrouter.ai/api/v1/models", { signal: AbortSignal.timeout(15000) })
+    .then((r) => r.json())
+    .then((b: any) =>
+      (b?.data ?? []).map((m: any) => ({ id: String(m.id), created: Number(m.created) || 0 })),
+    )
+    .catch(() => []);
+  return chooseModel(await modelList, maker);
+}
+
+function viaOpenRouter(key: string): Provider[] {
+  const env = (k: string) => (process.env[k] ?? "").trim();
+  const call = (label: string) => async (k: string, model: string, question: string) => {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${k}`,
+        "content-type": "application/json",
+        "HTTP-Referer": "https://repsuites.com",
+        "X-Title": "RepSuites",
+      },
+      signal: AbortSignal.timeout(60000),
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content: `You help a member of the public find a local business. Search the web. ${LIST_RULE}`,
+          },
+          { role: "user", content: question },
+        ],
+        tools: [
+          { type: "openrouter:web_search", parameters: { engine: "native", max_results: 5 } },
+        ],
+      }),
+    });
+    if (!res.ok)
+      throw new Error(
+        `${label} via OpenRouter ${res.status}: ${(await res.text().catch(() => "")).slice(0, 160)}`,
+      );
+    const b = (await res.json()) as any;
+    const msg = b.choices?.[0]?.message ?? {};
+    const urls = (msg.annotations ?? [])
+      .map((a: any) => a?.url_citation?.url)
+      .filter((u: unknown): u is string => typeof u === "string");
+    const text =
+      typeof msg.content === "string"
+        ? msg.content
+        : Array.isArray(msg.content)
+          ? msg.content.map((c: any) => String(c?.text ?? "")).join("\n")
+          : "";
+    return { text, urls, model: b.model };
+  };
+  return [
+    {
+      name: "OpenAI",
+      key,
+      model: env("REPSUITES_OPENROUTER_OPENAI_MODEL") || "auto:openai",
+      call: call("ChatGPT"),
+    },
+    {
+      name: "Google Gemini",
+      key,
+      model: env("REPSUITES_OPENROUTER_GEMINI_MODEL") || "auto:google",
+      call: call("Gemini"),
+    },
+    {
+      name: "Perplexity",
+      key,
+      model: env("REPSUITES_OPENROUTER_PERPLEXITY_MODEL") || "auto:perplexity",
+      call: call("Perplexity"),
+    },
+  ];
+}
+
 export function otherProviders(): Provider[] {
   const env = (k: string) => (process.env[k] ?? "").trim();
+  const router = env("REPSUITES_OPENROUTER_API_KEY");
+  if (router) return viaOpenRouter(router);
   const list: Provider[] = [
     {
       name: "OpenAI",

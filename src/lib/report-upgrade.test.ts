@@ -125,3 +125,35 @@ describe("report extras", () => {
     expect(html).toContain("AE &lt;Electric&gt;");
   });
 });
+
+describe("AI providers", () => {
+  it("uses OpenRouter for ChatGPT, Gemini and Perplexity when its key is set", async () => {
+    const { otherProviders } = await import("./ai-visibility.server");
+    process.env["REPSUITES_OPENROUTER_API_KEY"] = "or-test";
+    const list = otherProviders();
+    delete process.env["REPSUITES_OPENROUTER_API_KEY"];
+    expect(list.map((p) => p.name)).toEqual(["OpenAI", "Google Gemini", "Perplexity"]);
+    expect(list.every((p) => p.key === "or-test")).toBe(true);
+    expect(list[0]!.model).toBe("auto:openai");
+  });
+});
+
+describe("OpenRouter model choice", () => {
+  it("picks the newest everyday model for each maker", async () => {
+    const { chooseModel } = await import("./ai-visibility.server");
+    const list = [
+      { id: "openai/gpt-6.1-sol", created: 300 },
+      { id: "openai/gpt-6.1-sol-pro", created: 301 },
+      { id: "openai/gpt-6.1-sol:batch", created: 302 },
+      { id: "openai/gpt-6-luna", created: 200 },
+      { id: "google/gemini-nano-banana-2.1", created: 400 },
+      { id: "google/gemini-4-argon", created: 350 },
+      { id: "perplexity/sonar-pro", created: 10 },
+      { id: "perplexity/sonar", created: 9 },
+    ];
+    expect(chooseModel(list, "openai")).toBe("openai/gpt-6.1-sol");
+    expect(chooseModel(list, "google")).toBe("google/gemini-4-argon");
+    expect(chooseModel(list, "perplexity")).toBe("perplexity/sonar");
+    expect(chooseModel([], "openai")).toBeNull();
+  });
+});
