@@ -33,6 +33,7 @@ import {
 import { Logo } from "../components/site/Logo";
 import {
   buildProspectReport,
+  addProspectExtras,
   addProspectPhrase,
   findProspectContacts,
   findProspectOwner,
@@ -1313,6 +1314,7 @@ const ProspectRow = memo(function ProspectRow({
   const [includeVisual, setIncludeVisual] = useState(false);
   const build = useServerFn(buildProspectReport);
   const addPhrase = useServerFn(addProspectPhrase);
+  const addExtras = useServerFn(addProspectExtras);
   // Rebuild from the pipeline: no new search needed. The first phrase runs
   // with the report; any others are added one at a time (25 map checks each).
   // With the box cleared, the server keeps the last report's phrases and
@@ -1344,6 +1346,15 @@ const ProspectRow = memo(function ProspectRow({
       for (const w of list.length ? list.slice(1) : (r.addPhrases ?? [])) {
         const a = await addPhrase({ data: { placeId: p.placeId, keyword: w } }).catch(() => null);
         if (!a?.ok) failed.push(w);
+      }
+      // AI check and website picture: one request each, after the save.
+      const extras: { what: "ai" | "visual"; label: string }[] = [
+        ...(includeAi ? [{ what: "ai" as const, label: "AI check" }] : []),
+        ...(includeVisual ? [{ what: "visual" as const, label: "website picture" }] : []),
+      ];
+      for (const x of extras) {
+        const a = await addExtras({ data: { placeId: p.placeId, what: x.what } }).catch(() => null);
+        if (!a?.ok) failed.push(x.label);
       }
       setRebuild(false);
       if (failed.length)
@@ -2508,4 +2519,3 @@ function ReachBadges({
     </div>
   );
 }
-
