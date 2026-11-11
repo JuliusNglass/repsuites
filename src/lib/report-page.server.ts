@@ -1181,7 +1181,7 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
 }
 
 function fixitOffer(token: string): string {
-  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to write these fixes for you?</h3><p style="margin:0 0 4px">For a one-off &pound;27 we write every fix above, ready to copy into Google, within 48 hours. 14-day money-back promise.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
+  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to write these fixes for you?</h3><p style="margin:0 0 4px">For a one-off &pound;27 we write every fix above, ready to copy into Google, in minutes. 14-day money-back promise.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
 }
 
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {

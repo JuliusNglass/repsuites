@@ -54,17 +54,57 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
             product_data: {
               name: "Google Fix-It Pack",
               description: business
-                ? `Done-for-you Google profile fixes for ${business}. Delivered within 48 hours.`
-                : "Done-for-you Google profile fixes. Delivered within 48 hours.",
+                ? `Done-for-you Google profile fixes for ${business}. Delivered in minutes.`
+                : "Done-for-you Google profile fixes. Delivered in minutes.",
             },
           },
         },
       ],
       phone_number_collection: { enabled: true },
       allow_promotion_codes: true,
-      success_url: `${ORIGIN}/fix/thanks${token ? `?r=${token}` : ""}`,
+      success_url: `${ORIGIN}/fix/thanks?s={CHECKOUT_SESSION_ID}${token ? `&r=${token}` : ""}`,
       cancel_url: `${ORIGIN}/fix${token ? `?r=${token}` : ""}`,
     });
     if (!s.ok) return { ok: false as const, error: s.error };
     return { ok: true as const, url: s.data.url };
+  });
+
+const SESSION_RE = /^cs_(live|test)_[A-Za-z0-9]{10,200}$/;
+
+/** The thank-you page asks this every few seconds; it also writes the pack. */
+export const fixitProgress = createServerFn({ method: "POST" })
+  .validator((d: { s: string }) => z.object({ s: z.string().regex(SESSION_RE) }).parse(d))
+  .handler(async ({ data }) => {
+    applyNoStoreHeaders();
+    const { orderBySession, processFixit, recordFixitOrder } = await import("./fixit-pack.server");
+    let o = await orderBySession(data.s);
+    if (!o) {
+      // The webhook may not have landed yet: check with Stripe directly.
+      const s = await stripe<any>(`checkout/sessions/${data.s}`, undefined, "GET").catch(
+        () => null,
+      );
+      if (s?.ok && s.data?.payment_status === "paid" && s.data?.metadata?.kind === "fixit") {
+        await recordFixitOrder(s.data);
+        o = await orderBySession(data.s);
+      }
+    }
+    if (!o) return { status: "waiting" as const };
+    if (o.status === "paid" || o.status === "writing") o = await processFixit(o);
+    return o.status === "ready"
+      ? { status: "ready" as const, key: o.view_key }
+      : {
+          status:
+            o.status === "needs_info" || o.status === "failed"
+              ? ("help" as const)
+              : ("writing" as const),
+        };
+  });
+
+export const getFixitPack = createServerFn({ method: "GET" })
+  .validator((d: { key: string }) => z.object({ key: z.string().regex(/^[a-f0-9]{36}$/) }).parse(d))
+  .handler(async ({ data }) => {
+    applyNoStoreHeaders();
+    const { orderByKey } = await import("./fixit-pack.server");
+    const o = await orderByKey(data.key);
+    return o?.status === "ready" && o.pack ? { business: o.business, pack: o.pack } : null;
   });

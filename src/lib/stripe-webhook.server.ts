@@ -74,6 +74,8 @@ async function managedBought(session: any, trial = false) {
 }
 
 async function fixitPaid(session: any) {
+  const { recordFixitOrder } = await import("./fixit-pack.server");
+  await recordFixitOrder(session);
   const cust = session.customer_details ?? {};
   const { tagFixitPaid } = await import("./ghl-lead.server");
   await tagFixitPaid({

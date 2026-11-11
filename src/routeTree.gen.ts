@@ -34,6 +34,7 @@ import { Route as FixThanksRouteImport } from './routes/fix.thanks'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as ApiBillingBackRouteImport } from './routes/api.billing.back'
+import { Route as ApiInternalFixitRouteImport } from './routes/api.internal.fixit'
 import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
 import { Route as ApiInternalLifecycleRouteImport } from './routes/api.internal.lifecycle'
@@ -44,6 +45,7 @@ import { Route as ApiMetaDataDeletionRouteImport } from './routes/api.meta.data-
 import { Route as ApiResendWebhookRouteImport } from './routes/api.resend.webhook'
 import { Route as ApiReviewTriggerTokenRouteImport } from './routes/api.review-trigger.$token'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as FixPackKeyRouteImport } from './routes/fix.pack.$key'
 import { Route as RTokenPdfRouteImport } from './routes/r.$token.pdf'
 import { Route as ApiAccountingCallbackProviderRouteImport } from './routes/api.accounting.callback.$provider'
 import { Route as ApiAccountingWebhookQuickbooksRouteImport } from './routes/api.accounting.webhook.quickbooks'
@@ -176,6 +178,11 @@ const ApiBillingBackRoute = ApiBillingBackRouteImport.update({
   path: '/api/billing/back',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalFixitRoute = ApiInternalFixitRouteImport.update({
+  id: '/api/internal/fixit',
+  path: '/api/internal/fixit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalGoogleRoute = ApiInternalGoogleRouteImport.update({
   id: '/api/internal/google',
   path: '/api/internal/google',
@@ -227,6 +234,11 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
   getParentRoute: () => rootRouteImport,
+} as any)
+const FixPackKeyRoute = FixPackKeyRouteImport.update({
+  id: '/pack/$key',
+  path: '/pack/$key',
+  getParentRoute: () => FixRoute,
 } as any)
 const RTokenPdfRoute = RTokenPdfRouteImport.update({
   id: '/pdf',
@@ -288,6 +300,7 @@ export interface FileRoutesByFullPath {
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards/': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
+  '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
@@ -298,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/fix/pack/$key': typeof FixPackKeyRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
@@ -331,6 +345,7 @@ export interface FileRoutesByTo {
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
+  '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
@@ -341,6 +356,7 @@ export interface FileRoutesByTo {
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/fix/pack/$key': typeof FixPackKeyRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
@@ -375,6 +391,7 @@ export interface FileRoutesById {
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards/': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
+  '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
@@ -385,6 +402,7 @@ export interface FileRoutesById {
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/fix/pack/$key': typeof FixPackKeyRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
@@ -420,6 +438,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/cards/'
     | '/api/billing/back'
+    | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/lifecycle'
@@ -430,6 +449,7 @@ export interface FileRouteTypes {
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/fix/pack/$key'
     | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
@@ -463,6 +483,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/cards'
     | '/api/billing/back'
+    | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/lifecycle'
@@ -473,6 +494,7 @@ export interface FileRouteTypes {
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/fix/pack/$key'
     | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
@@ -506,6 +528,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/cards/'
     | '/api/billing/back'
+    | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
     | '/api/internal/lifecycle'
@@ -516,6 +539,7 @@ export interface FileRouteTypes {
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
+    | '/fix/pack/$key'
     | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
@@ -549,6 +573,7 @@ export interface RootRouteChildren {
   RTokenRoute: typeof RTokenRouteWithChildren
   CardsIndexRoute: typeof CardsIndexRoute
   ApiBillingBackRoute: typeof ApiBillingBackRoute
+  ApiInternalFixitRoute: typeof ApiInternalFixitRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
   ApiInternalLifecycleRoute: typeof ApiInternalLifecycleRoute
@@ -743,6 +768,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBillingBackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/fixit': {
+      id: '/api/internal/fixit'
+      path: '/api/internal/fixit'
+      fullPath: '/api/internal/fixit'
+      preLoaderRoute: typeof ApiInternalFixitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/google': {
       id: '/api/internal/google'
       path: '/api/internal/google'
@@ -813,6 +845,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fix/pack/$key': {
+      id: '/fix/pack/$key'
+      path: '/pack/$key'
+      fullPath: '/fix/pack/$key'
+      preLoaderRoute: typeof FixPackKeyRouteImport
+      parentRoute: typeof FixRoute
+    }
     '/r/$token/pdf': {
       id: '/r/$token/pdf'
       path: '/pdf'
@@ -860,10 +899,12 @@ declare module '@tanstack/react-router' {
 
 interface FixRouteChildren {
   FixThanksRoute: typeof FixThanksRoute
+  FixPackKeyRoute: typeof FixPackKeyRoute
 }
 
 const FixRouteChildren: FixRouteChildren = {
   FixThanksRoute: FixThanksRoute,
+  FixPackKeyRoute: FixPackKeyRoute,
 }
 
 const FixRouteWithChildren = FixRoute._addFileChildren(FixRouteChildren)
@@ -904,6 +945,7 @@ const rootRouteChildren: RootRouteChildren = {
   RTokenRoute: RTokenRouteWithChildren,
   CardsIndexRoute: CardsIndexRoute,
   ApiBillingBackRoute: ApiBillingBackRoute,
+  ApiInternalFixitRoute: ApiInternalFixitRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
   ApiInternalLifecycleRoute: ApiInternalLifecycleRoute,

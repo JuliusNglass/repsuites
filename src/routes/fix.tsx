@@ -18,8 +18,7 @@ export const Route = createFileRoute("/fix")({
       { title: "Google Fix-It Pack | RepSuites" },
       {
         name: "description",
-        content:
-          "We write your Google profile fixes for you. One-off £27, delivered within 48 hours.",
+        content: "We write your Google profile fixes for you. One-off £27, ready in minutes.",
       },
     ],
   }),
@@ -88,7 +87,7 @@ function FixPage() {
           </h1>
           <p className="text-lg text-muted-foreground">
             Your free check showed the gaps. Most owners never get round to fixing them. For a
-            one-off {FIXIT_PRICE}, we write every fix for you, ready to paste, within 48 hours.
+            one-off {FIXIT_PRICE}, we write every fix for you, ready to paste, in minutes.
           </p>
           <BuyButton token={r} />
         </section>
@@ -118,7 +117,7 @@ function FixPage() {
             {[
               "Pay once, securely. It takes under a minute.",
               "We use your free check to write every fix for your business.",
-              "Within 48 hours you get it all by email and WhatsApp, in the order to do it.",
+              "It appears on screen in a few minutes, with copy buttons, and we email you a copy.",
             ].map((x, i) => (
               <li key={x} className="flex gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
@@ -130,7 +129,7 @@ function FixPage() {
           </ol>
           <div className="grid gap-3 sm:grid-cols-2">
             <p className="flex gap-2 rounded-xl bg-muted p-4">
-              <Clock className="h-5 w-5 shrink-0 text-primary" aria-hidden /> Done within 48 hours
+              <Clock className="h-5 w-5 shrink-0 text-primary" aria-hidden /> Ready in minutes
             </p>
             <p className="flex gap-2 rounded-xl bg-muted p-4">
               <ShieldCheck className="h-5 w-5 shrink-0 text-primary" aria-hidden /> 14-day
