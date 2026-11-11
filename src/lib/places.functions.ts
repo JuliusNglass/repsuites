@@ -86,33 +86,34 @@ export const suggestBusinesses = createServerFn({ method: "POST" })
     };
     const suggestions: BusinessSuggestion[] = [];
     // Autocomplete often misses service-area businesses (cleaners, trades
-    // with no shop address). Text Search finds them, so fall back to it.
-    if (!(json.suggestions ?? []).length) {
-      const t = await timedFetch("https://places.googleapis.com/v1/places:searchText", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": key,
-          "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress",
-        },
-        body: JSON.stringify({ textQuery: data.q, regionCode: "gb", pageSize: 5 }),
+    // with no shop address) and fills the list with similar names instead.
+    // Text Search does find them, so its matches go first.
+    const t = await timedFetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress",
+      },
+      body: JSON.stringify({ textQuery: data.q, regionCode: "gb", pageSize: 3 }),
+    });
+    const tj = (t && t.ok ? await t.json().catch(() => ({})) : {}) as {
+      places?: { id?: string; displayName?: { text?: string }; formattedAddress?: string }[];
+    };
+    const seen = new Set<string>();
+    for (const p of tj.places ?? []) {
+      if (!p.id || !PLACE_ID_RE.test(p.id) || seen.has(p.id)) continue;
+      seen.add(p.id);
+      suggestions.push({
+        placeId: p.id,
+        name: (p.displayName?.text ?? "").slice(0, 160),
+        detail: (p.formattedAddress ?? "").slice(0, 200),
       });
-      const tj = (t && t.ok ? await t.json().catch(() => ({})) : {}) as {
-        places?: { id?: string; displayName?: { text?: string }; formattedAddress?: string }[];
-      };
-      for (const p of tj.places ?? []) {
-        if (!p.id || !PLACE_ID_RE.test(p.id)) continue;
-        suggestions.push({
-          placeId: p.id,
-          name: (p.displayName?.text ?? "").slice(0, 160),
-          detail: (p.formattedAddress ?? "").slice(0, 200),
-        });
-      }
-      return { suggestions };
     }
     for (const s of json.suggestions ?? []) {
       const p = s.placePrediction;
-      if (!p?.placeId || !PLACE_ID_RE.test(p.placeId)) continue;
+      if (!p?.placeId || !PLACE_ID_RE.test(p.placeId) || seen.has(p.placeId)) continue;
+      seen.add(p.placeId);
       suggestions.push({
         placeId: p.placeId,
         name: (p.structuredFormat?.mainText?.text ?? p.text?.text ?? "").slice(0, 160),
