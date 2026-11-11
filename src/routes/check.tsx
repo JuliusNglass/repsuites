@@ -215,7 +215,7 @@ function CheckPage() {
         {!place ? (
           <section
             aria-labelledby="h1"
-            className="relative overflow-hidden bg-[radial-gradient(90%_60%_at_100%_0%,var(--gold-soft),transparent_65%)]"
+            className="relative overflow-x-clip bg-[radial-gradient(90%_60%_at_100%_0%,var(--gold-soft),transparent_65%)]"
           >
             <div className="max-w-6xl mx-auto px-4 pt-8 pb-14 sm:pt-14 sm:pb-20 lg:py-20 grid gap-8 lg:gap-12 lg:grid-cols-[1.05fr_1fr] lg:items-start">
               <div className="space-y-5 max-w-xl lg:pt-6">
@@ -246,8 +246,8 @@ function CheckPage() {
                   className="absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-primary/25 via-transparent to-navy/15 blur-2xl"
                   aria-hidden
                 />
-                <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-lift)]">
-                  <div className="surface-navy px-5 py-4 sm:px-6">
+                <div className="relative z-10 rounded-3xl border border-border bg-card shadow-[var(--shadow-lift)]">
+                  <div className="surface-navy rounded-t-3xl px-5 py-4 sm:px-6">
                     <p className="text-sm font-bold uppercase tracking-[0.08em] text-primary">
                       Start your check
                     </p>
