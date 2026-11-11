@@ -4,6 +4,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import { trackPixel } from "../lib/meta-pixel";
 import { z } from "zod";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Logo } from "../components/site/Logo";
@@ -45,6 +46,19 @@ function Thanks() {
   const [keyword, setKeyword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Count the sale once per checkout (same id as the server copy).
+  useEffect(() => {
+    if (!s) return;
+    const k = `px-${s}`;
+    try {
+      if (sessionStorage.getItem(k)) return;
+      sessionStorage.setItem(k, "1");
+    } catch {
+      // private mode: still send
+    }
+    trackPixel("Purchase", { currency: "GBP", value: 27, content_name: "Fix-It Pack" }, s);
+  }, [s]);
 
   useEffect(() => {
     if (phase !== "writing") return;

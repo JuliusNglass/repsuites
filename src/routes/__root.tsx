@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportVibeError } from "../lib/vibe-error-reporting";
 import { Toaster } from "../components/ui/sonner";
+import { META_PIXEL_ID, pixelBootScript } from "../lib/meta-pixel";
 
 function NotFoundComponent() {
   return (
@@ -144,6 +145,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://repsuites.com/og-image.png?v=2" },
       { name: "theme-color", content: "#001938" },
     ],
+    scripts: META_PIXEL_ID ? [{ children: pixelBootScript(META_PIXEL_ID) }] : [],
     links: [
       { rel: "icon", href: "/favicon.ico?v=2", sizes: "any" },
       { rel: "icon", href: "/favicon.png?v=2", type: "image/png" },

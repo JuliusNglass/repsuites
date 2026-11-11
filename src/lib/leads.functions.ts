@@ -31,6 +31,7 @@ const Lead = z.object({
     .optional(),
   consentEmail: z.boolean().optional().default(false),
   consentWhatsapp: z.boolean().optional().default(false),
+  eventId: z.string().max(64).optional(),
   // The Google listing the person confirmed, when they picked one.
   place: z
     .object({
@@ -209,6 +210,16 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
           : null,
       ),
     ]);
+    if (data.eventId) {
+      const { sendMetaEvent } = await import("./meta-capi.server");
+      await sendMetaEvent({
+        name: "Lead",
+        eventId: data.eventId,
+        url: "https://repsuites.com/check",
+        email: data.email,
+        phone: data.phone || null,
+      });
+    }
     return { ok: true as const, reportUrl: reportLink };
   });
 

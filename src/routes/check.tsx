@@ -12,6 +12,7 @@ import { Logo } from "../components/site/Logo";
 import { BusinessSearch } from "../components/site/BusinessSearch";
 import type { BusinessDetails } from "../lib/places.functions";
 import { prebuildCheck, requestVisibilityCheck } from "../lib/leads.functions";
+import { newEventId, trackPixel } from "../lib/meta-pixel";
 import type { Headache, Size } from "../lib/ghl-lead";
 
 type Niche = {
@@ -158,6 +159,7 @@ function CheckPage() {
     setErr(null);
     try {
       const token = await (built.current ?? Promise.resolve(null));
+      const eventId = newEventId();
       const r = await send({
         data: {
           name: f.name,
@@ -174,6 +176,7 @@ function CheckPage() {
           ...(token ? { prebuiltToken: token } : {}),
           consentEmail: cEmail,
           consentWhatsapp: cWa,
+          eventId,
           place: {
             placeId: place.placeId,
             address: place.address,
@@ -188,6 +191,7 @@ function CheckPage() {
         setErr(r.error);
         return;
       }
+      trackPixel("Lead", { content_name: "Free Google Check" }, eventId);
       if (r.reportUrl) window.location.href = r.reportUrl.replace("https://repsuites.com", "");
       else
         setErr(

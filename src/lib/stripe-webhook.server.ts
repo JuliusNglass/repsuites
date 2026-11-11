@@ -84,6 +84,15 @@ async function fixitPaid(session: any) {
     name: cust.name ? String(cust.name) : null,
     business: String(session.metadata?.business ?? "") || null,
   });
+  const { sendMetaEvent } = await import("./meta-capi.server");
+  await sendMetaEvent({
+    name: "Purchase",
+    eventId: String(session.id),
+    url: "https://repsuites.com/fix",
+    email: cust.email ? String(cust.email) : null,
+    phone: cust.phone ? String(cust.phone) : null,
+    value: (session.amount_total ?? 2700) / 100,
+  });
 }
 
 async function shopPaid(session: any) {
