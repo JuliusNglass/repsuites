@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckRouteImport } from './routes/check'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as FixRouteImport } from './routes/fix'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
 import { Route as LoginRouteImport } from './routes/login'
@@ -29,6 +30,7 @@ import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
 import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
 import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
+import { Route as FixThanksRouteImport } from './routes/fix.thanks'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as ApiBillingBackRouteImport } from './routes/api.billing.back'
@@ -62,6 +64,11 @@ const CheckRoute = CheckRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FixRoute = FixRouteImport.update({
+  id: '/fix',
+  path: '/fix',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -148,6 +155,11 @@ const FeedbackIdRoute = FeedbackIdRouteImport.update({
   id: '/feedback/$id',
   path: '/feedback/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const FixThanksRoute = FixThanksRouteImport.update({
+  id: '/thanks',
+  path: '/thanks',
+  getParentRoute: () => FixRoute,
 } as any)
 const QTokenRoute = QTokenRouteImport.update({
   id: '/q/$token',
@@ -254,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
+  '/fix': typeof FixRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
@@ -270,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/fix/thanks': typeof FixThanksRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards/': typeof CardsIndexRoute
@@ -295,6 +309,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
+  '/fix': typeof FixRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
@@ -311,6 +326,7 @@ export interface FileRoutesByTo {
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/fix/thanks': typeof FixThanksRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards': typeof CardsIndexRoute
@@ -337,6 +353,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
+  '/fix': typeof FixRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
@@ -353,6 +370,7 @@ export interface FileRoutesById {
   '/cards/order': typeof CardsOrderRoute
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
+  '/fix/thanks': typeof FixThanksRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards/': typeof CardsIndexRoute
@@ -380,6 +398,7 @@ export interface FileRouteTypes {
     | '/'
     | '/check'
     | '/dashboard'
+    | '/fix'
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
@@ -396,6 +415,7 @@ export interface FileRouteTypes {
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
+    | '/fix/thanks'
     | '/q/$token'
     | '/r/$token'
     | '/cards/'
@@ -421,6 +441,7 @@ export interface FileRouteTypes {
     | '/'
     | '/check'
     | '/dashboard'
+    | '/fix'
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
@@ -437,6 +458,7 @@ export interface FileRouteTypes {
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
+    | '/fix/thanks'
     | '/q/$token'
     | '/r/$token'
     | '/cards'
@@ -462,6 +484,7 @@ export interface FileRouteTypes {
     | '/'
     | '/check'
     | '/dashboard'
+    | '/fix'
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
@@ -478,6 +501,7 @@ export interface FileRouteTypes {
     | '/cards/order'
     | '/cards/thanks'
     | '/feedback/$id'
+    | '/fix/thanks'
     | '/q/$token'
     | '/r/$token'
     | '/cards/'
@@ -504,6 +528,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CheckRoute: typeof CheckRoute
   DashboardRoute: typeof DashboardRoute
+  FixRoute: typeof FixRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
   LoginRoute: typeof LoginRoute
@@ -562,6 +587,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fix': {
+      id: '/fix'
+      path: '/fix'
+      fullPath: '/fix'
+      preLoaderRoute: typeof FixRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -682,6 +714,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/feedback/$id'
       preLoaderRoute: typeof FeedbackIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/fix/thanks': {
+      id: '/fix/thanks'
+      path: '/thanks'
+      fullPath: '/fix/thanks'
+      preLoaderRoute: typeof FixThanksRouteImport
+      parentRoute: typeof FixRoute
     }
     '/q/$token': {
       id: '/q/$token'
@@ -819,6 +858,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface FixRouteChildren {
+  FixThanksRoute: typeof FixThanksRoute
+}
+
+const FixRouteChildren: FixRouteChildren = {
+  FixThanksRoute: FixThanksRoute,
+}
+
+const FixRouteWithChildren = FixRoute._addFileChildren(FixRouteChildren)
+
 interface RTokenRouteChildren {
   RTokenPdfRoute: typeof RTokenPdfRoute
 }
@@ -834,6 +883,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CheckRoute: CheckRoute,
   DashboardRoute: DashboardRoute,
+  FixRoute: FixRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GoogleBusinessProfileRoute: GoogleBusinessProfileRoute,
   LoginRoute: LoginRoute,

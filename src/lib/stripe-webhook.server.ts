@@ -73,6 +73,17 @@ async function managedBought(session: any, trial = false) {
   }).catch(() => null);
 }
 
+async function fixitPaid(session: any) {
+  const cust = session.customer_details ?? {};
+  const { tagFixitPaid } = await import("./ghl-lead.server");
+  await tagFixitPaid({
+    email: cust.email ? String(cust.email).toLowerCase() : null,
+    phone: cust.phone ? String(cust.phone) : null,
+    name: cust.name ? String(cust.name) : null,
+    business: String(session.metadata?.business ?? "") || null,
+  });
+}
+
 async function shopPaid(session: any) {
   const orderId = String(session?.metadata?.order_id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(orderId)) return;
@@ -151,6 +162,7 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
   switch (event.type) {
     case "checkout.session.completed":
       if (obj.metadata?.kind === "shop" && obj.payment_status === "paid") await shopPaid(obj);
+      if (obj.metadata?.kind === "fixit" && obj.payment_status === "paid") await fixitPaid(obj);
       if (obj.metadata?.kind === "plan" && obj.subscription) {
         const sub = await stripe(`subscriptions/${obj.subscription}`);
         if (sub.ok) await saveSubscription(sub.data);
@@ -175,6 +187,7 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
       break;
     case "checkout.session.async_payment_succeeded":
       if (obj.metadata?.kind === "shop") await shopPaid(obj);
+      if (obj.metadata?.kind === "fixit") await fixitPaid(obj);
       break;
     case "customer.subscription.created":
     case "customer.subscription.updated":

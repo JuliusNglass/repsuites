@@ -698,6 +698,8 @@ export interface RenderExtra {
   minSalePence?: number | null;
   salePeriod?: string | null;
   competitorId?: string | null;
+  /** Show the £27 Fix-It Pack offer (free-check leads only). */
+  fixit?: boolean;
   branding?: {
     agency_name: string | null;
     primary_hex: string | null;
@@ -980,7 +982,10 @@ export function websiteEvidence(r: Report): string {
     ws == null
       ? ""
       : `<div class="card score"><div class="dial" style="background:${scoreColour(ws)}">${ws}</div><div><b>Website score, out of 100</b><p class="muted" style="margin:4px 0 0">${passed} of ${a.findings.length} checks passed. ${ws < 40 ? "Most visitors are likely to leave without calling." : ws < 70 ? "A few fixes would help Google and customers understand you." : "Your homepage is in good shape."}</p></div></div>`;
-  return `${intro}<p class="small">Source: ${esc(a.url)}</p>${scoreLine}<div class="card check-list">${[...a.findings].sort((x, y) => (x.status === "review" ? 0 : 1) - (y.status === "review" ? 0 : 1))
+  return `${intro}<p class="small">Source: ${esc(a.url)}</p>${scoreLine}<div class="card check-list">${[
+    ...a.findings,
+  ]
+    .sort((x, y) => (x.status === "review" ? 0 : 1) - (y.status === "review" ? 0 : 1))
     .map((f) => {
       const g = guidance[f.id] ?? {
         verdict: f.label,
@@ -1007,12 +1012,17 @@ export function websiteEvidence(r: Report): string {
 // Chapter 1: the three biggest fixes, from the same evidence as the plan.
 export function topThree(r: Report): string {
   const items: { title: string; why: string; big: boolean }[] = [];
-  for (const f of r.fixes ?? []) items.push({ title: f.title, why: f.why, big: f.priority === "high" });
+  for (const f of r.fixes ?? [])
+    items.push({ title: f.title, why: f.why, big: f.priority === "high" });
   const order = ["phone_match", "address_match", "local_wording", "title", "h1", "phone"];
   for (const f of [...(r.websiteAudit?.findings ?? [])]
     .filter((x) => x.status === "review" && order.includes(x.id))
     .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)))
-    items.push({ title: f.label, why: f.recommendation, big: f.id === "phone_match" || f.id === "address_match" });
+    items.push({
+      title: f.label,
+      why: f.recommendation,
+      big: f.id === "phone_match" || f.id === "address_match",
+    });
   const top = [...items.filter((i) => i.big), ...items.filter((i) => !i.big)].slice(0, 3);
   if (!top.length) return "";
   return `<div class="top3">${top
@@ -1020,7 +1030,9 @@ export function topThree(r: Report): string {
       (i) =>
         `<div class="card"><span class="pill ${i.big ? "big" : "improve"}">${i.big ? "Big impact" : "Quick win"}</span><h3>${esc(i.title)}</h3><p>${esc(i.why)}</p></div>`,
     )
-    .join("")}</div><p class="small">Every other fix is in your plan in chapter 6, with who does it and how to check it worked.</p>`;
+    .join(
+      "",
+    )}</div><p class="small">Every other fix is in your plan in chapter 6, with who does it and how to check it worked.</p>`;
 }
 
 const chapter = (n: number, id: string, title: string) =>
@@ -1118,6 +1130,10 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
         ? `You show up well near your strongest location, but customers across most of the area see other businesses first for \"${lead.keyword}\". Make your service and location clearer, build recent reviews and check the same area again.`
         : `You did not reach the top three anywhere we checked for \"${lead.keyword}\". Customers are seeing other businesses first.`;
   return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Your overall visibility score is <b>${view.score}/100</b>${r.maps?.checked ? "" : " (Google Maps position not checked yet, so it is left out of this score)"}. The map positions above show where customers are most and least likely to see you.</p></section>`;
+}
+
+function fixitOffer(token: string): string {
+  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to write these fixes for you?</h3><p style="margin:0 0 4px">For a one-off &pound;27 we write every fix above, ready to copy into Google, within 48 hours. 14-day money-back promise.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
 }
 
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
@@ -1227,6 +1243,7 @@ ${executiveBrief(r, view)}
 <div class="report-shell"><div class="report-main">
 ${chapter(1, "summary", "Do these three things first")}
 ${topThree(r)}
+${extra?.fixit ? fixitOffer(extra.token) : ""}
 ${headline}
 
 ${chapter(2, "map", "Where customers can find you on Google Maps")}
@@ -1268,11 +1285,11 @@ ${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
 <div class="score" style="margin-top:12px"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
 ${view.parts
-    .map(
-      (p) =>
-        `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:1rem"><span>${esc(p.label)}</span><b>${p.got} / ${p.max}</b></div><div class="bar"><span style="width:${Math.round((p.got / p.max) * 100)}%"></span></div></div>`,
-    )
-    .join("")}</details>
+  .map(
+    (p) =>
+      `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:1rem"><span>${esc(p.label)}</span><b>${p.got} / ${p.max}</b></div><div class="bar"><span style="width:${Math.round((p.got / p.max) * 100)}%"></span></div></div>`,
+  )
+  .join("")}</details>
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#334155">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time.</p>
 ${agency.phone || agency.email ? `<p class="small"><b>${esc(agency.name)}</b>${agency.phone ? ` · ${esc(agency.phone)}` : ""}${agency.email ? ` · ${esc(agency.email)}` : ""}</p>` : ""}

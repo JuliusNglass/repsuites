@@ -38,6 +38,7 @@ export const Route = createFileRoute("/r/$token")({
             sale_period: string | null;
             product: string | null;
             created_by: string | null;
+            source: string | null;
             name: string | null;
             phone: string | null;
             sent_at: string | null;
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/r/$token")({
             last_opened_at: string | null;
           }[]
         >(
-          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product,created_by,name,phone,sent_at,opens,last_opened_at&report_token=eq.${token}`,
+          `prospects?select=report,gbp_snapshot,lat,lng,contact_name,video_url,video_kind,og_image_url,min_sale_pence,sale_period,product,created_by,source,name,phone,sent_at,opens,last_opened_at&report_token=eq.${token}`,
           "",
         );
         const row = r.data?.[0];
@@ -94,6 +95,7 @@ export const Route = createFileRoute("/r/$token")({
             salePeriod: row?.sale_period ?? null,
             competitorId: /^[A-Za-z0-9_-]{10,300}$/.test(competitorId) ? competitorId : null,
             branding: brand?.data?.[0] ?? null,
+            fixit: row?.source === "inbound" && !row?.created_by,
           }),
           { status: 200, headers: HTML },
         );
