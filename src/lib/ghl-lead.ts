@@ -19,7 +19,9 @@ export type GhlLeadInput = {
   town: string;
   niche: string;
   size: Size | null;
-  headache: Headache | null;
+  headaches: Headache[];
+  /** What customers type into Google to find them. */
+  keyword?: string;
   consentEmail: boolean;
   consentWhatsapp: boolean;
   reportUrl: string | null;
@@ -42,15 +44,19 @@ function slug(s: string): string {
 }
 
 export function ghlLeadTags(p: GhlLeadInput): string[] {
-  const t = ["free-check", `niche-${slug(p.niche) || "general"}`, `src-${slug(p.source) || "direct"}`];
+  const t = [
+    "free-check",
+    `niche-${slug(p.niche) || "general"}`,
+    `src-${slug(p.source) || "direct"}`,
+  ];
   if (p.size) t.push(`size-${slug(p.size)}`);
-  if (p.headache) t.push(`headache-${p.headache}`);
+  for (const h of new Set(p.headaches)) t.push(`headache-${h}`);
   if (p.consentEmail) t.push("consent-email");
   if (p.consentWhatsapp) t.push("consent-whatsapp");
   // Owners with 3+ cleaners and a SparkOps-shaped headache go to the call path.
   const bigEnough = p.size !== null && p.size !== "solo";
-  if (bigEnough && p.headache && p.headache !== "clients" && p.headache !== "other")
-    t.push("route-sparkops-call");
+  const opsHeadache = p.headaches.some((h) => h === "admin" || h === "hiring" || h === "checking");
+  if (bigEnough && opsHeadache) t.push("route-sparkops-call");
   else t.push("route-fixit-pack");
   return t;
 }

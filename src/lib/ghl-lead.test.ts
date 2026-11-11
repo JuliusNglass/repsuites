@@ -9,7 +9,7 @@ const base: GhlLeadInput = {
   town: "Newport",
   niche: "cleaning",
   size: "6-15",
-  headache: "hiring",
+  headaches: ["hiring"],
   consentEmail: true,
   consentWhatsapp: false,
   reportUrl: "https://repsuites.com/r/abc",
@@ -30,7 +30,7 @@ describe("ghlLeadTags", () => {
   });
   it("sends solo owners and client-finding headaches to the Fix-It Pack", () => {
     expect(ghlLeadTags({ ...base, size: "solo" })).toContain("route-fixit-pack");
-    expect(ghlLeadTags({ ...base, headache: "clients" })).toContain("route-fixit-pack");
+    expect(ghlLeadTags({ ...base, headaches: ["clients"] })).toContain("route-fixit-pack");
   });
 });
 
@@ -40,5 +40,18 @@ describe("ghlLeadBody", () => {
     expect(b.firstName).toBe("Sam");
     expect(b.lastName).toBe("Jones");
     expect(b.website).toBe("https://repsuites.com/r/abc");
+  });
+});
+
+describe("several headaches", () => {
+  it("tags each one and routes to the call when any is an operations headache", () => {
+    const t = ghlLeadTags({ ...base, headaches: ["clients", "checking", "clients"] });
+    expect(t).toContain("headache-clients");
+    expect(t).toContain("headache-checking");
+    expect(t.filter((x) => x === "headache-clients")).toHaveLength(1);
+    expect(t).toContain("route-sparkops-call");
+  });
+  it("sends an owner with only a clients headache to the Fix-It Pack", () => {
+    expect(ghlLeadTags({ ...base, headaches: ["clients", "other"] })).toContain("route-fixit-pack");
   });
 });

@@ -5,13 +5,13 @@
 // local business. No em dashes in this copy (AGENTS.md).
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { Check, Loader2, Lock, MapPin, Star } from "lucide-react";
 import { Logo } from "../components/site/Logo";
 import { BusinessSearch } from "../components/site/BusinessSearch";
 import type { BusinessDetails } from "../lib/places.functions";
-import { requestVisibilityCheck } from "../lib/leads.functions";
+import { prebuildCheck, requestVisibilityCheck } from "../lib/leads.functions";
 import type { Headache, Size } from "../lib/ghl-lead";
 
 type Niche = {
@@ -20,6 +20,9 @@ type Niche = {
   team: string;
   sizes: [Size, string][];
   headaches: [Headache, string][];
+  /** What most customers type into Google; they can change it. */
+  keyword: string;
+  keywordHint: string;
 };
 
 const NICHES: Record<string, Niche> = {
@@ -41,6 +44,8 @@ const NICHES: Record<string, Niche> = {
       ["checking", "Checking the work is done right"],
       ["other", "Something else"],
     ],
+    keyword: "cleaning company",
+    keywordHint: "For example: cleaners, office cleaning, end of tenancy cleaning",
   },
   general: {
     headline: "Are customers finding you on Google, or your competitors?",
@@ -60,6 +65,8 @@ const NICHES: Record<string, Niche> = {
       ["checking", "Keeping quality consistent"],
       ["other", "Something else"],
     ],
+    keyword: "",
+    keywordHint: "For example: plumber, dentist, hair salon",
   },
 };
 
@@ -74,7 +81,8 @@ export const Route = createFileRoute("/check")({
       { title: "Free Google Check | RepSuites" },
       {
         name: "description",
-        content: "See how your business looks on Google in 30 seconds. Free score, top gaps and a local comparison.",
+        content:
+          "See how your business looks on Google in 30 seconds. Free score, top gaps and a local comparison.",
       },
     ],
   }),
@@ -104,7 +112,11 @@ function CheckPage() {
   const [step, setStep] = useState(0);
   const [f, setF] = useState({ name: "", email: "", phone: "", website: "" });
   const [size, setSize] = useState<Size | "">("");
-  const [headache, setHeadache] = useState<Headache | "">("");
+  const [headaches, setHeadaches] = useState<Headache[]>([]);
+  const [keyword, setKeyword] = useState(niche.keyword);
+  const prebuild = useServerFn(prebuildCheck);
+  // The report build starts the moment they confirm their business.
+  const built = useRef<Promise<string | null> | null>(null);
   const [cEmail, setCEmail] = useState(false);
   const [cWa, setCWa] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -112,7 +124,15 @@ function CheckPage() {
 
   // The scan preview ticks through while they fill in the form.
   useEffect(() => {
-    if (!place) return;
+    if (!place) {
+      built.current = null;
+      return;
+    }
+    built.current = prebuild({
+      data: { placeId: place.placeId, ...(keyword.trim() ? { keyword: keyword.trim() } : {}) },
+    })
+      .then((r) => (r.ok ? r.token : null))
+      .catch(() => null);
     setStep(0);
     const t = setInterval(() => setStep((s) => Math.min(s + 1, SCAN_STEPS.length - 1)), 1400);
     return () => clearInterval(t);
@@ -121,9 +141,14 @@ function CheckPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!place) return;
+    if (!headaches.length) {
+      setErr("Please tick at least one headache.");
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
+      const token = await (built.current ?? Promise.resolve(null));
       const r = await send({
         data: {
           name: f.name,
@@ -135,7 +160,9 @@ function CheckPage() {
           source: (src || utm_source || "direct").slice(0, 30),
           niche: nicheKey,
           size: size || null,
-          headache: headache || null,
+          headaches,
+          keyword: keyword.trim(),
+          ...(token ? { prebuiltToken: token } : {}),
           consentEmail: cEmail,
           consentWhatsapp: cWa,
           place: {
@@ -153,7 +180,10 @@ function CheckPage() {
         return;
       }
       if (r.reportUrl) window.location.href = r.reportUrl.replace("https://repsuites.com", "");
-      else setErr("Your details are saved. We could not finish the scan, so we will email your results shortly.");
+      else
+        setErr(
+          "Your details are saved. We could not finish the scan, so we will email your results shortly.",
+        );
     } catch {
       setErr("Please check your details and try again.");
     } finally {
@@ -180,6 +210,22 @@ function CheckPage() {
               <p className="text-lg text-muted-foreground leading-relaxed">{niche.sub}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-3 shadow-sm">
+              <label className="block space-y-1">
+                <span className="text-base font-semibold">
+                  What do customers type into Google to find you?
+                </span>
+                <input
+                  required
+                  className={input}
+                  value={keyword}
+                  maxLength={60}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  aria-describedby="kw-hint"
+                />
+                <span id="kw-hint" className="block text-base text-muted-foreground">
+                  {niche.keywordHint}
+                </span>
+              </label>
               <BusinessSearch
                 value={business}
                 onChange={setBusiness}
@@ -238,7 +284,10 @@ function CheckPage() {
                     ) : i === step ? (
                       <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden />
                     ) : (
-                      <span className="w-4 h-4 rounded-full border border-border inline-block" aria-hidden />
+                      <span
+                        className="w-4 h-4 rounded-full border border-border inline-block"
+                        aria-hidden
+                      />
                     )}
                     {s}
                   </li>
@@ -246,60 +295,127 @@ function CheckPage() {
               </ol>
             </div>
 
-            <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
+            <form
+              onSubmit={submit}
+              className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4"
+            >
               <h2 id="h2" className="text-xl font-bold">
                 Where should we send your results?
               </h2>
               <label className="block space-y-1">
                 <span className="text-base font-semibold">Your name</span>
-                <input required autoComplete="name" className={input} value={f.name}
-                  onChange={(e) => setF({ ...f, name: e.target.value })} />
+                <input
+                  required
+                  autoComplete="name"
+                  className={input}
+                  value={f.name}
+                  onChange={(e) => setF({ ...f, name: e.target.value })}
+                />
               </label>
               <label className="block space-y-1">
                 <span className="text-base font-semibold">Email</span>
-                <input required type="email" inputMode="email" autoComplete="email" className={input}
-                  value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
+                <input
+                  required
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  className={input}
+                  value={f.email}
+                  onChange={(e) => setF({ ...f, email: e.target.value })}
+                />
               </label>
               <label className="block space-y-1">
                 <span className="text-base font-semibold">Mobile</span>
-                <input required type="tel" inputMode="tel" autoComplete="tel" className={input}
-                  value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+                <input
+                  required
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  className={input}
+                  value={f.phone}
+                  onChange={(e) => setF({ ...f, phone: e.target.value })}
+                />
               </label>
               <label className="block space-y-1">
                 <span className="text-base font-semibold">{niche.team}</span>
-                <select required className={input} value={size} onChange={(e) => setSize(e.target.value as Size)}>
-                  <option value="" disabled>Choose one</option>
+                <select
+                  required
+                  className={input}
+                  value={size}
+                  onChange={(e) => setSize(e.target.value as Size)}
+                >
+                  <option value="" disabled>
+                    Choose one
+                  </option>
                   {niche.sizes.map(([v, l]) => (
-                    <option key={v} value={v}>{l}</option>
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
                   ))}
                 </select>
               </label>
-              <label className="block space-y-1">
-                <span className="text-base font-semibold">What is your biggest headache right now?</span>
-                <select required className={input} value={headache}
-                  onChange={(e) => setHeadache(e.target.value as Headache)}>
-                  <option value="" disabled>Choose one</option>
-                  {niche.headaches.map(([v, l]) => (
-                    <option key={v} value={v}>{l}</option>
-                  ))}
-                </select>
-              </label>
+              <fieldset className="space-y-1">
+                <legend className="text-base font-semibold">
+                  What are your biggest headaches right now?
+                </legend>
+                <p className="text-base text-muted-foreground">Tick all that apply.</p>
+                {niche.headaches.map(([v, l]) => (
+                  <label key={v} className="flex items-center gap-3 min-h-11 text-base">
+                    <input
+                      type="checkbox"
+                      className="w-5 h-5"
+                      checked={headaches.includes(v)}
+                      onChange={(e) =>
+                        setHeadaches((h) =>
+                          e.target.checked ? [...h, v] : h.filter((x) => x !== v),
+                        )
+                      }
+                    />
+                    {l}
+                  </label>
+                ))}
+              </fieldset>
               <fieldset className="space-y-2">
-                <legend className="text-base font-semibold">Can we send you tips and offers? (optional)</legend>
+                <legend className="text-base font-semibold">
+                  Can we send you tips and offers? (optional)
+                </legend>
                 <label className="flex items-center gap-3 min-h-11 text-base">
-                  <input type="checkbox" className="w-5 h-5" checked={cEmail} onChange={(e) => setCEmail(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5"
+                    checked={cEmail}
+                    onChange={(e) => setCEmail(e.target.checked)}
+                  />
                   Yes, by email
                 </label>
                 <label className="flex items-center gap-3 min-h-11 text-base">
-                  <input type="checkbox" className="w-5 h-5" checked={cWa} onChange={(e) => setCWa(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5"
+                    checked={cWa}
+                    onChange={(e) => setCWa(e.target.checked)}
+                  />
                   Yes, by WhatsApp
                 </label>
               </fieldset>
-              <input tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden"
-                value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} />
-              {err && <p role="alert" className="text-base font-semibold text-destructive">{err}</p>}
-              <button type="submit" disabled={busy}
-                className="w-full rounded-xl bg-primary text-primary-foreground font-bold text-lg py-4 min-h-12 inline-flex items-center justify-center gap-2 disabled:opacity-60">
+              <input
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="hidden"
+                value={f.website}
+                onChange={(e) => setF({ ...f, website: e.target.value })}
+              />
+              {err && (
+                <p role="alert" className="text-base font-semibold text-destructive">
+                  {err}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full rounded-xl bg-primary text-primary-foreground font-bold text-lg py-4 min-h-12 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+              >
                 {busy && <Loader2 className="w-5 h-5 animate-spin" aria-hidden />}
                 {busy ? "Building your report" : "Show my score"}
               </button>
@@ -307,7 +423,10 @@ function CheckPage() {
                 <Lock className="w-4 h-4 mt-1 shrink-0" aria-hidden />
                 <span>
                   Free. Your results appear straight away. We never share your details. See our{" "}
-                  <Link to="/privacy" className="underline">Privacy Policy</Link>.
+                  <Link to="/privacy" className="underline">
+                    Privacy Policy
+                  </Link>
+                  .
                 </span>
               </p>
             </form>
@@ -317,8 +436,13 @@ function CheckPage() {
 
       <footer className="border-t border-border py-6 text-center text-base text-muted-foreground">
         Accelur8 · Cwmbran, Wales ·{" "}
-        <Link to="/privacy" className="underline">Privacy</Link> ·{" "}
-        <Link to="/terms" className="underline">Terms</Link>
+        <Link to="/privacy" className="underline">
+          Privacy
+        </Link>{" "}
+        ·{" "}
+        <Link to="/terms" className="underline">
+          Terms
+        </Link>
       </footer>
     </div>
   );

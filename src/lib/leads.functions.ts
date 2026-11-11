@@ -21,7 +21,14 @@ const Lead = z.object({
   source: z.string().trim().max(40).optional().default(""),
   niche: z.string().trim().max(40).optional().default(""),
   size: z.enum(SIZES).nullable().optional().default(null),
-  headache: z.enum(HEADACHES).nullable().optional().default(null),
+  headaches: z.array(z.enum(HEADACHES)).max(5).optional().default([]),
+  // What customers type into Google to find them (the Maps search we run).
+  keyword: z.string().trim().max(60).optional().default(""),
+  // A report already started by prebuildCheck while they typed their details.
+  prebuiltToken: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{20,64}$/)
+    .optional(),
   consentEmail: z.boolean().optional().default(false),
   consentWhatsapp: z.boolean().optional().default(false),
   // The Google listing the person confirmed, when they picked one.
@@ -113,11 +120,29 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
     // Turn a request with a Google listing into a prospect with a ready report.
     let reportLink: string | null = null;
     let prospectId: string | null = null;
-    if (p?.placeId) {
+    // Already built while they typed? Attach their details to it.
+    if (p?.placeId && data.prebuiltToken) {
+      const own = await serviceWrite<{ id: string; report_token: string }[]>(
+        `prospects?report_token=eq.${data.prebuiltToken}&place_id=eq.${encodeURIComponent(p.placeId)}`,
+        "",
+        {
+          method: "PATCH",
+          headers: { Prefer: "return=representation" },
+          body: { email: data.email.toLowerCase(), contact_name: data.name },
+        },
+      );
+      const row = own.data?.[0];
+      if (row) {
+        reportLink = `https://repsuites.com/r/${row.report_token}`;
+        prospectId = row.id;
+      }
+    }
+    if (p?.placeId && !reportLink) {
       const { saveProspectReport } = await import("./prospects.server");
       const r = await saveProspectReport(p.placeId, "inbound", {
         email: data.email.toLowerCase(),
         contactName: data.name,
+        ...(data.keyword ? { keyword: data.keyword.toLowerCase() } : {}),
         // One Accelur8 HQ call for this request: lead_captured below.
         hq: false,
       }).catch(() => null);
@@ -145,7 +170,8 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
               town: data.town,
               niche: data.niche,
               size: data.size ?? null,
-              headache: data.headache ?? null,
+              headaches: data.headaches,
+              keyword: data.keyword,
               consentEmail: data.consentEmail,
               consentWhatsapp: data.consentWhatsapp,
               reportUrl: reportLink,
@@ -184,4 +210,36 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
       ),
     ]);
     return { ok: true as const, reportUrl: reportLink };
+  });
+
+// Starts the report as soon as someone confirms their business on /check, so
+// it is ready (or nearly) by the time they finish typing their details.
+// Public, so it has a brake: a build costs money.
+export const prebuildCheck = createServerFn({ method: "POST" })
+  .validator((d: { placeId: string; keyword?: string }) =>
+    z
+      .object({
+        placeId: z.string().regex(PLACE_ID_RE),
+        keyword: z.string().trim().max(60).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { verifyRequestOriginAsync } = await import("./auth.server");
+    if (!(await verifyRequestOriginAsync())) return { ok: false as const };
+    const { serviceRead } = await import("./supabase-service.server");
+    const since = new Date(Date.now() - 3600_000).toISOString();
+    const recent = await serviceRead<{ id: string }[]>(
+      `prospects?select=id&source=eq.inbound&report_at=gte.${since}&limit=61`,
+      "",
+    );
+    if ((recent.data?.length ?? 0) > 60) return { ok: false as const };
+    const { saveProspectReport, addProspectExtra } = await import("./prospects.server");
+    const r = await saveProspectReport(data.placeId, "inbound", {
+      ...(data.keyword ? { keyword: data.keyword.toLowerCase() } : {}),
+      hq: false,
+    }).catch(() => null);
+    if (!r?.ok) return { ok: false as const };
+    await addProspectExtra(data.placeId, "site").catch(() => null);
+    return { ok: true as const, token: r.token };
   });
