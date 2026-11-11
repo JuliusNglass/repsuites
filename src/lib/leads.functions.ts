@@ -4,17 +4,26 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { serviceWrite } from "./supabase-service.server";
+import { HEADACHES, SIZES } from "./ghl-lead";
 
 const PLACE_ID_RE = /^[A-Za-z0-9_-]{10,300}$/;
 
 const Lead = z.object({
   name: z.string().trim().min(2).max(120),
   business: z.string().trim().min(2).max(160),
-  town: z.string().trim().min(2).max(120),
+  town: z.string().trim().max(120).optional().default(""),
   email: z.string().trim().email().max(320),
   phone: z.string().trim().max(40).optional().default(""),
   // Hidden field. People leave it empty; bots fill it in.
   website: z.string().max(200).optional().default(""),
+  // Extra answers from the /check funnel. All optional so the homepage form
+  // keeps working unchanged.
+  source: z.string().trim().max(40).optional().default(""),
+  niche: z.string().trim().max(40).optional().default(""),
+  size: z.enum(SIZES).nullable().optional().default(null),
+  headache: z.enum(HEADACHES).nullable().optional().default(null),
+  consentEmail: z.boolean().optional().default(false),
+  consentWhatsapp: z.boolean().optional().default(false),
   // The Google listing the person confirmed, when they picked one.
   place: z
     .object({
@@ -80,7 +89,7 @@ async function notifyNewLead(
 export const requestVisibilityCheck = createServerFn({ method: "POST" })
   .validator((data: z.input<typeof Lead>) => Lead.parse(data))
   .handler(async ({ data }) => {
-    if (data.website) return { ok: true as const };
+    if (data.website) return { ok: true as const, reportUrl: null };
     const p = data.place ?? null;
     const w = await serviceWrite<{ id: string }[]>("leads", "", {
       method: "POST",
@@ -91,7 +100,7 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
         town: data.town,
         email: data.email.toLowerCase(),
         phone: data.phone || null,
-        source: "homepage_visibility_check",
+        source: data.source ? `check_${data.source}`.slice(0, 60) : "homepage_visibility_check",
         google_place_id: p?.placeId ?? null,
         address: p?.address || null,
         google_rating: p?.rating ?? null,
@@ -125,6 +134,25 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
     const { hqAfter } = await import("./hq.server");
     await Promise.all([
       notifyNewLead(data, reportLink),
+      // GoHighLevel contact with tags; GHL runs the follow-up. Never fails the request.
+      data.source
+        ? import("./ghl-lead.server").then(({ pushLeadToGhl }) =>
+            pushLeadToGhl({
+              name: data.name,
+              email: data.email.toLowerCase(),
+              phone: data.phone,
+              business: data.business,
+              town: data.town,
+              niche: data.niche,
+              size: data.size ?? null,
+              headache: data.headache ?? null,
+              consentEmail: data.consentEmail,
+              consentWhatsapp: data.consentWhatsapp,
+              reportUrl: reportLink,
+              source: data.source,
+            }).catch(() => false),
+          )
+        : Promise.resolve(false),
       // Accelur8 HQ: a new inbound lead. Never fails the request.
       hqAfter(() =>
         leadId
@@ -155,5 +183,5 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
           : null,
       ),
     ]);
-    return { ok: true as const };
+    return { ok: true as const, reportUrl: reportLink };
   });
