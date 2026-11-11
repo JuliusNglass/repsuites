@@ -28,10 +28,13 @@ export type FixitOrder = {
   pack: FixitPack | null;
   ready_at: string | null;
   emailed_at: string | null;
+  extras: FixitExtras | null;
 };
 
+export type FixitExtras = { areas?: string; services?: string; different?: string };
+
 const COLS =
-  "id,stripe_session_id,view_key,report_token,business,email,name,status,attempts,pack,ready_at,emailed_at";
+  "id,stripe_session_id,view_key,report_token,business,email,name,status,attempts,pack,ready_at,emailed_at,extras";
 const ORIGIN = "https://repsuites.com";
 
 /** Saves a paid order (from the Stripe webhook). Safe to call twice. */
@@ -66,7 +69,7 @@ export async function orderByKey(key: string): Promise<FixitOrder | null> {
   return r.data?.[0] ?? null;
 }
 
-async function findReport(o: FixitOrder): Promise<{ token: string; report: Report } | null> {
+export async function findReport(o: FixitOrder): Promise<{ token: string; report: Report } | null> {
   const q = o.report_token
     ? `report_token=eq.${o.report_token}`
     : o.email
@@ -88,7 +91,7 @@ and the obvious services for this kind of business. Use the search phrase custom
 Google rules: description up to 750 characters, no links or phone numbers in it; posts up to 1500
 characters, friendly, each ends with a simple call to action. Always answer by calling the tool.`;
 
-function promptFor(report: Report, keyword: string): string {
+function promptFor(report: Report, keyword: string, x: FixitExtras | null): string {
   const b = report.business;
   return `Write the Fix-It Pack for this business.
 Business: ${b.name}
@@ -101,6 +104,7 @@ Nearby businesses beating them: ${report.rivals
     .slice(0, 5)
     .map((r) => `${r.name} (${r.reviews} reviews, ${r.kind ?? ""})`)
     .join("; ")}
+${x?.areas ? `Areas they cover (from the owner): ${x.areas}\n` : ""}${x?.services ? `Services to mention (from the owner): ${x.services}\n` : ""}${x?.different ? `What makes them different (from the owner): ${x.different}\n` : ""}Use the owner's own answers above where given; they beat guesses.
 Give: a new description; the best primary Google category and 3 to 6 extra categories (real Google
 category names); 6 to 10 services with one-line descriptions; 4 Google posts for the next 4 weeks;
 3 review replies they can reuse (a 5-star review, a mixed review, an unhappy review) with [Name] where
@@ -108,7 +112,10 @@ the reviewer's name goes; and a numbered checklist of the exact steps, in order,
 in their Google Business Profile.`;
 }
 
-async function writePack(report: Report): Promise<FixitPack | { error: string }> {
+async function writePack(
+  report: Report,
+  x: FixitExtras | null,
+): Promise<FixitPack | { error: string }> {
   const key = (process.env["REPSUITES_ANTHROPIC_API_KEY"] ?? "").trim();
   if (!key) return { error: "AI key missing" };
   const keyword = report.maps?.keyword || report.business.category || "local services";
@@ -168,7 +175,7 @@ async function writePack(report: Report): Promise<FixitPack | { error: string }>
           },
         ],
         tool_choice: { type: "auto" },
-        messages: [{ role: "user", content: promptFor(report, keyword) }],
+        messages: [{ role: "user", content: promptFor(report, keyword, x) }],
       }),
     });
     if (!res.ok) return { error: `AI ${res.status}` };
@@ -243,7 +250,7 @@ export async function processFixit(o: FixitOrder): Promise<FixitOrder> {
     });
     return { ...o, status: "needs_info" };
   }
-  const pack = await writePack(found.report);
+  const pack = await writePack(found.report, o.extras);
   if ("error" in pack) {
     await serviceWrite(`fixit_orders?id=eq.${o.id}`, "", {
       method: "PATCH",
@@ -277,8 +284,10 @@ export async function processFixit(o: FixitOrder): Promise<FixitOrder> {
 /** Backstop run by the database every 5 minutes. */
 export async function runFixitQueue() {
   const since = new Date(Date.now() - 5 * 60_000).toISOString();
+  // Paid orders wait 10 minutes, so buyers can answer the optional questions first.
+  const paidBefore = new Date(Date.now() - 10 * 60_000).toISOString();
   const r = await serviceRead<FixitOrder[]>(
-    `fixit_orders?select=${COLS}&or=(status.eq.paid,and(status.eq.writing,writing_at.lt.${since}),and(status.eq.ready,emailed_at.is.null))&order=created_at.asc&limit=3`,
+    `fixit_orders?select=${COLS}&or=(and(status.eq.paid,created_at.lt.${paidBefore}),and(status.eq.writing,writing_at.lt.${since}),and(status.eq.ready,emailed_at.is.null))&order=created_at.asc&limit=3`,
     "",
   );
   let done = 0;
@@ -287,4 +296,27 @@ export async function runFixitQueue() {
     if (after.status === "ready") done++;
   }
   return { ok: true, done };
+}
+
+/** Saves the buyer's optional answers and, if needed, builds their report. */
+export async function saveFixitDetails(
+  o: FixitOrder,
+  d: { extras: FixitExtras; placeId?: string; keyword?: string },
+): Promise<{ ok: boolean; error?: string }> {
+  const body: Record<string, unknown> = { extras: d.extras };
+  if (!(await findReport(o))) {
+    if (!d.placeId) return { ok: false, error: "Please find your business first." };
+    const { saveProspectReport } = await import("./prospects.server");
+    const r = await saveProspectReport(d.placeId, "inbound", {
+      ...(d.keyword ? { keyword: d.keyword.toLowerCase() } : {}),
+      ...(o.email ? { email: o.email } : {}),
+      ...(o.name ? { contactName: o.name } : {}),
+      hq: false,
+    }).catch(() => null);
+    if (!r?.ok) return { ok: false, error: "We could not check that business. Please try again." };
+    body["report_token"] = r.token;
+    if (o.status === "needs_info") body["status"] = "paid";
+  }
+  await serviceWrite(`fixit_orders?id=eq.${o.id}`, "", { method: "PATCH", body });
+  return { ok: true };
 }

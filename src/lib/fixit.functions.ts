@@ -73,10 +73,13 @@ const SESSION_RE = /^cs_(live|test)_[A-Za-z0-9]{10,200}$/;
 
 /** The thank-you page asks this every few seconds; it also writes the pack. */
 export const fixitProgress = createServerFn({ method: "POST" })
-  .validator((d: { s: string }) => z.object({ s: z.string().regex(SESSION_RE) }).parse(d))
+  .validator((d: { s: string; go?: boolean }) =>
+    z.object({ s: z.string().regex(SESSION_RE), go: z.boolean().optional() }).parse(d),
+  )
   .handler(async ({ data }) => {
     applyNoStoreHeaders();
-    const { orderBySession, processFixit, recordFixitOrder } = await import("./fixit-pack.server");
+    const { orderBySession, processFixit, recordFixitOrder, findReport } =
+      await import("./fixit-pack.server");
     let o = await orderBySession(data.s);
     if (!o) {
       // The webhook may not have landed yet: check with Stripe directly.
@@ -89,6 +92,17 @@ export const fixitProgress = createServerFn({ method: "POST" })
       }
     }
     if (!o) return { status: "waiting" as const };
+    // First visit: ask the optional questions (and the business, if unknown).
+    if (!data.go && o.status === "paid") {
+      const known = await findReport(o);
+      return {
+        status: "details" as const,
+        needsBusiness: !known,
+        business: known?.report.business.name ?? o.business ?? null,
+      };
+    }
+    if (o.status === "needs_info")
+      return { status: "details" as const, needsBusiness: true, business: null };
     if (o.status === "paid" || o.status === "writing") o = await processFixit(o);
     return o.status === "ready"
       ? { status: "ready" as const, key: o.view_key }
@@ -107,4 +121,54 @@ export const getFixitPack = createServerFn({ method: "GET" })
     const { orderByKey } = await import("./fixit-pack.server");
     const o = await orderByKey(data.key);
     return o?.status === "ready" && o.pack ? { business: o.business, pack: o.pack } : null;
+  });
+
+export const fixitDetails = createServerFn({ method: "POST" })
+  .validator(
+    (d: {
+      s: string;
+      areas?: string;
+      services?: string;
+      different?: string;
+      placeId?: string;
+      keyword?: string;
+    }) =>
+      z
+        .object({
+          s: z.string().regex(SESSION_RE),
+          areas: z.string().trim().max(300).optional(),
+          services: z.string().trim().max(500).optional(),
+          different: z.string().trim().max(500).optional(),
+          placeId: z
+            .string()
+            .regex(/^[A-Za-z0-9_-]{10,300}$/)
+            .optional(),
+          keyword: z.string().trim().max(60).optional(),
+        })
+        .parse(d),
+  )
+  .handler(async ({ data }) => {
+    applyNoStoreHeaders();
+    if (!(await verifyRequestOriginAsync()))
+      return { ok: false as const, error: "Please refresh the page and try again." };
+    const { orderBySession, saveFixitDetails } = await import("./fixit-pack.server");
+    const o = await orderBySession(data.s);
+    if (!o)
+      return {
+        ok: false as const,
+        error: "We could not find your order yet. Try again in a moment.",
+      };
+    const extras = {
+      ...(data.areas ? { areas: data.areas } : {}),
+      ...(data.services ? { services: data.services } : {}),
+      ...(data.different ? { different: data.different } : {}),
+    };
+    const r = await saveFixitDetails(o, {
+      extras,
+      ...(data.placeId ? { placeId: data.placeId } : {}),
+      ...(data.keyword ? { keyword: data.keyword } : {}),
+    });
+    return r.ok
+      ? { ok: true as const }
+      : { ok: false as const, error: r.error ?? "Please try again." };
   });
