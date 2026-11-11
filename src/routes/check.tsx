@@ -187,7 +187,7 @@ function CheckPage() {
                 onConfirm={setPlace}
               />
               <p className="text-base text-muted-foreground">
-                Start typing your business name, then pick it from the list.
+                Type your business name and town, then pick it from the list.
               </p>
             </div>
             <ul className="space-y-2 text-base">
