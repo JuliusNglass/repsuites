@@ -96,26 +96,20 @@ function Home() {
     <PublicLayout>
       <section className="px-4 pt-16 pb-14 md:pt-24 md:pb-20 text-center">
         <div className="max-w-3xl mx-auto">
-          <p className="text-base font-bold text-muted-foreground mb-4">For local businesses</p>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-[1.08]">
+          <p className="eyebrow mb-4">For local businesses</p>
+          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08]">
             More local customers{" "}
-            <span className="text-primary-ink">finding you and choosing you.</span>
+            <span className="italic text-primary-ink">finding you and choosing you.</span>
           </h1>
           <p className="mt-5 text-lg text-muted-foreground">
             When someone nearby needs what you do, they search Google or ask an AI assistant, look
             at the reviews and pick one. RepSuites makes sure that one is you.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="/start"
-              className="rounded-xl bg-primary text-primary-foreground font-bold px-6 py-3 text-base"
-            >
+            <a href="/start" className="btn btn-gold btn-lg">
               Start free
             </a>
-            <a
-              href="#check"
-              className="rounded-xl border border-border px-6 py-3 text-base font-semibold"
-            >
+            <a href="#check" className="btn btn-ghost btn-lg">
               Get a free visibility check
             </a>
           </div>
@@ -127,7 +121,7 @@ function Home() {
 
       <section className="px-4 py-14 bg-muted/40">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
+          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-3">
             Three things that bring in customers
           </h2>
           <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
@@ -140,7 +134,7 @@ function Home() {
                 <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center mb-4">
                   <o.icon className="w-5 h-5 text-foreground" />
                 </div>
-                <h3 className="text-lg font-bold mb-2">{o.title}</h3>
+                <h3 className="text-lg font-semibold mb-2">{o.title}</h3>
                 <p className="text-muted-foreground">{o.text}</p>
               </div>
             ))}
@@ -150,14 +144,14 @@ function Home() {
 
       <section id="how" className="px-4 py-14">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-10">How it works</h2>
+          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-10">How it works</h2>
           <ol className="grid md:grid-cols-3 gap-5">
             {steps.map((s, i) => (
               <li key={s.title} className="rounded-2xl border border-border p-6">
                 <span className="inline-flex w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold items-center justify-center mb-3">
                   {i + 1}
                 </span>
-                <h3 className="text-lg font-bold mb-2">{s.title}</h3>
+                <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
                 <p className="text-muted-foreground">{s.text}</p>
               </li>
             ))}
@@ -167,7 +161,7 @@ function Home() {
 
       <section id="google-business-profile" className="px-4 py-14 bg-muted/40">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-3">
+          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-3">
             Connect your Google Business Profile
           </h2>
           <p className="text-center text-muted-foreground mb-10">
@@ -177,7 +171,7 @@ function Home() {
             {googleFeatures.map((f) => (
               <div key={f.title} className="rounded-2xl border border-border bg-card p-6">
                 <f.icon className="w-6 h-6 mb-3" />
-                <h3 className="font-bold mb-2">{f.title}</h3>
+                <h3 className="font-semibold mb-2">{f.title}</h3>
                 <p className="text-base text-muted-foreground">{f.text}</p>
               </div>
             ))}
@@ -203,7 +197,7 @@ function Home() {
       <section className="px-4 py-14">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 items-center">
           <div>
-            <h2 className="text-3xl font-bold mb-3">Reviews on the counter, not just online</h2>
+            <h2 className="text-3xl font-semibold mb-3">Reviews on the counter, not just online</h2>
             <p className="text-muted-foreground mb-4">
               Tap-and-scan review cards and table stands send happy customers straight to your
               Google review page. One scan, one tap, done. Already have RepSuites cards? They keep
@@ -228,7 +222,9 @@ function Home() {
 
       <section id="check" className="px-4 py-16 bg-muted/40">
         <div className="max-w-xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-2">Get your free visibility check</h2>
+          <h2 className="text-3xl font-semibold text-center mb-2">
+            Get your free visibility check
+          </h2>
           <p className="text-center text-muted-foreground mb-8">
             See where you show up on Google Maps across your area, how your reviews compare, and
             whether AI assistants mention you. We send it within 2 working days.
@@ -353,7 +349,7 @@ function CheckForm() {
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded-xl bg-primary text-primary-foreground font-bold py-3 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+        className="w-full btn btn-gold rounded-full py-3 inline-flex items-center justify-center gap-2 disabled:opacity-60"
       >
         {busy && <Loader2 className="w-4 h-4 animate-spin" />}
         Send me my free check

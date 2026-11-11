@@ -13,7 +13,7 @@ export function Logo({
     <span className={`inline-flex items-center gap-2 ${className}`}>
       <img src="/logo-mark.png" alt="" aria-hidden="true" className="h-8 w-8 rounded-md" />
       <span
-        className={`text-lg font-extrabold tracking-tight text-foreground ${compact ? "hidden min-[420px]:inline" : ""}`}
+        className={`font-display text-xl font-semibold tracking-tight text-foreground ${compact ? "hidden min-[420px]:inline" : ""}`}
       >
         Rep<span className="text-primary-ink">Suites</span>
       </span>

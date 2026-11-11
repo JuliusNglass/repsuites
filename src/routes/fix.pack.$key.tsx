@@ -26,10 +26,10 @@ function CopyBtn({ text }: { text: string }) {
           setTimeout(() => setDone(false), 1800);
         });
       }}
-      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 font-semibold"
+      className="btn btn-ghost shrink-0 px-4 text-base"
     >
       {done ? (
-        <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+        <Check className="h-4 w-4 text-success" aria-hidden />
       ) : (
         <Copy className="h-4 w-4" aria-hidden />
       )}
@@ -40,9 +40,11 @@ function CopyBtn({ text }: { text: string }) {
 
 function Block({ title, text, n }: { title: string; text: string; n?: number }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-bold text-lg">{n ? `${n}. ${title}` : title}</h3>
+    <div className="card p-5 sm:p-6 space-y-3">
+      <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
+        <h3 className="font-sans font-bold text-lg tracking-normal self-center">
+          {n ? `${n}. ${title}` : title}
+        </h3>
         <CopyBtn text={text} />
       </div>
       <p className="whitespace-pre-line">{text}</p>
@@ -55,22 +57,22 @@ function PackPage() {
   if (!data)
     return (
       <main className="max-w-xl mx-auto px-4 py-16 space-y-3">
-        <h1 className="text-2xl font-bold">This pack is not ready yet</h1>
+        <h1 className="text-2xl font-semibold">This pack is not ready yet</h1>
         <p>It usually takes a few minutes. Refresh this page shortly, or check your email.</p>
       </main>
     );
   const { pack, business } = data;
   return (
     <div className="min-h-screen bg-background text-foreground text-base leading-relaxed">
-      <header className="border-b border-border">
+      <header className="border-b border-border/70 bg-background/80 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
           <Logo />
         </div>
       </header>
-      <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12 space-y-10">
+      <main className="max-w-2xl mx-auto px-4 py-10 sm:py-16 space-y-12">
         <section className="space-y-3">
-          <p className="font-semibold text-primary">Your Google Fix-It Pack</p>
-          <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+          <p className="eyebrow">Your Google Fix-It Pack</p>
+          <h1 className="text-3xl sm:text-4xl font-semibold leading-tight">
             {business ? `Ready for ${business}` : "Your fixes are ready"}
           </h1>
           <p className="text-lg text-muted-foreground">
@@ -80,34 +82,39 @@ function PackPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-2xl font-bold">Do it in this order</h2>
-          <ol className="list-decimal space-y-2 pl-6">
-            {pack.checklist.map((c) => (
-              <li key={c}>{c}</li>
+          <h2 className="text-2xl font-semibold">Do it in this order</h2>
+          <ol className="card divide-y divide-border">
+            {pack.checklist.map((c, i) => (
+              <li key={c} className="flex gap-3 p-4 sm:px-5">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-bold text-white">
+                  {i + 1}
+                </span>
+                <span>{c}</span>
+              </li>
             ))}
           </ol>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold">Your business description</h2>
+          <h2 className="text-2xl font-semibold">Your business description</h2>
           <Block title="Paste into: Edit profile, then Description" text={pack.description} />
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold">Your categories</h2>
+          <h2 className="text-2xl font-semibold">Your categories</h2>
           <Block title="Primary category" text={pack.primaryCategory} />
           <Block title="Additional categories" text={pack.extraCategories.join("\n")} />
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold">Your services</h2>
+          <h2 className="text-2xl font-semibold">Your services</h2>
           {pack.services.map((s) => (
             <Block key={s.name} title={s.name} text={s.description} />
           ))}
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold">Your 4 Google posts</h2>
+          <h2 className="text-2xl font-semibold">Your 4 Google posts</h2>
           <p className="text-muted-foreground">Post one each week, with a photo of your work.</p>
           {pack.posts.map((p, i) => (
             <Block key={i} n={i + 1} title={`Week ${i + 1}`} text={p} />
@@ -115,26 +122,23 @@ function PackPage() {
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold">Review replies you can reuse</h2>
+          <h2 className="text-2xl font-semibold">Review replies you can reuse</h2>
           <p className="text-muted-foreground">Swap [Name] for the reviewer's first name.</p>
           {pack.replies.map((r) => (
             <Block key={r.when} title={r.when} text={r.reply} />
           ))}
         </section>
 
-        <section className="rounded-2xl border-2 border-primary bg-card p-5 sm:p-6 space-y-3">
-          <h2 className="text-2xl font-bold">Rather we keep it all up to date for you?</h2>
-          <p>
+        <section className="surface-navy rounded-3xl p-6 sm:p-8 space-y-4 shadow-[var(--shadow-lift)]">
+          <h2 className="text-2xl font-semibold">Rather we keep it all up to date for you?</h2>
+          <p className="text-white/85">
             RepSuites keeps the reviews coming, posts for you and reruns your Google check every
             month so you can see the change.
           </p>
-          <Link
-            to="/start"
-            className="flex min-h-14 w-full items-center justify-center rounded-full bg-primary px-6 text-lg font-bold text-primary-foreground"
-          >
+          <Link to="/start" className="btn btn-gold btn-lg w-full">
             Start free
           </Link>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-white/75">
             Something not right? Reply to the email we sent you and we will fix it.
           </p>
         </section>

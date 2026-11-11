@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 export function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur border-b border-border">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md backdrop-saturate-150 border-b border-border/70">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <Link to="/" className="flex items-center min-h-11 shrink-0" aria-label="RepSuites home">
             <Logo />
@@ -33,17 +33,14 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             >
               Log in
             </Link>
-            <a
-              href="/start"
-              className="inline-flex items-center min-h-11 rounded-lg bg-primary text-primary-foreground font-semibold px-3 sm:px-4"
-            >
+            <a href="/start" className="btn btn-gold px-4 sm:px-5">
               Start free
             </a>
           </nav>
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <footer className="border-t border-border py-8 px-4">
+      <footer className="border-t border-border bg-secondary/60 py-10 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <span>
             © {new Date().getFullYear()} Accelur8 Ltd. RepSuites is a product by Accelur8.
@@ -74,8 +71,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 // Readable styling for text pages (privacy, terms, Google connection).
 export const textPageClass = [
   "max-w-3xl mx-auto px-4 pt-12 pb-20 leading-relaxed",
-  "[&_h1]:text-3xl [&_h1]:md:text-4xl [&_h1]:font-bold [&_h1]:mb-2",
-  "[&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-10 [&_h2]:mb-3",
+  "[&_h1]:text-3xl [&_h1]:md:text-4xl [&_h1]:font-semibold [&_h1]:mb-2",
+  "[&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:mt-10 [&_h2]:mb-3",
   "[&_p]:mb-4 [&_p]:text-muted-foreground [&_strong]:text-foreground",
   "[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ul]:space-y-1.5 [&_li]:text-muted-foreground",
   "[&_a]:underline [&_a]:underline-offset-2 [&_a]:text-foreground",

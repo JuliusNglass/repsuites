@@ -87,7 +87,7 @@ function Pricing() {
       <section className="px-4 pt-14 pb-16 md:pt-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">
               Start free. Grow when you are ready.
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -116,12 +116,12 @@ function Pricing() {
 
           <div className="mt-10 grid md:grid-cols-3 gap-5 items-stretch">
             <div className="rounded-3xl border border-border bg-card p-7 flex flex-col">
-              <h2 className="text-xl font-bold">Free</h2>
+              <h2 className="text-xl font-semibold">Free</h2>
               <p className="text-base text-muted-foreground mt-1">
                 Start getting more reviews today.
               </p>
               <div className="mt-5 flex items-baseline gap-1">
-                <span className="text-5xl font-extrabold">£0</span>
+                <span className="font-display text-5xl font-semibold">£0</span>
                 <span className="text-muted-foreground">for ever</span>
               </div>
               <p className="text-base text-muted-foreground mt-1">No card needed</p>
@@ -143,10 +143,12 @@ function Pricing() {
 
             <div className="relative rounded-3xl border border-primary ring-2 ring-primary/40 bg-card p-7 flex flex-col md:-translate-y-2">
               {popular === GROWTH.id && <PopularBadge />}
-              <h2 className="text-xl font-bold">{GROWTH.name}</h2>
+              <h2 className="text-xl font-semibold">{GROWTH.name}</h2>
               <p className="text-base text-muted-foreground mt-1">{GROWTH.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
-                <span className="text-5xl font-extrabold">{money(planPence(interval))}</span>
+                <span className="font-display text-5xl font-semibold">
+                  {money(planPence(interval))}
+                </span>
                 <span className="text-muted-foreground">{yearly ? "a year" : "a month"}</span>
               </div>
               <p className="text-base text-muted-foreground mt-1">
@@ -171,7 +173,7 @@ function Pricing() {
                 type="button"
                 onClick={() => void upgrade("gold")}
                 disabled={busy !== null}
-                className="mt-7 rounded-xl bg-primary text-primary-foreground font-bold py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
+                className="mt-7 btn btn-gold rounded-full py-3.5 flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {busy === "gold" && <Loader2 className="w-4 h-4 animate-spin" />}
                 {signedIn
@@ -184,10 +186,10 @@ function Pricing() {
 
             <div className="relative rounded-3xl border border-border bg-card p-7 flex flex-col">
               {popular === MANAGED.id && <PopularBadge />}
-              <h2 className="text-xl font-bold">We do it for you</h2>
+              <h2 className="text-xl font-semibold">We do it for you</h2>
               <p className="text-base text-muted-foreground mt-1">{MANAGED.tagline}</p>
               <div className="mt-5 flex items-baseline gap-1">
-                <span className="text-5xl font-extrabold">
+                <span className="font-display text-5xl font-semibold">
                   {money(planPence(interval, "managed"))}
                 </span>
                 <span className="text-muted-foreground">{yearly ? "a year" : "a month"}</span>
@@ -224,7 +226,7 @@ function Pricing() {
 
           <div className="mt-12 grid md:grid-cols-2 gap-5">
             <div className="rounded-2xl bg-muted/60 p-6">
-              <h3 className="font-bold">How the maths works</h3>
+              <h3 className="font-semibold">How the maths works</h3>
               <p className="text-base text-muted-foreground mt-2">
                 Growth is {money(GROWTH.monthPence)} a month. Say a customer spends £20 with you. 3
                 extra customers a month is 3 x £20 = £60. That is more than the{" "}
@@ -232,7 +234,7 @@ function Pricing() {
               </p>
             </div>
             <div className="rounded-2xl bg-muted/60 p-6">
-              <h3 className="font-bold">Just want review cards?</h3>
+              <h3 className="font-semibold">Just want review cards?</h3>
               <p className="text-base text-muted-foreground mt-2">
                 Cards and table stands are a one-off buy and work without a plan.
               </p>
@@ -249,4 +251,3 @@ function Pricing() {
     </PublicLayout>
   );
 }
-

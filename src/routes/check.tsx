@@ -203,8 +203,8 @@ function CheckPage() {
         {!place ? (
           <section aria-labelledby="h1" className="space-y-6">
             <div className="space-y-3">
-              <p className="text-base font-semibold text-primary">Free 30-second check</p>
-              <h1 id="h1" className="text-3xl sm:text-4xl font-bold leading-tight">
+              <p className="eyebrow">Free 30-second check</p>
+              <h1 id="h1" className="text-3xl sm:text-4xl font-semibold leading-tight">
                 {niche.headline}
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">{niche.sub}</p>
@@ -299,7 +299,7 @@ function CheckPage() {
               onSubmit={submit}
               className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4"
             >
-              <h2 id="h2" className="text-xl font-bold">
+              <h2 id="h2" className="text-xl font-semibold">
                 Where should we send your results?
               </h2>
               <label className="block space-y-1">
@@ -414,7 +414,7 @@ function CheckPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full rounded-xl bg-primary text-primary-foreground font-bold text-lg py-4 min-h-12 inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full btn btn-gold rounded-full text-lg py-4 min-h-12 inline-flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {busy && <Loader2 className="w-5 h-5 animate-spin" aria-hidden />}
                 {busy ? "Building your report" : "Show my score"}

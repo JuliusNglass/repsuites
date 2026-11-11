@@ -1,6 +1,12 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+/* Self-hosted fonts (no third-party request, no layout shift from Google). */
+@import "@fontsource-variable/fraunces/opsz.css";
+@import "@fontsource/atkinson-hyperlegible-next/400.css";
+@import "@fontsource/atkinson-hyperlegible-next/500.css";
+@import "@fontsource/atkinson-hyperlegible-next/600.css";
+@import "@fontsource/atkinson-hyperlegible-next/700.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -65,12 +71,30 @@
      footer. text-xs is not used; if it comes back it still renders at 14px. */
   --text-xs: 0.875rem;
   --text-xs--line-height: 1.5;
+
+  /* ---- RepSuites premium design system (see docs/design-system.md) ---- */
+  --font-sans: "Atkinson Hyperlegible Next", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fraunces Variable", "Iowan Old Style", Georgia, serif;
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --color-gold: var(--primary);
+  --color-gold-soft: var(--gold-soft);
+  --color-success: var(--success);
+  --shadow-xs: 0 1px 2px oklch(0.2 0.04 250 / 0.06);
+  --shadow-card: 0 1px 2px oklch(0.2 0.04 250 / 0.05), 0 8px 24px -12px oklch(0.2 0.04 250 / 0.12);
+  --shadow-lift: 0 2px 4px oklch(0.2 0.04 250 / 0.06), 0 24px 48px -20px oklch(0.2 0.04 250 / 0.28);
+  --shadow-gold: 0 1px 0 oklch(1 0 0 / 0.35) inset, 0 8px 20px -8px oklch(0.7 0.16 75 / 0.6);
 }
 
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.985 0.005 200);
-  --foreground: oklch(0.2 0.035 230);
+  --radius: 0.75rem;
+  /* Warm ivory canvas instead of cold blue-grey: reads as print, not admin. */
+  --background: oklch(0.985 0.006 85);
+  --foreground: oklch(0.21 0.04 255);
+  --navy: oklch(0.21 0.06 258); /* #0b1e3d family, brand navy */
+  --navy-soft: oklch(0.29 0.06 258);
+  --gold-soft: oklch(0.95 0.05 85);
+  --success: oklch(0.5 0.12 155);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0.035 230);
   --popover: oklch(1 0 0);
@@ -79,17 +103,17 @@
   --primary-foreground: oklch(0.2 0.04 260);
   /* Gold for TEXT on light backgrounds (#9a6700, 4.6:1). Bright gold stays for fills. */
   --primary-ink: oklch(0.554 0.117 75);
-  --secondary: oklch(0.95 0.015 210);
+  --secondary: oklch(0.955 0.012 85);
   --secondary-foreground: oklch(0.25 0.05 220);
-  --muted: oklch(0.96 0.01 210);
-  --muted-foreground: oklch(0.48 0.03 220);
+  --muted: oklch(0.96 0.01 85);
+  --muted-foreground: oklch(0.46 0.025 255); /* 6.9:1 on ivory */
   --accent: oklch(0.92 0.03 200);
   --accent-foreground: oklch(0.2 0.05 220);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9 0.01 210);
-  --input: oklch(0.9 0.01 210);
-  --ring: oklch(0.45 0.1 220);
+  --border: oklch(0.9 0.012 85);
+  --input: oklch(0.86 0.014 85);
+  --ring: oklch(0.45 0.13 258);
   --chart-1: oklch(0.45 0.12 210);
   --chart-2: oklch(0.55 0.15 175);
   --chart-3: oklch(0.65 0.14 140);
@@ -106,6 +130,10 @@
 }
 
 .dark {
+  --navy: oklch(0.2 0.05 258);
+  --navy-soft: oklch(0.27 0.05 258);
+  --gold-soft: oklch(0.3 0.05 80);
+  --success: oklch(0.72 0.14 155);
   --background: oklch(0.15 0.03 230);
   --foreground: oklch(0.95 0.01 210);
   --card: oklch(0.2 0.03 230);
@@ -156,7 +184,19 @@
   h2,
   h3 {
     text-wrap: balance;
+    line-height: 1.2;
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+  }
+  h4,
+  h5,
+  h6 {
     line-height: 1.3;
+  }
+  ::selection {
+    background: var(--gold-soft);
   }
 
   p {
@@ -263,4 +303,107 @@ textarea {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ---- Components (premium design system). Use these instead of ad-hoc
+   utility stacks so buttons, cards and fields look the same everywhere. ---- */
+@layer components {
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--primary-ink);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 1.25rem;
+    border-radius: 999px;
+    font-weight: 700;
+    line-height: 1.2;
+    transition:
+      transform 150ms ease,
+      box-shadow 200ms ease,
+      background-color 200ms ease;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .btn:disabled {
+    opacity: 0.7;
+  }
+  .btn-gold {
+    background: linear-gradient(180deg, oklch(0.84 0.15 82), oklch(0.78 0.16 74));
+    color: var(--navy);
+    box-shadow: var(--shadow-gold);
+  }
+  .btn-gold:hover:not(:disabled) {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.35) inset,
+      0 12px 28px -10px oklch(0.7 0.16 75 / 0.75);
+  }
+  .btn-navy {
+    background: var(--navy);
+    color: oklch(0.98 0.005 85);
+    box-shadow: var(--shadow-xs);
+  }
+  .btn-navy:hover:not(:disabled) {
+    background: var(--navy-soft);
+  }
+  .btn-ghost {
+    background: var(--card);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--secondary);
+  }
+  .btn-lg {
+    min-height: 56px;
+    padding: 0 1.75rem;
+    font-size: 1.125rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-card);
+  }
+  .field {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--input);
+    background: var(--card);
+    box-shadow: var(--shadow-xs);
+  }
+  .field:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 1px;
+  }
+  .surface-navy {
+    background:
+      radial-gradient(120% 80% at 85% 0%, oklch(0.36 0.08 258 / 0.9), transparent 60%),
+      radial-gradient(60% 50% at 0% 100%, oklch(0.6 0.12 75 / 0.18), transparent 70%),
+      var(--navy);
+    color: oklch(0.97 0.005 85);
+  }
+  .faq summary {
+    list-style: none;
+  }
+  .faq summary::-webkit-details-marker {
+    display: none;
+  }
+  .faq[open] .faq-chevron {
+    transform: rotate(180deg);
+  }
 }

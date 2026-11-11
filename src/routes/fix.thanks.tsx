@@ -63,15 +63,19 @@ function Thanks() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col text-base leading-relaxed">
-      <header className="border-b border-border">
+      <header className="border-b border-border/70 bg-background/80 backdrop-blur-md">
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
           <Logo />
         </div>
       </header>
-      <main className="flex-1 w-full max-w-xl mx-auto px-4 py-10 space-y-8">
+      <main className="flex-1 w-full max-w-xl mx-auto px-4 py-12 sm:py-16 space-y-8">
         <section className="space-y-4" aria-live="polite">
-          <CheckCircle2 className="h-12 w-12 text-primary" aria-hidden />
-          <h1 className="text-3xl font-bold">Thank you. We are writing your fixes now.</h1>
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gold-soft ring-1 ring-primary/40">
+            <CheckCircle2 className="h-7 w-7 text-primary-ink" aria-hidden />
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-semibold">
+            Thank you. We are writing your fixes now.
+          </h1>
           {help ? (
             <p className="text-lg">
               We need one more detail to finish your pack. We will email you within the hour, or
@@ -83,16 +87,16 @@ function Thanks() {
                 This takes about a minute. Keep this page open and your pack will appear here. We
                 also email you a copy.
               </p>
-              <ol className="space-y-2 rounded-2xl border border-border bg-card p-5">
+              <ol className="card space-y-3 p-5 sm:p-6">
                 {STEPS.map((t, i) => (
                   <li
                     key={t}
-                    className={`flex items-center gap-2 ${i > step ? "text-muted-foreground/60" : ""}`}
+                    className={`flex items-center gap-2 ${i > step ? "text-muted-foreground" : ""}`}
                   >
                     {i < step ? (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600" aria-hidden />
+                      <CheckCircle2 className="h-5 w-5 text-success" aria-hidden />
                     ) : i === step ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden />
+                      <Loader2 className="h-5 w-5 animate-spin text-primary-ink" aria-hidden />
                     ) : (
                       <span
                         className="inline-block h-5 w-5 rounded-full border border-border"
@@ -106,19 +110,15 @@ function Thanks() {
             </>
           )}
         </section>
-        <section className="rounded-2xl border-2 border-primary bg-card p-5 sm:p-6 space-y-3">
-          <p className="font-semibold text-primary">Next step</p>
-          <h2 className="text-2xl font-bold">Keep the reviews coming in, every week</h2>
-          <p>
+        <section className="surface-navy rounded-3xl p-6 sm:p-8 space-y-4 shadow-[var(--shadow-lift)]">
+          <p className="eyebrow !text-primary">Next step</p>
+          <h2 className="text-2xl font-semibold">Keep the reviews coming in, every week</h2>
+          <p className="text-white/85">
             Fixing your profile gets you seen. Steady new reviews keep you there. RepSuites sends
             review requests for you, gives you a QR card for the counter or van, and reruns your
             Google check each month so you can see the change.
           </p>
-          <Link
-            to="/start"
-            search={r ? { r } : {}}
-            className="flex min-h-14 w-full items-center justify-center rounded-full bg-primary px-6 text-lg font-bold text-primary-foreground"
-          >
+          <Link to="/start" search={r ? { r } : {}} className="btn btn-gold btn-lg w-full">
             Start free
           </Link>
         </section>

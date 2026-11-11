@@ -112,7 +112,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-4 h-16 flex items-center justify-between gap-3">
+      <header className="border-b border-border/70 bg-background/80 backdrop-blur-md px-4 h-16 flex items-center justify-between gap-3">
         <a
           href="/"
           className="shrink-0 inline-flex items-center min-h-11"
@@ -208,7 +208,7 @@ function Dashboard() {
       )}
 
       {active && (
-        <nav className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+        <nav className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur-md backdrop-saturate-150">
           <div className="relative max-w-3xl mx-auto">
             <div
               ref={tabBar}
@@ -224,7 +224,7 @@ function Dashboard() {
                   className={`shrink-0 min-h-12 px-4 py-3 text-base font-semibold border-b-[3px] transition-colors ${
                     tab === t.id
                       ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {t.label}

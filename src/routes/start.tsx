@@ -112,7 +112,7 @@ function Start() {
         <div className="max-w-5xl mx-auto grid md:grid-cols-[1fr_1.1fr] gap-10 items-start">
           <div className="order-2 md:order-1 md:pt-6">
             <p className="text-base font-semibold text-primary-ink">Free for ever</p>
-            <h1 className="mt-2 text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+            <h1 className="mt-2 text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
               Get more Google reviews, starting today
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -141,7 +141,7 @@ function Start() {
             onSubmit={submit}
             className="order-1 md:order-2 rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm space-y-4"
           >
-            <h2 className="text-xl font-bold">Create your free account</h2>
+            <h2 className="text-xl font-semibold">Create your free account</h2>
             <p className="-mt-2 text-base text-muted-foreground">
               Then print your review QR card. Free, no card needed.
             </p>
@@ -267,7 +267,7 @@ function Start() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-xl bg-primary text-primary-foreground font-bold py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-60"
+              className="w-full btn btn-gold rounded-full py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {busy && <Loader2 className="w-5 h-5 animate-spin" />}
               {busy ? "Setting up your account" : "Start free"}
