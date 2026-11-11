@@ -268,10 +268,10 @@ export function RequestsPanel() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="font-bold">Ask a customer for a review</h3>
+            <h3 className="text-base font-bold">Ask a customer for a review</h3>
             <p className="text-base text-muted-foreground">
               WhatsApp and text messages open on your phone, ready to send. Free, and they come from
               your own number. Emails go automatically.
@@ -375,8 +375,8 @@ export function RequestsPanel() {
       </section>
 
       {showSettings && (
-        <section className="rounded-xl border border-border bg-card p-4 space-y-3 text-base">
-          <h3 className="font-bold">Message settings</h3>
+        <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 text-base shadow-sm">
+          <h3 className="text-base font-bold">Message settings</h3>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="space-y-1">
               <span className="text-base font-semibold">Your country (for phone numbers)</span>
@@ -563,7 +563,7 @@ export function RequestsPanel() {
         </section>
       )}
 
-      <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="font-bold flex items-center gap-1.5">
@@ -664,7 +664,7 @@ export function RequestsPanel() {
         )}
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-4">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
         <h3 className="font-bold text-base mb-2">Last 30 days</h3>
         <dl className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center">
           {(
@@ -685,9 +685,9 @@ export function RequestsPanel() {
         </dl>
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold">Ready to send ({toSend.length})</h3>
+          <h3 className="text-base font-bold">Ready to send ({toSend.length})</h3>
         </div>
         {toSend.length === 0 ? (
           <p className="text-base text-muted-foreground">
@@ -735,8 +735,8 @@ export function RequestsPanel() {
         )}
       </section>
 
-      <section className="rounded-xl border border-border bg-card p-4 space-y-2">
-        <h3 className="font-bold">Recent requests</h3>
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
+        <h3 className="text-base font-bold">Recent requests</h3>
         {d.requests.length === 0 ? (
           <p className="text-base text-muted-foreground">No requests yet.</p>
         ) : (

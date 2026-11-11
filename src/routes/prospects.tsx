@@ -1478,105 +1478,52 @@ const ProspectRow = memo(function ProspectRow({
       : p.phoneType === "landline"
         ? "This looks like a landline"
         : "Could not read this number for WhatsApp";
-  // 40px tall: easy to tap on a phone.
+  // 44px tall: easy to tap on a phone.
   const btn =
-    "min-h-10 rounded-lg border border-border px-3 py-1.5 inline-flex items-center gap-1.5";
-  const off = `${btn} opacity-40 cursor-not-allowed`;
+    "min-h-11 rounded-lg border border-border px-4 py-2 inline-flex items-center gap-2 font-semibold";
+  const main =
+    "min-h-11 rounded-lg bg-emerald-700 text-white px-5 py-2 inline-flex items-center gap-2 font-semibold shadow-sm active:scale-[0.97] transition-transform";
   const item =
-    "min-h-10 rounded-md px-2.5 py-2 inline-flex items-center gap-1.5 hover:bg-muted text-left";
+    "min-h-11 rounded-lg px-3 py-2 inline-flex items-center gap-2 hover:bg-muted text-left";
   const noEmail = !p.email;
   const noText = !phone;
+  // The one main action: the best channel we can reach them on.
+  const primary: "whatsapp" | "email" | "text" | "copy" = !noWhatsApp
+    ? "whatsapp"
+    : !noEmail
+      ? "email"
+      : !noText
+        ? "text"
+        : "copy";
+  const copyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      toast.error("Could not copy. Try again.");
+      return;
+    }
+    toast.success("Message and link copied");
+    ensureOg();
+    if (!p.sentAt) setCopied(true);
+  };
   return (
-    <li className="rounded-xl border border-border bg-card p-3 space-y-2">
+    <li className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 shadow-sm">
+      {/* Header: score, name and stage. */}
       <div className="flex items-start gap-3">
         <span
-          className={`shrink-0 rounded-lg px-2 py-1 text-base font-bold ${scoreClass(p.score)}`}
+          className={`shrink-0 rounded-lg min-w-11 text-center px-2 py-1.5 text-lg font-bold tabular-nums ${scoreClass(p.score)}`}
+          title="Visibility score"
         >
           {p.score ?? "-"}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold truncate">{p.name}</p>
-          <p className="text-base mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span
-              className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold ${
-                status.tone === "green"
-                  ? "bg-emerald-100 text-emerald-800"
-                  : status.tone === "amber"
-                    ? "bg-amber-100 text-amber-800"
-                    : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {status.text}
-            </span>
-            {status.sent && !undoAsk && (
-              <button
-                type="button"
-                onClick={() => setUndoAsk(true)}
-                title="It was not really sent. Clears the send and any opens."
-                className="underline text-muted-foreground py-1"
-              >
-                Undo
-              </button>
-            )}
-            {opensText && (
-              <span
-                className={
-                  opensText.startsWith("Opened")
-                    ? "font-semibold text-emerald-700"
-                    : "text-muted-foreground"
-                }
-              >
-                {opensText}
-              </span>
-            )}
-          </p>
-          {undoAsk && (
-            <div
-              role="alertdialog"
-              aria-label="Undo sent?"
-              className="mt-1 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-base flex flex-wrap items-center gap-2"
-            >
-              <span>This clears the sent time and opens. Undo?</span>
-              <button
-                type="button"
-                onClick={() => void undoSend()}
-                className="min-h-8 rounded-lg bg-primary text-primary-foreground px-2.5 font-semibold"
-              >
-                Undo sent
-              </button>
-              <button
-                type="button"
-                onClick={() => setUndoAsk(false)}
-                className="min-h-8 underline text-muted-foreground"
-              >
-                Keep it
-              </button>
-            </div>
-          )}
-          <p className="text-base text-muted-foreground truncate mt-0.5">
+          <p className="text-lg font-bold leading-snug truncate">{p.name}</p>
+          <p className="text-base text-muted-foreground leading-relaxed">
             {p.town}
             {p.followUpOn
               ? ` - follow up ${new Date(p.followUpOn).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
               : ""}
-            {p.source === "inbound" ? " - asked for a check" : ""}
-            {p.googleConnected ? " - connected Google" : ""}
           </p>
-          {watched && (
-            <p className="text-base mt-0.5 font-semibold text-emerald-700 inline-flex items-center gap-1">
-              <Video className="w-3.5 h-3.5" /> {watched}
-            </p>
-          )}
-          {p.topFix && <p className="text-base mt-0.5 truncate">{p.topFix}</p>}
-          <OwnerInfo p={p} chEnabled={chEnabled} onRefresh={onRefresh} />
-          <ReachBadges
-            h={{
-              phoneType: p.phoneType,
-              email: p.email,
-              facebook: p.facebook,
-              instagram: p.instagram,
-            }}
-            finding={false}
-          />
         </div>
         <select
           value={p.stage}
@@ -1584,7 +1531,7 @@ const ProspectRow = memo(function ProspectRow({
           onChange={(e) =>
             void onSave(p.id, { stage: e.target.value as (typeof STAGE_IDS)[number] })
           }
-          className="shrink-0 min-h-10 rounded-lg border border-input bg-background px-2 py-1 text-base"
+          className="shrink-0 min-h-11 rounded-lg border border-input bg-background px-2 py-1 text-base"
         >
           {STAGES.map((s) => (
             <option key={s.id} value={s.id}>
@@ -1593,14 +1540,105 @@ const ProspectRow = memo(function ProspectRow({
           ))}
         </select>
       </div>
+
+      {/* Key insight: the one line that matters most. */}
+      {p.topFix && (
+        <p className="rounded-xl border-l-4 border-primary bg-primary/5 px-4 py-3 text-lg font-semibold leading-relaxed text-pretty">
+          {p.topFix}
+        </p>
+      )}
+
+      {/* Status chips, all in one row. */}
+      <div className="flex flex-wrap items-center gap-2 text-base">
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-semibold ${
+            status.tone === "green"
+              ? "bg-emerald-100 text-emerald-800"
+              : status.tone === "amber"
+                ? "bg-amber-100 text-amber-800"
+                : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {status.text}
+        </span>
+        {opensText && (
+          <span
+            className={`rounded-full px-3 py-1 ${
+              opensText.startsWith("Opened")
+                ? "bg-emerald-50 font-semibold text-emerald-800"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {opensText}
+          </span>
+        )}
+        {watched && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-800">
+            <Video className="w-4 h-4" /> {watched}
+          </span>
+        )}
+        {p.source === "inbound" && (
+          <span className="rounded-full bg-muted px-3 py-1 text-muted-foreground">
+            Asked for a check
+          </span>
+        )}
+        {p.googleConnected && (
+          <span className="rounded-full bg-muted px-3 py-1 text-muted-foreground">
+            Connected Google
+          </span>
+        )}
+        {status.sent && !undoAsk && (
+          <button
+            type="button"
+            onClick={() => setUndoAsk(true)}
+            title="It was not really sent. Clears the send and any opens."
+            className="min-h-10 px-1 underline text-muted-foreground"
+          >
+            Undo
+          </button>
+        )}
+      </div>
+      {undoAsk && (
+        <div
+          role="alertdialog"
+          aria-label="Undo sent?"
+          className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-base flex flex-wrap items-center gap-2"
+        >
+          <span>This clears the sent time and opens. Undo?</span>
+          <button
+            type="button"
+            onClick={() => void undoSend()}
+            className="min-h-10 rounded-lg bg-primary text-primary-foreground px-3 font-semibold"
+          >
+            Undo sent
+          </button>
+          <button
+            type="button"
+            onClick={() => setUndoAsk(false)}
+            className="min-h-10 px-1 underline text-muted-foreground"
+          >
+            Keep it
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-1">
+        <OwnerInfo p={p} chEnabled={chEnabled} onRefresh={onRefresh} />
+        <ReachBadges
+          h={{
+            phoneType: p.phoneType,
+            email: p.email,
+            facebook: p.facebook,
+            instagram: p.instagram,
+          }}
+          finding={false}
+        />
+      </div>
+
+      {/* Actions: one primary, the rest under More. */}
       {p.link && (
-        <div className="flex flex-wrap gap-1.5 text-base">
-          {noWhatsApp ? (
-            <span title={noWaTitle} className={off} aria-disabled="true">
-              <MessageCircle className="w-4 h-4" /> WhatsApp
-              <span className="sr-only">: {noWaTitle}</span>
-            </span>
-          ) : (
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4 text-base">
+          {primary === "whatsapp" ? (
             <a
               href={`https://wa.me/${wa}?text=${encodeURIComponent(text)}`}
               target="_blank"
@@ -1611,51 +1649,32 @@ const ProspectRow = memo(function ProspectRow({
                   ? "Mobile number: very likely on WhatsApp. Opens the message and marks it as sent."
                   : "Opens the message in WhatsApp and marks it as sent"
               }
-              className="min-h-10 rounded-lg bg-emerald-700 text-white px-3 py-1.5 inline-flex items-center gap-1.5 font-semibold"
+              className={main}
             >
-              <MessageCircle className="w-4 h-4" /> Send on WhatsApp
+              <MessageCircle className="w-5 h-5" /> Send on WhatsApp
             </a>
-          )}
-          {noEmail ? (
-            <span title="No email saved. Add one in Details." className={off} aria-disabled="true">
-              <Mail className="w-4 h-4" /> Email
-              <span className="sr-only">: No email saved. Add one in Details.</span>
-            </span>
-          ) : (
+          ) : primary === "email" ? (
             <a
               title={`Email ${p.email}`}
               href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`}
               onClick={() => void sent("email")}
-              className={btn}
+              className={main}
             >
-              <Mail className="w-4 h-4" /> Email
+              <Mail className="w-5 h-5" /> Send by email
             </a>
-          )}
-          {noText ? (
-            <span title="No phone number" className={off} aria-disabled="true">
-              <Smartphone className="w-4 h-4" /> Text
-              <span className="sr-only">: No phone number</span>
-            </span>
-          ) : (
+          ) : primary === "text" ? (
             <a
               href={`sms:${phone}?&body=${encodeURIComponent(text)}`}
               onClick={() => void sent("text")}
-              className={btn}
+              className={main}
             >
-              <Smartphone className="w-4 h-4" /> Text
+              <Smartphone className="w-5 h-5" /> Send by text
             </a>
+          ) : (
+            <button type="button" onClick={() => void copyMessage()} className={main}>
+              <Copy className="w-5 h-5" /> Copy message
+            </button>
           )}
-          <a href={p.link} target="_blank" rel="noopener" className={btn}>
-            <ExternalLink className="w-4 h-4" /> Open
-          </a>
-          <button
-            type="button"
-            onClick={() => setVideoOpen((v) => !v)}
-            aria-expanded={videoOpen}
-            className={`${btn} ${hasVideo ? "border-emerald-600 text-emerald-700" : ""}`}
-          >
-            <Video className="w-4 h-4" /> {hasVideo ? "Video added" : "Add video"}
-          </button>
           <div ref={moreRef} className="relative">
             <button
               type="button"
@@ -1669,8 +1688,111 @@ const ProspectRow = memo(function ProspectRow({
             {moreOpen && (
               <div
                 role="menu"
-                className="absolute z-20 mt-1 right-0 min-w-48 rounded-lg border border-border bg-card shadow-lg p-1 flex flex-col"
+                className="absolute z-20 mt-1 left-0 min-w-56 rounded-xl border border-border bg-card shadow-lg p-1.5 flex flex-col"
               >
+                {primary !== "email" && !noEmail && (
+                  <a
+                    role="menuitem"
+                    title={`Email ${p.email}`}
+                    href={`mailto:${encodeURIComponent(p.email)}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailText)}`}
+                    onClick={() => {
+                      closeMore();
+                      void sent("email");
+                    }}
+                    className={item}
+                  >
+                    <Mail className="w-4 h-4" /> Send by email
+                  </a>
+                )}
+                {primary !== "text" && !noText && (
+                  <a
+                    role="menuitem"
+                    href={`sms:${phone}?&body=${encodeURIComponent(text)}`}
+                    onClick={() => {
+                      closeMore();
+                      void sent("text");
+                    }}
+                    className={item}
+                  >
+                    <Smartphone className="w-4 h-4" /> Send by text
+                  </a>
+                )}
+                {primary !== "copy" && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      closeMore();
+                      void copyMessage();
+                    }}
+                    className={item}
+                  >
+                    <Copy className="w-4 h-4" /> Copy message
+                  </button>
+                )}
+                {!p.sentAt && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      closeMore();
+                      void sent("manual");
+                    }}
+                    className={item}
+                  >
+                    <Check className="w-4 h-4" /> Mark as sent
+                  </button>
+                )}
+                <div className="my-1 border-t border-border" role="separator" />
+                <a
+                  role="menuitem"
+                  href={p.link}
+                  target="_blank"
+                  rel="noopener"
+                  onClick={closeMore}
+                  className={item}
+                >
+                  <ExternalLink className="w-4 h-4" /> Open report
+                </a>
+                <a
+                  role="menuitem"
+                  href={`${p.link}?print=1`}
+                  target="_blank"
+                  rel="noopener"
+                  onClick={closeMore}
+                  title="Opens the report ready to save as a PDF"
+                  className={item}
+                >
+                  <FileDown className="w-4 h-4" /> PDF
+                </a>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    closeMore();
+                    setVideoOpen((v) => !v);
+                  }}
+                  className={item}
+                >
+                  <Video className="w-4 h-4" /> {hasVideo ? "Change video" : "Add video"}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    closeMore();
+                    // Start from the phrases the report has now.
+                    if (!rebuild) setPhrases(p.phrases);
+                    setRebuild((v) => !v);
+                  }}
+                  title="Run the report again with fresh Google figures"
+                  className={item}
+                >
+                  <RefreshCw className="w-4 h-4" /> Rebuild report
+                </button>
+                {(!noWhatsApp || p.mapsUrl) && (
+                  <div className="my-1 border-t border-border" role="separator" />
+                )}
                 {!noWhatsApp && (
                   <a
                     role="menuitem"
@@ -1697,63 +1819,6 @@ const ProspectRow = memo(function ProspectRow({
                     <MapPin className="w-4 h-4" /> Google profile
                   </a>
                 )}
-                <a
-                  role="menuitem"
-                  href={`${p.link}?print=1`}
-                  target="_blank"
-                  rel="noopener"
-                  onClick={closeMore}
-                  title="Opens the report ready to save as a PDF"
-                  className={item}
-                >
-                  <FileDown className="w-4 h-4" /> PDF
-                </a>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    closeMore();
-                    // Start from the phrases the report has now.
-                    if (!rebuild) setPhrases(p.phrases);
-                    setRebuild((v) => !v);
-                  }}
-                  title="Run the report again with fresh Google figures"
-                  className={item}
-                >
-                  <RefreshCw className="w-4 h-4" /> Rebuild report
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={async () => {
-                    closeMore();
-                    try {
-                      await navigator.clipboard.writeText(text);
-                    } catch {
-                      toast.error("Could not copy. Try again.");
-                      return;
-                    }
-                    toast.success("Message and link copied");
-                    ensureOg();
-                    if (!p.sentAt) setCopied(true);
-                  }}
-                  className={item}
-                >
-                  <Copy className="w-4 h-4" /> Copy message
-                </button>
-                {!p.sentAt && (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      closeMore();
-                      void sent("manual");
-                    }}
-                    className={item}
-                  >
-                    <Check className="w-4 h-4" /> Mark as sent
-                  </button>
-                )}
               </div>
             )}
           </div>
@@ -1769,10 +1834,13 @@ const ProspectRow = memo(function ProspectRow({
               setOpen((v) => !v);
             }}
             aria-expanded={open}
-            className="min-h-10 ml-auto px-2 py-1.5 inline-flex items-center gap-1 text-muted-foreground"
+            className="min-h-11 ml-auto px-2 py-1.5 inline-flex items-center gap-1 text-muted-foreground"
           >
             Details {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
+          {primary !== "whatsapp" && (
+            <p className="basis-full text-base text-muted-foreground">{noWaTitle}, so WhatsApp is off.</p>
+          )}
         </div>
       )}
       {copied && !p.sentAt && (

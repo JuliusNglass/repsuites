@@ -97,8 +97,8 @@ export function QrCodesCard({ business }: { business: string }) {
       .catch(() => setCodes([]));
   }, [read]);
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <h2 className="font-bold flex items-center gap-2 mb-1">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+      <h2 className="text-lg font-bold leading-snug flex items-center gap-2 mb-1">
         <QrCode className="w-5 h-5" /> Review QR codes
       </h2>
       <p className="text-base text-muted-foreground mb-2">

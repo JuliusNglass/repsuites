@@ -35,7 +35,7 @@ export function AiVisibilityCard() {
 
   if (blocked)
     return (
-      <section className="rounded-xl border border-border bg-card p-4">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
         <h3 className="font-bold flex items-center gap-1.5">
           <Sparkles className="w-4 h-4" /> Are AI assistants recommending you?
         </h3>
@@ -46,7 +46,7 @@ export function AiVisibilityCard() {
 
   const l = d.latest;
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       <div>
         <h3 className="font-bold flex items-center gap-1.5">
           <Sparkles className="w-4 h-4" /> Are AI assistants recommending you?

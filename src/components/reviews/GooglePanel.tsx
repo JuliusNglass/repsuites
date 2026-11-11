@@ -105,10 +105,10 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
   return (
     <div className="space-y-4">
       {showConnection && (
-        <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <h2 className="text-base font-bold">Google Business Profile</h2>
+              <h2 className="text-lg font-bold leading-snug">Google Business Profile</h2>
               <p className="text-base text-muted-foreground">
                 {!d.ready
                   ? "The Google connection is being set up. Check back soon."
@@ -213,7 +213,7 @@ export function GooglePanel({ tab }: { tab: PanelTab }) {
         </>
       )}
       {connected && tab === "reviews" && (
-        <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="inline-flex rounded-lg border border-border p-0.5 text-base font-semibold">
               <button
@@ -431,9 +431,9 @@ function PerformanceCard() {
       ]
     : [];
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       <div>
-        <h2 className="text-base font-bold">How your Google profile is doing</h2>
+        <h2 className="text-lg font-bold leading-snug">How your Google profile is doing</h2>
         <p className="text-base text-muted-foreground">
           {p
             ? `${fmt(p.period.split)} to ${fmt(p.period.end)}, compared with the 4 weeks before. Google's figures run a few days behind.`
@@ -503,8 +503,8 @@ function ReportSettingsCard({
     setEmail(s.email);
   }, [s]);
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-2">
-      <h2 className="text-base font-bold">Monthly report by email</h2>
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
+      <h2 className="text-lg font-bold leading-snug">Monthly report by email</h2>
       <p className="text-base text-muted-foreground">
         {s.enabled
           ? `On. The figures for each month go to ${s.email} on the 4th of the next month.`
@@ -599,10 +599,10 @@ function ReplySettingsCard({
   useEffect(() => setV(s), [s]);
   const mode = MODES.find((m) => m.id === s.mode)!;
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-base font-bold">Review replies</h2>
+          <h2 className="text-lg font-bold leading-snug">Review replies</h2>
           <p className="text-base text-muted-foreground">
             {mode.label}
             {s.mode === "auto" ? ` for ${s.autoMinStars} stars and above` : ""}. {mode.help}
@@ -872,9 +872,9 @@ function GooglePosts({
     failed: "Did not post",
   };
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       <div>
-        <h2 className="text-base font-bold">Google posts</h2>
+        <h2 className="text-lg font-bold leading-snug">Google posts</h2>
         <p className="text-base text-muted-foreground">
           Updates and offers that show on your Google profile. Regular posts help you show up in
           local searches.

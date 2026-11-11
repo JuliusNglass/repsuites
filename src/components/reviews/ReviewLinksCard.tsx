@@ -69,11 +69,11 @@ export function ReviewLinksCard({ part }: { part: "links" | "feedback" }) {
   const unread = d.feedback.filter((f) => !f.read_at).length;
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       {part === "links" && (
         <>
           <div>
-            <h2 className="font-bold">Review sites on your QR page</h2>
+            <h2 className="text-lg font-bold leading-snug">Review sites on your QR page</h2>
             <p className="text-base text-muted-foreground">
               Customers who scan your code see every site below. The first one is the big button.
               Your Google link from the QR code is used automatically if you do not add one.

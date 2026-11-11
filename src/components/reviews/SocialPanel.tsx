@@ -54,7 +54,7 @@ export function SocialPanel({
 
   if (blocked)
     return (
-      <section className="rounded-xl border border-border bg-card p-4">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
         <p className="font-bold flex items-center gap-1.5">
           <Facebook className="w-4 h-4" /> Facebook and Instagram
         </p>
@@ -64,7 +64,7 @@ export function SocialPanel({
   if (!m) return null;
   if (!m.ready)
     return (
-      <section className="rounded-xl border border-border bg-card p-4">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
         <p className="font-bold flex items-center gap-1.5">
           <Facebook className="w-4 h-4" /> <Instagram className="w-4 h-4" /> Facebook and Instagram
         </p>
@@ -81,7 +81,7 @@ export function SocialPanel({
   const flags = (id: string) => ch.find((x) => x.id === id);
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
         <p className="font-bold flex items-center gap-1.5 flex-1 min-w-0">
           <Facebook className="w-4 h-4" /> <Instagram className="w-4 h-4" /> Facebook and Instagram
