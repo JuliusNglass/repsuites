@@ -98,8 +98,17 @@ const SCAN_STEPS = [
   "Writing up your top gaps",
 ];
 
-const input =
-  "w-full rounded-xl border border-input bg-background px-4 py-3 min-h-12 text-base focus:outline-none focus:ring-2 focus:ring-primary/40";
+const input = "field text-base";
+
+// A roomy tick-box row: the whole card is the tap target.
+const tick =
+  "flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-border bg-background px-4 py-2.5 transition-colors hover:bg-secondary has-[:checked]:border-navy/60 has-[:checked]:bg-gold-soft has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-[var(--ring)]";
+
+const PROMISES = [
+  "Your score out of 100",
+  "Your top gaps, in plain English",
+  "How you compare with businesses near you",
+];
 
 function CheckPage() {
   const { n, src, utm_source } = Route.useSearch();
@@ -192,255 +201,355 @@ function CheckPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center">
+    <div className="min-h-screen bg-background text-foreground flex flex-col text-base leading-relaxed">
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-md backdrop-saturate-150">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
           <Logo />
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Lock className="h-4 w-4" aria-hidden /> Free and private
+          </p>
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-xl mx-auto px-4 py-8 sm:py-12">
+      <main className="flex-1 w-full">
         {!place ? (
-          <section aria-labelledby="h1" className="space-y-6">
-            <div className="space-y-3">
-              <p className="eyebrow">Free 30-second check</p>
-              <h1 id="h1" className="text-3xl sm:text-4xl font-semibold leading-tight">
-                {niche.headline}
-              </h1>
-              <p className="text-lg text-muted-foreground leading-relaxed">{niche.sub}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-3 shadow-sm">
-              <label className="block space-y-1">
-                <span className="text-base font-semibold">
-                  What do customers type into Google to find you?
-                </span>
-                <input
-                  required
-                  className={input}
-                  value={keyword}
-                  maxLength={60}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  aria-describedby="kw-hint"
+          <section
+            aria-labelledby="h1"
+            className="relative overflow-hidden bg-[radial-gradient(90%_60%_at_100%_0%,var(--gold-soft),transparent_65%)]"
+          >
+            <div className="max-w-6xl mx-auto px-4 pt-8 pb-14 sm:pt-14 sm:pb-20 lg:py-20 grid gap-8 lg:gap-12 lg:grid-cols-[1.05fr_1fr] lg:items-start">
+              <div className="space-y-5 max-w-xl lg:pt-6">
+                <p className="eyebrow">
+                  <span className="h-px w-6 bg-primary-ink" aria-hidden /> Free 30-second check
+                </p>
+                <h1
+                  id="h1"
+                  className="text-[2rem] leading-[1.12] sm:text-5xl lg:text-[3.25rem] font-semibold sm:leading-[1.08]"
+                >
+                  {niche.headline}
+                </h1>
+                <p className="text-lg text-muted-foreground">{niche.sub}</p>
+                <ul className="hidden lg:grid gap-3 pt-2">
+                  {PROMISES.map((t) => (
+                    <li key={t} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-soft ring-1 ring-primary/40">
+                        <Check className="h-4 w-4 text-primary-ink" aria-hidden />
+                      </span>
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="relative w-full max-w-xl lg:max-w-none">
+                <div
+                  className="absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-primary/25 via-transparent to-navy/15 blur-2xl"
+                  aria-hidden
                 />
-                <span id="kw-hint" className="block text-base text-muted-foreground">
-                  {niche.keywordHint}
-                </span>
-              </label>
-              <BusinessSearch
-                value={business}
-                onChange={setBusiness}
-                confirmed={place}
-                onConfirm={setPlace}
-              />
-              <p className="text-base text-muted-foreground">
-                Type your business name and town, then pick it from the list.
-              </p>
+                <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-lift)]">
+                  <div className="surface-navy px-5 py-4 sm:px-6">
+                    <p className="text-sm font-bold uppercase tracking-[0.08em] text-primary">
+                      Start your check
+                    </p>
+                    <p className="mt-1 font-display text-xl font-semibold text-white">
+                      Find your business
+                    </p>
+                  </div>
+                  <div className="p-5 sm:p-6 space-y-5">
+                    <div className="space-y-1.5">
+                      <label htmlFor="kw" className="block font-bold">
+                        What do customers type into Google to find you?
+                      </label>
+                      <input
+                        id="kw"
+                        name="keyword"
+                        required
+                        className={input}
+                        value={keyword}
+                        maxLength={60}
+                        autoComplete="off"
+                        onChange={(e) => setKeyword(e.target.value)}
+                        aria-describedby="kw-hint"
+                      />
+                      <p id="kw-hint" className="text-muted-foreground">
+                        {niche.keywordHint}
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <BusinessSearch
+                        value={business}
+                        onChange={setBusiness}
+                        confirmed={place}
+                        onConfirm={setPlace}
+                      />
+                      <p className="text-muted-foreground">
+                        Type your business name and town, then pick it from the list.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <ul className="mt-6 grid gap-3 lg:hidden">
+                  {PROMISES.map((t) => (
+                    <li key={t} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-soft ring-1 ring-primary/40">
+                        <Check className="h-4 w-4 text-primary-ink" aria-hidden />
+                      </span>
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <ul className="space-y-2 text-base">
-              {[
-                "Your score out of 100",
-                "Your top gaps, in plain English",
-                "How you compare with businesses near you",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-2">
-                  <Check className="w-5 h-5 mt-0.5 text-emerald-600 shrink-0" aria-hidden />
-                  {t}
-                </li>
-              ))}
-            </ul>
           </section>
         ) : (
-          <section aria-labelledby="h2" className="space-y-6">
-            <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-bold text-lg">{place.name}</p>
-                  <p className="text-base text-muted-foreground flex items-center gap-1">
-                    <MapPin className="w-4 h-4" aria-hidden /> {place.town || place.address}
-                  </p>
+          <section
+            aria-labelledby="h2"
+            className="bg-[radial-gradient(90%_40%_at_100%_0%,var(--gold-soft),transparent_65%)]"
+          >
+            <div className="max-w-6xl mx-auto px-4 pt-6 pb-14 sm:pt-12 sm:pb-20 grid gap-6 lg:gap-10 lg:grid-cols-[1fr_1.15fr] lg:items-start">
+              <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-card)] lg:sticky lg:top-24">
+                <div className="surface-navy px-5 py-5 sm:px-6">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold uppercase tracking-[0.08em] text-primary">
+                        Your business
+                      </p>
+                      <p className="mt-1 font-display text-xl sm:text-2xl font-semibold text-white break-words">
+                        {place.name}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1.5 text-white/85">
+                        <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+                        <span className="truncate">{place.town || place.address}</span>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPlace(null)}
+                      className="btn shrink-0 border border-white/30 bg-white/10 px-4 text-white hover:bg-white/20 focus-visible:outline-white"
+                    >
+                      Change<span className="sr-only"> business</span>
+                    </button>
+                  </div>
+                  {place.rating != null && (
+                    <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-white ring-1 ring-white/15">
+                      <Star className="h-4 w-4 fill-primary text-primary" aria-hidden />
+                      <span className="tabular-nums">{place.rating}</span> from{" "}
+                      {place.reviewCount ?? 0} reviews
+                    </p>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setPlace(null)}
-                  className="text-base underline min-h-11 px-2 shrink-0"
-                >
-                  Change
-                </button>
+                <div className="p-5 sm:p-6">
+                  <p className="eyebrow">Your scan is running</p>
+                  <ol className="mt-3 space-y-2.5" aria-live="polite">
+                    {SCAN_STEPS.map((s, i) => (
+                      <li
+                        key={s}
+                        className={`flex items-center gap-3 ${i > step ? "text-muted-foreground" : "font-semibold"}`}
+                      >
+                        {i < step ? (
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success text-white">
+                            <Check className="h-4 w-4" aria-hidden />
+                          </span>
+                        ) : i === step ? (
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-soft ring-1 ring-primary/50">
+                            <Loader2
+                              className="h-4 w-4 animate-spin text-primary-ink"
+                              aria-hidden
+                            />
+                          </span>
+                        ) : (
+                          <span
+                            className="h-6 w-6 shrink-0 rounded-full border-2 border-border"
+                            aria-hidden
+                          />
+                        )}
+                        <span>
+                          {s}
+                          <span className="sr-only">
+                            {i < step ? " (done)" : i === step ? " (in progress)" : ""}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
               </div>
-              {place.rating != null && (
-                <p className="text-base flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" aria-hidden />
-                  {place.rating} from {place.reviewCount ?? 0} reviews
-                </p>
-              )}
-              <ol className="space-y-1.5 pt-1" aria-live="polite">
-                {SCAN_STEPS.map((s, i) => (
-                  <li
-                    key={s}
-                    className={`flex items-center gap-2 text-base ${i > step ? "text-muted-foreground/60" : ""}`}
-                  >
-                    {i < step ? (
-                      <Check className="w-4 h-4 text-emerald-600" aria-hidden />
-                    ) : i === step ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden />
-                    ) : (
-                      <span
-                        className="w-4 h-4 rounded-full border border-border inline-block"
-                        aria-hidden
-                      />
-                    )}
-                    {s}
-                  </li>
-                ))}
-              </ol>
-            </div>
 
-            <form
-              onSubmit={submit}
-              className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4"
-            >
-              <h2 id="h2" className="text-xl font-semibold">
-                Where should we send your results?
-              </h2>
-              <label className="block space-y-1">
-                <span className="text-base font-semibold">Your name</span>
-                <input
-                  required
-                  autoComplete="name"
-                  className={input}
-                  value={f.name}
-                  onChange={(e) => setF({ ...f, name: e.target.value })}
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-base font-semibold">Email</span>
-                <input
-                  required
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  className={input}
-                  value={f.email}
-                  onChange={(e) => setF({ ...f, email: e.target.value })}
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-base font-semibold">Mobile</span>
-                <input
-                  required
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  className={input}
-                  value={f.phone}
-                  onChange={(e) => setF({ ...f, phone: e.target.value })}
-                />
-              </label>
-              <label className="block space-y-1">
-                <span className="text-base font-semibold">{niche.team}</span>
-                <select
-                  required
-                  className={input}
-                  value={size}
-                  onChange={(e) => setSize(e.target.value as Size)}
-                >
-                  <option value="" disabled>
-                    Choose one
-                  </option>
-                  {niche.sizes.map(([v, l]) => (
-                    <option key={v} value={v}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <fieldset className="space-y-1">
-                <legend className="text-base font-semibold">
-                  What are your biggest headaches right now?
-                </legend>
-                <p className="text-base text-muted-foreground">Tick all that apply.</p>
-                {niche.headaches.map(([v, l]) => (
-                  <label key={v} className="flex items-center gap-3 min-h-11 text-base">
-                    <input
-                      type="checkbox"
-                      className="w-5 h-5"
-                      checked={headaches.includes(v)}
-                      onChange={(e) =>
-                        setHeadaches((h) =>
-                          e.target.checked ? [...h, v] : h.filter((x) => x !== v),
-                        )
-                      }
-                    />
-                    {l}
+              <form onSubmit={submit} className="card p-5 sm:p-8 space-y-5">
+                <div className="space-y-1">
+                  <p className="eyebrow">Last step</p>
+                  <h2 id="h2" className="text-2xl sm:text-3xl font-semibold">
+                    Where should we send your results?
+                  </h2>
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="c-name" className="block font-bold">
+                    Your name
                   </label>
-                ))}
-              </fieldset>
-              <fieldset className="space-y-2">
-                <legend className="text-base font-semibold">
-                  Can we send you tips and offers? (optional)
-                </legend>
-                <label className="flex items-center gap-3 min-h-11 text-base">
                   <input
-                    type="checkbox"
-                    className="w-5 h-5"
-                    checked={cEmail}
-                    onChange={(e) => setCEmail(e.target.checked)}
+                    id="c-name"
+                    required
+                    autoComplete="name"
+                    className={input}
+                    value={f.name}
+                    onChange={(e) => setF({ ...f, name: e.target.value })}
                   />
-                  Yes, by email
-                </label>
-                <label className="flex items-center gap-3 min-h-11 text-base">
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="c-email" className="block font-bold">
+                    Email
+                  </label>
                   <input
-                    type="checkbox"
-                    className="w-5 h-5"
-                    checked={cWa}
-                    onChange={(e) => setCWa(e.target.checked)}
+                    id="c-email"
+                    required
+                    type="email"
+                    spellCheck={false}
+                    inputMode="email"
+                    autoComplete="email"
+                    className={input}
+                    value={f.email}
+                    onChange={(e) => setF({ ...f, email: e.target.value })}
                   />
-                  Yes, by WhatsApp
-                </label>
-              </fieldset>
-              <input
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-                className="hidden"
-                value={f.website}
-                onChange={(e) => setF({ ...f, website: e.target.value })}
-              />
-              {err && (
-                <p role="alert" className="text-base font-semibold text-destructive">
-                  {err}
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="c-phone" className="block font-bold">
+                    Mobile
+                  </label>
+                  <input
+                    id="c-phone"
+                    required
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    className={input}
+                    value={f.phone}
+                    onChange={(e) => setF({ ...f, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="c-size" className="block font-bold">
+                    {niche.team}
+                  </label>
+                  <select
+                    id="c-size"
+                    required
+                    className={input}
+                    value={size}
+                    onChange={(e) => setSize(e.target.value as Size)}
+                  >
+                    <option value="" disabled>
+                      Choose one
+                    </option>
+                    {niche.sizes.map(([v, l]) => (
+                      <option key={v} value={v}>
+                        {l}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <fieldset className="space-y-2" aria-describedby="hd-hint">
+                  <legend className="font-bold">What are your biggest headaches right now?</legend>
+                  <p id="hd-hint" className="text-muted-foreground">
+                    Tick all that apply.
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {niche.headaches.map(([v, l]) => (
+                      <label key={v} className={tick}>
+                        <input
+                          type="checkbox"
+                          name="headaches"
+                          value={v}
+                          className="h-5 w-5 shrink-0 accent-[var(--navy)]"
+                          checked={headaches.includes(v)}
+                          onChange={(e) =>
+                            setHeadaches((h) =>
+                              e.target.checked ? [...h, v] : h.filter((x) => x !== v),
+                            )
+                          }
+                        />
+                        <span>{l}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset className="space-y-2">
+                  <legend className="font-bold">Can we send you tips and offers? (optional)</legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label htmlFor="c-consent-email" className={tick}>
+                      <input
+                        id="c-consent-email"
+                        type="checkbox"
+                        className="h-5 w-5 shrink-0 accent-[var(--navy)]"
+                        checked={cEmail}
+                        onChange={(e) => setCEmail(e.target.checked)}
+                      />
+                      <span>
+                        Yes, by email
+                        <span className="sr-only">: send me tips and offers by email</span>
+                      </span>
+                    </label>
+                    <label htmlFor="c-consent-wa" className={tick}>
+                      <input
+                        id="c-consent-wa"
+                        type="checkbox"
+                        className="h-5 w-5 shrink-0 accent-[var(--navy)]"
+                        checked={cWa}
+                        onChange={(e) => setCWa(e.target.checked)}
+                      />
+                      <span>
+                        Yes, by WhatsApp
+                        <span className="sr-only">: send me tips and offers on WhatsApp</span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+                <input
+                  tabIndex={-1}
+                  autoComplete="off"
+                  aria-hidden="true"
+                  aria-label="Leave this empty"
+                  className="hidden"
+                  value={f.website}
+                  onChange={(e) => setF({ ...f, website: e.target.value })}
+                />
+                {err && (
+                  <p role="alert" className="font-semibold text-destructive">
+                    {err}
+                  </p>
+                )}
+                <button type="submit" disabled={busy} className="btn btn-gold btn-lg w-full">
+                  {busy && <Loader2 className="h-5 w-5 animate-spin" aria-hidden />}
+                  {busy ? "Building your report…" : "Show my score"}
+                </button>
+                <p className="flex items-start gap-2 text-muted-foreground">
+                  <Lock className="mt-1 h-4 w-4 shrink-0" aria-hidden />
+                  <span>
+                    Free. Your results appear straight away. We never share your details. See our{" "}
+                    <Link to="/privacy" className="underline underline-offset-2 text-foreground">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </span>
                 </p>
-              )}
-              <button
-                type="submit"
-                disabled={busy}
-                className="w-full btn btn-gold rounded-full text-lg py-4 min-h-12 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                {busy && <Loader2 className="w-5 h-5 animate-spin" aria-hidden />}
-                {busy ? "Building your report" : "Show my score"}
-              </button>
-              <p className="text-base text-muted-foreground flex items-start gap-2">
-                <Lock className="w-4 h-4 mt-1 shrink-0" aria-hidden />
-                <span>
-                  Free. Your results appear straight away. We never share your details. See our{" "}
-                  <Link to="/privacy" className="underline">
-                    Privacy Policy
-                  </Link>
-                  .
-                </span>
-              </p>
-            </form>
+              </form>
+            </div>
           </section>
         )}
       </main>
 
-      <footer className="border-t border-border py-6 text-center text-base text-muted-foreground">
+      <footer className="border-t border-border bg-secondary/60 py-8 text-center text-muted-foreground">
         Accelur8 · Cwmbran, Wales ·{" "}
-        <Link to="/privacy" className="underline">
+        <Link
+          to="/privacy"
+          className="inline-flex min-h-11 items-center underline underline-offset-2"
+        >
           Privacy
         </Link>{" "}
         ·{" "}
-        <Link to="/terms" className="underline">
+        <Link
+          to="/terms"
+          className="inline-flex min-h-11 items-center underline underline-offset-2"
+        >
           Terms
         </Link>
       </footer>

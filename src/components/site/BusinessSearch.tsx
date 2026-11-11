@@ -113,7 +113,7 @@ export function BusinessSearch({
   return (
     <div className="space-y-1 relative">
       <label className="block space-y-1">
-        <span className="text-base font-semibold">Business name</span>
+        <span className="text-base font-bold">Business name</span>
         <div className="relative">
           <input
             type="text"
@@ -147,10 +147,10 @@ export function BusinessSearch({
                 setOpen(false);
               }
             }}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2.5 pr-9"
+            className="field pr-10 text-base"
           />
           {loading && (
-            <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-3 text-muted-foreground" />
+            <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-4 text-muted-foreground" />
           )}
         </div>
       </label>

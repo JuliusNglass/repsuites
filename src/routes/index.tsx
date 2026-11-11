@@ -94,145 +94,208 @@ const googleFeatures = [
 function Home() {
   return (
     <PublicLayout>
-      <section className="px-4 pt-16 pb-14 md:pt-24 md:pb-20 text-center">
-        <div className="max-w-3xl mx-auto">
-          <p className="eyebrow mb-4">For local businesses</p>
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-[1.08]">
-            More local customers{" "}
-            <span className="italic text-primary-ink">finding you and choosing you.</span>
-          </h1>
-          <p className="mt-5 text-lg text-muted-foreground">
-            When someone nearby needs what you do, they search Google or ask an AI assistant, look
-            at the reviews and pick one. RepSuites makes sure that one is you.
-          </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="/start" className="btn btn-gold btn-lg">
-              Start free
-            </a>
-            <a href="#check" className="btn btn-ghost btn-lg">
-              Get a free visibility check
-            </a>
+      <section
+        aria-labelledby="home-h1"
+        className="relative overflow-hidden border-b border-border/70 bg-[radial-gradient(90%_70%_at_100%_0%,var(--gold-soft),transparent_60%)]"
+      >
+        <div className="max-w-6xl mx-auto px-4 py-12 sm:py-16 lg:py-24 grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+          <div className="space-y-6 max-w-xl">
+            <p className="eyebrow">
+              <span className="h-px w-6 bg-primary-ink" aria-hidden /> For local businesses
+            </p>
+            <h1
+              id="home-h1"
+              className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold leading-[1.08]"
+            >
+              More local customers{" "}
+              <span className="italic text-primary-ink">finding you and choosing you.</span>
+            </h1>
+            <p className="text-lg sm:text-xl text-muted-foreground">
+              When someone nearby needs what you do, they search Google or ask an AI assistant, look
+              at the reviews and pick one. RepSuites makes sure that one is you.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a href="/start" className="btn btn-gold btn-lg">
+                Start free
+              </a>
+              <a href="#check" className="btn btn-ghost btn-lg">
+                Get a free visibility check
+              </a>
+            </div>
+            <p className="flex items-center gap-2 text-muted-foreground">
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-primary-ink" aria-hidden />
+              Free review page and QR code in 2 minutes. No card needed.
+            </p>
           </div>
-          <p className="mt-3 text-base text-muted-foreground">
-            Free review page and QR code in 2 minutes. No card needed.
-          </p>
+          <HeroPanel />
         </div>
       </section>
 
-      <section className="px-4 py-14 bg-muted/40">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-3">
-            Three things that bring in customers
-          </h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Being good at what you do is not enough if people cannot find you, or find a competitor
-            with better reviews first.
-          </p>
-          <div className="grid md:grid-cols-3 gap-5">
+      <div className="max-w-6xl mx-auto px-4 py-14 sm:py-20 space-y-16 sm:space-y-24">
+        <section aria-labelledby="outcomes" className="space-y-8">
+          <div className="max-w-2xl space-y-3">
+            <p className="eyebrow">What we do</p>
+            <h2 id="outcomes" className="text-3xl sm:text-4xl font-semibold">
+              Three things that bring in customers
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Being good at what you do is not enough if people cannot find you, or find a
+              competitor with better reviews first.
+            </p>
+          </div>
+          <ul className="grid gap-4 md:grid-cols-3">
             {outcomes.map((o) => (
-              <div key={o.title} className="rounded-2xl border border-border bg-card p-6">
-                <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center mb-4">
-                  <o.icon className="w-5 h-5 text-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{o.title}</h3>
-                <p className="text-muted-foreground">{o.text}</p>
-              </div>
+              <li key={o.title} className="card p-6 sm:p-7">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold-soft ring-1 ring-primary/40">
+                  <o.icon className="h-5 w-5 text-primary-ink" aria-hidden />
+                </span>
+                <h3 className="mt-5 text-xl font-semibold">{o.title}</h3>
+                <p className="mt-2 text-muted-foreground">{o.text}</p>
+              </li>
             ))}
-          </div>
-        </div>
-      </section>
+          </ul>
+        </section>
 
-      <section id="how" className="px-4 py-14">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-10">How it works</h2>
-          <ol className="grid md:grid-cols-3 gap-5">
+        <section id="how" aria-labelledby="how-h" className="space-y-8 scroll-mt-24">
+          <div className="max-w-2xl space-y-3">
+            <p className="eyebrow">Three steps</p>
+            <h2 id="how-h" className="text-3xl sm:text-4xl font-semibold">
+              How it works
+            </h2>
+          </div>
+          <ol className="grid gap-4 md:grid-cols-3">
             {steps.map((s, i) => (
-              <li key={s.title} className="rounded-2xl border border-border p-6">
-                <span className="inline-flex w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold items-center justify-center mb-3">
+              <li key={s.title} className="rounded-3xl border border-border bg-secondary/60 p-6">
+                <span className="font-display text-5xl font-semibold tabular-nums leading-none text-primary-ink">
                   {i + 1}
                 </span>
-                <h3 className="text-lg font-semibold mb-2">{s.title}</h3>
-                <p className="text-muted-foreground">{s.text}</p>
+                <h3 className="mt-4 text-xl font-semibold">{s.title}</h3>
+                <p className="mt-2 text-muted-foreground">{s.text}</p>
               </li>
             ))}
           </ol>
-        </div>
-      </section>
+        </section>
 
-      <section id="google-business-profile" className="px-4 py-14 bg-muted/40">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-semibold text-center mb-3">
-            Connect your Google Business Profile
-          </h2>
-          <p className="text-center text-muted-foreground mb-10">
-            Run your Google reviews and profile from one place, with your permission.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {googleFeatures.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border bg-card p-6">
-                <f.icon className="w-6 h-6 mb-3" />
-                <h3 className="font-semibold mb-2">{f.title}</h3>
-                <p className="text-base text-muted-foreground">{f.text}</p>
-              </div>
-            ))}
+        <section
+          id="google-business-profile"
+          aria-labelledby="gbp-h"
+          className="surface-navy rounded-[2rem] p-6 sm:p-10 lg:p-12 shadow-[var(--shadow-lift)] space-y-8 scroll-mt-24"
+        >
+          <div className="max-w-2xl space-y-3">
+            <p className="eyebrow !text-primary">With your permission</p>
+            <h2 id="gbp-h" className="text-3xl sm:text-4xl font-semibold text-white">
+              Connect your Google Business Profile
+            </h2>
+            <p className="text-lg text-white/85">
+              Run your Google reviews and profile from one place, with your permission.
+            </p>
           </div>
-          <p className="text-center text-base text-muted-foreground mt-8 max-w-2xl mx-auto">
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {googleFeatures.map((f) => (
+              <li key={f.title} className="rounded-2xl bg-white/[0.07] p-5 ring-1 ring-white/15">
+                <f.icon className="h-6 w-6 text-primary" aria-hidden />
+                <h3 className="mt-3 text-lg font-semibold text-white">{f.title}</h3>
+                <p className="mt-1.5 text-white/85">{f.text}</p>
+              </li>
+            ))}
+          </ul>
+          <p className="max-w-2xl text-white/85">
             You connect with your own Google account and can disconnect at any time. Read how we
             handle Google data in our{" "}
-            <Link to="/privacy" className="underline underline-offset-2 text-foreground">
+            <Link to="/privacy" className="font-semibold text-white underline underline-offset-2">
               Privacy Policy
             </Link>
             , or see{" "}
             <Link
               to="/google-business-profile"
-              className="underline underline-offset-2 text-foreground"
+              className="font-semibold text-white underline underline-offset-2"
             >
               how the Google connection works
             </Link>
             .
           </p>
-        </div>
-      </section>
+        </section>
 
-      <section className="px-4 py-14">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h2 className="text-3xl font-semibold mb-3">Reviews on the counter, not just online</h2>
-            <p className="text-muted-foreground mb-4">
+        <section aria-labelledby="cards-h" className="grid gap-8 md:grid-cols-2 md:items-center">
+          <div className="space-y-4">
+            <p className="eyebrow">Review cards</p>
+            <h2 id="cards-h" className="text-3xl sm:text-4xl font-semibold">
+              Reviews on the counter, not just online
+            </h2>
+            <p className="text-lg text-muted-foreground">
               Tap-and-scan review cards and table stands send happy customers straight to your
               Google review page. One scan, one tap, done. Already have RepSuites cards? They keep
               working.
             </p>
-            <Link
-              to="/cards"
-              className="inline-flex items-center min-h-11 font-semibold underline underline-offset-2"
-            >
+            <Link to="/cards" className="btn btn-ghost">
               About review cards
             </Link>
           </div>
-          <div className="rounded-2xl border border-border bg-card p-8 flex items-center gap-4">
-            <QrCode className="w-16 h-16 shrink-0" />
+          <div className="card flex items-center gap-5 p-6 sm:p-8">
+            <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gold-soft ring-1 ring-primary/40">
+              <QrCode className="h-12 w-12 text-navy" aria-hidden />
+            </span>
             <p className="text-muted-foreground">
               Customers scan, rate you and land on Google ready to post. You see every scan in your
               monthly report.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="check" className="px-4 py-16 bg-muted/40">
-        <div className="max-w-xl mx-auto">
-          <h2 className="text-3xl font-semibold text-center mb-2">
-            Get your free visibility check
-          </h2>
-          <p className="text-center text-muted-foreground mb-8">
-            See where you show up on Google Maps across your area, how your reviews compare, and
-            whether AI assistants mention you. We send it within 2 working days.
-          </p>
+        <section
+          id="check"
+          aria-labelledby="check-h"
+          className="grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:items-start scroll-mt-24"
+        >
+          <div className="space-y-4 lg:pt-4">
+            <p className="eyebrow">Free, no card needed</p>
+            <h2 id="check-h" className="text-3xl sm:text-4xl font-semibold">
+              Get your free visibility check
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              See where you show up on Google Maps across your area, how your reviews compare, and
+              whether AI assistants mention you. We send it within 2 working days.
+            </p>
+          </div>
           <CheckForm />
-        </div>
-      </section>
+        </section>
+      </div>
     </PublicLayout>
+  );
+}
+
+// A calm summary of the three outcomes. Decorative only, no invented numbers.
+function HeroPanel() {
+  return (
+    <div className="relative mx-auto w-full max-w-md" aria-hidden="true">
+      <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-primary/25 via-transparent to-navy/20 blur-2xl" />
+      <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-lift)]">
+        <div className="surface-navy px-5 py-4">
+          <p className="text-sm font-bold uppercase tracking-[0.08em] text-primary">
+            Your monthly report
+          </p>
+          <p className="mt-1 font-display text-xl font-semibold text-white">
+            Found, chosen, recommended
+          </p>
+        </div>
+        <div className="space-y-3 p-4 sm:p-5">
+          {outcomes.map((o) => (
+            <div
+              key={o.title}
+              className="flex items-center gap-4 rounded-2xl border border-border bg-background p-4"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-soft ring-1 ring-primary/40">
+                <o.icon className="h-5 w-5 text-primary-ink" />
+              </span>
+              <div className="flex-1 space-y-2">
+                <p className="font-bold">{o.title}</p>
+                <div className="h-2.5 w-4/5 rounded-full bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -259,23 +322,24 @@ function CheckForm() {
   };
   const field = (k: keyof typeof f, label: string, type = "text", required = true) => (
     <label className="block space-y-1">
-      <span className="text-base font-semibold">{label}</span>
+      <span className="text-base font-bold">{label}</span>
       <input
         type={type}
+        spellCheck={type === "email" ? false : undefined}
         name={k}
         required={required}
         value={f[k]}
         onChange={(e) => setF({ ...f, [k]: e.target.value })}
         autoComplete={AUTO[k]}
         inputMode={type === "email" ? "email" : type === "tel" ? "tel" : undefined}
-        className="w-full rounded-lg border border-input bg-background px-3 py-2.5 min-h-11 text-base"
+        className="field text-base"
       />
     </label>
   );
   if (done)
     return (
-      <div role="status" className="rounded-2xl border border-border bg-card p-6 text-center">
-        <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
+      <div role="status" className="card p-6 sm:p-8 text-center">
+        <CheckCircle2 className="w-10 h-10 mx-auto mb-3 text-success" aria-hidden />
         <p className="font-semibold">Thanks, we have your details.</p>
         <p className="text-base text-muted-foreground">
           Your visibility check will arrive by email within 2 working days.
@@ -284,7 +348,7 @@ function CheckForm() {
     );
   return (
     <form
-      className="rounded-2xl border border-border bg-card p-6 space-y-4"
+      className="card p-5 sm:p-8 space-y-4"
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
@@ -337,6 +401,7 @@ function CheckForm() {
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
+        aria-label="Leave this empty"
         className="hidden"
         value={f.website}
         onChange={(e) => setF({ ...f, website: e.target.value })}
@@ -346,17 +411,13 @@ function CheckForm() {
           {err}
         </p>
       )}
-      <button
-        type="submit"
-        disabled={busy}
-        className="w-full btn btn-gold rounded-full py-3 inline-flex items-center justify-center gap-2 disabled:opacity-60"
-      >
-        {busy && <Loader2 className="w-4 h-4 animate-spin" />}
+      <button type="submit" disabled={busy} className="btn btn-gold btn-lg w-full">
+        {busy && <Loader2 className="w-5 h-5 animate-spin" aria-hidden />}
         Send me my free check
       </button>
       <p className="text-base text-muted-foreground text-center">
         We use your details only to send your check and follow up about it. See our{" "}
-        <Link to="/privacy" className="underline">
+        <Link to="/privacy" className="underline underline-offset-2 text-foreground">
           Privacy Policy
         </Link>
         .

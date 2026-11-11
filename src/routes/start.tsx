@@ -26,8 +26,7 @@ export const Route = createFileRoute("/start")({
   component: Start,
 });
 
-const field =
-  "w-full rounded-xl border border-input bg-background px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/40";
+const field = "field text-base";
 
 const PERKS = [
   "Your own review page and QR code",
@@ -108,30 +107,39 @@ function Start() {
 
   return (
     <PublicLayout>
-      <section className="px-4 py-6 md:py-16">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-[1fr_1.1fr] gap-10 items-start">
+      <section
+        aria-labelledby="start-h1"
+        className="px-4 py-6 md:py-20 bg-[radial-gradient(90%_60%_at_0%_0%,var(--gold-soft),transparent_65%)]"
+      >
+        <div className="max-w-6xl mx-auto grid md:grid-cols-[1fr_1.1fr] gap-10 lg:gap-14 items-start">
           <div className="order-2 md:order-1 md:pt-6">
-            <p className="text-base font-semibold text-primary-ink">Free for ever</p>
-            <h1 className="mt-2 text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
-              Get more Google reviews, starting today
+            <p className="eyebrow">
+              <span className="h-px w-6 bg-primary-ink" aria-hidden /> Free for ever
+            </p>
+            <h1 id="start-h1" className="mt-3 text-4xl sm:text-5xl font-semibold leading-[1.08]">
+              Get more Google reviews,{" "}
+              <span className="italic text-primary-ink">starting today</span>
             </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
+            <p className="mt-4 text-lg sm:text-xl text-muted-foreground">
               Set up in 2 minutes. No card needed.
             </p>
-            <ul className="mt-6 space-y-3">
+            <ul className="mt-8 grid gap-3">
               {PERKS.map((p) => (
-                <li key={p} className="flex gap-3 items-start">
-                  <span className="mt-0.5 rounded-full bg-emerald-600 text-white p-1">
-                    <Check className="w-3.5 h-3.5" />
+                <li key={p} className="card flex gap-4 items-center p-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gold-soft ring-1 ring-primary/40">
+                    <Check className="h-5 w-5 text-primary-ink" aria-hidden />
                   </span>
                   <span className="text-base">{p}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-6 text-base text-muted-foreground">
+            <p className="mt-8 rounded-2xl border border-border bg-secondary/60 p-5 text-base text-muted-foreground">
               Want more later? RepSuites Growth writes your review replies, asks customers for
               reviews and gets you higher on Google Maps.{" "}
-              <Link to="/pricing" className="underline underline-offset-2">
+              <Link
+                to="/pricing"
+                className="font-semibold text-foreground underline underline-offset-2"
+              >
                 See prices
               </Link>
             </p>
@@ -139,15 +147,15 @@ function Start() {
 
           <form
             onSubmit={submit}
-            className="order-1 md:order-2 rounded-3xl border border-border bg-card p-6 md:p-8 shadow-sm space-y-4"
+            className="order-1 md:order-2 card rounded-3xl p-5 sm:p-8 shadow-[var(--shadow-lift)] space-y-5"
           >
-            <h2 className="text-xl font-semibold">Create your free account</h2>
+            <h2 className="text-2xl sm:text-3xl font-semibold">Create your free account</h2>
             <p className="-mt-2 text-base text-muted-foreground">
               Then print your review QR card. Free, no card needed.
             </p>
             <div id={fromReport ? undefined : "s-business"} tabIndex={fromReport ? undefined : -1}>
               {fromReport ? (
-                <label className="text-base font-semibold block mb-1.5" htmlFor="s-business">
+                <label className="text-base font-bold block mb-1.5" htmlFor="s-business">
                   Your business
                 </label>
               ) : null}
@@ -172,7 +180,7 @@ function Start() {
               <FieldError id="s-business-err" message={errFor("business")} />
             </div>
             <div>
-              <label className="text-base font-semibold block mb-1.5" htmlFor="s-name">
+              <label className="text-base font-bold block mb-1.5" htmlFor="s-name">
                 Your name
               </label>
               <input
@@ -187,12 +195,13 @@ function Start() {
               <FieldError id="s-name-err" message={errFor("name")} />
             </div>
             <div>
-              <label className="text-base font-semibold block mb-1.5" htmlFor="s-email">
+              <label className="text-base font-bold block mb-1.5" htmlFor="s-email">
                 Email
               </label>
               <input
                 id="s-email"
                 type="email"
+                spellCheck={false}
                 inputMode="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -204,7 +213,7 @@ function Start() {
               <FieldError id="s-email-err" message={errFor("email")} />
             </div>
             <div>
-              <label className="text-base font-semibold block mb-1.5" htmlFor="s-pass">
+              <label className="text-base font-bold block mb-1.5" htmlFor="s-pass">
                 Choose a password
               </label>
               <input
@@ -228,16 +237,20 @@ function Start() {
               autoComplete="off"
               value={trap}
               onChange={(e) => setTrap(e.target.value)}
+              aria-label="Leave this empty"
               className="hidden"
               name="website"
             />
-            <label className="flex gap-3 items-start text-base py-2 min-h-11">
+            <label
+              htmlFor="s-agree"
+              className="flex gap-3 items-start rounded-xl border border-border bg-background px-4 py-3 min-h-12 text-base has-[:checked]:bg-gold-soft has-[:checked]:border-navy/60"
+            >
               <input
                 id="s-agree"
                 type="checkbox"
                 checked={agree}
                 onChange={(e) => setAgree(e.target.checked)}
-                className="mt-0.5 w-6 h-6 shrink-0"
+                className="mt-0.5 w-6 h-6 shrink-0 accent-[var(--navy)]"
                 aria-invalid={errFor("agree") ? true : undefined}
                 aria-describedby={errFor("agree") ? "s-agree-err" : undefined}
               />
@@ -264,17 +277,16 @@ function Start() {
                 )}
               </p>
             )}
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full btn btn-gold rounded-full py-4 text-lg flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {busy && <Loader2 className="w-5 h-5 animate-spin" />}
-              {busy ? "Setting up your account" : "Start free"}
+            <button type="submit" disabled={busy} className="btn btn-gold btn-lg w-full">
+              {busy && <Loader2 className="w-5 h-5 animate-spin" aria-hidden />}
+              {busy ? "Setting up your account…" : "Start free"}
             </button>
             <p className="text-base text-center text-muted-foreground">
               No card needed. Already have an account?{" "}
-              <Link to="/login" className="underline">
+              <Link
+                to="/login"
+                className="font-semibold text-foreground underline underline-offset-2"
+              >
                 Sign in
               </Link>
             </p>
