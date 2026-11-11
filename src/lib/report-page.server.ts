@@ -686,7 +686,7 @@ function presentationClose(
   const fixUrl = extra?.fixit ? `/fix?r=${encodeURIComponent(extra.token)}` : "";
   const fixLink = (title: string) =>
     fixUrl
-      ? `<p class="noprint card-actions"><a class="btn btn-primary fixit-cta" href="${fixUrl}">Fix this for me</a><a class="btn btn-quiet fixit" href="${fixUrl}">Ask us to fix this</a></p>`
+      ? `<p class="noprint card-actions"><a class="btn btn-primary fixit-cta" href="${fixUrl}">Fix this for me</a></p>`
       : wa
         ? `<p class="noprint card-actions"><a class="wa fixit btn btn-wa" href="https://wa.me/${wa}?text=${encodeURIComponent(`Hi, I've seen the report for ${b.name}. Can you fix this for me: ${title}`)}">Ask us to fix this</a></p>`
         : "";
