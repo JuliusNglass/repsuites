@@ -200,6 +200,50 @@ a.fixit{border-radius:999px!important}
 .report-aside .card{padding:18px}.report-aside a{font-weight:600;color:var(--ink-2)}
 @media(max-width:620px){body{font-size:16px}.hero{padding:30px 22px 24px;border-radius:22px}.hero .biz{font-size:2rem}h2{font-size:1.35rem;margin-top:44px}.card{padding:18px}.report-tools{width:100%;border-radius:18px}.switch-label{min-width:0;width:100%}}
 @media print{.hero{background:var(--navy)!important;color:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;padding:10mm!important;border-radius:6mm}.hero::after{display:none}.metric{print-color-adjust:exact;-webkit-print-color-adjust:exact}h2{margin-top:0}.chapter-head{margin-top:0}}
+
+/* ===== Finish layer: one type scale, one card system, one button system ===== */
+:root{--ink:#0b1424;--ink-2:#334155;--ink-3:#526175;--line:#e3e8ef;--r-card:16px;--r-btn:12px;--sh-card:0 1px 2px rgba(11,20,36,.05),0 4px 16px rgba(11,20,36,.05)}
+body{font-size:17px;line-height:1.55;text-align:left}
+p,li,td{line-height:1.55}
+h2{font-size:1.5rem;line-height:1.25;font-weight:750}
+h3{font-size:1.125rem;line-height:1.35;font-weight:700}
+.card,.audit-card,.top3 .card,.stage>.card{border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--sh-card);padding:22px;margin:0 0 16px;background:#fff}
+.top3{gap:16px;align-items:stretch}.top3 .card{display:flex;flex-direction:column}.top3 .card .card-actions{margin-top:auto;padding-top:14px}
+.stage{gap:16px}.stage>.card{display:flex;flex-direction:column}.stage>.card .card-actions{margin-top:auto}
+.stage .when{display:inline-block;font-size:.875rem;font-weight:700;color:var(--ink-2);background:#eef1f5;border-radius:999px;padding:3px 10px;margin-bottom:4px;align-self:flex-start}
+.chapter-open{margin:64px 0 20px;padding-top:20px;border-top:1px solid var(--line)}#summary.chapter-open{border-top:0;padding-top:0}
+.chapter-open .eyebrow{font-size:.875rem;font-weight:700;letter-spacing:.06em;color:var(--ink-3)}
+.chapter-open h2{font-size:1.75rem;line-height:1.2;margin-top:4px}
+h3.sub{font-size:1.25rem;margin:32px 0 12px}
+.small,.muted{font-size:1rem;color:var(--ink-3)}
+/* Buttons */
+.btn,a.book,.book{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:10px 18px;border-radius:var(--r-btn);font:inherit;font-size:1rem;font-weight:700;line-height:1.2;text-decoration:none;cursor:pointer;border:2px solid transparent;text-align:center}
+.btn-primary{background:var(--navy);color:#fff!important;border-color:var(--navy)}.btn-primary:hover{filter:brightness(1.15)}
+.btn-quiet,a.book,.book{background:#fff;color:var(--ink)!important;border-color:#94a3b8}.btn-quiet:hover,a.book:hover{background:#f4f6f9}
+.btn-wa{background:#fff;color:#065f46!important;border-color:#25d366}.btn-wa:hover{background:#ecfdf5}
+a.fixit{border-radius:var(--r-btn)!important}
+.card-actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.cta{border-radius:var(--r-btn);color:#0b1424}
+/* Tables */
+table{font-size:1rem;border-collapse:separate;border-spacing:0;width:100%}
+th{font-size:.875rem;font-weight:700;color:var(--ink-2);background:#f6f8fb;letter-spacing:.01em}
+th:first-child{border-top-left-radius:10px}th:last-child{border-top-right-radius:10px}
+td,th{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tr.you td{background:#fff7e0;font-weight:700}tr.you td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
+.card table{margin:4px 0 0}
+table.kv td,table.kv th{text-align:left!important}table.kv tbody th,table.kv tr>th:first-child{width:38%;background:#f6f8fb;color:var(--ink-2);font-size:.95rem;border-radius:0}table.kv tr:first-child th{background:#eef1f5}
+.table-wrap,.card:has(>table){overflow-x:auto}
+/* Map switch: wraps cleanly, equal-height chips, nothing cut off */
+.switch{align-items:flex-start}
+.switch-label{width:100%;min-width:0;font-size:.875rem;letter-spacing:.04em}
+.switch .kw{display:flex;flex-wrap:wrap;gap:8px;overflow:visible;background:transparent;border-radius:0;padding:0;max-width:100%}
+.switch .kw button{flex:0 1 auto;white-space:normal;text-align:left;min-height:44px;line-height:1.3;padding:10px 16px;border:1px solid #94a3b8;border-radius:var(--r-btn);background:#fff;color:var(--ink);box-shadow:none;max-width:100%}
+.switch .kw button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.switch .kw button:hover:not(.on){background:#f4f6f9}
+@media(max-width:620px){body{font-size:16px}.chapter-open h2{font-size:1.45rem}h2{font-size:1.3rem}.card,.audit-card,.top3 .card,.stage>.card{padding:18px}.switch .kw button{flex:1 1 100%}.card-actions .btn{flex:1 1 100%}}
+@media print{.chapter-open{border-top:0;padding-top:0}.card,.audit-card{box-shadow:none!important;border:1px solid #cbd5e1!important;border-radius:8px!important}th{background:#f1f5f9!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}.card-actions,.btn{display:none!important}}
 `;
 
 const FLASH: Record<string, string> = {
@@ -638,10 +682,14 @@ function presentationClose(
   // "Ask us to fix this" opens WhatsApp to the agency (or RepSuites sales)
   // with the fix already typed, so the owner never has to learn how.
   const wa = salesWhatsApp(extra?.branding?.phone || undefined);
+  // Free-check leads go to the Fix-It Pack page instead of WhatsApp.
+  const fixUrl = extra?.fixit ? `/fix?r=${encodeURIComponent(extra.token)}` : "";
   const fixLink = (title: string) =>
-    wa
-      ? `<p class="noprint" style="margin:10px 0 0"><a class="wa fixit" href="https://wa.me/${wa}?text=${encodeURIComponent(`Hi, I've seen the report for ${b.name}. Can you fix this for me: ${title}`)}" style="display:inline-block;color:#065f46;border:2px solid #25d366;border-radius:12px;padding:10px 16px;min-height:44px;text-decoration:none;font-weight:700;margin-top:6px">Ask us to fix this</a></p>`
-      : "";
+    fixUrl
+      ? `<p class="noprint card-actions"><a class="btn btn-primary fixit-cta" href="${fixUrl}">Fix this for me</a><a class="btn btn-quiet fixit" href="${fixUrl}">Ask us to fix this</a></p>`
+      : wa
+        ? `<p class="noprint card-actions"><a class="wa fixit btn btn-wa" href="https://wa.me/${wa}?text=${encodeURIComponent(`Hi, I've seen the report for ${b.name}. Can you fix this for me: ${title}`)}">Ask us to fix this</a></p>`
+        : "";
   const date = esc(r.createdAt);
   const irrelevantNames = r.rivals
     .filter((x) => !relevantMapCompetitor({ title: x.name, category: x.kind }, r.maps.keyword))
@@ -852,7 +900,7 @@ export function profileEvidence(r: Report): string {
         ["Review recency and sample velocity", reviewEvidence],
       ]
     : [];
-  return `<h2>What Google shows about your business</h2><div class="card"><p class="small">Checked ${esc(r.createdAt)} using information customers can see on Google. Some account-only details cannot be checked here.</p><table><tr><th>Check</th><th>What we found</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>What you should confirm</h3><p class="small">Please confirm that you control the profile, that the business is not restricted, and that your services, review replies and posts are up to date.</p><p class="small">Your review numbers and rating show what customers see. They do not tell us how many enquiries you receive.</p></div>`;
+  return `<h2>What Google shows about your business</h2><div class="card"><p class="small">Checked ${esc(r.createdAt)} using information customers can see on Google. Some account-only details cannot be checked here.</p><table class="kv"><tr><th>Check</th><th>What we found</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>What you should confirm</h3><p class="small">Please confirm that you control the profile, that the business is not restricted, and that your services, review replies and posts are up to date.</p><p class="small">Your review numbers and rating show what customers see. They do not tell us how many enquiries you receive.</p></div>`;
 }
 
 export function websiteEvidence(r: Report): string {
@@ -1010,7 +1058,7 @@ export function websiteEvidence(r: Report): string {
 }
 
 // Chapter 1: the three biggest fixes, from the same evidence as the plan.
-export function topThree(r: Report): string {
+export function topThree(r: Report, fixToken: string | null = null): string {
   const items: { title: string; why: string; big: boolean }[] = [];
   for (const f of r.fixes ?? [])
     items.push({ title: f.title, why: f.why, big: f.priority === "high" });
@@ -1028,7 +1076,7 @@ export function topThree(r: Report): string {
   return `<div class="top3">${top
     .map(
       (i) =>
-        `<div class="card"><span class="pill ${i.big ? "big" : "improve"}">${i.big ? "Big impact" : "Quick win"}</span><h3>${esc(i.title)}</h3><p>${esc(i.why)}</p></div>`,
+        `<div class="card"><span class="pill ${i.big ? "big" : "improve"}">${i.big ? "Big impact" : "Quick win"}</span><h3>${esc(i.title)}</h3><p>${esc(i.why)}</p>${fixToken ? `<p class="noprint card-actions"><a class="btn btn-primary fixit-cta" href="/fix?r=${encodeURIComponent(fixToken)}">Fix this for me</a></p>` : ""}</div>`,
     )
     .join(
       "",
@@ -1242,7 +1290,7 @@ ${executiveBrief(r, view)}
 <p class="muted">${esc(b.address)} &middot; Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
 <div class="report-shell"><div class="report-main">
 ${chapter(1, "summary", "Do these three things first")}
-${topThree(r)}
+${topThree(r, extra?.fixit ? extra.token : null)}
 ${extra?.fixit ? fixitOffer(extra.token) : ""}
 ${headline}
 
