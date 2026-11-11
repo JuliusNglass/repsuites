@@ -193,7 +193,7 @@ export function PostPlanCard({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h3 className="font-bold">Change background</h3>
+              <h3 className="text-base font-bold">Change background</h3>
               <button
                 type="button"
                 aria-label="Close"
@@ -302,7 +302,7 @@ export function PostPlanCard({
       )}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="text-base font-bold flex items-center gap-1.5">
+          <h2 className="text-lg font-bold leading-snug flex items-center gap-1.5">
             <Sparkles className="w-4 h-4" /> Plan my month
           </h2>
           {hasCards && look && (

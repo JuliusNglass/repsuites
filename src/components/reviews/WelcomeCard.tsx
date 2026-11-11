@@ -137,7 +137,7 @@ export function WelcomeCard({
       {showUpgrade && (
         <section className="rounded-2xl bg-primary/10 border border-primary/30 p-4 sm:p-5 flex flex-col sm:flex-row gap-4 sm:items-center">
           <div className="flex-1">
-            <h2 className="font-bold flex items-center gap-1.5">
+            <h2 className="text-lg font-bold leading-snug flex items-center gap-1.5">
               <Sparkles className="w-4 h-4" /> Let RepSuites do the work
             </h2>
             <p className="text-base text-muted-foreground mt-1">

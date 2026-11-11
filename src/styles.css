@@ -145,8 +145,22 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     /* Dyslexia-friendly defaults (British Dyslexia Association style guide). */
-    line-height: 1.5;
+    line-height: 1.6;
     letter-spacing: 0.01em;
+    font-size: 1rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    line-height: 1.3;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   /* A clear, high-contrast focus ring for keyboard users everywhere. */

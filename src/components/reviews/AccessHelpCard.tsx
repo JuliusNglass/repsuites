@@ -94,7 +94,7 @@ export function AccessHelpCard() {
     });
 
   return (
-    <section id="access" className="rounded-xl border border-border bg-card p-4 space-y-3">
+    <section id="access" className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       <div>
         <h3 className="font-bold flex items-center gap-1.5">
           <KeyRound className="w-4 h-4" /> Give us access to your Google profile

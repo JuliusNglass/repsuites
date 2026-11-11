@@ -77,10 +77,10 @@ export function RankingCard() {
     await load();
   };
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="text-base font-bold">Where you show on Google Maps</h2>
+          <h2 className="text-lg font-bold leading-snug">Where you show on Google Maps</h2>
           <p className="text-base text-muted-foreground">
             {s.enabled
               ? `Each search is checked once a week from a ${s.gridSize} by ${s.gridSize} grid of points ${distanceLabel(s.spacingKm, miles)} apart around your business.`

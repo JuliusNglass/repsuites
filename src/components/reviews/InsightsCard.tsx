@@ -56,10 +56,10 @@ export function InsightsCard() {
   const f = data?.facts;
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4 space-y-4">
+    <section className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-bold">What your customers are saying</h3>
+          <h3 className="text-base font-bold">What your customers are saying</h3>
           <p className="text-base text-muted-foreground">
             {data
               ? `From reviews and private messages in the last ${(f?.periodDays ?? 90) >= 365 ? "12 months" : `${f?.periodDays ?? 90} days`}. Updated ${when(data.createdAt)}.`

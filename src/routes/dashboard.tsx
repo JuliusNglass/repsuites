@@ -209,7 +209,7 @@ function Dashboard() {
 
       {active && (
         <nav className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-          <div className="relative max-w-4xl mx-auto">
+          <div className="relative max-w-3xl mx-auto">
             <div
               ref={tabBar}
               onScroll={checkTabs}
@@ -221,7 +221,7 @@ function Dashboard() {
                   type="button"
                   onClick={() => setTab(t.id)}
                   aria-current={tab === t.id ? "page" : undefined}
-                  className={`shrink-0 px-3 py-3 text-base font-semibold border-b-2 ${
+                  className={`shrink-0 min-h-12 px-4 py-3 text-base font-semibold border-b-[3px] transition-colors ${
                     tab === t.id
                       ? "border-primary text-foreground"
                       : "border-transparent text-muted-foreground"
@@ -246,9 +246,11 @@ function Dashboard() {
         </nav>
       )}
 
-      <main className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold">{active?.name ?? "Welcome back"}</h1>
+      <main className="max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-6">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            {active?.name ?? "Welcome back"}
+          </h1>
           <p className="text-base text-muted-foreground">
             Signed in as {s.email}
             {s.agency ? " (Accelur8 team)" : ""}
@@ -268,12 +270,16 @@ function Dashboard() {
         )}
         {active && tab === "reviews" && (
           <>
-            <div className="inline-flex rounded-lg border border-border p-0.5 text-base font-semibold">
+            <div
+              role="group"
+              aria-label="Which reviews to show"
+              className="inline-flex rounded-xl bg-muted p-1 text-base font-semibold"
+            >
               <button
                 type="button"
                 onClick={() => setInbox("google")}
                 aria-pressed={inbox === "google"}
-                className={`rounded-md px-3 py-1.5 ${inbox === "google" ? "bg-muted" : ""}`}
+                className={`min-h-10 rounded-lg px-4 py-1.5 transition-colors ${inbox === "google" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
               >
                 Google reviews
               </button>
@@ -281,7 +287,7 @@ function Dashboard() {
                 type="button"
                 onClick={() => setInbox("private")}
                 aria-pressed={inbox === "private"}
-                className={`rounded-md px-3 py-1.5 ${inbox === "private" ? "bg-muted" : ""}`}
+                className={`min-h-10 rounded-lg px-4 py-1.5 transition-colors ${inbox === "private" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
               >
                 Private messages
               </button>
