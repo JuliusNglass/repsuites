@@ -1,6 +1,6 @@
 // Meta Pixel (browser side). The Pixel ID is public, so it lives in code.
 // Leave it blank to switch all tracking off.
-export const META_PIXEL_ID = "";
+export const META_PIXEL_ID = "2255833958277551";
 
 declare global {
   interface Window {
