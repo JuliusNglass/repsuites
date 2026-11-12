@@ -24,6 +24,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiCheckFitRouteImport } from './routes/api.check-fit'
+import { Route as ApiDemoLeadRouteImport } from './routes/api.demo-lead'
 import { Route as ApiProspectConnectRouteImport } from './routes/api.prospect-connect'
 import { Route as ApiReportVideoRouteImport } from './routes/api.report-video'
 import { Route as ApiUnsubscribeRouteImport } from './routes/api.unsubscribe'
@@ -127,6 +128,11 @@ const TermsRoute = TermsRouteImport.update({
 const ApiCheckFitRoute = ApiCheckFitRouteImport.update({
   id: '/api/check-fit',
   path: '/api/check-fit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDemoLeadRoute = ApiDemoLeadRouteImport.update({
+  id: '/api/demo-lead',
+  path: '/api/demo-lead',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProspectConnectRoute = ApiProspectConnectRouteImport.update({
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
+  '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
@@ -342,6 +349,7 @@ export interface FileRoutesByTo {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
+  '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
@@ -389,6 +397,7 @@ export interface FileRoutesById {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
+  '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
@@ -437,6 +446,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/check-fit'
+    | '/api/demo-lead'
     | '/api/prospect-connect'
     | '/api/report-video'
     | '/api/unsubscribe'
@@ -483,6 +493,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/check-fit'
+    | '/api/demo-lead'
     | '/api/prospect-connect'
     | '/api/report-video'
     | '/api/unsubscribe'
@@ -529,6 +540,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/check-fit'
+    | '/api/demo-lead'
     | '/api/prospect-connect'
     | '/api/report-video'
     | '/api/unsubscribe'
@@ -576,6 +588,7 @@ export interface RootRouteChildren {
   StartRoute: typeof StartRoute
   TermsRoute: typeof TermsRoute
   ApiCheckFitRoute: typeof ApiCheckFitRoute
+  ApiDemoLeadRoute: typeof ApiDemoLeadRoute
   ApiProspectConnectRoute: typeof ApiProspectConnectRoute
   ApiReportVideoRoute: typeof ApiReportVideoRoute
   ApiUnsubscribeRoute: typeof ApiUnsubscribeRoute
@@ -709,6 +722,13 @@ declare module '@tanstack/react-router' {
       path: '/api/check-fit'
       fullPath: '/api/check-fit'
       preLoaderRoute: typeof ApiCheckFitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/demo-lead': {
+      id: '/api/demo-lead'
+      path: '/api/demo-lead'
+      fullPath: '/api/demo-lead'
+      preLoaderRoute: typeof ApiDemoLeadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/prospect-connect': {
@@ -956,6 +976,7 @@ const rootRouteChildren: RootRouteChildren = {
   StartRoute: StartRoute,
   TermsRoute: TermsRoute,
   ApiCheckFitRoute: ApiCheckFitRoute,
+  ApiDemoLeadRoute: ApiDemoLeadRoute,
   ApiProspectConnectRoute: ApiProspectConnectRoute,
   ApiReportVideoRoute: ApiReportVideoRoute,
   ApiUnsubscribeRoute: ApiUnsubscribeRoute,
