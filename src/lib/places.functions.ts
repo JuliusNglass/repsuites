@@ -135,6 +135,13 @@ export const suggestBusinesses = createServerFn({ method: "POST" })
       });
       if (suggestions.length >= 5) break;
     }
+    if (!suggestions.length)
+      console.error("suggestBusinesses: no results", {
+        text: t?.status,
+        textCount: tj.places?.length ?? 0,
+        auto: json.suggestions?.length ?? 0,
+        firstId: json.suggestions?.[0]?.placePrediction?.placeId?.slice(0, 12) ?? null,
+      });
     return { suggestions };
   });
 
