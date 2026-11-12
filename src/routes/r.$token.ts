@@ -24,6 +24,13 @@ export const Route = createFileRoute("/r/$token")({
         const token = String(params.token || "");
         if (!/^[A-Za-z0-9_-]{20,64}$/.test(token))
           return new Response(reportNotFound(), { status: 404, headers: HTML });
+        // /r/<token>?go=fix sends the owner straight to their Fix-It Pack page.
+        // GHL only stores the report link, so its texts use this shortcut.
+        if (new URL(request.url).searchParams.get("go") === "fix")
+          return new Response(null, {
+            status: 302,
+            headers: { Location: `/fix?r=${encodeURIComponent(token)}`, "Cache-Control": "no-store" },
+          });
         const r = await serviceRead<
           {
             report: Report | null;
