@@ -58,7 +58,14 @@ export const suggestBusinesses = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<{ suggestions: BusinessSuggestion[] }> => {
     const key = mapsKey();
-    if (!key || !(await verifyRequestOriginAsync())) return { suggestions: [] };
+    if (!key) {
+      console.error("suggestBusinesses: no maps key");
+      return { suggestions: [] };
+    }
+    if (!(await verifyRequestOriginAsync())) {
+      console.error("suggestBusinesses: origin check failed");
+      return { suggestions: [] };
+    }
     const ask = (businessesOnly: boolean) =>
       timedFetch("https://places.googleapis.com/v1/places:autocomplete", {
         method: "POST",
@@ -74,7 +81,14 @@ export const suggestBusinesses = createServerFn({ method: "POST" })
     let res = await ask(true);
     // If Google rejects the business-only filter, ask again without it.
     if (res && res.status === 400) res = await ask(false);
-    if (!res || !res.ok) return { suggestions: [] };
+    if (!res || !res.ok) {
+      console.error(
+        "suggestBusinesses: autocomplete failed",
+        res?.status,
+        (await res?.text().catch(() => ""))?.slice(0, 300),
+      );
+      return { suggestions: [] };
+    }
     const json = (await res.json().catch(() => ({}))) as {
       suggestions?: {
         placePrediction?: {
