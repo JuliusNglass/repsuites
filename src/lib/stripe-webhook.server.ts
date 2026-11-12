@@ -95,6 +95,20 @@ async function fixitPaid(session: any) {
   });
 }
 
+// A new RepSuites plan (paid or trial): tag the GHL contact so the next step
+// in the journey (SparkOps for cleaning firms) can follow. Best effort.
+async function tagPlanCustomer(session: any) {
+  const cust = session?.customer_details ?? {};
+  const email = String(cust.email ?? session?.customer_email ?? "").toLowerCase() || null;
+  const plan = String(session?.metadata?.plan ?? "").replace(/[^a-z0-9-]/gi, "").slice(0, 20);
+  const { addGhlTags } = await import("./ghl-lead.server");
+  await addGhlTags({
+    email,
+    phone: cust.phone ? String(cust.phone) : null,
+    tags: ["customer", "repsuites-customer", ...(plan ? [`repsuites-${plan}`] : [])],
+  }).catch(() => false);
+}
+
 async function shopPaid(session: any) {
   const orderId = String(session?.metadata?.order_id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(orderId)) return;
@@ -178,6 +192,7 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
         const sub = await stripe(`subscriptions/${obj.subscription}`);
         if (sub.ok) await saveSubscription(sub.data);
         if (obj.metadata?.plan === "managed") await managedBought(obj);
+        await tagPlanCustomer(obj);
       }
       // Monthly free trial: the card is saved, now make the subscription
       // (trial.server.ts). Trialing unlocks the plan straight away.
@@ -188,6 +203,7 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
         if (t?.ok) {
           await saveSubscription(t.sub);
           if (obj.metadata?.plan === "managed") await managedBought(obj, true);
+          await tagPlanCustomer(obj);
         } else if (t) {
           // Stripe will retry the webhook; record nothing so it runs again.
           console.warn(`Trial not started for ${String(obj.id)}: ${t.error}`);

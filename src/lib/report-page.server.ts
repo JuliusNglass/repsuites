@@ -1184,6 +1184,42 @@ function fixitOffer(token: string): string {
   return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to write these fixes for you?</h3><p style="margin:0 0 4px">For a one-off &pound;27 we write every fix above, ready to copy into Google, in minutes. 14-day money-back promise.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
 }
 
+// Free-check leads: two optional questions, asked after they have their
+// score (not on the check form). Answers tag their GHL contact so the right
+// follow-up runs. A cleaning team with an operations headache is offered a
+// SparkOps call straight away.
+function fitQuestions(token: string, cleaning: boolean): string {
+  const sizes: [string, string][] = [
+    ["solo", "Just me"],
+    ["2-5", "2 to 5"],
+    ["6-15", "6 to 15"],
+    ["16-25", "16 to 25"],
+    ["25+", "More than 25"],
+  ];
+  const heads: [string, string][] = cleaning
+    ? [
+        ["clients", "Getting the right clients"],
+        ["admin", "Admin and chasing"],
+        ["hiring", "Hiring and keeping cleaners"],
+        ["checking", "Checking the work is done right"],
+        ["other", "Something else"],
+      ]
+    : [
+        ["clients", "Getting more of the right customers"],
+        ["admin", "Admin and chasing"],
+        ["hiring", "Hiring and keeping staff"],
+        ["checking", "Keeping quality consistent"],
+        ["other", "Something else"],
+      ];
+  const who = cleaning ? "cleaners" : "people";
+  const book = "https://accelur8.accelur8clientwork.com/book?package=cleaning";
+  const opt = (name: string, type: string, [v, l]: [string, string]) =>
+    `<label class="fitopt"><input type="${type}" name="${name}" value="${v}"> <span>${esc(l)}</span></label>`;
+  return `<form id="fitq" class="card noprint" style="border:2px solid var(--report-primary,#0b1d3a)"><h3 style="margin:0 0 6px">Two quick questions so we can help properly</h3><p class="small" style="margin:0 0 12px">Optional. It takes 10 seconds.</p><fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:700;margin:0 0 8px">How many ${who} work in the business?</legend><div class="fitgrid">${sizes.map((x) => opt("s", "radio", x)).join("")}</div></fieldset><fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:700;margin:0 0 8px">What are your biggest headaches right now? Tick all that apply.</legend><div class="fitgrid">${heads.map((x) => opt("h", "checkbox", x)).join("")}</div></fieldset><button type="submit" class="cta" style="border:0;width:100%;cursor:pointer;font:inherit">Send</button><p id="fitmsg" class="small" role="status" style="margin:10px 0 0"></p></form>
+<style>.fitgrid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.fitopt{display:flex;align-items:center;gap:10px;min-height:48px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:12px;font-size:1rem;line-height:1.4;cursor:pointer}.fitopt input{width:20px;height:20px;flex:none;accent-color:var(--report-primary,#0b1d3a)}</style>
+<script>(function(){var f=document.getElementById("fitq"),m=document.getElementById("fitmsg");if(!f)return;f.addEventListener("submit",function(e){e.preventDefault();var s=f.querySelector('input[name="s"]:checked'),h=[].map.call(f.querySelectorAll('input[name="h"]:checked'),function(i){return i.value});if(!s||!h.length){m.textContent="Please pick a team size and at least one headache.";return;}var b=f.querySelector("button");b.disabled=true;m.textContent="Sending...";fetch("/api/check-fit",{method:"POST",body:JSON.stringify({t:${JSON.stringify(token)},s:s.value,h:h})}).then(function(r){return r.json()}).then(function(d){if(!d.ok)throw 0;f.innerHTML=d.sparkops&&${cleaning ? "true" : "false"}?'<h3 style="margin:0 0 6px">Thanks. With a team your size, there is a bigger win too.</h3><p style="margin:0 0 12px">SparkOps runs your jobs, cleaners, proof of every clean and pay in one app, set up for you. See it with your own business on a free 30-minute call.</p><a class="cta" href="${book}">Book a free 30-minute call</a>':'<h3 style="margin:0 0 6px">Thanks, that helps.</h3><p style="margin:0">We will keep our tips to what matters for a business like yours.</p>';}).catch(function(){b.disabled=false;m.textContent="That did not send. Please try again.";});});})();</script>`;
+}
+
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
   const b = r.business;
   const agency = agencyBrand(extra?.branding ?? undefined);
@@ -1292,6 +1328,7 @@ ${executiveBrief(r, view)}
 ${chapter(1, "summary", "Do these three things first")}
 ${topThree(r, extra?.fixit ? extra.token : null)}
 ${extra?.fixit ? fixitOffer(extra.token) : ""}
+${extra?.fixit ? fitQuestions(extra.token, /clean/i.test(r.maps?.keyword ?? "")) : ""}
 ${headline}
 
 ${chapter(2, "map", "Where customers can find you on Google Maps")}

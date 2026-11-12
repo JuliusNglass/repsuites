@@ -77,3 +77,17 @@ export function ghlLeadBody(p: GhlLeadInput) {
     website: p.reportUrl ?? undefined,
   };
 }
+
+// Asked on the report page after the free check (not on the check form), so
+// the form stays short. Returns the tags to add in GHL. A team of 2+ with an
+// operations headache is a SparkOps fit: "fit-sparkops" starts the SparkOps
+// call follow-up. Everyone else stays on the Fix-It Pack route.
+export function fitTags(size: Size | null, headaches: Headache[]): string[] {
+  const t: string[] = ["fit-answered"];
+  if (size) t.push(`size-${slug(size)}`);
+  for (const h of new Set(headaches)) t.push(`headache-${h}`);
+  const bigEnough = size !== null && size !== "solo";
+  const opsHeadache = headaches.some((h) => h === "admin" || h === "hiring" || h === "checking");
+  if (bigEnough && opsHeadache) t.push("fit-sparkops");
+  return t;
+}

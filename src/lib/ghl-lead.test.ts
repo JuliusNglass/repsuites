@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ghlLeadBody, ghlLeadTags, type GhlLeadInput } from "./ghl-lead";
+import { fitTags, ghlLeadBody, ghlLeadTags, type GhlLeadInput } from "./ghl-lead";
 
 const base: GhlLeadInput = {
   name: "Sam Jones",
@@ -53,5 +53,23 @@ describe("several headaches", () => {
   });
   it("sends an owner with only a clients headache to the Fix-It Pack", () => {
     expect(ghlLeadTags({ ...base, headaches: ["clients", "other"] })).toContain("route-fixit-pack");
+  });
+});
+
+describe("fitTags (report page questions)", () => {
+  it("flags a team with an operations headache as a SparkOps fit", () => {
+    expect(fitTags("6-15", ["hiring", "clients"])).toEqual([
+      "fit-answered",
+      "size-6-15",
+      "headache-hiring",
+      "headache-clients",
+      "fit-sparkops",
+    ]);
+  });
+  it("keeps a solo owner on the Fix-It Pack route", () => {
+    expect(fitTags("solo", ["admin"])).not.toContain("fit-sparkops");
+  });
+  it("keeps a team whose only headache is clients on the Fix-It Pack route", () => {
+    expect(fitTags("2-5", ["clients"])).not.toContain("fit-sparkops");
   });
 });

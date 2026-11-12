@@ -121,8 +121,6 @@ function CheckPage() {
   const [place, setPlace] = useState<BusinessDetails | null>(null);
   const [step, setStep] = useState(0);
   const [f, setF] = useState({ name: "", email: "", phone: "", website: "" });
-  const [size, setSize] = useState<Size | "">("");
-  const [headaches, setHeadaches] = useState<Headache[]>([]);
   const [keyword, setKeyword] = useState(niche.keyword);
   const prebuild = useServerFn(prebuildCheck);
   // The report build starts the moment they confirm their business.
@@ -151,10 +149,6 @@ function CheckPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!place) return;
-    if (!headaches.length) {
-      setErr("Please tick at least one headache.");
-      return;
-    }
     setBusy(true);
     setErr(null);
     try {
@@ -170,8 +164,10 @@ function CheckPage() {
           website: f.website,
           source: (src || utm_source || "direct").slice(0, 30),
           niche: nicheKey,
-          size: size || null,
-          headaches,
+          // Team size and headaches are asked on the report page instead, so
+          // this form stays short. Leads default to the Fix-It Pack route.
+          size: null,
+          headaches: [],
           keyword: keyword.trim(),
           ...(token ? { prebuiltToken: token } : {}),
           consentEmail: cEmail,
@@ -430,52 +426,6 @@ function CheckPage() {
                     onChange={(e) => setF({ ...f, phone: e.target.value })}
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="c-size" className="block font-bold">
-                    {niche.team}
-                  </label>
-                  <select
-                    id="c-size"
-                    required
-                    className={input}
-                    value={size}
-                    onChange={(e) => setSize(e.target.value as Size)}
-                  >
-                    <option value="" disabled>
-                      Choose one
-                    </option>
-                    {niche.sizes.map(([v, l]) => (
-                      <option key={v} value={v}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <fieldset className="space-y-2" aria-describedby="hd-hint">
-                  <legend className="font-bold">What are your biggest headaches right now?</legend>
-                  <p id="hd-hint" className="text-muted-foreground">
-                    Tick all that apply.
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {niche.headaches.map(([v, l]) => (
-                      <label key={v} className={tick}>
-                        <input
-                          type="checkbox"
-                          name="headaches"
-                          value={v}
-                          className="h-5 w-5 shrink-0 accent-[var(--navy)]"
-                          checked={headaches.includes(v)}
-                          onChange={(e) =>
-                            setHeadaches((h) =>
-                              e.target.checked ? [...h, v] : h.filter((x) => x !== v),
-                            )
-                          }
-                        />
-                        <span>{l}</span>
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
                 <fieldset className="space-y-2">
                   <legend className="font-bold">Can we send you tips and offers? (optional)</legend>
                   <div className="grid gap-2 sm:grid-cols-2">

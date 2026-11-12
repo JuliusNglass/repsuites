@@ -65,3 +65,47 @@ export async function tagFixitPaid(p: {
     return false;
   }
 }
+
+// Adds tags to an existing GHL contact found by email (or phone), without
+// touching its other tags. Best effort, like above.
+export async function addGhlTags(p: {
+  email: string | null;
+  phone: string | null;
+  tags: string[];
+}): Promise<boolean> {
+  const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
+  if (!token || (!p.email && !p.phone) || !p.tags.length) return false;
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Version: "2021-07-28",
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+  try {
+    const u = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        locationId: GHL_LOCATION_ID,
+        ...(p.email ? { email: p.email } : {}),
+        ...(p.phone ? { phone: p.phone } : {}),
+      }),
+      signal: AbortSignal.timeout(6000),
+    });
+    const id = u.ok ? ((await u.json()) as { contact?: { id?: string } }).contact?.id : null;
+    if (!id) {
+      console.error("GHL tag upsert failed", u.status);
+      return false;
+    }
+    const r = await fetch(`https://services.leadconnectorhq.com/contacts/${id}/tags`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ tags: p.tags }),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) console.error("GHL add tags failed", r.status);
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
