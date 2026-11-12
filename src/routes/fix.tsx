@@ -239,6 +239,16 @@ function FixPage() {
                 </span>
                 <span className="text-white/80">one-off, no subscription</span>
               </p>
+              <p className="text-white/90">
+                Less than one takeaway coffee a week for a month: {FIXIT_PRICE} / 30 days = 90p a
+                day.
+              </p>
+              <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 text-white/90">
+                <strong className="text-white">Bonus: a free month of RepSuites Growth</strong>{" "}
+                (normally £49). It asks your customers for reviews and writes your review replies,
+                so the fixes keep working. No card needed. Worth £76 in total, yours for{" "}
+                {FIXIT_PRICE}.
+              </div>
               <div className="flex gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
                 <ShieldCheck className="h-6 w-6 shrink-0 text-primary" aria-hidden />
                 <p className="text-white/90">

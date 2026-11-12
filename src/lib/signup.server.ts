@@ -68,6 +68,7 @@ export async function signUpFree(
     placeId?: string | undefined;
     report?: string | undefined;
     website?: string | undefined;
+    bonus?: string | undefined;
   },
 ) {
   // Honeypot: people never fill the hidden "website" box; bots do.
@@ -162,6 +163,13 @@ export async function signUpFree(
     await serviceWrite(`tenants?id=eq.${tenantId}`, "", { method: "DELETE" });
     await undo();
     return { ok: false as const, error: "We could not create your account. Try again." };
+  }
+
+  // Fix-It Pack buyers: their free month of Growth (once per order).
+  let bonus = false;
+  if (input.bonus) {
+    const { claimFixitBonus } = await import("./fixit-bonus.server");
+    bonus = await claimFixitBonus(input.bonus, tenantId).catch(() => false);
   }
 
   // A 6-digit code to confirm their email (they can use the account now).
@@ -259,6 +267,6 @@ export async function signUpFree(
   ]);
 
   const s = await performSignIn(email, input.password);
-  if (!s.ok) return { ok: true as const, signedIn: false as const };
-  return { ok: true as const, signedIn: true as const };
+  if (!s.ok) return { ok: true as const, signedIn: false as const, bonus };
+  return { ok: true as const, signedIn: true as const, bonus };
 }

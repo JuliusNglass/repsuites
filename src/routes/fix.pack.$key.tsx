@@ -54,6 +54,7 @@ function Block({ title, text, n }: { title: string; text: string; n?: number }) 
 
 function PackPage() {
   const data = Route.useLoaderData();
+  const { key } = Route.useParams();
   if (!data)
     return (
       <main className="max-w-xl mx-auto px-4 py-16 space-y-3">
@@ -130,13 +131,15 @@ function PackPage() {
         </section>
 
         <section className="surface-navy rounded-3xl p-6 sm:p-8 space-y-4 shadow-[var(--shadow-lift)]">
-          <h2 className="text-2xl font-semibold">Rather we keep it all up to date for you?</h2>
+          <p className="eyebrow !text-primary">Your bonus</p>
+          <h2 className="text-2xl font-semibold">Turn on your free month of RepSuites Growth</h2>
           <p className="text-white/85">
-            RepSuites keeps the reviews coming, posts for you and reruns your Google check every
-            month so you can see the change.
+            It asks your customers for reviews by text and email, writes your review replies and
+            reruns your Google check, so these fixes keep working. Normally £49. No card needed.
+            After 30 days you choose to keep it or stay on the free plan.
           </p>
-          <Link to="/start" className="btn btn-gold btn-lg w-full">
-            Start free
+          <Link to="/start" search={{ bonus: key }} className="btn btn-gold btn-lg w-full">
+            Turn on my free month
           </Link>
           <p className="text-sm text-white/75">
             Something not right? Reply to the email we sent you and we will fix it.

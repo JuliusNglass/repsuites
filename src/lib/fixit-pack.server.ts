@@ -213,7 +213,7 @@ async function emailPack(o: FixitOrder) {
   const r = await sendEmail({
     to: o.email,
     subject: `Your Google Fix-It Pack${o.business ? ` for ${o.business}` : ""} is ready`,
-    html: `<p>Hi ${first},</p><p>Your Google Fix-It Pack is ready. Everything is written for you, with a copy button next to each part and the steps in order.</p><p><a href="${url}" style="display:inline-block;background:#0b1d3a;color:#fff;padding:14px 22px;border-radius:999px;text-decoration:none;font-weight:700">Open my Fix-It Pack</a></p><p>Most owners finish it in about 20 minutes. If anything is not right, just reply to this email and we will sort it.</p><p>Accelur8</p>`,
+    html: `<p>Hi ${first},</p><p>Your Google Fix-It Pack is ready. Everything is written for you, with a copy button next to each part and the steps in order.</p><p><a href="${url}" style="display:inline-block;background:#0b1d3a;color:#fff;padding:14px 22px;border-radius:999px;text-decoration:none;font-weight:700">Open my Fix-It Pack</a></p><p><b>Your bonus:</b> a free month of RepSuites Growth (normally £49, no card needed). It asks your customers for reviews and writes your review replies, so the fixes keep working.</p><p><a href="https://repsuites.com/start?bonus=${o.view_key}" style="color:#0b1d3a;font-weight:700">Turn on my free month</a></p><p>Most owners finish it in about 20 minutes. If anything is not right, just reply to this email and we will sort it.</p><p>Accelur8</p>`,
     text: `Hi ${first}, your Google Fix-It Pack is ready: ${url}  Reply to this email if anything is not right. Accelur8`,
     replyTo: "julius@accelur8.com",
   });

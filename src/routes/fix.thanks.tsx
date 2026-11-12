@@ -258,16 +258,13 @@ function Thanks() {
           )}
         </section>
         <section className="surface-navy rounded-3xl p-6 sm:p-8 space-y-4 shadow-[var(--shadow-lift)]">
-          <p className="eyebrow !text-primary">Next step</p>
-          <h2 className="text-2xl font-semibold">Keep the reviews coming in, every week</h2>
+          <p className="eyebrow !text-primary">Your bonus</p>
+          <h2 className="text-2xl font-semibold">A free month of RepSuites Growth is yours</h2>
           <p className="text-white/85">
-            Fixing your profile gets you seen. Steady new reviews keep you there. RepSuites sends
-            review requests for you, gives you a QR card for the counter or van, and reruns your
-            Google check each month so you can see the change.
+            Fixing your profile gets you seen. Steady new reviews keep you there. When your pack is
+            ready, you can switch on your free month from the pack page, and the link is in your
+            email too. Normally £49. No card needed.
           </p>
-          <Link to="/start" search={r ? { r } : {}} className="btn btn-gold btn-lg w-full">
-            Start free
-          </Link>
         </section>
       </main>
     </div>

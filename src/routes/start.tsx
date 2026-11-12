@@ -12,7 +12,10 @@ import { getSignupPrefill, signUpFreeFn } from "../lib/signup.functions";
 import { signupProblemAt, type SignupField } from "../lib/signup";
 
 export const Route = createFileRoute("/start")({
-  validateSearch: z.object({ r: z.string().max(64).optional() }),
+  validateSearch: z.object({
+    r: z.string().max(64).optional(),
+    bonus: z.string().max(80).optional(),
+  }),
   head: () => ({
     meta: [
       { title: "Start free | RepSuites" },
@@ -35,7 +38,7 @@ const PERKS = [
 ];
 
 function Start() {
-  const { r } = Route.useSearch();
+  const { r, bonus } = Route.useSearch();
   const prefill = useServerFn(getSignupPrefill);
   const signUp = useServerFn(signUpFreeFn);
   const [business, setBusiness] = useState("");
@@ -91,6 +94,7 @@ function Start() {
           ...(fromReport && r ? { report: r } : {}),
           ...(!fromReport && biz ? { placeId: biz.placeId } : {}),
           ...(trap ? { website: trap } : {}),
+          ...(bonus ? { bonus } : {}),
         },
       });
       if (!res.ok) {
@@ -123,6 +127,16 @@ function Start() {
             <p className="mt-4 text-lg sm:text-xl text-muted-foreground">
               Set up in 2 minutes. No card needed.
             </p>
+            {bonus ? (
+              <p
+                role="status"
+                className="mt-5 rounded-2xl border-2 border-primary bg-gold-soft p-5 text-base"
+              >
+                <b>Your free month of RepSuites Growth is included</b> with your Fix-It Pack.
+                Normally £49. No card needed. Create your account below and it switches on straight
+                away. After 30 days you choose to keep it or stay on the free plan.
+              </p>
+            ) : null}
             <ul className="mt-8 grid gap-3">
               {PERKS.map((p) => (
                 <li key={p} className="card flex gap-4 items-center p-4">

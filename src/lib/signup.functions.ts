@@ -18,6 +18,7 @@ export const signUpFreeFn = createServerFn({ method: "POST" })
       placeId?: string;
       report?: string;
       website?: string;
+      bonus?: string;
     }) =>
       z
         .object({
@@ -29,6 +30,7 @@ export const signUpFreeFn = createServerFn({ method: "POST" })
           placeId: z.string().max(300).optional(),
           report: z.string().max(64).optional(),
           website: z.string().max(200).optional(),
+          bonus: z.string().max(80).optional(),
         })
         .parse(d),
   )

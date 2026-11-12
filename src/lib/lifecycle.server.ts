@@ -111,6 +111,9 @@ export async function runLifecycle(token: string) {
     body: { last_daily_at: now.toISOString() },
   });
   const live = s?.mode === "live";
+  // Fix-It Pack bonus months: reminder at 7 days left, back to free at the end.
+  const { runBonusMonth } = await import("./fixit-bonus.server");
+  const bonus = await runBonusMonth(now).catch(() => ({ reminded: 0, ended: 0 }));
 
   const byTenant = new Map<string, Sent[]>();
   for (const x of sends.data ?? []) {
@@ -185,7 +188,7 @@ export async function runLifecycle(token: string) {
   }
   return {
     status: 200,
-    body: { ok: true, mode: live ? "live" : "preview", due: due.length, sent, weekly },
+    body: { ok: true, mode: live ? "live" : "preview", due: due.length, sent, weekly, bonus },
   };
 }
 

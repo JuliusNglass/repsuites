@@ -73,3 +73,9 @@ describe("fitTags (report page questions)", () => {
     expect(fitTags("2-5", ["clients"])).not.toContain("fit-sparkops");
   });
 });
+
+describe("fitTags week question", () => {
+  it("records how they run the week", () => {
+    expect(fitTags("2-5", ["admin"], "app")).toContain("runs-app");
+  });
+});

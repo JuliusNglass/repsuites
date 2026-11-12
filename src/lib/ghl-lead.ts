@@ -82,8 +82,16 @@ export function ghlLeadBody(p: GhlLeadInput) {
 // the form stays short. Returns the tags to add in GHL. A team of 2+ with an
 // operations headache is a SparkOps fit: "fit-sparkops" starts the SparkOps
 // call follow-up. Everyone else stays on the Fix-It Pack route.
-export function fitTags(size: Size | null, headaches: Headache[]): string[] {
+export const WEEK_RUNS = ["whatsapp", "spreadsheet", "paper", "app"] as const;
+export type WeekRun = (typeof WEEK_RUNS)[number];
+
+export function fitTags(
+  size: Size | null,
+  headaches: Headache[],
+  runs: WeekRun | null = null,
+): string[] {
   const t: string[] = ["fit-answered"];
+  if (runs) t.push(`runs-${runs}`);
   if (size) t.push(`size-${slug(size)}`);
   for (const h of new Set(headaches)) t.push(`headache-${h}`);
   const bigEnough = size !== null && size !== "solo";
