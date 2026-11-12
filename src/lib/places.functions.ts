@@ -81,15 +81,16 @@ export const suggestBusinesses = createServerFn({ method: "POST" })
     let res = await ask(true);
     // If Google rejects the business-only filter, ask again without it.
     if (res && res.status === 400) res = await ask(false);
-    if (!res || !res.ok) {
+    // If autocomplete fails (for example its daily quota is used up), carry on
+    // with Text Search alone rather than showing nothing.
+    const autoOk = Boolean(res && res.ok);
+    if (!autoOk)
       console.error(
         "suggestBusinesses: autocomplete failed",
         res?.status,
         (await res?.text().catch(() => ""))?.slice(0, 300),
       );
-      return { suggestions: [] };
-    }
-    const json = (await res.json().catch(() => ({}))) as {
+    const json = (autoOk && res ? await res.json().catch(() => ({})) : {}) as {
       suggestions?: {
         placePrediction?: {
           placeId?: string;
@@ -109,7 +110,7 @@ export const suggestBusinesses = createServerFn({ method: "POST" })
         "X-Goog-Api-Key": key,
         "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress",
       },
-      body: JSON.stringify({ textQuery: data.q, regionCode: "gb", pageSize: 3 }),
+      body: JSON.stringify({ textQuery: data.q, regionCode: "gb", pageSize: autoOk ? 3 : 5 }),
     });
     const tj = (t && t.ok ? await t.json().catch(() => ({})) : {}) as {
       places?: { id?: string; displayName?: { text?: string }; formattedAddress?: string }[];
