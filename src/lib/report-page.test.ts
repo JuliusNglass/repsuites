@@ -272,3 +272,14 @@ describe("all keyword grids in PDF", () => {
     expect(html).toContain(".presentation-close{break-before:page}");
   });
 });
+
+describe("worth step for cleaning businesses", () => {
+  it("talks about weekly clients, not days open", () => {
+    const r = { ...report, maps: { ...report.maps, keyword: "domestic cleaning" } };
+    const h = renderReport(r, { token: "a".repeat(24), snapshot: null, flash: "" });
+    expect(h).toContain("What 1 more client is worth");
+    expect(h).toContain("× 52");
+    expect(h).not.toContain("Open 6 days a week");
+    expect(h).not.toContain("1 more customer");
+  });
+});

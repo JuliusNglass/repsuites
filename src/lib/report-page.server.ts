@@ -617,6 +617,7 @@ type Sale = ReturnType<typeof saleFor>;
 // at the owner's lowest price, with the sum shown step by step. The slider
 // and the A day / A week buttons update the sum in the page (no framework).
 function worthSection(r: Report, sale: Sale, extra: RenderExtra | null): string {
+  if (/clean/i.test(r.maps?.keyword ?? "")) return cleaningWorthSection(sale, extra);
   const cur = sale.currency;
   const sym = saleSymbol(cur);
   const range = saleRange(cur);
@@ -656,6 +657,50 @@ ${controls}
 <li>Your own review page and QR code, so happy customers leave reviews in seconds.</li>
 <li>Unhappy customers message you privately first, not on Google.</li>
 <li>Repeat the same map check later to measure whether visibility improved.</li>
+</ul>
+</div>${script}`;
+}
+
+// Cleaning businesses earn from regular clients, booked weekly, not daily walk-ins.
+function cleaningWorthSection(sale: Sale, extra: RenderExtra | null): string {
+  const cur = sale.currency;
+  const sym = saleSymbol(cur);
+  const range = saleRange(cur);
+  const max = Math.max(range.max, sale.amount);
+  const print = extra?.flash === "print";
+  const yr = money(sale.amount * 52, cur);
+  const lines = [
+    `1 more regular client, cleaned once a week at ${money(sale.amount, cur)}`,
+    "52 weeks a year",
+    `${money(sale.amount, cur)} × 52 = ${yr} a year`,
+  ];
+  const controls = print
+    ? `<p class="muted" style="margin:10px 0 0">At ${esc(money(sale.amount, cur))} a clean:</p>`
+    : `<div class="noprint"><label for="ws-range" style="display:block;font-weight:700;margin-top:12px">Your price per clean</label>
+<div class="ctl"><input id="ws-range" type="range" min="${range.min}" max="${max}" step="${range.step}" value="${sale.amount}" aria-label="Your price per clean">
+<span class="num">${sym}<input id="ws-num" type="number" inputmode="numeric" min="1" max="${max * 100}" step="1" value="${sale.amount}" aria-label="Your price per clean in ${cur === "NGN" ? "naira" : "pounds"}"></span></div></div>`;
+  const script = print
+    ? ""
+    : `<script>(function(){var S=${JSON.stringify(sym)},a=${sale.amount};var rg=document.getElementById("ws-range"),nm=document.getElementById("ws-num");
+function m(n){return S+Math.round(n).toLocaleString("en-GB");}
+function draw(){var L=document.querySelectorAll("#ws-sum li");
+L[0].innerHTML="1 more regular client, cleaned once a week at <b>"+m(a)+"</b>";
+L[2].innerHTML="<b>"+m(a)+"</b> &times; 52 = <b>"+m(a*52)+"</b> a year";
+document.getElementById("ws-total").textContent=m(a*52);}
+rg.addEventListener("input",function(){a=+rg.value;nm.value=a;draw();});
+nm.addEventListener("input",function(){var v=Math.round(+nm.value);if(!(v>0))return;a=v;rg.value=Math.min(v,+rg.max);draw();});})();</script>`;
+  const bold = (t: string) => esc(t).replace(/([£₦][\d,]+)/g, "<b>$1</b>");
+  return `<h2 id="worth">What 1 more client is worth</h2>
+<div class="card worth"><p style="margin:0">Just 1 more weekly client is worth this much.</p>
+${controls}
+<ol id="ws-sum" class="sum" aria-live="polite">${lines.map((l) => `<li>${bold(l)}</li>`).join("")}</ol>
+<div class="total"><div class="big" id="ws-total">${yr}</div><div>a year, from 1 more weekly client</div></div>
+<p class="small" style="margin:12px 0 0">Not a forecast. Change the price to match yours.</p>
+<h3 style="margin:18px 0 8px;font-size:1rem">How we help you win that client</h3>
+<ul class="small" style="margin:0;padding-left:18px;font-size:1rem;line-height:1.5">
+<li>Your own review page and QR code, so happy clients leave reviews in seconds.</li>
+<li>Unhappy clients message you privately first, not on Google.</li>
+<li>Repeat the same map check later to see if more people find you.</li>
 </ul>
 </div>${script}`;
 }
