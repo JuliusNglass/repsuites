@@ -277,9 +277,9 @@ function realNumbers(token: string, snap: ProspectSnapshot | null, flash: string
   const connect = `/api/prospect-connect?r=${encodeURIComponent(token)}`;
   if (!snap)
     return `<div class="noprint">${note}<h2 id="real">See your real numbers</h2><div class="card">
-<p style="margin:0">Google keeps private figures only the owner can see: how many people <b>called you</b>, <b>asked for directions</b> and <b>visited your website</b> from your Google profile, and the words they searched. Sign in with the Google account you use for your profile to add them to this report.</p>
+<p style="margin:0">See how many people <b>called</b>, <b>asked for directions</b> and <b>visited your website</b> from Google. Sign in with your Google profile account.</p>
 <a class="cta" style="margin-top:14px" href="${connect}">See my real numbers</a>
-<p class="small" style="margin:10px 0 0">Free, and takes a minute. We read the figures once and keep no access to your profile afterwards. Google will ask you to allow RepSuites; you can remove it any time in your Google account under Security, Third-party connections.</p></div></div>`;
+<p class="small" style="margin:10px 0 0">Free. Takes a minute. We read the figures once and keep no access.</p></div></div>`;
   const c = snap.current;
   const pv = snap.previous;
   const views = c.searchViews + c.mapsViews;
@@ -413,7 +413,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
     ? `<div class="cmp switch noprint"><span class="switch-label">Show the map for</span><div class="kw" role="group" aria-label="Business shown on the map"><button type="button" data-cmp="" aria-pressed="true" class="on">${esc(b.name)} (you)</button>${competitors.map((c) => `<button type="button" data-cmp="${esc(c.placeId)}" aria-pressed="false">${esc(c.name)}</button>`).join("")}</div></div>`
     : "";
   const furthest = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
-  const intro = `<p style="margin:0 0 12px">Each pin is your place on Google Maps when a customer searches from that spot (25 spots, up to ${esc(furthest)} away). The house is you.</p>
+  const intro = `<p style="margin:0 0 12px">Your Google Maps place from 25 spots, up to ${esc(furthest)} away. The house is you.</p>
 `;
   if (!center || !extra)
     return `${printable}<div class="screen-grids"><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>`;
@@ -646,11 +646,11 @@ document.querySelectorAll(".worth .seg button").forEach(function(b){b.addEventLi
   // Bold the money in the server-drawn lines, as the script does.
   const bold = (t: string) => esc(t).replace(/([£₦][\d,]+|\b312\b(?= days))/g, "<b>$1</b>");
   return `<h2 id="worth">What 1 more customer is worth</h2>
-<div class="card worth"><p style="margin:0">You do not need lots more customers. Here is what just one more is worth, at your lowest price.</p>
+<div class="card worth"><p style="margin:0">Just 1 more regular customer is worth this much.</p>
 ${controls}
 <ol id="ws-sum" class="sum" aria-live="polite">${lines.map((l) => `<li>${bold(l)}</li>`).join("")}</ol>
 <div class="total"><div class="big" id="ws-total">${total}</div><div>a year in extra sales, from 1 more customer</div></div>
-<p class="small" style="margin:12px 0 0">This is not a forecast. It shows what one extra customer would add at the price you set. Change the price to match yours.</p>
+<p class="small" style="margin:12px 0 0">Not a forecast. Change the price to match yours.</p>
 <h3 style="margin:18px 0 8px;font-size:1rem">How we help you win that customer</h3>
 <ul class="small" style="margin:0;padding-left:18px;font-size:1rem;line-height:1.5">
 <li>Your own review page and QR code, so happy customers leave reviews in seconds.</li>
@@ -729,9 +729,7 @@ function presentationClose(
     .join("");
   return `<section class="presentation-close chapter" id="action-plan">
 <h3 class="sub">Your 90-day action plan</h3>
-<div class="stage">${actionCards || `<article class="card"><div class="when">This month</div><h3>Keep your current position</h3><p>Keep earning reviews, keep your Google profile up to date and run the same search again later.</p></article>`}</div><div class="card"><p class="small"><b>Before you make a change:</b> save a copy of what customers see today, choose who will make the change and set a date. Run the same check again afterwards so you can see whether it helped.</p></div>
-<h2>Proof and next step</h2>
-<div class="card"><p><b>What this report shows:</b> how your business appeared in the Google searches we checked on ${date}, plus the public information customers could see.</p><p><b>What it cannot show:</b> private account figures, how many visitors became customers, or a guaranteed future ranking.</p><p style="margin-bottom:0"><b>Your next step:</b> choose the first three actions, save what customers see today and set a date to run the same check again.</p></div>
+<div class="stage">${actionCards || `<article class="card"><div class="when">This month</div><h3>Keep your current position</h3><p>Keep earning reviews, keep your Google profile up to date and run the same search again later.</p></article>`}</div><p class="small">Pick your first 3 actions, set a date, then run this check again to see the change.</p>
 </section>`;
 }
 
@@ -900,7 +898,7 @@ export function profileEvidence(r: Report): string {
         ["Review recency and sample velocity", reviewEvidence],
       ]
     : [];
-  return `<h2>What Google shows about your business</h2><div class="card"><p class="small">What customers see on your Google profile.</p><table class="kv"><tr><th>Check</th><th>What we found</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>What you should confirm</h3><p class="small">Please confirm that you control the profile, that the business is not restricted, and that your services, review replies and posts are up to date.</p><p class="small">Your review numbers and rating show what customers see. They do not tell us how many enquiries you receive.</p></div>`;
+  return `<h2>What Google shows about your business</h2><div class="card"><table class="kv"><tr><th>Check</th><th>What we found</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table></div>`;
 }
 
 export function websiteEvidence(r: Report): string {
@@ -1080,7 +1078,7 @@ export function topThree(r: Report, fixToken: string | null = null): string {
     )
     .join(
       "",
-    )}</div><p class="small">Every other fix is in <a href="#plan">your plan</a> at the end, with who does it and how to check it worked.</p>`;
+    )}</div><p class="small">More fixes in <a href="#plan">your plan</a>.</p>`;
 }
 
 const chapter = (n: number, id: string, title: string) =>
@@ -1177,11 +1175,11 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
       : lead.top3 > 0
         ? `You show up well near your strongest location, but customers across most of the area see other businesses first for \"${lead.keyword}\". Make your service and location clearer, build recent reviews and check the same area again.`
         : `You did not reach the top three anywhere we checked for \"${lead.keyword}\". Customers are seeing other businesses first.`;
-  return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Your overall visibility score is <b>${view.score}/100</b>${r.maps?.checked ? "" : " (Google Maps position not checked yet, so it is left out of this score)"}. The next step shows on a map where customers are most and least likely to see you.</p></section>`;
+  return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Visibility score: <b>${view.score}/100</b>${r.maps?.checked ? "" : " (Google Maps position not checked yet, so it is left out of this score)"}.</p></section>`;
 }
 
 function fixitOffer(token: string): string {
-  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to write these fixes for you?</h3><p style="margin:0 0 4px">For a one-off &pound;27 we write every fix above, ready to copy into Google, in minutes. 14-day money-back promise.</p><p style="margin:0 0 4px"><b>Bonus:</b> a free month of RepSuites Growth (normally &pound;49), no card needed. That is 90p a day for the fixes: &pound;27 / 30 days.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
+  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to write these fixes for you?</h3><p style="margin:0 0 4px">We write every fix, ready to paste into Google. 14-day money back.</p><p style="margin:0 0 4px"><b>Bonus:</b> a free month of RepSuites Growth (worth &pound;49). About 90p a day.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
 }
 
 // Free-check leads: two optional questions, asked after they have their
@@ -1287,7 +1285,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     .filter((g) => g.competitors?.length)
     .map(
       (g) =>
-        `<h2>Who shows up for &quot;${esc(g.keyword)}&quot;</h2><div class="card"><p class="small">Same ${g.ranks.length} spots. Average counts only spots in the top 20.</p><table><tr><th>Business</th><th>Top 3 spots</th><th>Found</th><th>Average</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g
+        `<div class="card"><p class="small" style="margin:0 0 8px">Search: &quot;${esc(g.keyword)}&quot;</p><table><tr><th>Business</th><th>Top 3</th><th>Found</th><th>Avg place</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g
           .competitors!.filter((c) => relevantMapCompetitor({ title: c.name }, g.keyword))
           .map(
             (c) =>
@@ -1303,8 +1301,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
       { title: g.leader, category: relevantRivals.find((x) => x.name === g.leader)?.kind },
       r.maps.keyword,
     )
-      ? `<div class="card"><b>Catching the next business up</b><p style="margin:6px 0 0">${esc(g.leader)} has ${g.leaderReviews} reviews and you have ${b.reviews}. That is a gap of ${g.need}.</p>
-<p class="muted" style="margin:6px 0 0">To catch them in a year, you need about <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b>. The easy way: ask every customer, every day.</p></div>`
+      ? `<div class="card"><b>Catch ${esc(g.leader)}</b><p style="margin:6px 0 0">They have ${g.leaderReviews} reviews. You have ${b.reviews}. Get <b>${g.perWeekIn12Months} new review${g.perWeekIn12Months === 1 ? "" : "s"} a week</b> to catch up in a year.</p></div>`
       : "";
   const view = scoreView(r);
   const sale = saleFor(r, {

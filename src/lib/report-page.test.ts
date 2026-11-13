@@ -69,7 +69,9 @@ describe("score uses the whole area", async () => {
     expect(v.fixes.some((f) => f.title.includes("fast food"))).toBe(true);
     const h = renderReport(r, { token: "a".repeat(24), snapshot: null, flash: "" });
     expect(h).toContain("What we found");
-    expect(h.indexOf("What we found")).toBeLessThan(h.indexOf("How we checked, and how your score"));
+    expect(h.indexOf("What we found")).toBeLessThan(
+      h.indexOf("How we checked, and how your score"),
+    );
   });
 });
 
@@ -280,7 +282,7 @@ describe("all keyword grids in PDF", () => {
   it("adds a presentation narrative and deliberate A4 print layout", () => {
     const html = renderReport(report, { token: "a".repeat(24), snapshot: null, flash: "print" });
     expect(html).toContain("Your 90-day action plan");
-    expect(html).toContain("Proof and next step");
+    expect(html).toContain("Pick your first 3 actions");
     expect(html).toContain("Copy share link");
     expect(html).toContain("Download PDF");
     expect(html).toContain("Presentation mode");
@@ -288,4 +290,3 @@ describe("all keyword grids in PDF", () => {
     expect(html).toContain(".presentation-close{break-before:page}");
   });
 });
-
