@@ -166,6 +166,16 @@ export async function runCheckFollowups(token: string) {
     let okSend = false;
     if (step.channel === "sms" && msg.sms) {
       okSend = contact ? await sendSms(contact.id, msg.sms) : false;
+      // Text failed (no GHL contact or no SMS access): fall back to email.
+      if (!okSend && lead.email) {
+        const r = await sendEmail({
+          to: lead.email,
+          subject: `Your Google Check for ${lead.business}`,
+          html: `<p style="font-family:Arial,sans-serif;font-size:16px;line-height:1.5">${msg.sms.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`).replace(/ Reply STOP to opt out\.$/, "")}</p>`,
+          replyTo: julius(),
+        });
+        okSend = r.ok;
+      }
     } else if (step.channel === "email" && msg.subject && lead.email) {
       const r = await sendEmail({
         to: lead.email,
