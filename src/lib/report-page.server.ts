@@ -1016,7 +1016,7 @@ export function topThree(r: Report, fixToken: string | null = null): string {
       (i) =>
         `<div class="card"><span class="pill ${i.big ? "big" : "improve"}">${i.big ? "Big impact" : "Quick win"}</span><h3>${esc(i.title)}</h3><p>${esc(i.why)}</p>${fixToken ? `<p class="noprint card-actions"><a class="btn btn-primary fixit-cta" href="/fix?r=${encodeURIComponent(fixToken)}">Fix this for me</a></p>` : ""}</div>`,
     )
-    .join("")}</div><p class="small">More fixes in <a href="#plan">your plan</a>.</p>`;
+    .join("")}</div>`;
 }
 
 const chapter = (n: number, id: string, title: string) =>
@@ -1176,7 +1176,7 @@ const STEP_STYLE = `.rbar{padding:8px 10px;border-radius:12px;margin:0 0 6px}.rb
 .stepbar-track{height:6px;border-radius:99px;background:#e2e8f0;margin:8px 0 10px;overflow:hidden}#step-fill{display:block;height:100%;width:0;background:var(--report-accent);border-radius:99px;transition:width .25s}
 .steplinks{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;justify-content:center}.steplinks::-webkit-scrollbar{display:none}
 .steplinks button{flex-shrink:0;border:1px solid var(--line,#e2e8f0);background:#fff;color:var(--ink-2,#334155);border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:.9rem;font-weight:650;cursor:pointer}.steplinks button.on{background:var(--report-primary);border-color:var(--report-primary);color:#fff}
-.stepnav.solo{justify-content:center}.stepnav.solo .stepbtn{margin:0 auto}.stepnav{display:flex;justify-content:space-between;gap:12px;margin:28px 0 8px}.stepbtn{min-height:52px;padding:0 22px;border-radius:14px;border:0;background:var(--report-primary);color:#fff;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;flex:1;max-width:440px;margin-left:auto}.stepbtn.ghost{background:#fff;color:var(--ink,#0b1424);border:1px solid var(--line,#cbd5e1);flex:0 0 auto;margin-left:0}.stepbtn:disabled{display:none}.stepnav .stepbtn:not(.ghost){display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:1.05rem;box-shadow:0 10px 26px rgba(11,29,58,.25)}.stepbtn .arr{display:inline-block;font-size:1.3rem;line-height:1;animation:nudge 1.4s ease-in-out infinite}@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}.stepbtn:hover .arr{animation:none;transform:translateX(5px)}.stepbtn:focus-visible,.steplinks button:focus-visible{outline:3px solid var(--report-accent);outline-offset:2px}
+.stepnav [hidden]{display:none!important}.stepnav.solo{justify-content:center}.stepnav.solo .stepbtn{margin:0 auto}.stepnav{display:flex;justify-content:space-between;gap:12px;margin:28px 0 8px}.stepbtn{min-height:52px;padding:0 22px;border-radius:14px;border:0;background:var(--report-primary);color:#fff;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;flex:1;max-width:440px;margin-left:auto}.stepbtn.ghost{background:#fff;color:var(--ink,#0b1424);border:1px solid var(--line,#cbd5e1);flex:0 0 auto;margin-left:0}.stepbtn:disabled{display:none}.stepnav .stepbtn:not(.ghost){display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:1.05rem;box-shadow:0 10px 26px rgba(11,29,58,.25)}.stepbtn .arr{display:inline-block;font-size:1.3rem;line-height:1;animation:nudge 1.4s ease-in-out infinite}@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}.stepbtn:hover .arr{animation:none;transform:translateX(5px)}.stepbtn:focus-visible,.steplinks button:focus-visible{outline:3px solid var(--report-accent);outline-offset:2px}
 .js-steps .chapter-open{margin-top:8px;padding-top:0;border-top:0}.js-steps .chapter-open .eyebrow{display:none}
 .switch{justify-content:center;text-align:center}.switch-label{min-width:0;width:100%;text-align:center}.switch .kw{margin:0 auto}#rmap-sum{max-width:none}.screen-grids .card>p,.screen-grids .card>ul{max-width:none}
 @media(max-width:620px){.steplinks{justify-content:flex-start}.stepnav{position:sticky;bottom:0;background:rgba(246,248,251,.96);padding:10px 0;margin:20px 0 0}.stepbtn{max-width:none}}
@@ -1297,7 +1297,6 @@ ${video}
 <div class="stepbar noprint" id="stepbar" hidden><div class="stepbar-top"><span id="step-count"></span><span id="step-name"></span></div><div class="stepbar-track"><span id="step-fill"></span></div><div class="steplinks" id="steplinks" role="tablist" aria-label="Report steps"></div></div>
 <section class="step" id="step-overview" data-title="Your score">
 ${executiveBrief(r, view)}
-${headline}
 <p class="muted">${esc(b.address)} &middot; Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
 </section>
 <section class="step" id="step-map" data-title="Google Maps">
@@ -1323,26 +1322,26 @@ ${gap}
 ${profileEvidence(r)}
 
 </section>
-<section class="step" id="step-fixes" data-title="Fix first">
-${chapter(4, "fixes", "Fix these 3 first")}
-${topThree(r, extra?.fixit ? extra.token : null)}
-${reviewStand(r, extra)}
-${extra?.fixit ? fixitOffer(extra.token) : ""}
-</section>
 <section class="step" id="step-website" data-title="Website">
 ${chapter(5, "website-ch", "Your website")}
 ${websitePicture(r)}
 ${websiteEvidence(r)}
 </section>
 ${r.aiVisibility ? `<section class="step" id="step-ai" data-title="AI assistants">${chapter(6, "ai", "Do AI assistants recommend you?")}${aiSection(r)}</section>` : ""}
-<section class="step" id="step-plan" data-title="What it\'s worth">
-${chapter(r.aiVisibility ? 7 : 6, "plan", "What this is worth to you")}
+<section class="step" id="step-plan" data-title="What it’s worth">
+${chapter(6, "plan", "What this is worth to you")}
 ${worthSection(r, sale, extra)}
-${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
+${extra?.snapshot ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
+</section>
+<section class="step" id="step-fixes" data-title="Fix first">
+${chapter(4, "fixes", "Fix these 3 first")}
+${topThree(r, extra?.fixit ? extra.token : null)}
+${reviewStand(r, extra)}
+${extra?.fixit ? fixitOffer(extra.token) : ""}
+</section>
+<section class="step" id="step-questions" data-title="Last step">
+${chapter(8, "questions", "One last thing")}
 ${extra?.fixit ? fitQuestions(extra.token, /clean/i.test(r.maps?.keyword ?? "")) : ""}
-<div class="noprint closing card"><h3>Want us to do all of this for you?</h3><p>We handle reviews, your Google profile and website fixes every month, and rerun this check so you can see the dots change.</p><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
-<p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
-<p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}">Or book a free 15-minute call</a></p></div>
 <details class="card how" id="score"><summary>How we checked, and how your score of ${view.score}/100 works</summary>
 <div class="score" style="margin-top:12px"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>

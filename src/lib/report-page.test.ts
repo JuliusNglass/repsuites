@@ -24,10 +24,9 @@ const snap: any = {
 };
 
 describe("report real numbers", () => {
-  it("invites the owner to connect when there are no figures", () => {
+  it("does not ask to connect before there are figures (kept off the report)", () => {
     const h = renderReport(report, { token: "a".repeat(24), snapshot: null, flash: "" });
-    expect(h).toContain("See my real numbers");
-    expect(h).toContain("/api/prospect-connect?r=");
+    expect(h).not.toContain("See my real numbers");
   });
   it("shows the figures with a worked example", () => {
     const h = renderReport(report, { token: "a".repeat(24), snapshot: snap, flash: "connected" });
@@ -68,10 +67,7 @@ describe("score uses the whole area", async () => {
     expect(v.score).toBeLessThan(91);
     expect(v.fixes.some((f) => f.title.includes("fast food"))).toBe(true);
     const h = renderReport(r, { token: "a".repeat(24), snapshot: null, flash: "" });
-    expect(h).toContain("What we found");
-    expect(h.indexOf("What we found")).toBeLessThan(
-      h.indexOf("How we checked, and how your score"),
-    );
+    expect(h).toContain("How we checked, and how your score");
   });
 });
 
@@ -101,24 +97,10 @@ describe("personal video at the top", () => {
     expect(h).toContain('<video id="pv"');
     expect(h).toContain("playsinline");
   });
-  it("offers the free QR card first in What we found, without a video", () => {
+  it("keeps step 1 to the score, with no extra links or buttons", () => {
     const h = renderReport({ ...report, business: { ...report.business, reviews: 0 } }, base);
-    const found = h.indexOf("What we found");
-    const free = h.indexOf("Start free: get your review QR card");
-    expect(free).toBeGreaterThan(found);
-    expect(free).toBeLessThan(h.indexOf("See where you show up"));
-    expect(h).toContain('href="#map"');
-  });
-  it("does not repeat Start free in What we found when the video has it", () => {
-    const h = renderReport(
-      { ...report, business: { ...report.business, reviews: 0 } },
-      {
-        ...base,
-        video: { kind: "loom", url: "https://www.loom.com/share/0123456789abcdef0123456789abcdef" },
-      },
-    );
+    expect(h).not.toContain("What we found");
     expect(h).not.toContain("Start free: get your review QR card");
-    expect(h).toContain("See where you show up");
   });
   it("has no video section without a video", () => {
     expect(renderReport(report, base)).not.toContain("I recorded this");
