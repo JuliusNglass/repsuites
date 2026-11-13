@@ -263,7 +263,7 @@ describe("all keyword grids in PDF", () => {
 
   it("adds a presentation narrative and deliberate A4 print layout", () => {
     const html = renderReport(report, { token: "a".repeat(24), snapshot: null, flash: "print" });
-    expect(html).toContain("What this is worth to you");
+    expect(html).not.toContain("What this is worth to you");
 
     expect(html).toContain("Copy share link");
     expect(html).toContain("Download PDF");

@@ -1117,7 +1117,11 @@ export function reviewStand(r: Report, extra: RenderExtra | null): string {
     }),
   );
   const order = extra ? `/cards?r=${encodeURIComponent(extra.token)}` : "/cards";
-  return `<h2 id="stand">Start getting reviews today</h2><div class="card" style="display:flex;flex-wrap:wrap;gap:18px;align-items:center"><div style="background:#0f172a;color:#fff;border-radius:16px;padding:16px;text-align:center;width:190px"><b style="display:block;font-size:1.05rem">Enjoyed your visit?</b><span style="font-size:.95rem">Scan to leave a review</span><div style="background:#fff;border-radius:10px;padding:8px;margin:10px auto 8px;width:148px">${qr}</div><span style="font-size:.95rem;font-weight:700">${esc(r.business.name)}</span></div><div style="flex:1;min-width:200px"><p style="margin-top:0"><b>Your review QR code and link are ready now.</b> Customers scan or tap and land straight on your Google review page.</p><p class="noprint" style="display:flex;flex-wrap:wrap;gap:10px"><button type="button" class="book" data-copy="${esc(url)}" onclick="var b=this;navigator.clipboard.writeText(b.dataset.copy).then(function(){b.textContent='Link copied'})">Copy my review link</button><a class="book" href="${order}">Order a printed stand</a></p><p class="small">Text the link to every client after each clean.</p></div></div>`;
+  const cleaning = /clean/i.test(r.maps?.keyword ?? "");
+  const who = cleaning ? "client" : "customer";
+  const when = cleaning ? "Text it the moment a clean is finished, while they are happy." : "Text or email it after every sale, while they are happy.";
+  return `<h2 id="stand">Get more reviews, faster</h2><div class="card"><p style="margin-top:0">Google ranks businesses higher when new reviews keep coming in. A steady 1 or 2 a week beats 20 in one month and then nothing.</p><p>Your review link opens your Google review page in one tap. ${when}</p><p class="noprint"><button type="button" class="cta" style="width:100%;border:0;cursor:pointer" data-copy="${esc(url)}" onclick="var b=this;navigator.clipboard.writeText(b.dataset.copy).then(function(){b.textContent='Link copied. Paste it into your next text.'})">Copy my review link</button></p><p class="small" style="margin:0">Example: ask every ${who} this week. If 1 in 3 say yes and you see 15 a week, that is 5 new reviews.</p>
+<details style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">Have a counter or front desk? Use a QR code</summary><div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-top:12px"><div style="background:#0f172a;color:#fff;border-radius:16px;padding:16px;text-align:center;width:190px"><b style="display:block;font-size:1.05rem">Enjoyed your visit?</b><span style="font-size:.95rem">Scan to leave a review</span><div style="background:#fff;border-radius:10px;padding:8px;margin:10px auto 8px;width:148px">${qr}</div><span style="font-size:.95rem;font-weight:700">${esc(r.business.name)}</span></div><p style="flex:1;min-width:200px">${cleaning ? "Print it on a card your cleaners leave behind." : "Put it where people pay or wait."} <a href="${order}">Order a printed stand</a></p></div></details></div>`;
 }
 
 function websitePicture(r: Report): string {
@@ -1162,7 +1166,7 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
 }
 
 function fixitOffer(token: string): string {
-  return `<div class="card noprint"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 10px">We write the new wording and review messages for you, ready to copy in. One-off &pound;27, 14-day money back.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}&amp;buy=1">Fix these for me</a></div>`;
+  return `<div class="card noprint"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 10px">A full, well-written Google profile tells Google exactly what you do and where. That is a big part of who shows up first. We write it all for you, ready to paste in. One-off &pound;27, 14-day money back.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}&amp;buy=1">Fix these for me</a></div>`;
 }
 
 // Free-check leads: two optional questions, asked after they have their
@@ -1205,7 +1209,7 @@ function fitQuestions(token: string, cleaning: boolean): string {
 const STEPS_SCRIPT = `<script>(function(){var steps=[].slice.call(document.querySelectorAll("section.step"));if(steps.length<2)return;document.body.classList.add("js-steps");var bar=document.getElementById("stepbar"),nav=document.getElementById("stepnav"),links=document.getElementById("steplinks"),back=document.getElementById("step-back"),next=document.getElementById("step-next"),fill=document.getElementById("step-fill"),cnt=document.getElementById("step-count"),nm=document.getElementById("step-name");bar.hidden=false;nav.hidden=false;var cur=0;
 steps.forEach(function(st,i){var b=document.createElement("button");b.type="button";b.setAttribute("role","tab");b.textContent=st.getAttribute("data-title");b.addEventListener("click",function(){show(i,true)});links.appendChild(b);});
 function show(i,scroll){cur=Math.max(0,Math.min(steps.length-1,i));steps.forEach(function(st,j){st.classList.toggle("on",j===cur)});[].slice.call(links.children).forEach(function(b,j){b.classList.toggle("on",j===cur);b.setAttribute("aria-selected",j===cur?"true":"false")});
-cnt.textContent="Step "+(cur+1)+" of "+steps.length;nm.textContent=steps[cur].getAttribute("data-title");fill.style.width=((cur+1)/steps.length*100)+"%";back.disabled=cur===0;nav.classList.toggle("solo",cur===0);
+cnt.textContent="Step "+(cur+1)+" of "+steps.length;nm.textContent=steps[cur].getAttribute("data-title");fill.style.width=((cur+1)/steps.length*100)+"%";back.disabled=cur===0;nav.classList.toggle("solo",cur===0);nav.style.display=cur===steps.length-1?"none":"";
 if(cur<steps.length-1){next.hidden=false;next.innerHTML="Next: "+steps[cur+1].getAttribute("data-title")+' <span aria-hidden="true" class="arr">&rarr;</span>';}else next.hidden=true;
 var on=links.children[cur];if(on&&on.scrollIntoView)on.scrollIntoView({block:"nearest",inline:"center"});
 if(history.replaceState)history.replaceState(null,"","#"+steps[cur].id.replace("step-",""));
@@ -1223,7 +1227,7 @@ const STEP_STYLE = `.rbar{padding:8px 10px;border-radius:12px;margin:0 0 6px}.rb
 .steplinks button{flex-shrink:0;border:1px solid var(--line,#e2e8f0);background:#fff;color:var(--ink-2,#334155);border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:.9rem;font-weight:650;cursor:pointer}.steplinks button.on{background:var(--report-primary);border-color:var(--report-primary);color:#fff}
 .stepnav [hidden]{display:none!important}.stepnav.solo{justify-content:center}.stepnav.solo .stepbtn{margin:0 auto}.stepnav{display:flex;justify-content:space-between;gap:12px;margin:28px 0 8px}.stepbtn{min-height:52px;padding:0 22px;border-radius:14px;border:0;background:var(--report-primary);color:#fff;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;flex:1;max-width:440px;margin-left:auto}.stepbtn.ghost{background:#fff;color:var(--ink,#0b1424);border:1px solid var(--line,#cbd5e1);flex:0 0 auto;margin-left:0}.stepbtn:disabled{display:none}.stepnav .stepbtn:not(.ghost){display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:1.05rem;box-shadow:0 10px 26px rgba(11,29,58,.25)}.stepbtn .arr{display:inline-block;font-size:1.3rem;line-height:1;animation:nudge 1.4s ease-in-out infinite}@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}.stepbtn:hover .arr{animation:none;transform:translateX(5px)}.stepbtn:focus-visible,.steplinks button:focus-visible{outline:3px solid var(--report-accent);outline-offset:2px}
 .js-steps .chapter-open{margin-top:8px;padding-top:0;border-top:0}.js-steps .chapter-open .eyebrow{display:none}
-.switch{justify-content:center;text-align:center}.switch-label{min-width:0;width:100%;text-align:center}.switch .kw{margin:0 auto}#rmap-sum{max-width:none}.screen-grids .card>p,.screen-grids .card>ul{max-width:none}
+.switch{justify-content:center;text-align:center}.switch-label{min-width:0;width:100%;text-align:center}.switch .kw{justify-content:center}.switch .kw{margin:0 auto}#rmap-sum{max-width:none}.screen-grids .card>p,.screen-grids .card>ul{max-width:none}
 .stepnav .stepbtn,.stepnav .stepbtn.ghost{flex:1 1 0;max-width:none;margin:0}
 @media(max-width:620px){.steplinks{justify-content:flex-start}.stepnav{position:sticky;bottom:0;background:rgba(246,248,251,.96);padding:10px 0;margin:20px 0 0}.stepbtn{max-width:none}}
 @media print{.stepbar,.stepnav{display:none!important}section.step{display:block!important;animation:none}}
@@ -1365,17 +1369,16 @@ ${rows
   .join("")}</table></div>`
 }
 ${gap}
-${profileEvidence(r)}
 
 </section>
 <section class="step" id="step-website" data-title="Website">
 ${chapter(5, "website-ch", "Your website")}
+${profileEvidence(r)}
 ${websitePicture(r)}
 ${websiteEvidence(r)}
 </section>
 ${r.aiVisibility ? `<section class="step" id="step-ai" data-title="AI assistants">${chapter(6, "ai", "Do AI assistants recommend you?")}${aiSection(r)}</section>` : ""}
 <section class="step" id="step-plan" data-title="What it’s worth">
-${chapter(6, "plan", "What this is worth to you")}
 ${worthSection(r, sale, extra)}
 ${extra?.snapshot ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
 </section>
