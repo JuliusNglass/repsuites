@@ -8,6 +8,7 @@ export async function sendEmail(input: {
   text?: string;
   replyTo?: string;
   headers?: Record<string, string>;
+  fromName?: string;
 }): Promise<{ ok: true; id?: string } | { ok: false; error: string }> {
   const key = (process.env["REPSUITES_RESEND_API_KEY"] ?? "").trim();
   if (!key) return { ok: false, error: "Email is not set up yet." };
@@ -17,7 +18,7 @@ export async function sendEmail(input: {
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       signal: AbortSignal.timeout(15000),
       body: JSON.stringify({
-        from: "RepSuites <noreply@repsuites.com>",
+        from: `${(input.fromName ?? "RepSuites").replace(/[<>"]/g, "")} <noreply@repsuites.com>`,
         to: [input.to],
         subject: input.subject.slice(0, 200),
         html: input.html,

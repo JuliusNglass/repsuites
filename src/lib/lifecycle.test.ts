@@ -129,3 +129,14 @@ describe("before sign-ins were tracked", () => {
     expect(nextEmail(f, [], early)).toBe(null);
   });
 });
+
+describe("trade and help", () => {
+  it("tailors the QR email to home services and always offers help", () => {
+    const f = base({ created_at: daysAgo(4), name: "Millyellas Carpet Care" });
+    const home = emailFor("print_qr", f, "u");
+    expect(home.subject).toContain("after each job");
+    expect(home.html).toContain('reply "help"');
+    const cafe = emailFor("print_qr", { ...f, name: "Test Cafe" }, "u");
+    expect(cafe.html).toContain("by the till");
+  });
+});

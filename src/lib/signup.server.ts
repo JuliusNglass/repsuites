@@ -265,17 +265,18 @@ export async function signUpFree(
     }).catch(() => null),
     sendEmail({
       to: email,
-      replyTo: "support@repsuites.com",
-      subject: `Welcome to RepSuites, ${name.split(" ")[0]}`,
-      html: `<p>Hi ${esc(name.split(" ")[0] ?? "")},</p>
-<p>Your free RepSuites account for <b>${esc(business)}</b> is ready.</p>
-<p>Three quick things to do:</p>
-<ol><li>Connect your Google profile, so you can see your real numbers.</li>
-<li>Print your QR code and put it where customers pay.</li>
-<li>Get a table stand or review cards, so customers can tap or scan in one second.</li></ol>
-<p><a href="https://repsuites.com/dashboard">Open your dashboard</a></p>
-<p>Any questions, just reply to this email.</p>
-<p>The RepSuites team</p>`,
+      replyTo: to,
+      fromName: "Julius at RepSuites",
+      subject: `${name.split(" ")[0]}, your first job takes 60 seconds`,
+      html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px;line-height:1.5;color:#0f172a;max-width:560px">
+<p>Hi ${esc(name.split(" ")[0] ?? "")},</p>
+<p>Your RepSuites account for <b>${esc(business)}</b> is ready.</p>
+<p>Do one thing today: connect your Google profile. Then RepSuites can show you how many people found you on Google last month, with your reviews in one place.</p>
+<ol><li style="margin:0 0 6px">Open Settings and press <b>Connect Google</b>.</li><li style="margin:0 0 6px">Sign in with the Google account you use for your business.</li><li style="margin:0 0 6px">Press <b>Allow</b>.</li></ol>
+<p style="margin:20px 0"><a href="https://repsuites.com/dashboard#settings" style="background:#f5b324;color:#0f172a;font-weight:700;text-decoration:none;padding:12px 18px;border-radius:10px;display:inline-block">Connect Google now</a></p>
+<p>No time, or not sure where to start? Just reply "help" and we will set it up with you.</p>
+<p>Quick question: how did you find RepSuites? One word is fine.</p>
+<p>Julius<br>RepSuites, by Accelur8</p></div>`,
     }).catch(() => null),
   ]);
 

@@ -133,31 +133,54 @@ function button(href: string, text: string): string {
   return `<p style="margin:20px 0"><a href="${href}" style="background:#f5b324;color:#0f172a;font-weight:700;text-decoration:none;padding:12px 18px;border-radius:10px;display:inline-block">${text}</a></p>`;
 }
 
+// Home-service trades meet customers at their door, not at a till.
+export function isHomeService(name: string): boolean {
+  return /clean|maid|carpet|valet|detail|plumb|heat|electric|garden|landscap|window|gutter|roof|build|decor|paint|handy|repair|removal|pest|lock|drain|pool|dog|groom|tutor|mobile/i.test(
+    name,
+  );
+}
+
 // The email for a business, with the unsubscribe link at the bottom.
+// One job and one button per email; every email offers to do it for them.
 export function emailFor(type: EmailType, f: Facts, unsubUrl: string): Email {
   const first = (f.owner_name ?? "").split(/\s+/)[0] || "there";
   const biz = esc(f.name);
+  const home = isHomeService(f.name);
   const hi = `<p>Hi ${esc(first)},</p>`;
-  const sign = `<p>Any questions, just reply to this email.</p><p>The RepSuites team</p>`;
+  const help = `<p>No time, or not sure where to start? Just reply "help" and we will set it up with you.</p>`;
+  const sign = `${help}<p>Julius<br>RepSuites, by Accelur8</p>`;
   const foot = `<p style="font-size:14px;color:#64748b;margin-top:24px">You get these tips because ${biz} has a RepSuites account. <a href="${unsubUrl}" style="color:#64748b">Stop these emails</a>.</p>`;
   const wrap = (subject: string, body: string): Email => ({
     subject,
-    html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#0f172a;max-width:560px">${hi}${body}${sign}${foot}</div>`,
+    html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px;line-height:1.5;color:#0f172a;max-width:560px">${hi}${body}${sign}${foot}</div>`,
   });
+  const steps = (xs: string[]) =>
+    `<ol>${xs.map((x) => `<li style="margin:0 0 6px">${x}</li>`).join("")}</ol>`;
   switch (type) {
     case "connect_google":
       return wrap(
         `See how many people find ${f.name} on Google`,
-        `<p>Google knows how many people saw ${biz}, called you and asked for directions last month. Connect your Google profile and RepSuites shows you, in plain numbers.</p>
-<p>It takes about a minute. You just sign in with the Google account you use for your business.</p>${button(`${DASH}#settings`, "Connect Google")}`,
+        `<p>Google counts how many people saw ${biz}, called you and asked for directions. Here is how to see it in 3 steps:</p>
+${steps(["Open Settings and press <b>Connect Google</b>.", "Sign in with the Google account you use for your business.", "Press <b>Allow</b>. Your numbers appear on the Results tab."])}
+${button(`${DASH}#settings`, "Connect Google")}
+<p>Not sure which Google account it is? Reply and we will find it for you.</p>`,
       );
     case "print_qr":
-      return wrap(
-        `Your review QR code for ${f.name} is ready to print`,
-        `<p>Your review page is set up, but nobody has scanned your code yet. The quickest win: print your QR code and put it by the till, on tables or on receipts.</p>
-<p>Happy customers scan it and leave a Google review in seconds. Unhappy ones can message you privately instead.</p>${button(`${DASH}#qr`, "Print my QR code")}
-<p>Want it to look smart? A table stand is £29, or 2 for £49, posted to you. <a href="https://repsuites.com/cards">See stands and cards</a>.</p>`,
-      );
+      return home
+        ? wrap(
+            `The easiest way to get reviews after each job`,
+            `<p>Customers are happiest the moment you finish the job. That is the time to ask. Your review code makes it one tap:</p>
+${steps(["Open the <b>QR card</b> tab.", "Press <b>Download</b>, then save it to your phone or print it.", "Show it at the end of each job, or add it to your invoice."])}
+${button(`${DASH}#qr`, "Get my review code")}
+<p>Happy customers go to Google. Unhappy ones can message you privately first.</p>`,
+          )
+        : wrap(
+            `Your review QR code for ${f.name} is ready to print`,
+            `<p>Your review page is set up. The quickest win is to put your code where customers pay:</p>
+${steps(["Open the <b>QR card</b> tab.", "Press <b>Download</b> and print it.", "Put it by the till, on tables or on receipts."])}
+${button(`${DASH}#qr`, "Get my review code")}
+<p>Happy customers go to Google. Unhappy ones can message you privately first.</p>`,
+          );
     case "growth_upsell": {
       const what =
         f.scans_total > 0
@@ -166,31 +189,37 @@ export function emailFor(type: EmailType, f: Facts, unsubUrl: string): Email {
       return wrap(
         `${f.name}: ${what} already`,
         `<p>Good start: ${what} since you joined RepSuites.</p>
-<p>RepSuites Growth turns that into more reviews and more customers:</p>
-<ul><li>AI writes a reply to every Google review for you to approve</li>
-<li>Ask customers for reviews by email, WhatsApp or text</li>
-<li>See where you show up on Google Maps across your area</li>
-<li>A plain-English summary of what customers say, every month</li></ul>
-<p>It is £49 a month, or £497 a year (£91 less than paying monthly). Cancel any time.</p>${button("https://repsuites.com/pricing", "See RepSuites Growth")}`,
+<p>Most of your past customers will never see your code. RepSuites Growth asks them for you, by text or email, after each job, and only sends the happy ones to Google.</p>
+<p>It also writes a reply to every Google review for you to approve, and shows where you appear on Google Maps.</p>
+<p>It is £49 a month, about £1.61 a day. One extra customer a month more than pays for it. Cancel any time.</p>
+${button("https://repsuites.com/pricing", "Start RepSuites Growth")}
+<p>Rather we set it up with you? Reply "call" and we will book 10 minutes.</p>`,
       );
     }
     case "nudge_7":
       return wrap(
-        `A quick update on ${f.name}`,
+        `${first}, you are one step from your first review request`,
         `<p>${esc(oneNumber(f))}</p>
-<p>It only takes a minute to check your dashboard: new reviews, private messages and how you are doing on Google.</p>${button(DASH, "Open my dashboard")}`,
+<p>${f.google_connected ? "Your next step: get your review code in front of customers. It takes about a minute." : "Your next step: connect your Google profile. It takes about a minute."}</p>
+${button(f.google_connected ? `${DASH}#qr` : `${DASH}#settings`, f.google_connected ? "Get my review code" : "Connect Google")}`,
       );
     case "winback_30":
       return wrap(
-        `We have not seen you for a while`,
-        `<p>It has been a month since you last opened RepSuites for ${biz}. ${esc(oneNumber(f))}</p>
-<p>New since then: a map of where you show up on Google, AI-written Google posts, and review cards with your logo. Your account is still here and ready.</p>${button(DASH, "Take a look")}`,
+        `Still want more Google reviews for ${f.name}?`,
+        `<p>It has been a month since you last opened RepSuites. ${esc(oneNumber(f))}</p>
+<p>If reviews are still on your list, the fastest way is to let us set it up with you. It takes about 10 minutes.</p>
+${button(DASH, "Open my account")}
+<p>Not for you any more? Reply "close" and we will close your account. No hard feelings.</p>`,
       );
     case "stand_upsell_paid":
       return wrap(
         `Customers are scanning your code. Make it easier.`,
         `<p>${esc(oneNumber(f))} That is great.</p>
-<p>A proper table stand or a tap-to-review NFC card makes it even easier, so more people do it. Stands are £29, or 2 for £49. Cards start at £15.</p>${button("https://repsuites.com/cards", "See stands and cards")}`,
+${
+  home
+    ? `<p>A tap-to-review card makes it even easier at the end of a job: the customer taps it with their phone and leaves a review. Cards start at £15.</p>`
+    : `<p>A proper table stand or a tap-to-review card makes it even easier, so more people do it. Stands are £29, or 2 for £49. Cards start at £15.</p>`
+}${button("https://repsuites.com/cards", home ? "See tap cards" : "See stands and cards")}`,
       );
     case "past_due":
       return wrap(
