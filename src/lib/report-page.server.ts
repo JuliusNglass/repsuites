@@ -348,7 +348,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const center = grids[0]!.center ?? extra?.center ?? null;
   const miles = usesMiles(center?.lat, center?.lng);
   const spacingKm = grids[0]!.spacingKm ?? (miles ? 0.8 : 1);
-  const legend = `${rankLegend()}<p class="small" style="text-align:center;margin:8px auto 0">The number on each pin is where you came on Google Maps from that spot.</p>`;
+  const legend = `${rankLegend()}`;
   // Plain words: "in the top 3 in 6 of the 25 places", "not in the top 3
   // anywhere", "in the top 3 everywhere".
   // The top card already says "X of 25"; this explains the shape: your own
@@ -413,10 +413,10 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
     ? `<div class="cmp switch noprint"><span class="switch-label">Show the map for</span><div class="kw" role="group" aria-label="Business shown on the map"><button type="button" data-cmp="" aria-pressed="true" class="on">${esc(b.name)} (you)</button>${competitors.map((c) => `<button type="button" data-cmp="${esc(c.placeId)}" aria-pressed="false">${esc(c.name)}</button>`).join("")}</div></div>`
     : "";
   const furthest = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
-  const intro = `<p style="margin:0 0 8px">We searched Google Maps from <b>25 spots</b> in a circle reaching <b>${esc(furthest)}</b> out from your business. Each pin shows what a customer standing there would see.</p>
-<ul style="margin:0 0 12px;padding-left:1.2em"><li>The number on each pin is where you came in the list from that spot.</li><li>The house is you.</li><li>Pinch, or use + and −, to zoom in.</li></ul>`;
+  const intro = `<p style="margin:0 0 12px">Each pin is your place on Google Maps when a customer searches from that spot (25 spots, up to ${esc(furthest)} away). The house is you.</p>
+`;
   if (!center || !extra)
-    return `${printable}<div class="screen-grids"><h3 class="sub">Where you show up across your area</h3><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>`;
+    return `${printable}<div class="screen-grids"><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>`;
   const spots = gridSpots(center, 5, spacingKm).map((p) => [
     Math.round(p.lat * 1e6) / 1e6,
     Math.round(p.lng * 1e6) / 1e6,
@@ -448,7 +448,7 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
   const rivalKey = data.rivals.length
     ? `<p class="small" style="margin:8px 0 0">${data.rivals.map((x) => `<b class="rkey">${x.l}</b> ${esc(x.n)}`).join(" &nbsp; ")}</p>`
     : "";
-  return `${printable}<div class="screen-grids"><h3 class="sub">Where you show up across your area</h3><div class="card">${intro}${tabs}${competitorTabs}
+  return `${printable}<div class="screen-grids"><div class="card">${intro}${tabs}${competitorTabs}
 <div id="rmap" class="map" role="region" aria-label="Map of where you show up. The words under the map say the same thing."><div id="rmap-fallback" style="padding:16px">${dots(grids[0]!)}</div></div>
 ${legend}${rivalKey}<p id="rmap-sum" aria-live="polite" style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -900,7 +900,7 @@ export function profileEvidence(r: Report): string {
         ["Review recency and sample velocity", reviewEvidence],
       ]
     : [];
-  return `<h2>What Google shows about your business</h2><div class="card"><p class="small">Checked ${esc(r.createdAt)} using information customers can see on Google. Some account-only details cannot be checked here.</p><table class="kv"><tr><th>Check</th><th>What we found</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>What you should confirm</h3><p class="small">Please confirm that you control the profile, that the business is not restricted, and that your services, review replies and posts are up to date.</p><p class="small">Your review numbers and rating show what customers see. They do not tell us how many enquiries you receive.</p></div>`;
+  return `<h2>What Google shows about your business</h2><div class="card"><p class="small">What customers see on your Google profile.</p><table class="kv"><tr><th>Check</th><th>What we found</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table><h3>What you should confirm</h3><p class="small">Please confirm that you control the profile, that the business is not restricted, and that your services, review replies and posts are up to date.</p><p class="small">Your review numbers and rating show what customers see. They do not tell us how many enquiries you receive.</p></div>`;
 }
 
 export function websiteEvidence(r: Report): string {
@@ -1021,9 +1021,9 @@ export function websiteEvidence(r: Report): string {
       priority: "Medium priority · Website expert",
     },
   };
-  const intro = `<section id="website" class="chapter"><div class="card"><p class="diagnosis">We checked whether your website clearly says <b>what you do, where you work, why customers should trust you and how they can contact you.</b> Each recommendation tells you what to change and how to check it afterwards.</p><p class="small">Checked ${esc(a.checkedAt)}. We checked the information available on the homepage. Page speed, ease of use and completed enquiries need separate checks.</p>`;
+  const intro = `<section id="website" class="chapter"><div class="card"><p class="diagnosis">Does your homepage say <b>what you do, where, why trust you and how to reach you?</b></p>`;
   if (a.status !== "checked")
-    return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "We could not open your website in time for this check, so it is left out of your score. This usually means the site is slow to load or blocks automatic checks. Rerun the check later to include it."}</p></div></section>`;
+    return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "We could not open your website in time, so it is left out of your score. This usually means the site is slow to load."}</p></div></section>`;
   const ws = websiteScore(a);
   const passed = a.findings.filter((f) => f.status === "pass").length;
   const scoreLine =
@@ -1241,7 +1241,7 @@ const STEP_STYLE = `main{max-width:900px}.js-steps .report-tools{position:static
 .steplinks{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;justify-content:center}.steplinks::-webkit-scrollbar{display:none}
 .steplinks button{flex-shrink:0;border:1px solid var(--line,#e2e8f0);background:#fff;color:var(--ink-2,#334155);border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:.9rem;font-weight:650;cursor:pointer}.steplinks button.on{background:var(--report-primary);border-color:var(--report-primary);color:#fff}
 .stepnav{display:flex;justify-content:space-between;gap:12px;margin:28px 0 8px}.stepbtn{min-height:52px;padding:0 22px;border-radius:14px;border:0;background:var(--report-primary);color:#fff;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;flex:1;max-width:360px;margin-left:auto}.stepbtn.ghost{background:#fff;color:var(--ink,#0b1424);border:1px solid var(--line,#cbd5e1);flex:0 0 auto;margin-left:0}.stepbtn:disabled{visibility:hidden}.stepbtn:focus-visible,.steplinks button:focus-visible{outline:3px solid var(--report-accent);outline-offset:2px}
-.js-steps .chapter-open{margin-top:8px;padding-top:0;border-top:0}
+.js-steps .chapter-open{margin-top:8px;padding-top:0;border-top:0}.js-steps .chapter-open .eyebrow{display:none}
 .switch{justify-content:center;text-align:center}.switch-label{min-width:0;width:100%;text-align:center}.switch .kw{margin:0 auto}#rmap-sum{max-width:none}.screen-grids .card>p,.screen-grids .card>ul{max-width:none}
 @media(max-width:620px){.steplinks{justify-content:flex-start}.stepnav{position:sticky;bottom:0;background:rgba(246,248,251,.96);padding:10px 0;margin:20px 0 0}.stepbtn{max-width:none}}
 @media print{.stepbar,.stepnav{display:none!important}section.step{display:block!important;animation:none}}
@@ -1287,7 +1287,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     .filter((g) => g.competitors?.length)
     .map(
       (g) =>
-        `<h2>Who shows up for &quot;${esc(g.keyword)}&quot;</h2><div class="card"><p class="small">Same ${g.ranks.length} search spots, checked ${esc(date)}. Average position includes only spots where the business appeared in the top 20.</p><table><tr><th>Business</th><th>Top 3 spots</th><th>Found</th><th>Average</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g
+        `<h2>Who shows up for &quot;${esc(g.keyword)}&quot;</h2><div class="card"><p class="small">Same ${g.ranks.length} spots. Average counts only spots in the top 20.</p><table><tr><th>Business</th><th>Top 3 spots</th><th>Found</th><th>Average</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g
           .competitors!.filter((c) => relevantMapCompetitor({ title: c.name }, g.keyword))
           .map(
             (c) =>
@@ -1355,12 +1355,12 @@ ${executiveBrief(r, view)}
 <p class="muted">${esc(b.address)} &middot; Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
 </section>
 <section class="step" id="step-map" data-title="Google Maps">
-${chapter(2, "map", "Where customers can find you on Google Maps")}
+${chapter(2, "map", "Where you show up on Google Maps")}
 ${heat || (mapsLine ? `<div class="card">${mapsLine}</div>` : "")}
 ${beforeAfter(r)}
 </section>
 <section class="step" id="step-rivals" data-title="Rivals">
-${chapter(3, "rivals", "Who is beating you, and why")}
+${chapter(3, "rivals", "Who is beating you")}
 ${comparison}
 ${
   comparison
@@ -1378,7 +1378,7 @@ ${profileEvidence(r)}
 
 </section>
 <section class="step" id="step-fixes" data-title="Fix first">
-${chapter(4, "fixes", "Do these three things first")}
+${chapter(4, "fixes", "Fix these 3 first")}
 ${topThree(r, extra?.fixit ? extra.token : null)}
 ${extra?.fixit ? fixitOffer(extra.token) : ""}
 ${headline}
@@ -1390,7 +1390,7 @@ ${websiteEvidence(r)}
 </section>
 ${r.aiVisibility ? `<section class="step" id="step-ai" data-title="AI assistants">${chapter(6, "ai", "Do AI assistants recommend you?")}${aiSection(r)}</section>` : ""}
 <section class="step" id="step-plan" data-title="Your plan">
-${chapter(r.aiVisibility ? 7 : 6, "plan", "Your plan, and what it is worth")}
+${chapter(r.aiVisibility ? 7 : 6, "plan", "Your plan")}
 ${presentationClose(r, b, view, extra)}
 ${worthSection(r, sale, extra)}
 ${reviewStand(r, extra)}

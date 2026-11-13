@@ -40,7 +40,7 @@ describe("report reading comfort", () => {
   it("has the Easier reading switch and says the priority of each fix in words", () => {
     const h = renderReport(report, { token: "a".repeat(24), snapshot: null, flash: "" });
     expect(h).toContain("Easier reading");
-    expect(h).toContain("Do these three things first");
+    expect(h).toContain("Fix these 3 first");
     expect(h).not.toContain("text-transform:uppercase");
   });
 });

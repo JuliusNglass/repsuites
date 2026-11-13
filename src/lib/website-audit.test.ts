@@ -42,7 +42,7 @@ describe("homepage audit evidence", () => {
     );
     const html = websiteEvidence({ websiteAudit: audit } as Report);
     expect(html).not.toContain("<img>");
-    expect(html).toContain("Page speed, ease of use and completed enquiries need separate checks");
+    expect(html).toContain("Does your homepage say");
     expect(html).toContain("Next step");
   });
   it("does not infer failures when a fetch or redirect is unsafe", async () => {
@@ -61,10 +61,10 @@ describe("homepage audit evidence", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(
-        async () => new Response("x".repeat(2_500_001), { headers: { "content-type": "text/html" } }),
+        async () =>
+          new Response("x".repeat(2_500_001), { headers: { "content-type": "text/html" } }),
       ),
     );
     expect((await checkWebsite("https://example.com/")).status).toBe("unavailable");
   });
 });
-
