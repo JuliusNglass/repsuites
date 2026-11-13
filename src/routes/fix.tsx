@@ -10,7 +10,7 @@ import { fixitBusiness, startFixitCheckout } from "../lib/fixit.functions";
 import { FIXIT_FAQ, FIXIT_INCLUDES, FIXIT_PRICE } from "../lib/fixit";
 
 export const Route = createFileRoute("/fix")({
-  validateSearch: z.object({ r: z.string().optional() }),
+  validateSearch: z.object({ r: z.string().optional(), buy: z.coerce.number().optional() }),
   loaderDeps: ({ search }) => ({ r: search.r }),
   loader: ({ deps }) => fixitBusiness({ data: deps.r ? { token: deps.r } : {} }),
   head: () => ({
@@ -116,8 +116,47 @@ function PackMock({ name }: { name?: string | null | undefined }) {
   );
 }
 
+// From the report: skip this page and open Stripe straight away. Stripe's
+// page shows the price and summary, takes the card and email in one step.
+function StraightToCheckout({ token }: { token?: string | undefined }) {
+  const start = useServerFn(startFixitCheckout);
+  const [err, setErr] = useState<string | null>(null);
+  const ran = useRef(false);
+  useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
+    start({ data: token ? { token } : {} })
+      .then((x) => {
+        if (x.ok) window.location.href = x.url;
+        else setErr(x.error);
+      })
+      .catch(() => setErr("Something went wrong. Please try again."));
+  }, [start, token]);
+  return (
+    <main className="min-h-dvh flex flex-col items-center justify-center gap-4 p-6 text-center text-lg">
+      {err ? (
+        <>
+          <p role="alert">{err}</p>
+          <a className="btn btn-gold min-h-12" href={`/fix${token ? `?r=${token}` : ""}`}>
+            See the details
+          </a>
+        </>
+      ) : (
+        <p className="inline-flex items-center gap-2">
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Opening secure checkout
+        </p>
+      )}
+    </main>
+  );
+}
+
 function FixPage() {
-  const { r } = Route.useSearch();
+  const { r, buy } = Route.useSearch();
+  if (buy === 1) return <StraightToCheckout token={r} />;
+  return <FixLanding r={r} />;
+}
+
+function FixLanding({ r }: { r?: string | undefined }) {
   const { name } = Route.useLoaderData();
   const heroBuy = useRef<HTMLDivElement>(null);
   const [showBar, setShowBar] = useState(false);

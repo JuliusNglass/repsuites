@@ -1162,7 +1162,7 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
 }
 
 function fixitOffer(token: string): string {
-  return `<div class="card noprint"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 10px">We write the new wording and review messages for you, ready to copy in. One-off &pound;27, 14-day money back.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me</a></div>`;
+  return `<div class="card noprint"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 10px">We write the new wording and review messages for you, ready to copy in. One-off &pound;27, 14-day money back.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}&amp;buy=1">Fix these for me</a></div>`;
 }
 
 // Free-check leads: two optional questions, asked after they have their

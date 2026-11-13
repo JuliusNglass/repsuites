@@ -32,17 +32,21 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
     if (!stripeReady()) return { ok: false as const, error: "Payments are not open yet." };
     const token = cleanToken(data.token);
     let business = "";
+    let email = "";
     if (token) {
-      const r = await serviceRead<{ name: string | null }[]>(
-        `prospects?select=name&report_token=eq.${token}`,
+      const r = await serviceRead<{ name: string | null; email: string | null }[]>(
+        `prospects?select=name,email&report_token=eq.${token}`,
         "",
       );
       business = String(r.data?.[0]?.name ?? "").slice(0, 120);
+      const e = String(r.data?.[0]?.email ?? "").trim();
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) email = e;
     }
     const meta = { kind: "fixit", token: token ?? "", business };
     const s = await stripe<{ id: string; url: string }>("checkout/sessions", {
       mode: "payment",
       ...(token ? { client_reference_id: token } : {}),
+      ...(email ? { customer_email: email } : {}),
       metadata: meta,
       payment_intent_data: { metadata: meta },
       line_items: [
