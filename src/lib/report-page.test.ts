@@ -267,7 +267,7 @@ describe("all keyword grids in PDF", () => {
 
     expect(html).toContain("Copy share link");
     expect(html).toContain("Download PDF");
-    expect(html).toContain("Presentation mode");
+    expect(html).not.toContain("Presentation mode");
     expect(html).toContain("@page{size:A4");
     expect(html).toContain(".presentation-close{break-before:page}");
   });

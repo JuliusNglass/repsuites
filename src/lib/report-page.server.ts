@@ -1224,6 +1224,7 @@ const STEP_STYLE = `.rbar{padding:8px 10px;border-radius:12px;margin:0 0 6px}.rb
 .stepnav [hidden]{display:none!important}.stepnav.solo{justify-content:center}.stepnav.solo .stepbtn{margin:0 auto}.stepnav{display:flex;justify-content:space-between;gap:12px;margin:28px 0 8px}.stepbtn{min-height:52px;padding:0 22px;border-radius:14px;border:0;background:var(--report-primary);color:#fff;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;flex:1;max-width:440px;margin-left:auto}.stepbtn.ghost{background:#fff;color:var(--ink,#0b1424);border:1px solid var(--line,#cbd5e1);flex:0 0 auto;margin-left:0}.stepbtn:disabled{display:none}.stepnav .stepbtn:not(.ghost){display:inline-flex;align-items:center;justify-content:center;gap:10px;font-size:1.05rem;box-shadow:0 10px 26px rgba(11,29,58,.25)}.stepbtn .arr{display:inline-block;font-size:1.3rem;line-height:1;animation:nudge 1.4s ease-in-out infinite}@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}.stepbtn:hover .arr{animation:none;transform:translateX(5px)}.stepbtn:focus-visible,.steplinks button:focus-visible{outline:3px solid var(--report-accent);outline-offset:2px}
 .js-steps .chapter-open{margin-top:8px;padding-top:0;border-top:0}.js-steps .chapter-open .eyebrow{display:none}
 .switch{justify-content:center;text-align:center}.switch-label{min-width:0;width:100%;text-align:center}.switch .kw{margin:0 auto}#rmap-sum{max-width:none}.screen-grids .card>p,.screen-grids .card>ul{max-width:none}
+.stepnav .stepbtn,.stepnav .stepbtn.ghost{flex:1 1 0;max-width:none;margin:0}
 @media(max-width:620px){.steplinks{justify-content:flex-start}.stepnav{position:sticky;bottom:0;background:rgba(246,248,251,.96);padding:10px 0;margin:20px 0 0}.stepbtn{max-width:none}}
 @media print{.stepbar,.stepnav{display:none!important}section.step{display:block!important;animation:none}}
 @media (prefers-reduced-motion:reduce){.js-steps section.step.on{animation:none}#step-fill{transition:none}.stepbtn .arr{animation:none}}`;
@@ -1331,7 +1332,7 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
         : "/logo-mark.png";
   const reportUrl = extra ? `/r/${encodeURIComponent(extra.token)}` : "";
   const tools = extra
-    ? `<nav class="report-tools noprint" aria-label="Report actions"><button type="button" id="copy-report">Copy share link</button><a href="${reportUrl}?print=1" class="primary" title="Opens the print window: choose Save as PDF">Download PDF</a><button type="button" id="present-report">Presentation mode</button></nav>`
+    ? `<nav class="report-tools noprint" aria-label="Report actions"><button type="button" id="copy-report">Copy share link</button><a href="${reportUrl}?print=1" class="primary" title="Opens the print window: choose Save as PDF">Download PDF</a></nav>`
     : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
