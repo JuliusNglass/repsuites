@@ -42,7 +42,7 @@ describe("homepage audit evidence", () => {
     );
     const html = websiteEvidence({ websiteAudit: audit } as Report);
     expect(html).not.toContain("<img>");
-    expect(html).toContain("Does your homepage say");
+    expect(html).toContain("We checked whether your homepage");
     expect(html).toContain("Next step");
   });
   it("does not infer failures when a fetch or redirect is unsafe", async () => {

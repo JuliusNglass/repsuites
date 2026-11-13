@@ -233,7 +233,7 @@ describe("diagnostic report evidence", () => {
       },
       { token: "a".repeat(24), snapshot: null, flash: "print" },
     );
-    expect(h).toContain("Avg place");
+    expect(h).toContain("of 25");
     expect(h).toContain("Other &#60;Cafe&#62;");
     expect(h).toContain("No title found");
     expect(h).toContain("Review the title");
@@ -281,8 +281,8 @@ describe("all keyword grids in PDF", () => {
 
   it("adds a presentation narrative and deliberate A4 print layout", () => {
     const html = renderReport(report, { token: "a".repeat(24), snapshot: null, flash: "print" });
-    expect(html).toContain("Your 90-day action plan");
-    expect(html).toContain("Pick your first 3 actions");
+    expect(html).toContain("What this is worth to you");
+
     expect(html).toContain("Copy share link");
     expect(html).toContain("Download PDF");
     expect(html).toContain("Presentation mode");

@@ -145,7 +145,7 @@ h3.sub{font-size:1.2rem;margin:28px 0 10px;letter-spacing:-.01em}
 .check-row>summary{list-style:none;cursor:pointer;min-height:56px;display:flex;align-items:center;gap:12px;padding:6px 0}.check-row>summary::-webkit-details-marker{display:none}
 .check-row .pill{min-width:64px;justify-content:center}.check-title{flex:1;font-weight:650}.see{color:var(--ink-3);font-size:.95rem;white-space:nowrap}.check-row[open] .see{visibility:hidden}
 .check-body{padding:0 0 16px 76px}.check-body p{margin:6px 0}
-.closing{background:var(--navy);color:#fff;border:0;padding:28px;margin-top:28px}.closing h3{margin:0 0 6px;font-size:1.35rem;color:#fff}.closing p,.closing .small{color:rgba(255,255,255,.85)}.closing a.book{background:transparent;color:#fff!important;border-color:rgba(255,255,255,.4)}
+.closing{background:var(--navy,#0b1d3a);color:#fff;border:0;padding:28px;margin-top:28px}.closing h3{margin:0 0 6px;font-size:1.35rem;color:#fff}.closing p,.closing .small{color:rgba(255,255,255,.85)}.closing a.book{background:transparent;color:#fff!important;border-color:rgba(255,255,255,.4)}
 details.how>summary{list-style:none;cursor:pointer;min-height:48px;display:flex;align-items:center;font-weight:650}details.how>summary::-webkit-details-marker{display:none}
 @media(max-width:760px){.top3{grid-template-columns:1fr}.check-body{padding-left:0}.chapter-open h2{font-size:1.5rem}}
 @media print{.chapter-open{break-before:page;margin-top:0}#summary.chapter-open{break-before:auto}.check-body{padding-left:0}.top3{grid-template-columns:repeat(3,1fr)}details.how,details.how>*{display:block}}
@@ -673,66 +673,6 @@ const WEBSITE_FIX_ORDER = [
   "schema",
 ];
 
-function presentationClose(
-  r: Report,
-  b: Report["business"],
-  view: ReturnType<typeof scoreView>,
-  extra: RenderExtra | null = null,
-): string {
-  // "Ask us to fix this" opens WhatsApp to the agency (or RepSuites sales)
-  // with the fix already typed, so the owner never has to learn how.
-  const wa = salesWhatsApp(extra?.branding?.phone || undefined);
-  // Free-check leads go to the Fix-It Pack page instead of WhatsApp.
-  const fixUrl = extra?.fixit ? `/fix?r=${encodeURIComponent(extra.token)}` : "";
-  const fixLink = (title: string) =>
-    fixUrl
-      ? `<p class="noprint card-actions"><a class="btn btn-primary fixit-cta" href="${fixUrl}">Fix this for me</a></p>`
-      : wa
-        ? `<p class="noprint card-actions"><a class="wa fixit btn btn-wa" href="https://wa.me/${wa}?text=${encodeURIComponent(`Hi, I've seen the report for ${b.name}. Can you fix this for me: ${title}`)}">Ask us to fix this</a></p>`
-        : "";
-  const date = esc(r.createdAt);
-  const irrelevantNames = r.rivals
-    .filter((x) => !relevantMapCompetitor({ title: x.name, category: x.kind }, r.maps.keyword))
-    .map((x) => x.name.toLocaleLowerCase());
-  const actions = [
-    ...view.fixes.filter((fix) => {
-      const copy = `${fix.title} ${fix.why}`.toLocaleLowerCase();
-      return !irrelevantNames.some((name) => copy.includes(name));
-    }),
-    ...(r.websiteAudit?.findings ?? [])
-      .filter((finding) => finding.status === "review" && WEBSITE_FIX_ORDER.includes(finding.id))
-      .sort((x, y) => WEBSITE_FIX_ORDER.indexOf(x.id) - WEBSITE_FIX_ORDER.indexOf(y.id))
-      .map((finding) => ({
-        title: `Improve ${finding.label.toLocaleLowerCase()}`,
-        why: finding.recommendation,
-        priority: "medium" as const,
-      })),
-  ]
-    .filter(
-      (fix, index, all) =>
-        all.findIndex(
-          (candidate) => candidate.title.toLocaleLowerCase() === fix.title.toLocaleLowerCase(),
-        ) === index,
-    )
-    .slice(0, 6);
-  const actionCards = actions
-    .map((a, i) => {
-      const timing = i < 2 ? "Days 1-14" : i < 4 ? "Days 15-45" : "Days 46-90";
-      const effort = /reviews?|posts?|reply/i.test(a.title) ? "Ongoing" : "Low to medium";
-      const proof = /review/i.test(a.title)
-        ? "Review count, recency and response evidence"
-        : /maps|google/i.test(a.title)
-          ? "A repeat scan at the same search spots"
-          : "A repeat evidence check";
-      return `<article class="card"><div class="when">${timing}</div><h3>${esc(a.title)}</h3><p>${esc(a.why)}</p><p class="small"><b>Who will do it:</b> Choose a person, or ask us<br><b>How much work:</b> ${effort}<br><b>How to check it:</b> ${proof}</p>${fixLink(a.title)}</article>`;
-    })
-    .join("");
-  return `<section class="presentation-close chapter" id="action-plan">
-<h3 class="sub">Your 90-day action plan</h3>
-<div class="stage">${actionCards || `<article class="card"><div class="when">This month</div><h3>Keep your current position</h3><p>Keep earning reviews, keep your Google profile up to date and run the same search again later.</p></article>`}</div><p class="small">Pick your first 3 actions, set a date, then run this check again to see the change.</p>
-</section>`;
-}
-
 export interface RenderExtra {
   token: string;
   snapshot: ProspectSnapshot | null;
@@ -895,10 +835,10 @@ export function profileEvidence(r: Report): string {
             ? `${a.photos} photos found on Google`
             : "Google returned no photo count in this check. This does not mean the profile has no photos.",
         ],
-        ["Review recency and sample velocity", reviewEvidence],
+        ["Recent reviews", reviewEvidence],
       ]
     : [];
-  return `<h2>What Google shows about your business</h2><div class="card"><table class="kv"><tr><th>Check</th><th>What we found</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table></div>`;
+  return `<h2>What Google shows about your business</h2><div class="card"><table class="kv"><tr><th>What customers see</th><th>Yours</th></tr>${[...rows, ...detailed].map(([label, value]) => `<tr><th>${esc(label!)}</th><td>${esc(value!)}</td></tr>`).join("")}</table></div>`;
 }
 
 export function websiteEvidence(r: Report): string {
@@ -1019,7 +959,7 @@ export function websiteEvidence(r: Report): string {
       priority: "Medium priority · Website expert",
     },
   };
-  const intro = `<section id="website" class="chapter"><div class="card"><p class="diagnosis">Does your homepage say <b>what you do, where, why trust you and how to reach you?</b></p>`;
+  const intro = `<section id="website" class="chapter"><div class="card"><p class="diagnosis">We checked whether your homepage clearly shows <b>what you do, where you work, why customers can trust you and how to reach you.</b></p>`;
   if (a.status !== "checked")
     return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "We could not open your website in time, so it is left out of your score. This usually means the site is slow to load."}</p></div></section>`;
   const ws = websiteScore(a);
@@ -1076,9 +1016,7 @@ export function topThree(r: Report, fixToken: string | null = null): string {
       (i) =>
         `<div class="card"><span class="pill ${i.big ? "big" : "improve"}">${i.big ? "Big impact" : "Quick win"}</span><h3>${esc(i.title)}</h3><p>${esc(i.why)}</p>${fixToken ? `<p class="noprint card-actions"><a class="btn btn-primary fixit-cta" href="/fix?r=${encodeURIComponent(fixToken)}">Fix this for me</a></p>` : ""}</div>`,
     )
-    .join(
-      "",
-    )}</div><p class="small">More fixes in <a href="#plan">your plan</a>.</p>`;
+    .join("")}</div><p class="small">More fixes in <a href="#plan">your plan</a>.</p>`;
 }
 
 const chapter = (n: number, id: string, title: string) =>
@@ -1134,7 +1072,7 @@ export function reviewStand(r: Report, extra: RenderExtra | null): string {
     }),
   );
   const order = extra ? `/cards?r=${encodeURIComponent(extra.token)}` : "/cards";
-  return `<h2 id="stand">Your review stand</h2><div class="card" style="display:flex;flex-wrap:wrap;gap:18px;align-items:center"><div style="background:#0f172a;color:#fff;border-radius:16px;padding:16px;text-align:center;width:190px"><b style="display:block;font-size:1.05rem">Enjoyed your visit?</b><span style="font-size:.95rem">Scan to leave a review</span><div style="background:#fff;border-radius:10px;padding:8px;margin:10px auto 8px;width:148px">${qr}</div><span style="font-size:.95rem;font-weight:700">${esc(r.business.name)}</span></div><div style="flex:1;min-width:200px"><p>Customers scan this and land straight on your Google review page. Try it now with your phone camera.</p><p class="noprint"><a class="book" href="${order}">Get this stand</a></p></div></div>`;
+  return `<h2 id="stand">Start getting reviews today</h2><div class="card" style="display:flex;flex-wrap:wrap;gap:18px;align-items:center"><div style="background:#0f172a;color:#fff;border-radius:16px;padding:16px;text-align:center;width:190px"><b style="display:block;font-size:1.05rem">Enjoyed your visit?</b><span style="font-size:.95rem">Scan to leave a review</span><div style="background:#fff;border-radius:10px;padding:8px;margin:10px auto 8px;width:148px">${qr}</div><span style="font-size:.95rem;font-weight:700">${esc(r.business.name)}</span></div><div style="flex:1;min-width:200px"><p style="margin-top:0"><b>Your review QR code and link are ready now.</b> Customers scan or tap and land straight on your Google review page.</p><p class="noprint" style="display:flex;flex-wrap:wrap;gap:10px"><button type="button" class="book" data-copy="${esc(url)}" onclick="var b=this;navigator.clipboard.writeText(b.dataset.copy).then(function(){b.textContent='Link copied'})">Copy my review link</button><a class="book" href="${order}">Order a printed stand</a></p><p class="small">Text the link to every client after each clean.</p></div></div>`;
 }
 
 function websitePicture(r: Report): string {
@@ -1179,7 +1117,7 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
 }
 
 function fixitOffer(token: string): string {
-  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to write these fixes for you?</h3><p style="margin:0 0 4px">We write every fix, ready to paste into Google. 14-day money back.</p><p style="margin:0 0 4px"><b>Bonus:</b> a free month of RepSuites Growth (worth &pound;49). About 90p a day.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
+  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 4px">We write your new Google profile wording and your review request messages, ready to copy in. 14-day money back.</p><p style="margin:0 0 4px"><b>Free bonus month:</b> automatic review requests. Every client gets a text asking for a review as soon as their clean is done (worth &pound;49).</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
 }
 
 // Free-check leads: two optional questions, asked after they have their
@@ -1232,7 +1170,7 @@ var start=0,h=(location.hash||"").slice(1);if(h){steps.forEach(function(st,i){if
 document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a)return;var id=a.getAttribute("href").slice(1);for(var i=0;i<steps.length;i++){if(steps[i].id==="step-"+id||(id&&steps[i].querySelector("#"+CSS.escape(id)))){if(i!==cur){e.preventDefault();show(i,true);}return;}}});
 show(start,false);if(h)window.scrollTo(0,0);})();</script>`;
 
-const STEP_STYLE = `main{max-width:900px}.js-steps .report-tools{position:static;margin-bottom:6px}.js-steps section.step{display:none}.js-steps section.step.on{display:block;animation:stepin .2s ease-out}@keyframes stepin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+const STEP_STYLE = `.rbar{padding:8px 10px;border-radius:12px;margin:0 0 6px}.rbar.you{background:#fff7e0;outline:2px solid var(--report-accent)}.rbar-top{display:flex;justify-content:space-between;gap:12px;font-size:1rem}.rbar-track{height:10px;background:#e8eef2;border-radius:99px;margin-top:6px;overflow:hidden}.rbar-track span{display:block;height:100%;background:#94a3b8;border-radius:99px}.rbar.you .rbar-track span{background:var(--report-accent)}main{max-width:900px}.js-steps .report-tools{position:static;margin-bottom:6px}.js-steps section.step{display:none}.js-steps section.step.on{display:block;animation:stepin .2s ease-out}@keyframes stepin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .stepbar{position:sticky;top:0;z-index:20;background:rgba(246,248,251,.96);backdrop-filter:blur(6px);padding:12px 0 10px;margin:0 0 14px;border-bottom:1px solid var(--line,#e2e8f0)}
 .stepbar-top{display:flex;justify-content:space-between;gap:12px;font-size:.95rem;font-weight:700;color:var(--ink-2,#334155)}#step-name{color:var(--report-primary)}
 .stepbar-track{height:6px;border-radius:99px;background:#e2e8f0;margin:8px 0 10px;overflow:hidden}#step-fill{display:block;height:100%;width:0;background:var(--report-accent);border-radius:99px;transition:width .25s}
@@ -1281,18 +1219,28 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
       ? `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>not in the first 20</b> results on Google Maps.</p>`
       : `<p>Searching <b>"${esc(r.maps.keyword)}"</b> from your own street, you are <b>number ${r.maps.position}</b> on Google Maps.${r.maps.position <= 3 ? " That is the top 3. Well done." : " The first 3 are the ones most people tap."}</p>`;
   const heat = gridsOf(r).length ? heatMap(r, extra) : "";
+  // Rivals as a plain ranking: out of the same search spots, how often each
+  // business shows in the top 3 (the first results people tap).
   const comparison = gridsOf(r)
     .filter((g) => g.competitors?.length)
-    .map(
-      (g) =>
-        `<div class="card"><p class="small" style="margin:0 0 8px">Search: &quot;${esc(g.keyword)}&quot;</p><table><tr><th>Business</th><th>Top 3</th><th>Found</th><th>Avg place</th></tr><tr class="you"><td>${esc(b.name)} (you)</td><td>${g.top3}</td><td>${g.found}</td><td>${g.average ?? "-"}</td></tr>${g
+    .map((g) => {
+      const n = g.ranks.length;
+      const list = [
+        { name: `${b.name} (you)`, top3: g.top3, you: true },
+        ...g
           .competitors!.filter((c) => relevantMapCompetitor({ title: c.name }, g.keyword))
-          .map(
-            (c) =>
-              `<tr><td>${esc(c.name)}</td><td>${c.top3}</td><td>${c.found}</td><td>${c.average ?? "-"}</td></tr>`,
-          )
-          .join("")}</table></div>`,
-    )
+          .map((c) => ({ name: c.name, top3: c.top3, you: false })),
+      ].sort((x, y) => y.top3 - x.top3 || (x.you ? -1 : 1));
+      const place = list.findIndex((x) => x.you) + 1;
+      const ord = (k: number) =>
+        `${k}${k % 10 === 1 && k !== 11 ? "st" : k % 10 === 2 && k !== 12 ? "nd" : k % 10 === 3 && k !== 13 ? "rd" : "th"}`;
+      return `<div class="card"><p style="margin:0 0 4px"><b>You are ${ord(place)} of ${list.length}</b> for &quot;${esc(g.keyword)}&quot;.</p><p class="small" style="margin:0 0 14px">How often each business is in the top 3 on Google Maps, across the same ${n} spots.</p>${list
+        .map(
+          (x) =>
+            `<div class="rbar${x.you ? " you" : ""}"><div class="rbar-top"><span>${esc(x.name)}</span><b>${x.top3} of ${n}</b></div><div class="rbar-track"><span style="width:${n ? Math.round((x.top3 / n) * 100) : 0}%"></span></div></div>`,
+        )
+        .join("")}</div>`;
+    })
     .join("");
   const g = r.reviewGap;
   const gap =
@@ -1349,6 +1297,7 @@ ${video}
 <div class="stepbar noprint" id="stepbar" hidden><div class="stepbar-top"><span id="step-count"></span><span id="step-name"></span></div><div class="stepbar-track"><span id="step-fill"></span></div><div class="steplinks" id="steplinks" role="tablist" aria-label="Report steps"></div></div>
 <section class="step" id="step-overview" data-title="Your score">
 ${executiveBrief(r, view)}
+${headline}
 <p class="muted">${esc(b.address)} &middot; Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
 </section>
 <section class="step" id="step-map" data-title="Google Maps">
@@ -1377,8 +1326,8 @@ ${profileEvidence(r)}
 <section class="step" id="step-fixes" data-title="Fix first">
 ${chapter(4, "fixes", "Fix these 3 first")}
 ${topThree(r, extra?.fixit ? extra.token : null)}
+${reviewStand(r, extra)}
 ${extra?.fixit ? fixitOffer(extra.token) : ""}
-${headline}
 </section>
 <section class="step" id="step-website" data-title="Website">
 ${chapter(5, "website-ch", "Your website")}
@@ -1386,11 +1335,9 @@ ${websitePicture(r)}
 ${websiteEvidence(r)}
 </section>
 ${r.aiVisibility ? `<section class="step" id="step-ai" data-title="AI assistants">${chapter(6, "ai", "Do AI assistants recommend you?")}${aiSection(r)}</section>` : ""}
-<section class="step" id="step-plan" data-title="Your plan">
-${chapter(r.aiVisibility ? 7 : 6, "plan", "Your plan")}
-${presentationClose(r, b, view, extra)}
+<section class="step" id="step-plan" data-title="What it\'s worth">
+${chapter(r.aiVisibility ? 7 : 6, "plan", "What this is worth to you")}
 ${worthSection(r, sale, extra)}
-${reviewStand(r, extra)}
 ${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
 ${extra?.fixit ? fitQuestions(extra.token, /clean/i.test(r.maps?.keyword ?? "")) : ""}
 <div class="noprint closing card"><h3>Want us to do all of this for you?</h3><p>We handle reviews, your Google profile and website fixes every month, and rerun this check so you can see the dots change.</p><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
