@@ -20,7 +20,7 @@ describe("rank pins", () => {
   });
   it("labels every band in the legend, with no em dashes", () => {
     const l = rankLegend();
-    for (const t of ["Top 3", "4 to 10", "11 to 20", "Not in the top 20"]) expect(l).toContain(t);
+    for (const t of ["Top 3", "4 to 10", "11 to 20", "Missing: not in the top 20"]) expect(l).toContain(t);
     expect(l + readingToggle()).not.toContain("—");
   });
 });
