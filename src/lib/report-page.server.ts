@@ -1162,7 +1162,7 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
 }
 
 function fixitOffer(token: string): string {
-  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 4px">We write your new Google profile wording and your review request messages, ready to copy in. 14-day money back.</p><p style="margin:0 0 4px"><b>Free bonus month:</b> automatic review requests. Every client gets a text asking for a review as soon as their clean is done (worth &pound;49).</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me for &pound;27</a><p class="small" style="text-align:center;margin:8px 0 0">One-off payment. No subscription.</p></div>`;
+  return `<div class="card noprint"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 10px">We write the new wording and review messages for you, ready to copy in. One-off &pound;27, 14-day money back.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}">Fix these for me</a></div>`;
 }
 
 // Free-check leads: two optional questions, asked after they have their
