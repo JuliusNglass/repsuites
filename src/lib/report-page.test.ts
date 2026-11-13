@@ -233,7 +233,7 @@ describe("diagnostic report evidence", () => {
       },
       { token: "a".repeat(24), snapshot: null, flash: "print" },
     );
-    expect(h).toContain("Top 3 spots");
+    expect(h).toContain("Avg place");
     expect(h).toContain("Other &#60;Cafe&#62;");
     expect(h).toContain("No title found");
     expect(h).toContain("Review the title");
