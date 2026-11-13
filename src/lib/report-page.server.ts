@@ -69,7 +69,7 @@ tr.you td{font-weight:700;background:#fffbeb}
 .found{border:2px solid #f5b324}.finding{display:flex;gap:10px;align-items:flex-start;margin:10px 0}.finding p{margin:0;font-size:1.0625rem}.fi{font-size:1.3rem;line-height:1.3}
 .map{position:relative;aspect-ratio:1;max-width:560px;margin:0 auto;border-radius:12px;overflow:hidden;background:#e8eef0;z-index:0}
 .kw{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.kw button{border:1px solid #64748b;background:#fff;color:#0b1b33;border-radius:999px;padding:8px 14px;font:inherit;font-size:1rem;cursor:pointer}.kw button.on{background:#0f172a;color:#fff;border-color:#0f172a}
-.pin{position:absolute;transform:translate(-50%,-50%);width:32px;height:32px;font-size:.875rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}.pin.rk-missing{border:0;box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.45)}
+.pin{position:absolute;transform:translate(-50%,-50%);width:32px;height:32px;font-size:.875rem;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)}.pin.rk-missing{border:2px solid #fff;box-shadow:0 0 0 2px #1e293b,0 1px 4px rgba(0,0,0,.45)}
 .pin.home{width:40px;height:40px;background:#0b1b33;border-radius:50%;z-index:3}
 .pin.home .rank{position:absolute;right:-12px;top:-12px;min-width:28px;height:28px;padding:0 4px;font-size:.875rem;border:2px solid #fff}
 .rpin{position:absolute;transform:translate(-50%,-110%) rotate(-45deg);width:24px;height:24px;border-radius:50% 50% 50% 0;background:#475569;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35)}.rpin span{transform:rotate(45deg);color:#fff;font-weight:800;font-size:.875rem}

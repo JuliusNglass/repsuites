@@ -1,23 +1,25 @@
-// The moving map for emails: 25 dots fill in one by one (green = top 3,
-// amber = 4 to 10, red = lower, grey = not checked), then the picture holds.
+// The moving map for emails: 25 dots fill in one by one, with the same colours
+// as the report map (blue top 3, amber 4 to 10, red 11 to 20, dark with a white cross = missing).
 // Pure: returns GIF bytes. The centre dot (the business's own street) gets
 // a white ring. Email apps play GIFs; WhatsApp shows the first frame.
 import { GIFEncoder } from "gifenc";
 
 const PALETTE: [number, number, number][] = [
   [11, 29, 58], // 0 navy background
-  [22, 163, 74], // 1 green
-  [245, 158, 11], // 2 amber
-  [239, 68, 68], // 3 red
+  [31, 111, 209], // 1 blue (top 3)
+  [240, 160, 32], // 2 amber (4 to 10)
+  [217, 58, 63], // 3 red (11 to 20)
   [203, 213, 225], // 4 grey
   [255, 255, 255], // 5 white
   [30, 52, 92], // 6 empty slot
+  [30, 41, 59], // 7 missing (dark, white ring)
 ];
 
 function colourOf(v: number | null): number {
   if (v === -1) return 4;
-  if (v !== null && v <= 3) return 1;
-  if (v !== null && v <= 10) return 2;
+  if (v === null) return 7;
+  if (v <= 3) return 1;
+  if (v <= 10) return 2;
   return 3;
 }
 
@@ -51,7 +53,19 @@ export function mapGif(ranks: (number | null)[], size = 420): Uint8Array {
   gif.writeFrame(frame.slice(), W, W, { palette: PALETTE, delay: 400, repeat: 0 });
   list.forEach((v, i) => {
     const [cx, cy] = centre(i);
-    disc(frame, cx, cy, r, colourOf(v));
+    const c = colourOf(v);
+    if (c === 7) {
+      // Missing: white ring round a dark dot with a white cross.
+      disc(frame, cx, cy, r, 5);
+      disc(frame, cx, cy, r - 4, 7);
+      for (let d = -r * 0.45; d <= r * 0.45; d += 0.5)
+        for (let w = -2; w <= 2; w++) {
+          const a = Math.round(cy + d) * W + Math.round(cx + d + w);
+          const b2 = Math.round(cy + d) * W + Math.round(cx - d + w);
+          frame[a] = 5;
+          frame[b2] = 5;
+        }
+    } else disc(frame, cx, cy, r, c);
     gif.writeFrame(frame.slice(), W, W, { delay: i === list.length - 1 ? 3000 : 90 });
   });
   gif.finish();

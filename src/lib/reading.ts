@@ -34,7 +34,7 @@ export function rankBand(v: number | null): RankBand {
 
 // What a pin says: its number, or a dash when not in the top 20.
 export function rankText(v: number | null): string {
-  return v === -1 ? "?" : v === null ? "–" : String(v);
+  return v === -1 ? "?" : v === null ? "✕" : String(v);
 }
 
 // Plain words for one pin, for screen readers and hover.
@@ -49,13 +49,13 @@ export function rankWords(v: number | null): string {
 // The CSS that makes a pin: shape and outline as well as colour, so the
 // bands still differ in greyscale print and for colour-blind readers.
 // Top 3: circle. 4 to 10: rounded square. 11 to 20: square.
-// Not in the top 20: white circle with a dashed grey outline and a dash.
+// Not in the top 20 (missing): dark circle with a white cross, so the gaps stand out on the map.
 export const RANK_PIN_STYLE = `
 .rk{display:flex;align-items:center;justify-content:center;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
 .rk-top3{background:#1f6fd1;color:#fff;border-radius:50%}
 .rk-near{background:#f0a020;color:#0b1b33;border-radius:28%}
 .rk-far{background:#d93a3f;color:#fff;border-radius:8%}
-.rk-missing{background:#fff;color:#0b1b33;border-radius:50%;outline:2px dashed #64748b;outline-offset:-2px}
+.rk-missing{background:#1e293b;color:#fff;border-radius:50%}
 .rk-unknown{background:#e2e8f0;color:#334155;border-radius:50%}
 .rkey-list{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:8px 18px;margin:12px 0 0;padding:0;font-size:1rem}
 .rkey-list li{display:flex;align-items:center;gap:8px}
@@ -66,7 +66,7 @@ export const RANK_PIN_STYLE = `
 export function rankLegend(): string {
   const item = (band: RankBand, sample: string, label: string) =>
     `<li><span class="rk rk-${band}" aria-hidden="true">${sample}</span>${label}</li>`;
-  return `<ul class="rkey-list" aria-label="What the pins mean">${item("top3", "1", "Top 3")}${item("near", "5", "4 to 10")}${item("far", "14", "11 to 20")}${item("missing", "–", "Not in the top 20")}</ul>`;
+  return `<ul class="rkey-list" aria-label="What the pins mean">${item("top3", "1", "Top 3")}${item("near", "5", "4 to 10")}${item("far", "14", "11 to 20")}${item("missing", "✕", "Missing: not in the top 20")}</ul>`;
 }
 
 const EASY_KEY = "rs-easy-reading";

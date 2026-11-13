@@ -14,7 +14,7 @@ describe("rank pins", () => {
     expect(rankBand(-1)).toBe("unknown");
   });
   it("shows a dash when not in the top 20 and says it in words", () => {
-    expect(rankText(null)).toBe("–");
+    expect(rankText(null)).toBe("✕");
     expect(rankWords(null)).toBe("not in the top 20");
     expect(rankWords(2)).toBe("number 2 (top 3)");
   });

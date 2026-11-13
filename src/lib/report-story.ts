@@ -25,17 +25,12 @@ function age(days: number): string {
   return `over ${Math.floor(days / 365)} year${days >= 730 ? "s" : ""}`;
 }
 
+// Same colours, shapes and marks as the full report's map pins.
 function dot(v: number | null, i: number): string {
-  const c =
-    v === -1
-      ? "#cbd5e1"
-      : v !== null && v <= 3
-        ? "#16a34a"
-        : v !== null && v <= 10
-          ? "#f59e0b"
-          : "#ef4444";
-  const t = v === -1 ? "" : v === null ? "20+" : String(v);
-  return `<span class="sd" style="background:${c};animation-delay:${0.15 + i * 0.06}s">${t}</span>`;
+  const band =
+    v === -1 ? "unknown" : v === null ? "missing" : v <= 3 ? "top3" : v <= 10 ? "near" : "far";
+  const t = v === -1 ? "?" : v === null ? "&#10005;" : String(v);
+  return `<span class="sd sd-${band}${i === 12 ? " you" : ""}" style="animation-delay:${0.15 + i * 0.06}s">${t}</span>`;
 }
 
 export function storyCards(s: StoryInput): string[] {
@@ -52,7 +47,7 @@ export function storyCards(s: StoryInput): string[] {
           ? "In every spot, people see other businesses first."
           : "In the other spots, people see other businesses first.";
     cards.push(
-      `<p class="sk">Google Maps around you</p><h2>Top 3 in ${s.top3} of 25 spots</h2><div class="sgrid" aria-label="Your Google Maps position in 25 spots around you">${s.ranks.map(dot).join("")}</div><p>When people search <b>"${esc(s.keyword ?? "")}"</b>. ${verdict}</p><p class="sl"><i style="background:#16a34a"></i>Top 3 <i style="background:#f59e0b"></i>4 to 10 <i style="background:#ef4444"></i>Lower</p>`,
+      `<p class="sk">Google Maps around you</p><h2>Top 3 in ${s.top3} of 25 spots</h2><div class="sgrid" aria-label="Your Google Maps position in 25 spots around you">${s.ranks.map(dot).join("")}</div><p>When people search <b>"${esc(s.keyword ?? "")}"</b>. ${verdict}</p><p class="sl"><i class="sd-top3"></i>Top 3 <i class="sd-near"></i>4 to 10 <i class="sd-far"></i>11 to 20 <i class="sd-missing"></i>Missing</p>`,
     );
   }
   if (s.leader && s.leader.reviews > s.reviews) {
@@ -93,7 +88,7 @@ const STORY_STYLE = `.story,.story *{box-sizing:border-box}.story{position:fixed
 .scard h2{font-size:clamp(26px,7vw,36px);line-height:1.15;margin:0 0 14px;color:#fff}.sk{margin:0 0 8px;color:var(--report-accent,#f5b324);font-weight:700}
 .sbig{font-size:84px;font-weight:800;line-height:1;margin:6px 0 14px}.sbig small{font-size:28px;opacity:.7}
 .sgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:6px 0 16px;max-width:340px}.sd{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;color:#fff;opacity:0;transform:scale(.3);animation:spop .35s ease forwards}
-@keyframes spop{to{opacity:1;transform:none}}.sl{font-size:15px;opacity:.85}.sl i{display:inline-block;width:12px;height:12px;border-radius:50%;margin:0 4px 0 10px;vertical-align:middle}
+@keyframes spop{to{opacity:1;transform:none}}.sd-top3{background:#1f6fd1;border-radius:50%}.sd-near{background:#f0a020;color:#0b1b33!important;border-radius:28%!important}.sd-far{background:#d93a3f;border-radius:8%!important}.sd-missing{background:#1e293b;border:2px solid #fff;font-size:20px!important}.sd-unknown{background:#e2e8f0;color:#334155!important}.sd.you{box-shadow:0 0 0 3px var(--report-accent,#f5b324)}.sl{font-size:15px;opacity:.85}.sl i{display:inline-block;width:14px;height:14px;border-radius:50%;margin:0 4px 0 10px;vertical-align:middle}
 .sbar{display:grid;grid-template-columns:1fr;gap:4px;margin:0 0 14px}.sbar span{font-weight:700}.sbar b{display:block;height:22px;border-radius:8px;background:rgba(255,255,255,.55);animation:sgrow 1s ease}.sbar.you b{background:var(--report-accent,#f5b324)}.sbar em{font-style:normal;font-size:15px}
 @keyframes sgrow{from{width:0}}.sf{padding-left:22px}.sf li{margin:0 0 12px}
 .sbtn{display:flex;align-items:center;justify-content:center;text-align:center;min-height:52px;border-radius:14px;background:var(--report-accent,#f5b324);color:#0b1424;font-weight:800;text-decoration:none;margin:14px 0 0;border:0;font:inherit;font-weight:800;cursor:pointer;width:100%}.sbtn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5)}
