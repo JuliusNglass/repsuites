@@ -36,6 +36,7 @@ import { Route as FixThanksRouteImport } from './routes/fix.thanks'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as ApiBillingBackRouteImport } from './routes/api.billing.back'
+import { Route as ApiInternalCheckFollowupsRouteImport } from './routes/api.internal.check-followups'
 import { Route as ApiInternalFixitRouteImport } from './routes/api.internal.fixit'
 import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
@@ -190,6 +191,12 @@ const ApiBillingBackRoute = ApiBillingBackRouteImport.update({
   path: '/api/billing/back',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalCheckFollowupsRoute =
+  ApiInternalCheckFollowupsRouteImport.update({
+    id: '/api/internal/check-followups',
+    path: '/api/internal/check-followups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalFixitRoute = ApiInternalFixitRouteImport.update({
   id: '/api/internal/fixit',
   path: '/api/internal/fixit',
@@ -314,6 +321,7 @@ export interface FileRoutesByFullPath {
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards/': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
+  '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
@@ -361,6 +369,7 @@ export interface FileRoutesByTo {
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
+  '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
@@ -409,6 +418,7 @@ export interface FileRoutesById {
   '/r/$token': typeof RTokenRouteWithChildren
   '/cards/': typeof CardsIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
+  '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/cards/'
     | '/api/billing/back'
+    | '/api/internal/check-followups'
     | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/cards'
     | '/api/billing/back'
+    | '/api/internal/check-followups'
     | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
@@ -552,6 +564,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/cards/'
     | '/api/billing/back'
+    | '/api/internal/check-followups'
     | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
@@ -599,6 +612,7 @@ export interface RootRouteChildren {
   RTokenRoute: typeof RTokenRouteWithChildren
   CardsIndexRoute: typeof CardsIndexRoute
   ApiBillingBackRoute: typeof ApiBillingBackRoute
+  ApiInternalCheckFollowupsRoute: typeof ApiInternalCheckFollowupsRoute
   ApiInternalFixitRoute: typeof ApiInternalFixitRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
@@ -808,6 +822,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBillingBackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/check-followups': {
+      id: '/api/internal/check-followups'
+      path: '/api/internal/check-followups'
+      fullPath: '/api/internal/check-followups'
+      preLoaderRoute: typeof ApiInternalCheckFollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/fixit': {
       id: '/api/internal/fixit'
       path: '/api/internal/fixit'
@@ -987,6 +1008,7 @@ const rootRouteChildren: RootRouteChildren = {
   RTokenRoute: RTokenRouteWithChildren,
   CardsIndexRoute: CardsIndexRoute,
   ApiBillingBackRoute: ApiBillingBackRoute,
+  ApiInternalCheckFollowupsRoute: ApiInternalCheckFollowupsRoute,
   ApiInternalFixitRoute: ApiInternalFixitRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
