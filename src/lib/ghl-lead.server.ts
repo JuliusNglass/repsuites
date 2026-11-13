@@ -109,3 +109,48 @@ export async function addGhlTags(p: {
     return false;
   }
 }
+
+// A new free RepSuites account: create or update the GHL contact so the
+// sign-up journey (onboarding, upgrade nudges) can run there. Best effort.
+export async function pushSignupToGhl(p: {
+  name: string;
+  email: string;
+  business: string;
+  source: string;
+}): Promise<boolean> {
+  const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
+  if (!token || !p.email) return false;
+  const first = p.name.trim().split(/\s+/)[0] ?? "";
+  const last = p.name.trim().split(/\s+/).slice(1).join(" ");
+  const src =
+    p.source
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 30) || "direct";
+  try {
+    const r = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Version: "2021-07-28",
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        locationId: GHL_LOCATION_ID,
+        email: p.email,
+        firstName: first,
+        ...(last ? { lastName: last } : {}),
+        companyName: p.business,
+        source: `RepSuites free sign-up (${src})`,
+        tags: ["repsuites-free-signup", "repsuites-free", `signup-src-${src}`],
+      }),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) console.error("GHL sign-up push failed", r.status);
+    return r.ok;
+  } catch {
+    return false;
+  }
+}

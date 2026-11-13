@@ -69,6 +69,7 @@ export async function signUpFree(
     report?: string | undefined;
     website?: string | undefined;
     bonus?: string | undefined;
+    came?: string | undefined;
   },
 ) {
   // Honeypot: people never fill the hidden "website" box; bots do.
@@ -89,6 +90,8 @@ export async function signUpFree(
   const email = input.email.trim().toLowerCase();
   const business = input.business.trim().slice(0, 120);
   const name = input.name.trim().slice(0, 120);
+  // Where they came from: utm tags or the site that sent them (no personal data).
+  const came = (input.came ?? "").replace(/[^\w .:/=&|-]/g, "").slice(0, 160);
 
   // The prospect report they came from, if any.
   let prospect: {
@@ -139,6 +142,7 @@ export async function signUpFree(
       settings: {
         source: "self_serve",
         owner_name: name,
+        ...(came ? { came } : {}),
         ...(placeId ? { place_id: placeId } : {}),
       },
     },
@@ -224,7 +228,16 @@ export async function signUpFree(
 
   const to = (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
   const { hqAfter } = await import("./hq.server");
+  const { pushSignupToGhl } = await import("./ghl-lead.server");
   await Promise.all([
+    pushSignupToGhl({
+      name,
+      email,
+      business,
+      source: prospect
+        ? "report"
+        : (came.match(/utm_source=([\w.-]+)/)?.[1] ?? came.match(/ref=([\w.-]+)/)?.[1] ?? "direct"),
+    }).catch(() => false),
     // Accelur8 HQ: a new business account (runs alongside the emails, never fails sign-up).
     hqAfter(() => ({
       event: "signed_up",
@@ -247,7 +260,7 @@ export async function signUpFree(
         : `New free sign-up: ${business}`,
       html: `<p><b>${esc(business)}</b> signed up for a free account.</p>
 <p>${esc(name)}<br>${esc(email)}</p>
-<p>${prospect ? "They came from their prospect report." : "They signed up from the website."} ${placeId ? "Their Google review link is set up." : "No Google listing chosen yet."}</p>
+<p>${prospect ? "They came from their prospect report." : "They signed up from the website."} Came from: ${esc(prospect ? "report" : came || "direct or unknown")}. ${placeId ? "Their Google review link is set up." : "No Google listing chosen yet."}</p>
 <p>Next: help them print their QR code, then offer a table stand and RepSuites Growth.</p>`,
     }).catch(() => null),
     sendEmail({

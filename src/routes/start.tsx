@@ -11,6 +11,23 @@ import type { BusinessDetails } from "../lib/places.functions";
 import { getSignupPrefill, signUpFreeFn } from "../lib/signup.functions";
 import { signupProblemAt, type SignupField } from "../lib/signup";
 
+// utm tags in the address, else the site that linked here.
+function cameFrom(): string {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    const utm = ["utm_source", "utm_medium", "utm_campaign"]
+      .map((k) => (q.get(k) ? `${k}=${q.get(k)}` : ""))
+      .filter(Boolean)
+      .join("&");
+    const stored = sessionStorage.getItem("rs_came") ?? "";
+    const ref = document.referrer ? new URL(document.referrer).hostname : "";
+    const refPart = ref && !/repsuites\.com$/.test(ref) ? `ref=${ref}` : "";
+    return (utm || stored || refPart).slice(0, 160);
+  } catch {
+    return "";
+  }
+}
+
 export const Route = createFileRoute("/start")({
   validateSearch: z.object({
     r: z.string().max(64).optional(),
@@ -95,6 +112,7 @@ function Start() {
           ...(!fromReport && biz ? { placeId: biz.placeId } : {}),
           ...(trap ? { website: trap } : {}),
           ...(bonus ? { bonus } : {}),
+          came: cameFrom(),
         },
       });
       if (!res.ok) {

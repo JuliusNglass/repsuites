@@ -180,6 +180,24 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  // First touch for this visit: utm tags or the outside site that sent them.
+  // The free sign-up form reads it, so we know how each account found us.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("rs_came")) return;
+      const q = new URLSearchParams(window.location.search);
+      const utm = ["utm_source", "utm_medium", "utm_campaign"]
+        .map((k) => (q.get(k) ? `${k}=${q.get(k)}` : ""))
+        .filter(Boolean)
+        .join("&");
+      const ref = document.referrer ? new URL(document.referrer).hostname : "";
+      const val = utm || (ref && !/repsuites\.com$/.test(ref) ? `ref=${ref}` : "direct");
+      sessionStorage.setItem("rs_came", `${val}|page=${window.location.pathname}`.slice(0, 160));
+    } catch {
+      /* storage blocked */
+    }
+  }, []);
+
   // GoTrue recovery links carry #access_token=...&type=recovery in the hash.
   // If the Supabase project's Site URL sends the link to "/" (or any page
   // other than /reset-password), detect the recovery token here and redirect
