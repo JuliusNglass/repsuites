@@ -319,3 +319,13 @@ export async function alertReportOpened(
 <p><a href="${SHARED_ORIGIN}/r/${token}">Open their report</a> &middot; <a href="${SHARED_ORIGIN}/prospects">Prospects</a></p>`,
   }).catch(() => null);
 }
+
+// Story mode on the report: keep the furthest card reached (1 to 8).
+export async function trackStory(token: string, card: number) {
+  if (!TOKEN_RE.test(token) || !Number.isInteger(card) || card < 1 || card > 8) return;
+  await serviceWrite(
+    `prospects?report_token=eq.${token}&or=(story_max_card.is.null,story_max_card.lt.${card})`,
+    "",
+    { method: "PATCH", body: { story_max_card: card, story_seen_at: new Date().toISOString() } },
+  ).catch(() => null);
+}

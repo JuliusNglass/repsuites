@@ -49,6 +49,7 @@ import { Route as ApiResendWebhookRouteImport } from './routes/api.resend.webhoo
 import { Route as ApiReviewTriggerTokenRouteImport } from './routes/api.review-trigger.$token'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
 import { Route as FixPackKeyRouteImport } from './routes/fix.pack.$key'
+import { Route as RTokenMapDotgifRouteImport } from './routes/r.$token.map[.]gif'
 import { Route as RTokenPdfRouteImport } from './routes/r.$token.pdf'
 import { Route as ApiAccountingCallbackProviderRouteImport } from './routes/api.accounting.callback.$provider'
 import { Route as ApiAccountingWebhookQuickbooksRouteImport } from './routes/api.accounting.webhook.quickbooks'
@@ -259,6 +260,11 @@ const FixPackKeyRoute = FixPackKeyRouteImport.update({
   path: '/pack/$key',
   getParentRoute: () => FixRoute,
 } as any)
+const RTokenMapDotgifRoute = RTokenMapDotgifRouteImport.update({
+  id: '/map.gif',
+  path: '/map.gif',
+  getParentRoute: () => RTokenRoute,
+} as any)
 const RTokenPdfRoute = RTokenPdfRouteImport.update({
   id: '/pdf',
   path: '/pdf',
@@ -334,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/fix/pack/$key': typeof FixPackKeyRoute
+  '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
@@ -382,6 +389,7 @@ export interface FileRoutesByTo {
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/fix/pack/$key': typeof FixPackKeyRoute
+  '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
@@ -431,6 +439,7 @@ export interface FileRoutesById {
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/fix/pack/$key': typeof FixPackKeyRoute
+  '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
@@ -481,6 +490,7 @@ export interface FileRouteTypes {
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
     | '/fix/pack/$key'
+    | '/r/$token/map.gif'
     | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
@@ -529,6 +539,7 @@ export interface FileRouteTypes {
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
     | '/fix/pack/$key'
+    | '/r/$token/map.gif'
     | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
@@ -577,6 +588,7 @@ export interface FileRouteTypes {
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
     | '/fix/pack/$key'
+    | '/r/$token/map.gif'
     | '/r/$token/pdf'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
@@ -913,6 +925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FixPackKeyRouteImport
       parentRoute: typeof FixRoute
     }
+    '/r/$token/map.gif': {
+      id: '/r/$token/map.gif'
+      path: '/map.gif'
+      fullPath: '/r/$token/map.gif'
+      preLoaderRoute: typeof RTokenMapDotgifRouteImport
+      parentRoute: typeof RTokenRoute
+    }
     '/r/$token/pdf': {
       id: '/r/$token/pdf'
       path: '/pdf'
@@ -971,10 +990,12 @@ const FixRouteChildren: FixRouteChildren = {
 const FixRouteWithChildren = FixRoute._addFileChildren(FixRouteChildren)
 
 interface RTokenRouteChildren {
+  RTokenMapDotgifRoute: typeof RTokenMapDotgifRoute
   RTokenPdfRoute: typeof RTokenPdfRoute
 }
 
 const RTokenRouteChildren: RTokenRouteChildren = {
+  RTokenMapDotgifRoute: RTokenMapDotgifRoute,
   RTokenPdfRoute: RTokenPdfRoute,
 }
 

@@ -1,6 +1,7 @@
 // Server-only: the shareable insight report a prospect opens (/r/<token>).
 // Plain HTML so it loads instantly on a phone and prints cleanly to PDF.
 // No em dashes in this copy (AGENTS.md).
+import { storyMode } from "./report-story";
 import type { Report } from "./prospects.server";
 import type { ProspectSnapshot } from "./prospect-connect.server";
 import { gridInsight, joinSides, sideOf, gridSpots } from "./report-map";
@@ -1119,7 +1120,9 @@ export function reviewStand(r: Report, extra: RenderExtra | null): string {
   const order = extra ? `/cards?r=${encodeURIComponent(extra.token)}` : "/cards";
   const cleaning = /clean/i.test(r.maps?.keyword ?? "");
   const who = cleaning ? "client" : "customer";
-  const when = cleaning ? "Text it the moment a clean is finished, while they are happy." : "Text or email it after every sale, while they are happy.";
+  const when = cleaning
+    ? "Text it the moment a clean is finished, while they are happy."
+    : "Text or email it after every sale, while they are happy.";
   return `<h2 id="stand">Get more reviews, faster</h2><div class="card"><p style="margin-top:0">Google ranks businesses higher when new reviews keep coming in. A steady 1 or 2 a week beats 20 in one month and then nothing.</p><p>Your review link opens your Google review page in one tap. ${when}</p><p class="noprint"><button type="button" class="cta" style="width:100%;border:0;cursor:pointer" data-copy="${esc(url)}" onclick="var b=this;navigator.clipboard.writeText(b.dataset.copy).then(function(){b.textContent='Link copied. Paste it into your next text.'})">Copy my review link</button></p><p class="small" style="margin:0">Example: ask every ${who} this week. If 1 in 3 say yes and you see 15 a week, that is 5 new reviews.</p>
 <details style="margin-top:14px"><summary style="cursor:pointer;font-weight:700">Have a counter or front desk? Use a QR code</summary><div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-top:12px"><div style="background:#0f172a;color:#fff;border-radius:16px;padding:16px;text-align:center;width:190px"><b style="display:block;font-size:1.05rem">Enjoyed your visit?</b><span style="font-size:.95rem">Scan to leave a review</span><div style="background:#fff;border-radius:10px;padding:8px;margin:10px auto 8px;width:148px">${qr}</div><span style="font-size:.95rem;font-weight:700">${esc(r.business.name)}</span></div><p style="flex:1;min-width:200px">${cleaning ? "Print it on a card your cleaners leave behind." : "Put it where people pay or wait."} <a href="${order}">Order a printed stand</a></p></div></details></div>`;
 }
@@ -1335,12 +1338,34 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
         ? envLogo
         : "/logo-mark.png";
   const reportUrl = extra ? `/r/${encodeURIComponent(extra.token)}` : "";
+  const g0 = gridsOf(r).find((x) => !x.ranks.includes(-1)) ?? gridsOf(r)[0];
+  const lead = rows
+    .filter((x) => !x.you && x.reviews > b.reviews)
+    .sort((x, y) => y.reviews - x.reviews)[0];
+  const story = extra
+    ? storyMode(
+        {
+          business: b.name,
+          score: view.score,
+          keyword: g0?.keyword ?? r.maps.keyword ?? null,
+          ranks: g0 && g0.ranks.length === 25 ? g0.ranks : null,
+          top3: g0 ? g0.top3 : null,
+          reviews: b.reviews,
+          newestReviewDays: r.profileAudit?.newestReviewDays ?? b.newestReviewDays ?? null,
+          leader: lead ? { name: lead.name, reviews: lead.reviews } : null,
+          fixes: view.fixes.map((f) => f.title),
+          fixUrl: `/fix?r=${encodeURIComponent(extra.token)}`,
+          cleaning: /clean|maid/i.test(`${r.maps.keyword ?? ""} ${b.category}`),
+        },
+        extra.token,
+      )
+    : "";
   const tools = extra
     ? `<nav class="report-tools noprint" aria-label="Report actions"><button type="button" id="copy-report">Copy share link</button><a href="${reportUrl}?print=1" class="primary" title="Opens the print window: choose Save as PDF">Download PDF</a></nav>`
     : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}">${READING_HEAD}<style>:root{--report-primary:${primary};--report-accent:${secondary}}${STYLE}${video ? VIDEO_STYLE : ""}${STEP_STYLE}.biz{color:var(--report-primary);border-left-color:var(--report-accent)}.cta{background:var(--report-accent)}.found{border-color:var(--report-accent)}</style></head><body><main>
+<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}">${READING_HEAD}<style>:root{--report-primary:${primary};--report-accent:${secondary}}${STYLE}${video ? VIDEO_STYLE : ""}${STEP_STYLE}.biz{color:var(--report-primary);border-left-color:var(--report-accent)}.cta{background:var(--report-accent)}.found{border-color:var(--report-accent)}</style></head><body>${story}<main>
 <div class="top"><div class="brand"><img src="${esc(logo)}" alt=""> ${esc(agency.name)}</div>${readingToggle()}</div>
 ${tools}
 ${video}

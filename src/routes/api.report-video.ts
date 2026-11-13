@@ -3,7 +3,7 @@
 // Also "chat" (tapped WhatsApp) and "call" (tapped book a call).
 // Our own team watching (signed in) and bots are not counted.
 import { createFileRoute } from "@tanstack/react-router";
-import { trackAction, trackVideo } from "../lib/prospect-video.server";
+import { trackAction, trackStory, trackVideo } from "../lib/prospect-video.server";
 import { isLinkBot } from "../lib/link-bots";
 
 const done = () => new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
@@ -24,6 +24,10 @@ export const Route = createFileRoute("/api/report-video")({
         }
         if ((j.e === "chat" || j.e === "call") && typeof j.t === "string") {
           await trackAction(j.t, j.e).catch(() => null);
+          return done();
+        }
+        if (j.e === "story" && typeof j.t === "string" && typeof j.p === "number") {
+          await trackStory(j.t, j.p).catch(() => null);
           return done();
         }
         const e = j.e === "play" || j.e === "progress" ? j.e : null;
