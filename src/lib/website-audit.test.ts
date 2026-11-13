@@ -61,7 +61,7 @@ describe("homepage audit evidence", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(
-        async () => new Response("x".repeat(600_001), { headers: { "content-type": "text/html" } }),
+        async () => new Response("x".repeat(2_500_001), { headers: { "content-type": "text/html" } }),
       ),
     );
     expect((await checkWebsite("https://example.com/")).status).toBe("unavailable");

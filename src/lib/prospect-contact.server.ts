@@ -97,7 +97,10 @@ export function safeSiteUrl(raw: string): string {
 export async function getPage(
   url: string,
   budget: { left: number },
+  opts: { timeoutMs?: number; maxBytes?: number } = {},
 ): Promise<{ html: string; url: string } | null> {
+  const timeoutMs = opts.timeoutMs ?? TIMEOUT_MS;
+  const maxBytes = opts.maxBytes ?? MAX_BYTES;
   let at = url;
   for (let hop = 0; hop < 4; hop++) {
     if (budget.left <= 0) return null;
@@ -113,9 +116,10 @@ export async function getPage(
           Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.5",
           "Accept-Language": "en-GB,en;q=0.9",
         },
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: AbortSignal.timeout(timeoutMs),
       });
-    } catch {
+    } catch (e) {
+      console.log("getPage fetch failed", at, String(e).slice(0, 120));
       return null;
     }
     if (r.status >= 300 && r.status < 400) {
@@ -133,7 +137,10 @@ export async function getPage(
       }
       continue;
     }
-    if (!r.ok) return null;
+    if (!r.ok) {
+      console.log("getPage status", at, r.status);
+      return null;
+    }
     const type = r.headers.get("content-type") ?? "";
     if (type && !/html|text\/plain/i.test(type)) return null;
     try {
@@ -147,7 +154,8 @@ export async function getPage(
           const { done, value } = await reader.read();
           if (done) return { html: html + decoder.decode(), url: safe };
           bytes += value.byteLength;
-          if (bytes > MAX_BYTES) {
+          if (bytes > maxBytes) {
+            console.log("getPage too large", at, bytes);
             await reader.cancel();
             return null; // A truncated page must not create missing-element findings.
           }

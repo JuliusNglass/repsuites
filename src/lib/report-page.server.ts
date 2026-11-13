@@ -413,8 +413,8 @@ export function heatMap(r: Report, extra: RenderExtra | null): string {
     ? `<div class="cmp switch noprint"><span class="switch-label">Show the map for</span><div class="kw" role="group" aria-label="Business shown on the map"><button type="button" data-cmp="" aria-pressed="true" class="on">${esc(b.name)} (you)</button>${competitors.map((c) => `<button type="button" data-cmp="${esc(c.placeId)}" aria-pressed="false">${esc(c.name)}</button>`).join("")}</div></div>`
     : "";
   const furthest = distanceText(Math.round(spacingKm * 2 * 10) / 10, miles);
-  const intro = `<p style="margin:0 0 8px">We searched Google Maps from 25 places around you, up to ${esc(furthest)} away. This is what a customer standing there would see.</p>
-<ul style="margin:0 0 12px;padding-left:1.2em"><li>Each pin shows where you came in the list from that place.</li><li>The house is you.</li><li>Pinch, or use + and −, to zoom in.</li></ul>`;
+  const intro = `<p style="margin:0 0 8px">We searched Google Maps from <b>25 spots</b> in a circle reaching <b>${esc(furthest)}</b> out from your business. Each pin shows what a customer standing there would see.</p>
+<ul style="margin:0 0 12px;padding-left:1.2em"><li>The number on each pin is where you came in the list from that spot.</li><li>The house is you.</li><li>Pinch, or use + and −, to zoom in.</li></ul>`;
   if (!center || !extra)
     return `${printable}<div class="screen-grids"><h3 class="sub">Where you show up across your area</h3><div class="card">${intro}${dots(grids[0]!)}${legend}<p style="margin:14px 0 0">${summaryOf(grids[0]!)}</p></div></div>`;
   const spots = gridSpots(center, 5, spacingKm).map((p) => [
@@ -1023,7 +1023,7 @@ export function websiteEvidence(r: Report): string {
   };
   const intro = `<section id="website" class="chapter"><div class="card"><p class="diagnosis">We checked whether your website clearly says <b>what you do, where you work, why customers should trust you and how they can contact you.</b> Each recommendation tells you what to change and how to check it afterwards.</p><p class="small">Checked ${esc(a.checkedAt)}. We checked the information available on the homepage. Page speed, ease of use and completed enquiries need separate checks.</p>`;
   if (a.status !== "checked")
-    return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "The website could not be checked. No negative findings were inferred."}</p></div></section>`;
+    return `${intro}<p>${a.status === "no_website" ? "No website was supplied by Google." : "We could not open your website in time for this check, so it is left out of your score. This usually means the site is slow to load or blocks automatic checks. Rerun the check later to include it."}</p></div></section>`;
   const ws = websiteScore(a);
   const passed = a.findings.filter((f) => f.status === "pass").length;
   const scoreLine =
@@ -1080,7 +1080,7 @@ export function topThree(r: Report, fixToken: string | null = null): string {
     )
     .join(
       "",
-    )}</div><p class="small">Every other fix is in your plan in chapter 6, with who does it and how to check it worked.</p>`;
+    )}</div><p class="small">Every other fix is in <a href="#plan">your plan</a> at the end, with who does it and how to check it worked.</p>`;
 }
 
 const chapter = (n: number, id: string, title: string) =>
@@ -1177,7 +1177,7 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
       : lead.top3 > 0
         ? `You show up well near your strongest location, but customers across most of the area see other businesses first for \"${lead.keyword}\". Make your service and location clearer, build recent reviews and check the same area again.`
         : `You did not reach the top three anywhere we checked for \"${lead.keyword}\". Customers are seeing other businesses first.`;
-  return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Your overall visibility score is <b>${view.score}/100</b>${r.maps?.checked ? "" : " (Google Maps position not checked yet, so it is left out of this score)"}. The map positions above show where customers are most and least likely to see you.</p></section>`;
+  return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Your overall visibility score is <b>${view.score}/100</b>${r.maps?.checked ? "" : " (Google Maps position not checked yet, so it is left out of this score)"}. The next step shows on a map where customers are most and least likely to see you.</p></section>`;
 }
 
 function fixitOffer(token: string): string {
@@ -1214,10 +1214,38 @@ function fitQuestions(token: string, cleaning: boolean): string {
   const who = cleaning ? "cleaners" : "people";
   const opt = (name: string, type: string, [v, l]: [string, string]) =>
     `<label class="fitopt"><input type="${type}" name="${name}" value="${v}"> <span>${esc(l)}</span></label>`;
-  return `<form id="fitq" class="card noprint" style="border:2px solid var(--report-primary,#0b1d3a)"><h3 style="margin:0 0 6px">Two quick questions so we can help properly</h3><p class="small" style="margin:0 0 12px">Optional. It takes 10 seconds.</p><fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:700;margin:0 0 8px">How many ${who} work in the business?</legend><div class="fitgrid">${sizes.map((x) => opt("s", "radio", x)).join("")}</div></fieldset><fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:700;margin:0 0 8px">What are your biggest headaches right now? Tick all that apply.</legend><div class="fitgrid">${heads.map((x) => opt("h", "checkbox", x)).join("")}</div></fieldset>${cleaning ? `<fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:700;margin:0 0 8px">How do you run your week now?</legend><div class="fitgrid"><label class="fitopt"><input type="radio" name="w" value="whatsapp"> <span>WhatsApp messages</span></label><label class="fitopt"><input type="radio" name="w" value="spreadsheet"> <span>A spreadsheet</span></label><label class="fitopt"><input type="radio" name="w" value="paper"> <span>Paper or in my head</span></label><label class="fitopt"><input type="radio" name="w" value="app"> <span>An app</span></label></div></fieldset>` : ""}<button type="submit" class="cta" style="border:0;width:100%;cursor:pointer;font:inherit">Send</button><p id="fitmsg" class="small" role="status" style="margin:10px 0 0"></p></form>
+  return `<form id="fitq" class="card noprint" style="border:2px solid var(--report-primary,#0b1d3a)"><h3 style="margin:0 0 6px">${cleaning ? "3" : "2"} quick questions so we can help properly</h3><p class="small" style="margin:0 0 12px">Optional. It takes about 20 seconds.</p><fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:700;margin:0 0 8px">How many ${who} work in the business?</legend><div class="fitgrid">${sizes.map((x) => opt("s", "radio", x)).join("")}</div></fieldset><fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:700;margin:0 0 8px">What are your biggest headaches right now? Tick all that apply.</legend><div class="fitgrid">${heads.map((x) => opt("h", "checkbox", x)).join("")}</div></fieldset>${cleaning ? `<fieldset style="border:0;padding:0;margin:0 0 14px"><legend style="font-weight:700;margin:0 0 8px">How do you run your week now?</legend><div class="fitgrid"><label class="fitopt"><input type="radio" name="w" value="whatsapp"> <span>WhatsApp messages</span></label><label class="fitopt"><input type="radio" name="w" value="spreadsheet"> <span>A spreadsheet</span></label><label class="fitopt"><input type="radio" name="w" value="paper"> <span>Paper or in my head</span></label><label class="fitopt"><input type="radio" name="w" value="app"> <span>An app</span></label></div></fieldset>` : ""}<button type="submit" class="cta" style="border:0;width:100%;cursor:pointer;font:inherit">Send</button><p id="fitmsg" class="small" role="status" style="margin:10px 0 0"></p></form>
 <style>.fitgrid{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.fitopt{display:flex;align-items:center;gap:10px;min-height:48px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:12px;font-size:1rem;line-height:1.4;cursor:pointer}.fitopt input{width:20px;height:20px;flex:none;accent-color:var(--report-primary,#0b1d3a)}</style>
 <script>(function(){var f=document.getElementById("fitq"),m=document.getElementById("fitmsg");if(!f)return;f.addEventListener("submit",function(e){e.preventDefault();var s=f.querySelector('input[name="s"]:checked'),h=[].map.call(f.querySelectorAll('input[name="h"]:checked'),function(i){return i.value});if(!s||!h.length){m.textContent="Please pick a team size and at least one headache.";return;}var b=f.querySelector("button");b.disabled=true;m.textContent="Sending...";fetch("/api/check-fit",{method:"POST",body:JSON.stringify({t:${JSON.stringify(token)},s:s.value,h:h,w:(f.querySelector('input[name="w"]:checked')||{}).value||null})}).then(function(r){return r.json()}).then(function(d){if(!d.ok)throw 0;f.innerHTML=d.sparkops&&${cleaning ? "true" : "false"}?(d.app?'<h3 style="margin:0 0 6px">Thanks. Already using an app?</h3><p style="margin:0 0 12px">Most cleaning firms tell us theirs was built for plumbers, not cleans. Your SparkOps demo is ready, with your business name in it, so you can compare. If you ever switch, we move your clients, cleaners and repeat jobs across for you.</p><a class="cta" href="https://ops.accelur8clientwork.com/demo/go?r=${token}">Open your SparkOps demo</a>':'<h3 style="margin:0 0 6px">Thanks. Your SparkOps demo is ready.</h3><p style="margin:0 0 12px">See SparkOps set up with your business name and a sample week of cleans. It runs your jobs, cleaners, proof of every clean and pay in one app. No sign-up, no call. It is £97 a month if you keep it, about £3.19 a day.</p><a class="cta" href="https://ops.accelur8clientwork.com/demo/go?r=${token}">Open your SparkOps demo</a>'):'<h3 style="margin:0 0 6px">Thanks, that helps.</h3><p style="margin:0">We will keep our tips to what matters for a business like yours.</p>';}).catch(function(){b.disabled=false;m.textContent="That did not send. Please try again.";});});})();</script>`;
 }
+
+// One report section per screen, with Back/Next and a progress bar. Without
+// script (and when printing) every step shows, so nothing is ever hidden.
+const STEPS_SCRIPT = `<script>(function(){var steps=[].slice.call(document.querySelectorAll("section.step"));if(steps.length<2)return;document.body.classList.add("js-steps");var bar=document.getElementById("stepbar"),nav=document.getElementById("stepnav"),links=document.getElementById("steplinks"),back=document.getElementById("step-back"),next=document.getElementById("step-next"),fill=document.getElementById("step-fill"),cnt=document.getElementById("step-count"),nm=document.getElementById("step-name");bar.hidden=false;nav.hidden=false;var cur=0;
+steps.forEach(function(st,i){var b=document.createElement("button");b.type="button";b.setAttribute("role","tab");b.textContent=st.getAttribute("data-title");b.addEventListener("click",function(){show(i,true)});links.appendChild(b);});
+function show(i,scroll){cur=Math.max(0,Math.min(steps.length-1,i));steps.forEach(function(st,j){st.classList.toggle("on",j===cur)});[].slice.call(links.children).forEach(function(b,j){b.classList.toggle("on",j===cur);b.setAttribute("aria-selected",j===cur?"true":"false")});
+cnt.textContent="Step "+(cur+1)+" of "+steps.length;nm.textContent=steps[cur].getAttribute("data-title");fill.style.width=((cur+1)/steps.length*100)+"%";back.disabled=cur===0;
+if(cur<steps.length-1){next.hidden=false;next.textContent="Next: "+steps[cur+1].getAttribute("data-title");}else next.hidden=true;
+var on=links.children[cur];if(on&&on.scrollIntoView)on.scrollIntoView({block:"nearest",inline:"center"});
+if(history.replaceState)history.replaceState(null,"","#"+steps[cur].id.replace("step-",""));
+setTimeout(function(){window.dispatchEvent(new Event("resize"))},30);if(scroll)window.scrollTo({top:0,behavior:"smooth"});}
+back.addEventListener("click",function(){show(cur-1,true)});next.addEventListener("click",function(){show(cur+1,true)});
+var start=0,h=(location.hash||"").slice(1);if(h){steps.forEach(function(st,i){if(st.id==="step-"+h||st.querySelector("#"+CSS.escape(h)))start=i;});}
+document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a)return;var id=a.getAttribute("href").slice(1);for(var i=0;i<steps.length;i++){if(steps[i].id==="step-"+id||(id&&steps[i].querySelector("#"+CSS.escape(id)))){if(i!==cur){e.preventDefault();show(i,true);}return;}}});
+show(start,false);if(h)window.scrollTo(0,0);})();</script>`;
+
+const STEP_STYLE = `main{max-width:900px}.js-steps .report-tools{position:static;margin-bottom:6px}.js-steps section.step{display:none}.js-steps section.step.on{display:block;animation:stepin .2s ease-out}@keyframes stepin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.stepbar{position:sticky;top:0;z-index:20;background:rgba(246,248,251,.96);backdrop-filter:blur(6px);padding:12px 0 10px;margin:0 0 14px;border-bottom:1px solid var(--line,#e2e8f0)}
+.stepbar-top{display:flex;justify-content:space-between;gap:12px;font-size:.95rem;font-weight:700;color:var(--ink-2,#334155)}#step-name{color:var(--report-primary)}
+.stepbar-track{height:6px;border-radius:99px;background:#e2e8f0;margin:8px 0 10px;overflow:hidden}#step-fill{display:block;height:100%;width:0;background:var(--report-accent);border-radius:99px;transition:width .25s}
+.steplinks{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;justify-content:center}.steplinks::-webkit-scrollbar{display:none}
+.steplinks button{flex-shrink:0;border:1px solid var(--line,#e2e8f0);background:#fff;color:var(--ink-2,#334155);border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:.9rem;font-weight:650;cursor:pointer}.steplinks button.on{background:var(--report-primary);border-color:var(--report-primary);color:#fff}
+.stepnav{display:flex;justify-content:space-between;gap:12px;margin:28px 0 8px}.stepbtn{min-height:52px;padding:0 22px;border-radius:14px;border:0;background:var(--report-primary);color:#fff;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;flex:1;max-width:360px;margin-left:auto}.stepbtn.ghost{background:#fff;color:var(--ink,#0b1424);border:1px solid var(--line,#cbd5e1);flex:0 0 auto;margin-left:0}.stepbtn:disabled{visibility:hidden}.stepbtn:focus-visible,.steplinks button:focus-visible{outline:3px solid var(--report-accent);outline-offset:2px}
+.js-steps .chapter-open{margin-top:8px;padding-top:0;border-top:0}
+.switch{justify-content:center;text-align:center}.switch-label{min-width:0;width:100%;text-align:center}.switch .kw{margin:0 auto}#rmap-sum{max-width:none}.screen-grids .card>p,.screen-grids .card>ul{max-width:none}
+@media(max-width:620px){.steplinks{justify-content:flex-start}.stepnav{position:sticky;bottom:0;background:rgba(246,248,251,.96);padding:10px 0;margin:20px 0 0}.stepbtn{max-width:none}}
+@media print{.stepbar,.stepnav{display:none!important}section.step{display:block!important;animation:none}}
+@media (prefers-reduced-motion:reduce){.js-steps section.step.on{animation:none}#step-fill{transition:none}}`;
 
 export function renderReport(r: Report, extra: RenderExtra | null = null): string {
   const b = r.business;
@@ -1317,23 +1345,21 @@ export function renderReport(r: Report, extra: RenderExtra | null = null): strin
     : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}">${READING_HEAD}<style>:root{--report-primary:${primary};--report-accent:${secondary}}${STYLE}${video ? VIDEO_STYLE : ""}.biz{color:var(--report-primary);border-left-color:var(--report-accent)}.cta{background:var(--report-accent)}.found{border-color:var(--report-accent)}</style></head><body><main>
+<title>${esc(b.name)}: how you show up on Google</title><meta property="og:type" content="website"><meta property="og:site_name" content="RepSuites"><meta property="og:title" content="${esc(preview.title)}"><meta property="og:description" content="${esc(preview.description)}"><meta name="description" content="${esc(preview.description)}"><meta property="og:image" content="${esc(ogImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${esc(ogImage)}">${READING_HEAD}<style>:root{--report-primary:${primary};--report-accent:${secondary}}${STYLE}${video ? VIDEO_STYLE : ""}${STEP_STYLE}.biz{color:var(--report-primary);border-left-color:var(--report-accent)}.cta{background:var(--report-accent)}.found{border-color:var(--report-accent)}</style></head><body><main>
 <div class="top"><div class="brand"><img src="${esc(logo)}" alt=""> ${esc(agency.name)}</div>${readingToggle()}</div>
 ${tools}
 ${video}
+<div class="stepbar noprint" id="stepbar" hidden><div class="stepbar-top"><span id="step-count"></span><span id="step-name"></span></div><div class="stepbar-track"><span id="step-fill"></span></div><div class="steplinks" id="steplinks" role="tablist" aria-label="Report steps"></div></div>
+<section class="step" id="step-overview" data-title="Your score">
 ${executiveBrief(r, view)}
 <p class="muted">${esc(b.address)} &middot; Prepared ${date}${b.mapsUrl && /^https:\/\/(www\.)?(maps\.)?google\.[a-z.]+\//.test(b.mapsUrl) ? ` &middot; <a href="${esc(b.mapsUrl)}" target="_blank" rel="noopener" style="color:#334155">See your Google profile</a>` : ""}</p>
-<div class="report-shell"><div class="report-main">
-${chapter(1, "summary", "Do these three things first")}
-${topThree(r, extra?.fixit ? extra.token : null)}
-${extra?.fixit ? fixitOffer(extra.token) : ""}
-${extra?.fixit ? fitQuestions(extra.token, /clean/i.test(r.maps?.keyword ?? "")) : ""}
-${headline}
-
+</section>
+<section class="step" id="step-map" data-title="Google Maps">
 ${chapter(2, "map", "Where customers can find you on Google Maps")}
 ${heat || (mapsLine ? `<div class="card">${mapsLine}</div>` : "")}
 ${beforeAfter(r)}
-
+</section>
+<section class="step" id="step-rivals" data-title="Rivals">
 ${chapter(3, "rivals", "Who is beating you, and why")}
 ${comparison}
 ${
@@ -1350,18 +1376,26 @@ ${rows
 ${gap}
 ${profileEvidence(r)}
 
-${chapter(4, "website-ch", "Your website")}
+</section>
+<section class="step" id="step-fixes" data-title="Fix first">
+${chapter(4, "fixes", "Do these three things first")}
+${topThree(r, extra?.fixit ? extra.token : null)}
+${extra?.fixit ? fixitOffer(extra.token) : ""}
+${headline}
+</section>
+<section class="step" id="step-website" data-title="Website">
+${chapter(5, "website-ch", "Your website")}
 ${websitePicture(r)}
 ${websiteEvidence(r)}
-
-${r.aiVisibility ? chapter(5, "ai", "Do AI assistants recommend you?") : ""}
-${aiSection(r)}
-
-${chapter(6, "plan", "Your plan, and what it is worth")}
+</section>
+${r.aiVisibility ? `<section class="step" id="step-ai" data-title="AI assistants">${chapter(6, "ai", "Do AI assistants recommend you?")}${aiSection(r)}</section>` : ""}
+<section class="step" id="step-plan" data-title="Your plan">
+${chapter(r.aiVisibility ? 7 : 6, "plan", "Your plan, and what it is worth")}
 ${presentationClose(r, b, view, extra)}
 ${worthSection(r, sale, extra)}
 ${reviewStand(r, extra)}
 ${extra ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
+${extra?.fixit ? fitQuestions(extra.token, /clean/i.test(r.maps?.keyword ?? "")) : ""}
 <div class="noprint closing card"><h3>Want us to do all of this for you?</h3><p>We handle reviews, your Google profile and website fixes every month, and rerun this check so you can see the dots change.</p><a class="cta" href="${extra ? `/start?r=${encodeURIComponent(extra.token)}` : "/start"}">Start free</a>
 <p class="small" style="text-align:center;margin:8px 0 0">Free review page and QR code. No card needed.</p>
 <p class="small" style="text-align:center;margin:6px 0 0"><a class="book" href="${esc(bookingLink(b.name))}">Or book a free 15-minute call</a></p></div>
@@ -1377,8 +1411,10 @@ ${view.parts
 <p class="small noprint" style="text-align:center;margin-top:10px"><a href="javascript:window.print()" style="color:#334155">Save or print this report</a></p>
 <p class="small" style="margin-top:24px">Figures come from Google on the date above and change over time.</p>
 ${agency.phone || agency.email ? `<p class="small"><b>${esc(agency.name)}</b>${agency.phone ? ` · ${esc(agency.phone)}` : ""}${agency.email ? ` · ${esc(agency.email)}` : ""}</p>` : ""}
-</div><aside class="report-aside noprint" aria-label="Report chapters"><div class="card"><div class="method">In this report</div><a href="#summary">1. Fix first</a><a href="#map">2. Google Maps</a><a href="#rivals">3. Rivals and reviews</a><a href="#website-ch">4. Your website</a>${r.aiVisibility ? `<a href="#ai">5. AI assistants</a>` : ""}<a href="#plan">6. Plan and value</a></div></aside></div>
-</main><script>(function(){function o(){document.querySelectorAll("details").forEach(function(d){d.open=true})}addEventListener("beforeprint",o);if(matchMedia)matchMedia("print").addListener&&matchMedia("print").addListener(function(m){if(m.matches)o()});})();</script>${extra ? actionTracker(extra.token) : ""}${extra ? `<script>(function(){var copy=document.getElementById("copy-report"),present=document.getElementById("present-report");if(copy)copy.addEventListener("click",function(){navigator.clipboard.writeText(location.origin+${JSON.stringify(reportUrl)}).then(function(){copy.textContent="Link copied";setTimeout(function(){copy.textContent="Copy share link"},1600)}).catch(function(){prompt("Copy this report link",location.origin+${JSON.stringify(reportUrl)})});});if(present)present.addEventListener("click",function(){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});document.querySelector("#summary")?.scrollIntoView({behavior:"smooth"});});})();</script>` : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
+
+</section>
+<nav class="stepnav noprint" id="stepnav" hidden><button type="button" id="step-back" class="stepbtn ghost">Back</button><button type="button" id="step-next" class="stepbtn">Next</button></nav>
+</main>${STEPS_SCRIPT}<script>(function(){function o(){document.querySelectorAll("details").forEach(function(d){d.open=true})}addEventListener("beforeprint",o);if(matchMedia)matchMedia("print").addListener&&matchMedia("print").addListener(function(m){if(m.matches)o()});})();</script>${extra ? actionTracker(extra.token) : ""}${extra ? `<script>(function(){var copy=document.getElementById("copy-report"),present=document.getElementById("present-report");if(copy)copy.addEventListener("click",function(){navigator.clipboard.writeText(location.origin+${JSON.stringify(reportUrl)}).then(function(){copy.textContent="Link copied";setTimeout(function(){copy.textContent="Copy share link"},1600)}).catch(function(){prompt("Copy this report link",location.origin+${JSON.stringify(reportUrl)})});});if(present)present.addEventListener("click",function(){if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(function(){});document.querySelector("#summary")?.scrollIntoView({behavior:"smooth"});});})();</script>` : ""}${extra?.flash === "print" ? `<script>addEventListener("load",function(){setTimeout(function(){print()},300)})</script>` : ""}</body></html>`;
 }
 
 export function reportNotFound(): string {

@@ -15,6 +15,9 @@ export async function checkWebsite(
   });
   if (!website) return empty("no_website");
   if (!safeSiteUrl(website)) return empty("unavailable");
-  const page = await getPage(website, { left: 4 });
+  // Small-business sites are often slow or heavy (website builders), so the
+  // homepage check waits longer and reads more than contact scraping does
+  // (up to 10 seconds and 2.5 MB).
+  const page = await getPage(website, { left: 4 }, { timeoutMs: 10_000, maxBytes: 2_500_000 });
   return page ? auditHomepage(page.html, page.url, checkedAt, google) : empty("unavailable");
 }
