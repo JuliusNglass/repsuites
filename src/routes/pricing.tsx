@@ -2,7 +2,8 @@
 // subscribe through Stripe Checkout; new visitors start free first.
 // No em dashes in this copy (AGENTS.md).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/pricing")({
       },
     ],
   }),
+  validateSearch: z.object({ go: z.enum(["growth", "growth-year"]).optional() }),
   // "Most popular" only when real subscriptions say so (popular-plan.ts).
   loader: async () => getPopularPlan().catch(() => ({ planId: null })),
   component: Pricing,
@@ -55,6 +57,27 @@ function Pricing() {
   const [signedIn, setSignedIn] = useState(false);
   const [busy, setBusy] = useState<CheckoutPlan | null>(null);
   const [interval, setInterval] = useState<BillingInterval>("year");
+  const { go } = Route.useSearch();
+  const went = useRef(false);
+  // Sales link (/start?plan=growth): once signed in and confirmed, open
+  // Stripe straight away. Errors (e.g. email not confirmed) show as usual.
+  useEffect(() => {
+    if (!go || !signedIn || went.current) return;
+    went.current = true;
+    const i: BillingInterval = go === "growth-year" ? "year" : "month";
+    setInterval(i);
+    setBusy("gold");
+    start({ data: { plan: "gold", interval: i } })
+      .then((r) => {
+        if (r.ok) window.location.href = r.url;
+        else {
+          setBusy(null);
+          if (r.error === "signin") window.location.href = "/login";
+          else if (r.error !== "manage") toast.error(r.error);
+        }
+      })
+      .catch(() => setBusy(null));
+  }, [go, signedIn, start]);
 
   useEffect(() => {
     session()

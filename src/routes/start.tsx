@@ -32,6 +32,7 @@ export const Route = createFileRoute("/start")({
   validateSearch: z.object({
     r: z.string().max(64).optional(),
     bonus: z.string().max(80).optional(),
+    plan: z.enum(["growth", "growth-year"]).optional(),
   }),
   head: () => ({
     meta: [
@@ -55,7 +56,7 @@ const PERKS = [
 ];
 
 function Start() {
-  const { r, bonus } = Route.useSearch();
+  const { r, bonus, plan } = Route.useSearch();
   const prefill = useServerFn(getSignupPrefill);
   const signUp = useServerFn(signUpFreeFn);
   const [business, setBusiness] = useState("");
@@ -120,7 +121,9 @@ function Start() {
         setBusy(false);
         return;
       }
-      window.location.href = res.signedIn ? "/dashboard?welcome=1" : "/login";
+      // From the Growth sales link: confirm the email code, then straight to payment.
+      const next = plan ? `/dashboard?welcome=1&upgrade=${plan}` : "/dashboard?welcome=1";
+      window.location.href = res.signedIn ? next : "/login";
     } catch {
       setError("Something went wrong. Try again.");
       setBusy(false);

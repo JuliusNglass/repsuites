@@ -4,7 +4,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { applyNoStoreHeaders, verifyRequestOriginAsync } from "./auth.server";
-import { serviceRead } from "./supabase-service.server";
+import { serviceRead, serviceWrite } from "./supabase-service.server";
+import { findStandPack } from "./shop";
 import { stripe, stripeReady } from "./stripe.server";
 import { cleanToken, FIXIT_PENCE } from "./fixit";
 
@@ -24,7 +25,9 @@ export const fixitBusiness = createServerFn({ method: "GET" })
   });
 
 export const startFixitCheckout = createServerFn({ method: "POST" })
-  .validator((d: { token?: string }) => z.object({ token: z.string().optional() }).parse(d))
+  .validator((d: { token?: string; stand?: boolean }) =>
+    z.object({ token: z.string().optional(), stand: z.boolean().optional() }).parse(d),
+  )
   .handler(async ({ data }) => {
     applyNoStoreHeaders();
     if (!(await verifyRequestOriginAsync()))
@@ -42,7 +45,29 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
       const e = String(r.data?.[0]?.email ?? "").trim();
       if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) email = e;
     }
-    const meta = { kind: "fixit", token: token ?? "", business };
+    // Optional add-on: one printed A5 table stand, sold at the shop price and
+    // fulfilled through the normal shop order (see shopPaid in the webhook).
+    const stand = data.stand ? findStandPack("stand-1") : null;
+    let orderId = "";
+    if (stand) {
+      const ins = await serviceWrite<{ id: string }[]>("shop_orders", "", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: {
+          items: [{ kind: "stand", pack: stand.id, qty: stand.qty, pence: stand.pence }],
+          total_pence: stand.pence,
+          business_name: business || "Fix-It customer",
+        },
+      });
+      orderId = ins.data?.[0]?.id ?? "";
+      if (!orderId) return { ok: false as const, error: "Could not start your order. Try again." };
+    }
+    const meta = {
+      kind: "fixit",
+      token: token ?? "",
+      business,
+      ...(orderId ? { order_id: orderId } : {}),
+    };
     const s = await stripe<{ id: string; url: string }>("checkout/sessions", {
       mode: "payment",
       ...(token ? { client_reference_id: token } : {}),
@@ -63,7 +88,36 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
             },
           },
         },
+        ...(stand
+          ? [
+              {
+                quantity: 1,
+                price_data: {
+                  currency: "gbp",
+                  unit_amount: stand.pence,
+                  product_data: {
+                    name: "A5 table stand with QR code",
+                    description: "Printed for your business. Customers scan it to leave a review.",
+                  },
+                },
+              },
+            ]
+          : []),
       ],
+      ...(stand
+        ? {
+            shipping_address_collection: { allowed_countries: ["GB"] },
+            shipping_options: [
+              {
+                shipping_rate_data: {
+                  display_name: "Free UK delivery",
+                  type: "fixed_amount",
+                  fixed_amount: { amount: 0, currency: "gbp" },
+                },
+              },
+            ],
+          }
+        : {}),
       phone_number_collection: { enabled: true },
       allow_promotion_codes: true,
       success_url: `${ORIGIN}/fix/thanks?s={CHECKOUT_SESSION_ID}${token ? `&r=${token}` : ""}`,

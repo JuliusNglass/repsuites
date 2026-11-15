@@ -76,6 +76,8 @@ async function managedBought(session: any, trial = false) {
 async function fixitPaid(session: any) {
   const { recordFixitOrder } = await import("./fixit-pack.server");
   await recordFixitOrder(session);
+  // Table stand added at checkout: mark its shop order paid and notify.
+  if (session?.metadata?.order_id) await shopPaid(session);
   const cust = session.customer_details ?? {};
   const { tagFixitPaid } = await import("./ghl-lead.server");
   await tagFixitPaid({
@@ -100,7 +102,9 @@ async function fixitPaid(session: any) {
 async function tagPlanCustomer(session: any) {
   const cust = session?.customer_details ?? {};
   const email = String(cust.email ?? session?.customer_email ?? "").toLowerCase() || null;
-  const plan = String(session?.metadata?.plan ?? "").replace(/[^a-z0-9-]/gi, "").slice(0, 20);
+  const plan = String(session?.metadata?.plan ?? "")
+    .replace(/[^a-z0-9-]/gi, "")
+    .slice(0, 20);
   const { addGhlTags } = await import("./ghl-lead.server");
   await addGhlTags({
     email,
