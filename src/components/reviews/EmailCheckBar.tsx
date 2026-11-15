@@ -48,6 +48,8 @@ export function EmailCheckBar() {
           if (r?.ok) {
             toast.success("Email confirmed. Thank you.");
             setEmail(null);
+            const up = new URLSearchParams(window.location.search).get("upgrade");
+            if (up === "growth" || up === "growth-year") window.location.href = `/pricing?go=${up}`;
           } else toast.error(r?.error ?? "Something went wrong. Try again.");
         }}
       >

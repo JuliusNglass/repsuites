@@ -10,7 +10,11 @@ import { fixitBusiness, startFixitCheckout } from "../lib/fixit.functions";
 import { FIXIT_FAQ, FIXIT_INCLUDES, FIXIT_PRICE } from "../lib/fixit";
 
 export const Route = createFileRoute("/fix")({
-  validateSearch: z.object({ r: z.string().optional(), buy: z.coerce.number().optional() }),
+  validateSearch: z.object({
+    r: z.string().optional(),
+    buy: z.coerce.number().optional(),
+    stand: z.coerce.number().optional(),
+  }),
   loaderDeps: ({ search }) => ({ r: search.r }),
   loader: ({ deps }) => fixitBusiness({ data: deps.r ? { token: deps.r } : {} }),
   head: () => ({
@@ -29,10 +33,11 @@ function BuyButton({ token, compact = false }: { token?: string | undefined; com
   const start = useServerFn(startFixitCheckout);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [stand, setStand] = useState(false);
   async function go() {
     setBusy(true);
     setErr(null);
-    const r = await start({ data: token ? { token } : {} }).catch(() => null);
+    const r = await start({ data: { ...(token ? { token } : {}), stand } }).catch(() => null);
     if (r?.ok) {
       window.location.href = r.url;
       return;
@@ -56,6 +61,20 @@ function BuyButton({ token, compact = false }: { token?: string | undefined; com
           `Fix my Google profile for ${FIXIT_PRICE}`
         )}
       </button>
+      {compact ? null : (
+        <label className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 text-base cursor-pointer">
+          <input
+            type="checkbox"
+            checked={stand}
+            onChange={(e) => setStand(e.target.checked)}
+            className="mt-1 h-5 w-5 accent-[var(--gold)]"
+          />
+          <span>
+            <strong>Add a printed table stand for £29.</strong> Customers scan it to leave a review.
+            Free UK delivery.
+          </span>
+        </label>
+      )}
       {compact ? null : (
         <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
           <Lock className="h-4 w-4" aria-hidden /> Secure payment by Stripe. One-off, no
@@ -118,20 +137,20 @@ function PackMock({ name }: { name?: string | null | undefined }) {
 
 // From the report: skip this page and open Stripe straight away. Stripe's
 // page shows the price and summary, takes the card and email in one step.
-function StraightToCheckout({ token }: { token?: string | undefined }) {
+function StraightToCheckout({ token, stand }: { token?: string | undefined; stand?: boolean }) {
   const start = useServerFn(startFixitCheckout);
   const [err, setErr] = useState<string | null>(null);
   const ran = useRef(false);
   useEffect(() => {
     if (ran.current) return;
     ran.current = true;
-    start({ data: token ? { token } : {} })
+    start({ data: { ...(token ? { token } : {}), ...(stand ? { stand: true } : {}) } })
       .then((x) => {
         if (x.ok) window.location.href = x.url;
         else setErr(x.error);
       })
       .catch(() => setErr("Something went wrong. Please try again."));
-  }, [start, token]);
+  }, [start, token, stand]);
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center gap-4 p-6 text-center text-lg">
       {err ? (
@@ -151,8 +170,8 @@ function StraightToCheckout({ token }: { token?: string | undefined }) {
 }
 
 function FixPage() {
-  const { r, buy } = Route.useSearch();
-  if (buy === 1) return <StraightToCheckout token={r} />;
+  const { r, buy, stand } = Route.useSearch();
+  if (buy === 1) return <StraightToCheckout token={r} stand={stand === 1} />;
   return <FixLanding r={r} />;
 }
 
