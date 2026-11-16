@@ -57,3 +57,39 @@ export function smsPeriod(now: Date): string {
   const m = p.find((x) => x.type === "month")?.value ?? "01";
   return `${y}-${m}`;
 }
+
+// A texted request that fits one text part (160 characters) wherever it can.
+// Links are written without "https://" (phones still make them tappable).
+// Tries the friendliest wording first and falls back to shorter ones.
+export function oneTextRequest(a: {
+  name: string;
+  business: string;
+  token: string;
+  reminder: boolean;
+}): string {
+  const link = `repsuites.com/q/${a.token}`;
+  const stop = `Stop: repsuites.com/x/${a.token}`;
+  const first = a.name.trim().split(/\s+/)[0]?.slice(0, 15) ?? "";
+  const hi = first ? `Hi ${first}, ` : "Hi, ";
+  const biz = a.business.trim();
+  const options = a.reminder
+    ? [
+        `${hi}a gentle reminder from ${biz}: a quick review would mean a lot ${link}\n${stop}`,
+        `${hi}a quick reminder from ${biz}: ${link}\n${stop}`,
+        `${biz}: a quick review would mean a lot ${link}\n${stop}`,
+        `Quick review? ${link}\n${stop}`,
+      ]
+    : [
+        `${hi}thanks for choosing ${biz}. A quick review would really help: ${link}\n${stop}`,
+        `${hi}thanks for choosing ${biz}! Quick review? ${link}\n${stop}`,
+        `${biz}: a quick review would really help ${link}\n${stop}`,
+        `Quick review? ${link}\n${stop}`,
+      ];
+  const plain = (t: string) =>
+    t
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, "-");
+  for (const o of options.map(plain)) if (smsParts(o) === 1) return o;
+  return plain(options[options.length - 1]!);
+}

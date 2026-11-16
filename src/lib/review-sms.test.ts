@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanSender, reviewSmsText, smsNumber, smsParts, smsPeriod } from "./review-sms";
+import { cleanSender, oneTextRequest, reviewSmsText, smsNumber, smsParts, smsPeriod } from "./review-sms";
 
 describe("smsNumber", () => {
   it("accepts UK mobiles in any common form", () => {
@@ -47,5 +47,26 @@ describe("smsPeriod", () => {
   it("uses UK months", () => {
     expect(smsPeriod(new Date("2026-11-30T23:30:00Z"))).toBe("2026-11");
     expect(smsPeriod(new Date("2026-06-30T23:30:00Z"))).toBe("2026-07");
+  });
+});
+
+describe("oneTextRequest", () => {
+  const token = "a".repeat(24);
+  it("fits one part with a normal name and business", () => {
+    const t = oneTextRequest({ name: "Sarah Jones", business: "BrightClean", token, reminder: false });
+    expect(smsParts(t)).toBe(1);
+    expect(t).toContain("Hi Sarah,");
+    expect(t).toContain(`repsuites.com/q/${token}`);
+    expect(t).toContain(`Stop: repsuites.com/x/${token}`);
+  });
+  it("falls back to shorter wording for a long business name", () => {
+    const t = oneTextRequest({
+      name: "Bartholomew",
+      business: "Sparkling White Limited Professional Cleaning Services Derby",
+      token,
+      reminder: true,
+    });
+    expect(smsParts(t)).toBe(1);
+    expect(t).toContain("/x/");
   });
 });
