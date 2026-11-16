@@ -48,7 +48,7 @@ export function renderPresentation(r: Report, token: string): string {
   const growthDay = GROWTH.monthPence / 30;
   const fix = FIXIT_PRICE;
   const growth = gbp(GROWTH.monthPence);
-  const perDay = `${Math.round(growthDay)}p`;
+  const perDay = `£${(growthDay / 100).toFixed(2)}`;
   const fixesCount = r.fixes?.length ?? 0;
 
   const rivalRows = [
@@ -149,7 +149,7 @@ export function renderPresentation(r: Report, token: string): string {
       <p class="kicker">"What does it cost me?"</p>
       <div class="price">
         <div class="pcard"><p class="pk">Foundation</p><p class="pp">${fix}</p><p class="pd">Fix-It Pack, one-off</p></div>
-        <div class="pcard hi"><p class="pk">Growth</p><p class="pp">${growth}<small>/month</small></p><p class="pd">About ${perDay} a day. Less than a coffee a week.</p></div>
+        <div class="pcard hi"><p class="pk">Growth</p><p class="pp">${growth}<small>/month</small></p><p class="pd">About ${perDay} a day. Less than a coffee.</p></div>
       </div>
       <h2>One extra customer a month more than pays for it.</h2>
       <p class="sub">No contract. Cancel any time. Your monthly report shows exactly what is moving.</p>
