@@ -21,6 +21,7 @@ import { AddBusinessForm } from "../components/agency/AddBusinessForm";
 import { AccountingCard } from "../components/reviews/AccountingCard";
 import { PastCustomersCard } from "../components/reviews/PastCustomersCard";
 import { JourneyPanel } from "../components/reviews/JourneyPanel";
+import { TodayPanel } from "../components/reviews/TodayPanel";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -269,6 +270,9 @@ function Dashboard() {
             welcome={welcome}
             onTab={setTab}
           />
+        )}
+        {active && tab === "home" && s.googleConnected && (
+          <TodayPanel key={`t-${active.id}`} business={active.name} onTab={setTab} />
         )}
         {active && tab === "home" && (
           <JourneyPanel
