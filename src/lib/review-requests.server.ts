@@ -857,7 +857,7 @@ export async function runSmsRequests(token: string) {
   if (ok.error || ok.data !== true) return { status: 401, body: { ok: false } };
   const { smsReady, textPackFor, takeSmsParts, giveBackSmsParts, sendSmsWorks } =
     await import("./review-sms.server");
-  const { reviewSmsText, smsParts, smsNumber } = await import("./review-sms");
+  const { oneTextRequest, smsParts, smsNumber } = await import("./review-sms");
   if (!smsReady()) return { status: 200, body: { ok: true, sent: 0, skipped: "not set up" } };
   const packs = await serviceRead<{ tenant_id: string }[]>(
     "review_sms_settings?select=tenant_id&enabled=eq.true&monthly_cap=gt.0",
@@ -925,9 +925,12 @@ export async function runSmsRequests(token: string) {
       });
       continue;
     }
-    const vars = { name: r.name ?? "", business: c.business, link: linkFor(r.token) };
-    const body = fillMessage(r.step === 0 ? r.message || c.s.message : c.s.reminderMessage, vars);
-    const text = reviewSmsText(body, `${vars.link}?unsub=1`);
+    const text = oneTextRequest({
+      name: r.name ?? "",
+      business: c.business,
+      token: r.token,
+      reminder: r.step > 0,
+    });
     const parts = smsParts(text);
     const now = new Date();
     if (!(await takeSmsParts(r.tenant_id, parts, now))) {
