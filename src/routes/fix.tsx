@@ -227,8 +227,8 @@ function FixLanding({ r }: { r?: string | undefined }) {
                   <Clock className="h-5 w-5 text-primary-ink" aria-hidden /> Ready in minutes
                 </li>
                 <li className="flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-primary-ink" aria-hidden /> 14-day money-back
-                  promise
+                  <ShieldCheck className="h-5 w-5 text-primary-ink" aria-hidden /> No Google login
+                  needed
                 </li>
               </ul>
             </div>
@@ -310,8 +310,8 @@ function FixLanding({ r }: { r?: string | undefined }) {
               <div className="flex gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
                 <ShieldCheck className="h-6 w-6 shrink-0 text-primary" aria-hidden />
                 <p className="text-white/90">
-                  <strong className="text-white">14-day money-back promise.</strong> Not happy? Tell
-                  us within 14 days and we will rewrite it or refund you in full.
+                  <strong className="text-white">Free rewrite.</strong> Not quite right? Tell us
+                  within 14 days and we will rewrite it for you.
                 </p>
               </div>
             </div>

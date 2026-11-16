@@ -1169,7 +1169,7 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
 }
 
 function fixitOffer(token: string): string {
-  return `<div class="card noprint"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 10px">A full, well-written Google profile tells Google exactly what you do and where. That is a big part of who shows up first. We write it all for you, ready to paste in. One-off &pound;27, 14-day money back.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}&amp;buy=1">Fix these for me</a></div>`;
+  return `<div class="card noprint"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 10px">A full, well-written Google profile tells Google exactly what you do and where. That is a big part of who shows up first. We write it all for you, ready to paste in. One-off &pound;27, no Google login needed.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}&amp;buy=1">Fix these for me</a></div>`;
 }
 
 // Free-check leads: two optional questions, asked after they have their

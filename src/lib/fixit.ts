@@ -24,7 +24,7 @@ export const FIXIT_FAQ: [string, string][] = [
   ],
   [
     "What if I am not happy?",
-    "Tell us within 14 days and we will either rewrite it or refund you in full. No forms, just reply to our email.",
+    "Tell us within 14 days and we will rewrite it for you. No forms, just reply to our email.",
   ],
   ["Is this a subscription?", "No. It is a one-off payment of £27. Nothing else is taken."],
 ];
