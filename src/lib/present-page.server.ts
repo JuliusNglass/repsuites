@@ -86,7 +86,7 @@ export function renderPresentation(r: Report, token: string): string {
         <div>
           <h2>${mapLine}</h2>
           <p class="sub">Each square is a spot around you. <span class="key a">1-3</span> means customers see you. <span class="key x">20+</span> means they see someone else.</p>
-          ${leader ? `<p class="sub">Most often in the top 3: <b>${esc(leader.name)}</b>.</p>` : ""}
+          ${leader ? `<p class="sub">Most reviewed rival nearby: <b>${esc(leader.name)}</b>.</p>` : ""}
         </div>
       </div>
     </section>`,
