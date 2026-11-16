@@ -217,7 +217,8 @@ function FixLanding({ r }: { r?: string | undefined }) {
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground">
                 Your free check showed the gaps. Most owners never get round to fixing them. For a
-                one-off {FIXIT_PRICE}, we write every fix for you, ready to paste, in minutes.
+                one-off {FIXIT_PRICE}, we write every fix for you, ready to paste, in minutes. It is
+                the foundation your profile needs before it can climb.
               </p>
               <div ref={heroBuy} className="max-w-md">
                 <BuyButton token={r} />
@@ -303,9 +304,10 @@ function FixLanding({ r }: { r?: string | undefined }) {
               </p>
               <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 text-white/90">
                 <strong className="text-white">Bonus: a free month of RepSuites Growth</strong>{" "}
-                (normally £49). It asks your customers for reviews and writes your review replies,
-                so the fixes keep working. No card needed. Worth £76 in total, yours for{" "}
-                {FIXIT_PRICE}.
+                (normally £49). The pack fixes the foundation. Growth is the part that helps you
+                move up: it asks your customers for reviews, writes your review replies and shows
+                you each month where you started and where you are now. No card needed. Worth £76
+                in total, yours for {FIXIT_PRICE}.
               </div>
               <div className="flex gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
                 <ShieldCheck className="h-6 w-6 shrink-0 text-primary" aria-hidden />

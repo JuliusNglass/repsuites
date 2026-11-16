@@ -170,7 +170,7 @@ function Start() {
             </ul>
             <p className="mt-8 rounded-2xl border border-border bg-secondary/60 p-5 text-base text-muted-foreground">
               Want more later? RepSuites Growth writes your review replies, asks customers for
-              reviews and gets you higher on Google Maps.{" "}
+              reviews and tracks where you show up on Google Maps each month.{" "}
               <Link
                 to="/pricing"
                 className="font-semibold text-foreground underline underline-offset-2"

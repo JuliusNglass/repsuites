@@ -41,7 +41,7 @@ export const GROWTH = {
   name: "RepSuites Growth",
   monthPence: 4900,
   yearPence: 49700,
-  tagline: "Everything you need to get more reviews and more customers.",
+  tagline: "Keeps your profile active every month, the part that helps you move up on Google.",
   features: [
     "AI writes a reply to every Google review for you",
     "Ask customers for reviews by email, WhatsApp or text",
@@ -49,7 +49,7 @@ export const GROWTH = {
     "See where you show up on Google Maps across your area",
     "Check if AI assistants like ChatGPT recommend you",
     "Post updates to your Google profile",
-    "A monthly report by email",
+    "A monthly report: where you started and where you are now",
   ],
 };
 
