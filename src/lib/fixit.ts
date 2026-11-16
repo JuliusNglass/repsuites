@@ -26,7 +26,14 @@ export const FIXIT_FAQ: [string, string][] = [
     "What if I am not happy?",
     "Tell us within 14 days and we will rewrite it for you. No forms, just reply to our email.",
   ],
-  ["Is this a subscription?", "No. It is a one-off payment of £27. Nothing else is taken."],
+  [
+    "Will this move me up on Google?",
+    "It gets your profile right, which is the foundation. On its own that is a good start, but it rarely moves you up much. Google favours profiles that stay active: fresh reviews, replies and updates, month after month. That is what RepSuites Growth keeps going, and your first month of it is free with this pack.",
+  ],
+  [
+    "Is this a subscription?",
+    "No. The pack is a one-off payment of £27. Nothing else is taken. Growth is optional: after your free month you choose to keep it or not, and you can cancel any time.",
+  ],
 ];
 
 /** Report tokens are 20 to 64 URL-safe characters. */

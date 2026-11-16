@@ -261,7 +261,8 @@ function Thanks() {
           <p className="eyebrow !text-primary">Your bonus</p>
           <h2 className="text-2xl font-semibold">A free month of RepSuites Growth is yours</h2>
           <p className="text-white/85">
-            Fixing your profile gets you seen. Steady new reviews keep you there. When your pack is
+            Your pack fixes the foundation. Steady new reviews and replies, month after month, are
+            what help you move up. When your pack is
             ready, you can switch on your free month from the pack page, and the link is in your
             email too. Normally £49. No card needed.
           </p>

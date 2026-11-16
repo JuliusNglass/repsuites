@@ -134,8 +134,9 @@ function PackPage() {
           <p className="eyebrow !text-primary">Your bonus</p>
           <h2 className="text-2xl font-semibold">Turn on your free month of RepSuites Growth</h2>
           <p className="text-white/85">
-            It asks your customers for reviews by text and email, writes your review replies and
-            reruns your Google check, so these fixes keep working. Normally £49. No card needed.
+            These fixes are the foundation. Growth is the part that helps you move up: it asks your
+            customers for reviews by text and email, writes your review replies and reruns your
+            Google check, so you can see where you started and where you are now. Normally £49. No card needed.
             After 30 days you choose to keep it or stay on the free plan.
           </p>
           <Link to="/start" search={{ bonus: key }} className="btn btn-gold btn-lg w-full">

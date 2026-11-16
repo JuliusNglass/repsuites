@@ -90,7 +90,7 @@ export async function runBonusMonth(
           subject: `7 days left of your free RepSuites Growth month`,
           html: email(
             first,
-            `<p>Your free month of RepSuites Growth for ${name} ends in 7 days.</p><p>To keep the AI review replies, review requests by text and your Google Maps tracking, it is £49 a month. That is about £1.61 a day: £49 x 12 = £588 a year, and £588 / 365 = £1.61.</p><p>If 3 extra customers a month each spend £20 with you, that is £60, more than it costs.</p>${button("https://repsuites.com/pricing", "Keep RepSuites Growth")}<p>If you do nothing, you go back to the free plan and keep your review page and QR code.</p>`,
+            `<p>Your free month of RepSuites Growth for ${name} ends in 7 days.</p><p>Your Fix-It Pack set the foundation. Growth is the part that keeps you moving: steady reviews, replies and a monthly check of where you show up. To keep the AI review replies, review requests by text and your Google Maps tracking, it is £49 a month. That is about £1.61 a day: £49 x 12 = £588 a year, and £588 / 365 = £1.61.</p><p>If 3 extra customers a month each spend £20 with you, that is £60, more than it costs.</p>${button("https://repsuites.com/pricing", "Keep RepSuites Growth")}<p>If you do nothing, you go back to the free plan and keep your review page and QR code.</p>`,
           ),
         }).catch(() => null);
       await serviceWrite(`tenant_bonus?tenant_id=eq.${b.tenant_id}`, "", {
