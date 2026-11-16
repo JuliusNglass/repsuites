@@ -20,6 +20,7 @@ import { AccessHelpCard } from "../components/reviews/AccessHelpCard";
 import { AddBusinessForm } from "../components/agency/AddBusinessForm";
 import { AccountingCard } from "../components/reviews/AccountingCard";
 import { PastCustomersCard } from "../components/reviews/PastCustomersCard";
+import { JourneyPanel } from "../components/reviews/JourneyPanel";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 const TABS = [
+  { id: "home", label: "Home" },
   { id: "reviews", label: "Reviews" },
   { id: "qr", label: "QR card" },
   { id: "ask", label: "Ask" },
@@ -46,9 +48,9 @@ function Dashboard() {
   const [picking, setPicking] = useState(false);
   const [adding, setAdding] = useState(false);
   const [tab, setTabState] = useState<TabId>(() => {
-    if (typeof window === "undefined") return "reviews";
+    if (typeof window === "undefined") return "home";
     const h = window.location.hash.slice(1);
-    return TABS.some((t) => t.id === h) ? (h as TabId) : "reviews";
+    return TABS.some((t) => t.id === h) ? (h as TabId) : "home";
   });
   const setTab = (t: TabId) => {
     setTabState(t);
@@ -258,13 +260,22 @@ function Dashboard() {
         </div>
         {!s.agency && <EmailCheckBar />}
         {!active && <p className="text-muted-foreground">Choose a business to get started.</p>}
-        {active && s.plan === "free" && !s.agency && (tab === "reviews" || welcome) && (
+        {active && s.plan === "free" && !s.agency && (tab === "home" || welcome) && (
           <WelcomeCard
             key={`w-${active.id}`}
             business={active.name}
             googleConnected={s.googleConnected}
             qrDownloaded={s.qrDownloaded}
             welcome={welcome}
+            onTab={setTab}
+          />
+        )}
+        {active && tab === "home" && (
+          <JourneyPanel
+            key={`j-${active.id}`}
+            business={active.name}
+            googleConnected={s.googleConnected}
+            qrDownloaded={s.qrDownloaded}
             onTab={setTab}
           />
         )}
