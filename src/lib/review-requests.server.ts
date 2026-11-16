@@ -382,7 +382,14 @@ export async function handleTrigger(
     );
     if (dup.data?.length) return { status: 200, body: { ok: true, result: "duplicate" } };
   }
-  const [s, tz] = await Promise.all([settingsFor(tenantId), timezoneFor(tenantId)]);
+  const { textPackFor } = await import("./review-sms.server");
+  const [s, tz, pack] = await Promise.all([
+    settingsFor(tenantId),
+    timezoneFor(tenantId),
+    textPackFor(tenantId).catch(() => null),
+  ]);
+  // Text Pack businesses text customers with no email; others get the manual list.
+  const phoneChannel: Channel = pack?.enabled && pack.sender ? "sms" : "whatsapp";
   const dueAt = triggeredSendTime(new Date(), s.firstDelayHours, tz, {
     start: s.quietStart,
     end: s.quietEnd,
@@ -394,7 +401,7 @@ export async function handleTrigger(
         name: input.name,
         email: input.email,
         phone: input.phone,
-        channel: input.email ? "email" : "whatsapp",
+        channel: input.email ? "email" : phoneChannel,
       },
     ],
     {
@@ -837,4 +844,124 @@ export async function openRequest(
     });
   }
   return { redirect: url };
+}
+
+// Called with the email run: texts every due SMS request for businesses with
+// the Text Pack switched on. Businesses without it keep the manual list
+// (send from their own phone, then mark as sent).
+export async function runSmsRequests(token: string) {
+  const ok = await serviceWrite<boolean>("rpc/repsuites_cron_token_ok", "", {
+    method: "POST",
+    body: { p_token: token },
+  });
+  if (ok.error || ok.data !== true) return { status: 401, body: { ok: false } };
+  const { smsReady, textPackFor, takeSmsParts, giveBackSmsParts, sendSmsWorks } =
+    await import("./review-sms.server");
+  const { reviewSmsText, smsParts, smsNumber } = await import("./review-sms");
+  if (!smsReady()) return { status: 200, body: { ok: true, sent: 0, skipped: "not set up" } };
+  const packs = await serviceRead<{ tenant_id: string }[]>(
+    "review_sms_settings?select=tenant_id&enabled=eq.true&monthly_cap=gt.0",
+    "",
+  );
+  const ids = (packs.data ?? []).map((p) => p.tenant_id);
+  if (!ids.length) return { status: 200, body: { ok: true, sent: 0 } };
+  const nowIso = () => new Date().toISOString();
+  for (const t of ids) {
+    await matchGoogleReviews(t).catch(() => null);
+    await settleDueReminders(t, "phone").catch(() => null);
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- PostgREST rows, same shape as the email run.
+  const due = await serviceRead<any[]>(
+    `review_requests?select=id,tenant_id,token,name,phone,step,first_sent_at,reminders_sent,opened_at,clicked_at,feedback_at,reviewed_at,unsubscribed_at,message&channel=eq.sms&status=in.(due,waiting)&due_at=lte.${nowIso()}&tenant_id=in.(${ids.join(",")})&order=due_at.asc&limit=40`,
+    "",
+  );
+  const cache = new Map<
+    string,
+    { s: RequestSettings; business: string; tz: string; out: Set<string>; sender: string | null }
+  >();
+  let sent = 0;
+  for (const r of due.data ?? []) {
+    if (
+      hasStopSignal({
+        clickedAt: r.clicked_at,
+        feedbackAt: r.feedback_at,
+        reviewedAt: r.reviewed_at,
+        unsubscribedAt: r.unsubscribed_at,
+      })
+    )
+      continue;
+    let c = cache.get(r.tenant_id);
+    if (!c) {
+      const [s, business, tz, out, pack] = await Promise.all([
+        settingsFor(r.tenant_id),
+        businessName(r.tenant_id),
+        timezoneFor(r.tenant_id),
+        serviceRead<{ contact: string }[]>(
+          `review_request_optouts?select=contact&tenant_id=eq.${r.tenant_id}&limit=10000`,
+          "",
+        ),
+        textPackFor(r.tenant_id),
+      ]);
+      c = {
+        s,
+        business,
+        tz,
+        out: new Set((out.data ?? []).map((o) => o.contact)),
+        sender: pack?.sender ?? null,
+      };
+      cache.set(r.tenant_id, c);
+    }
+    if (!c.sender) continue;
+    const key = phoneKey(r.phone, c.s.countryCode);
+    if (!key || !smsNumber(r.phone) || c.out.has(key)) {
+      await serviceWrite(`review_requests?id=eq.${r.id}`, "", {
+        method: "PATCH",
+        body: {
+          status: "stopped",
+          ...(key && c.out.has(key)
+            ? { unsubscribed_at: nowIso() }
+            : { error: "Not a UK mobile." }),
+        },
+      });
+      continue;
+    }
+    const vars = { name: r.name ?? "", business: c.business, link: linkFor(r.token) };
+    const body = fillMessage(r.step === 0 ? r.message || c.s.message : c.s.reminderMessage, vars);
+    const text = reviewSmsText(body, `${vars.link}?unsub=1`);
+    const parts = smsParts(text);
+    const now = new Date();
+    if (!(await takeSmsParts(r.tenant_id, parts, now))) {
+      // Allowance used up this month: try again tomorrow.
+      await serviceWrite(`review_requests?id=eq.${r.id}`, "", {
+        method: "PATCH",
+        body: {
+          error: "Monthly text allowance used.",
+          due_at: new Date(now.getTime() + 86400000).toISOString(),
+        },
+      });
+      continue;
+    }
+    const res = await sendSmsWorks({ to: r.phone, sender: c.sender, text, tag: "review request" });
+    if (res.ok) {
+      await serviceWrite(`review_requests?id=eq.${r.id}`, "", {
+        method: "PATCH",
+        body: {
+          ...nextAfterSend(r, c.s, c.tz, now),
+          reminders_sent: Math.min(2, (r.reminders_sent ?? 0) + (r.step > 0 ? 1 : 0)),
+          ...(res.id ? { sms_id: res.id.slice(0, 100) } : {}),
+        },
+      });
+      sent++;
+    } else {
+      await giveBackSmsParts(r.tenant_id, parts, now);
+      await serviceWrite(`review_requests?id=eq.${r.id}`, "", {
+        method: "PATCH",
+        body: {
+          error: res.error.slice(0, 200),
+          due_at: new Date(now.getTime() + 3600000).toISOString(),
+        },
+      });
+    }
+  }
+  return { status: 200, body: { ok: true, sent } };
 }
