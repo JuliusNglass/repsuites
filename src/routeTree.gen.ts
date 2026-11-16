@@ -52,6 +52,7 @@ import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhoo
 import { Route as FixPackKeyRouteImport } from './routes/fix.pack.$key'
 import { Route as RTokenMapDotgifRouteImport } from './routes/r.$token.map[.]gif'
 import { Route as RTokenPdfRouteImport } from './routes/r.$token.pdf'
+import { Route as RTokenPresentRouteImport } from './routes/r.$token.present'
 import { Route as ApiAccountingCallbackProviderRouteImport } from './routes/api.accounting.callback.$provider'
 import { Route as ApiAccountingWebhookQuickbooksRouteImport } from './routes/api.accounting.webhook.quickbooks'
 import { Route as ApiAccountingWebhookXeroRouteImport } from './routes/api.accounting.webhook.xero'
@@ -276,6 +277,11 @@ const RTokenPdfRoute = RTokenPdfRouteImport.update({
   path: '/pdf',
   getParentRoute: () => RTokenRoute,
 } as any)
+const RTokenPresentRoute = RTokenPresentRouteImport.update({
+  id: '/present',
+  path: '/present',
+  getParentRoute: () => RTokenRoute,
+} as any)
 const ApiAccountingCallbackProviderRoute =
   ApiAccountingCallbackProviderRouteImport.update({
     id: '/api/accounting/callback/$provider',
@@ -349,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/fix/pack/$key': typeof FixPackKeyRoute
   '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
+  '/r/$token/present': typeof RTokenPresentRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -399,6 +406,7 @@ export interface FileRoutesByTo {
   '/fix/pack/$key': typeof FixPackKeyRoute
   '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
+  '/r/$token/present': typeof RTokenPresentRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/fix/pack/$key': typeof FixPackKeyRoute
   '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
+  '/r/$token/present': typeof RTokenPresentRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -502,6 +511,7 @@ export interface FileRouteTypes {
     | '/fix/pack/$key'
     | '/r/$token/map.gif'
     | '/r/$token/pdf'
+    | '/r/$token/present'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/fix/pack/$key'
     | '/r/$token/map.gif'
     | '/r/$token/pdf'
+    | '/r/$token/present'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -602,6 +613,7 @@ export interface FileRouteTypes {
     | '/fix/pack/$key'
     | '/r/$token/map.gif'
     | '/r/$token/pdf'
+    | '/r/$token/present'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -959,6 +971,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RTokenPdfRouteImport
       parentRoute: typeof RTokenRoute
     }
+    '/r/$token/present': {
+      id: '/r/$token/present'
+      path: '/present'
+      fullPath: '/r/$token/present'
+      preLoaderRoute: typeof RTokenPresentRouteImport
+      parentRoute: typeof RTokenRoute
+    }
     '/api/accounting/callback/$provider': {
       id: '/api/accounting/callback/$provider'
       path: '/api/accounting/callback/$provider'
@@ -1012,11 +1031,13 @@ const FixRouteWithChildren = FixRoute._addFileChildren(FixRouteChildren)
 interface RTokenRouteChildren {
   RTokenMapDotgifRoute: typeof RTokenMapDotgifRoute
   RTokenPdfRoute: typeof RTokenPdfRoute
+  RTokenPresentRoute: typeof RTokenPresentRoute
 }
 
 const RTokenRouteChildren: RTokenRouteChildren = {
   RTokenMapDotgifRoute: RTokenMapDotgifRoute,
   RTokenPdfRoute: RTokenPdfRoute,
+  RTokenPresentRoute: RTokenPresentRoute,
 }
 
 const RTokenRouteWithChildren =
