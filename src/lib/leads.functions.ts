@@ -102,6 +102,14 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.website) return { ok: true as const, reportUrl: null };
     const p = data.place ?? null;
+    if (p?.placeId && !data.phone.trim()) {
+      const { gatedCheckOn } = await import("./gc-scan.server");
+      if (gatedCheckOn())
+        return {
+          ok: false as const,
+          error: "Please add your mobile number so we can send your results.",
+        };
+    }
     const w = await serviceWrite<{ id: string }[]>("leads", "", {
       method: "POST",
       headers: { Prefer: "return=representation" },
@@ -126,7 +134,9 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
     let reportLink: string | null = null;
     let prospectId: string | null = null;
     const { gatedCheckOn } = await import("./gc-scan.server");
-    const deferred = !!(data.deferScan && p?.placeId && data.phone && gatedCheckOn());
+    // Gate on: any request with a Google listing waits for SEND, whatever the
+    // caller sends, so nobody can skip the WhatsApp step.
+    const deferred = !!(p?.placeId && gatedCheckOn());
     // Already built while they typed? Attach their details to it.
     if (!deferred && p?.placeId && data.prebuiltToken) {
       const own = await serviceWrite<{ id: string; report_token: string }[]>(

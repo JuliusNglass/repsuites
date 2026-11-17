@@ -114,6 +114,13 @@ const input = "field text-base";
 const tick =
   "flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-border bg-background px-4 py-2.5 transition-colors hover:bg-secondary has-[:checked]:border-navy/60 has-[:checked]:bg-gold-soft has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-[var(--ring)]";
 
+// With the WhatsApp gate on, results go to their phone, so the page says so.
+const GATED_PROMISES = [
+  "Your score out of 100, sent to your phone",
+  "Your top gaps, in plain English",
+  "Who is beating you on Google Maps near you",
+];
+
 const PROMISES = [
   "Your score out of 100",
   "Your top gaps, in plain English",
@@ -266,7 +273,8 @@ function CheckPage() {
             <div className="max-w-6xl mx-auto px-4 pt-8 pb-14 sm:pt-14 sm:pb-20 lg:py-20 grid gap-8 lg:gap-12 lg:grid-cols-[1.05fr_1fr] lg:items-start">
               <div className="space-y-5 max-w-xl lg:pt-6">
                 <p className="eyebrow">
-                  <span className="h-px w-6 bg-primary-ink" aria-hidden /> Free 30-second check
+                  <span className="h-px w-6 bg-primary-ink" aria-hidden />{" "}
+                  {gated ? "Free Google check, sent by WhatsApp" : "Free 30-second check"}
                 </p>
                 <h1
                   id="h1"
@@ -274,9 +282,14 @@ function CheckPage() {
                 >
                   {niche.headline}
                 </h1>
-                <p className="text-lg text-muted-foreground">{niche.sub}</p>
+                <p className="text-lg text-muted-foreground">
+                  {gated
+                    ? niche.sub.replace(/30-second /, "") +
+                      " We send your results straight to your phone."
+                    : niche.sub}
+                </p>
                 <ul className="hidden lg:grid gap-3 pt-2">
-                  {PROMISES.map((t) => (
+                  {(gated ? GATED_PROMISES : PROMISES).map((t) => (
                     <li key={t} className="flex items-start gap-3">
                       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-soft ring-1 ring-primary/40">
                         <Check className="h-4 w-4 text-primary-ink" aria-hidden />
@@ -335,7 +348,7 @@ function CheckPage() {
                   </div>
                 </div>
                 <ul className="mt-6 grid gap-3 lg:hidden">
-                  {PROMISES.map((t) => (
+                  {(gated ? GATED_PROMISES : PROMISES).map((t) => (
                     <li key={t} className="flex items-start gap-3">
                       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gold-soft ring-1 ring-primary/40">
                         <Check className="h-4 w-4 text-primary-ink" aria-hidden />

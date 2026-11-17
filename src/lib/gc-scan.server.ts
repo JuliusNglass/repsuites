@@ -121,11 +121,24 @@ async function pushToGhl(
   }
 }
 
+// GHL sometimes refuses a write for a moment; try three times before giving up.
+async function pushWithRetry(
+  who: { email: string; phone: string },
+  fields: Partial<Record<keyof typeof FIELD, string | number>>,
+  tag: string,
+): Promise<boolean> {
+  for (let i = 0; i < 3; i++) {
+    if (await pushToGhl(who, fields, tag)) return true;
+    await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+  }
+  return false;
+}
+
 /** Runs the scan for one contact and writes the result into GHL. */
 export async function runGatedScan(who: { email: string; phone: string }): Promise<string> {
   const lead = await findLead(who.email, who.phone);
   if (!lead?.google_place_id) {
-    await pushToGhl(who, { status: "not_found" }, "gc-scan-failed");
+    await pushWithRetry(who, { status: "not_found" }, "gc-scan-failed");
     return "not_found";
   }
   const { saveProspectReport, addProspectExtra } = await import("./prospects.server");
@@ -136,7 +149,7 @@ export async function runGatedScan(who: { email: string; phone: string }): Promi
     hq: false,
   }).catch(() => null);
   if (!saved?.ok) {
-    await pushToGhl(who, { status: "scan_failed" }, "gc-scan-failed");
+    await pushWithRetry(who, { status: "scan_failed" }, "gc-scan-failed");
     return "scan_failed";
   }
   const row = await serviceRead<{ report: unknown }[]>(
@@ -146,12 +159,12 @@ export async function runGatedScan(who: { email: string; phone: string }): Promi
   const report = row.data?.[0]?.report as import("./prospects.server").Report | undefined;
   const link = `https://repsuites.com/r/${saved.token}`;
   if (!report) {
-    await pushToGhl(who, { status: "scan_failed", fullReport: link }, "gc-scan-failed");
+    await pushWithRetry(who, { status: "scan_failed", fullReport: link }, "gc-scan-failed");
     return "scan_failed";
   }
   const { checkSummary } = await import("./report-page.server");
   const s = checkSummary(report);
-  await pushToGhl(
+  const delivered = await pushWithRetry(
     who,
     {
       score: s.score,
@@ -168,6 +181,10 @@ export async function runGatedScan(who: { email: string; phone: string }): Promi
     },
     "gc-scan-ready",
   );
+  if (!delivered) {
+    console.error("gated scan: GHL did not take the result", who.email || who.phone);
+    return "ghl_failed";
+  }
   // Website check last: the summary is already on its way, and the
   // background task has a time limit after GHL gets its answer.
   await addProspectExtra(lead.google_place_id, "site").catch(() => null);
