@@ -29,6 +29,9 @@ const Lead = z.object({
     .string()
     .regex(/^[A-Za-z0-9_-]{20,64}$/)
     .optional(),
+  // WhatsApp-gated check: save the lead now, scan only after they reply
+  // SEND (GHL calls /api/ghl/run-scan). Only honoured when GC_GATED_SCAN=1.
+  deferScan: z.boolean().optional().default(false),
   consentEmail: z.boolean().optional().default(false),
   consentWhatsapp: z.boolean().optional().default(false),
   eventId: z.string().max(64).optional(),
@@ -114,6 +117,7 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
         google_rating: p?.rating ?? null,
         google_review_count: p?.reviewCount ?? null,
         website_url: p?.websiteUrl || null,
+        check_keyword: data.keyword ? data.keyword.toLowerCase() : null,
       },
     });
     if (w.error)
@@ -121,8 +125,10 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
     // Turn a request with a Google listing into a prospect with a ready report.
     let reportLink: string | null = null;
     let prospectId: string | null = null;
+    const { gatedCheckOn } = await import("./gc-scan.server");
+    const deferred = !!(data.deferScan && p?.placeId && data.phone && gatedCheckOn());
     // Already built while they typed? Attach their details to it.
-    if (p?.placeId && data.prebuiltToken) {
+    if (!deferred && p?.placeId && data.prebuiltToken) {
       const own = await serviceWrite<{ id: string; report_token: string }[]>(
         `prospects?report_token=eq.${data.prebuiltToken}&place_id=eq.${encodeURIComponent(p.placeId)}`,
         "",
@@ -138,7 +144,7 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
         prospectId = row.id;
       }
     }
-    if (p?.placeId && !reportLink) {
+    if (!deferred && p?.placeId && !reportLink) {
       const { saveProspectReport } = await import("./prospects.server");
       const r = await saveProspectReport(p.placeId, "inbound", {
         email: data.email.toLowerCase(),
@@ -177,6 +183,7 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
               consentWhatsapp: data.consentWhatsapp,
               reportUrl: reportLink,
               source: data.source,
+              scanPending: deferred,
             }).catch(() => false),
           )
         : Promise.resolve(false),
@@ -220,7 +227,7 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
         phone: data.phone || null,
       });
     }
-    return { ok: true as const, reportUrl: reportLink };
+    return { ok: true as const, reportUrl: reportLink, deferred };
   });
 
 // Starts the report as soon as someone confirms their business on /check, so
@@ -238,6 +245,9 @@ export const prebuildCheck = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { verifyRequestOriginAsync } = await import("./auth.server");
     if (!(await verifyRequestOriginAsync())) return { ok: false as const };
+    // WhatsApp gate on: nothing is scanned until they reply SEND.
+    const { gatedCheckOn } = await import("./gc-scan.server");
+    if (gatedCheckOn()) return { ok: false as const };
     const { serviceRead } = await import("./supabase-service.server");
     const since = new Date(Date.now() - 3600_000).toISOString();
     const recent = await serviceRead<{ id: string }[]>(
@@ -254,3 +264,9 @@ export const prebuildCheck = createServerFn({ method: "POST" })
     await addProspectExtra(data.placeId, "site").catch(() => null);
     return { ok: true as const, token: r.token };
   });
+
+// Tells /check whether the WhatsApp gate is on (no scan until they reply).
+export const checkGated = createServerFn({ method: "GET" }).handler(async () => {
+  const { gatedCheckOn } = await import("./gc-scan.server");
+  return { gated: gatedCheckOn() };
+});

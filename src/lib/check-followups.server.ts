@@ -14,7 +14,14 @@ import {
   type FollowupLead,
 } from "./check-followups";
 
-const STOP_TAGS = ["replied", "customer", "fixit-paid", "repsuites-customer", "no-followup"];
+const STOP_TAGS = [
+  "replied",
+  "customer",
+  "fixit-paid",
+  "repsuites-customer",
+  "no-followup",
+  "gc-scan-pending",
+];
 
 function julius(): string {
   return (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
