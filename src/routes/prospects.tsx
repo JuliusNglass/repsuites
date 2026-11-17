@@ -1839,9 +1839,7 @@ const ProspectRow = memo(function ProspectRow({
             Details {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           {primary !== "whatsapp" && (
-            <p className="basis-full text-base text-muted-foreground">
-              {noWaTitle}, so WhatsApp is off.
-            </p>
+            <p className="basis-full text-base text-muted-foreground">{noWaTitle}, so WhatsApp is off.</p>
           )}
         </div>
       )}

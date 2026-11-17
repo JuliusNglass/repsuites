@@ -1,12 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  cleanSender,
-  oneTextRequest,
-  reviewSmsText,
-  smsNumber,
-  smsParts,
-  smsPeriod,
-} from "./review-sms";
+import { cleanSender, oneTextRequest, reviewSmsText, smsNumber, smsParts, smsPeriod } from "./review-sms";
 
 describe("smsNumber", () => {
   it("accepts UK mobiles in any common form", () => {
@@ -60,12 +53,7 @@ describe("smsPeriod", () => {
 describe("oneTextRequest", () => {
   const token = "a".repeat(24);
   it("fits one part with a normal name and business", () => {
-    const t = oneTextRequest({
-      name: "Sarah Jones",
-      business: "BrightClean",
-      token,
-      reminder: false,
-    });
+    const t = oneTextRequest({ name: "Sarah Jones", business: "BrightClean", token, reminder: false });
     expect(smsParts(t)).toBe(1);
     expect(t).toContain("Hi Sarah,");
     expect(t).toContain(`repsuites.com/q/${token}`);
