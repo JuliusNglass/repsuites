@@ -34,7 +34,9 @@ describe("story mode", () => {
     expect(c.length).toBe(4);
   });
   it("needs at least 3 cards", () => {
-    expect(storyMode({ ...s, ranks: null, leader: null, newestReviewDays: null, fixes: [] }, "t")).toBe("");
+    expect(
+      storyMode({ ...s, ranks: null, leader: null, newestReviewDays: null, fixes: [] }, "t"),
+    ).toBe("");
     expect(storyMode(s, "tok")).toContain('id="story"');
   });
 });

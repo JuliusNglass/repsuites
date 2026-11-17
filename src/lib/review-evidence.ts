@@ -19,4 +19,3 @@ export function reviewSample(
     reviewsLast90Days: times.filter((time) => now - time <= 90 * 86400000).length,
   };
 }
-

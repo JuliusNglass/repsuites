@@ -259,12 +259,12 @@ function Thanks() {
         </section>
         <section className="surface-navy rounded-3xl p-6 sm:p-8 space-y-4 shadow-[var(--shadow-lift)]">
           <p className="eyebrow !text-primary">Your bonus</p>
-          <h2 className="text-2xl font-semibold">A free month of RepSuites Growth is yours</h2>
+          <h2 className="text-2xl font-semibold">30 days of our managed service, free</h2>
           <p className="text-white/85">
             Your pack fixes the foundation. Steady new reviews and replies, month after month, are
-            what help you move up. When your pack is
-            ready, you can switch on your free month from the pack page, and the link is in your
-            email too. Normally £49. No card needed.
+            what help you move up, so for the next 30 days we run that for you and send you a
+            ranking update each week. When your pack is ready, switch it on from the pack page; the
+            link is in your email too. Normally £99. No card needed.
           </p>
         </section>
       </main>
