@@ -1,8 +1,8 @@
-// The Fix-It Pack: a one-off £27 done-for-you write-up of the Google profile
+// The Fix-It Pack: a one-off £49 done-for-you write-up of the Google profile
 // fixes a free check found. Pure data, shared by the sales page, the report
 // card and the checkout. No em dashes in this copy (AGENTS.md).
-export const FIXIT_PENCE = 2700;
-export const FIXIT_PRICE = "£27";
+export const FIXIT_PENCE = 4900;
+export const FIXIT_PRICE = "£49";
 
 export const FIXIT_INCLUDES = [
   "A rewritten Google business description, using the words people search for",
@@ -32,7 +32,7 @@ export const FIXIT_FAQ: [string, string][] = [
   ],
   [
     "Is this a subscription?",
-    "No. The pack is a one-off payment of £27. Nothing else is taken. Growth is optional: after your free month you choose to keep it or not, and you can cancel any time.",
+    "No. The pack is a one-off payment of £49. Nothing else is taken. Growth is optional: after your free month you choose to keep it or not, and you can cancel any time.",
   ],
 ];
 
