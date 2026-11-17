@@ -169,7 +169,7 @@ export async function signUpFree(
     return { ok: false as const, error: "We could not create your account. Try again." };
   }
 
-  // Fix-It Pack buyers: their free month of Growth (once per order).
+  // Fix-It Pack buyers: their free managed 30 days (once per order).
   let bonus = false;
   if (input.bonus) {
     const { claimFixitBonus } = await import("./fixit-bonus.server");

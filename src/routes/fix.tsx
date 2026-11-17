@@ -299,15 +299,15 @@ function FixLanding({ r }: { r?: string | undefined }) {
                 <span className="text-white/80">one-off, no subscription</span>
               </p>
               <p className="text-white/90">
-                Less than a coffee a day for a month: {FIXIT_PRICE} / 30 days = £1.63 a day,
-                and your first month of Growth (worth £49) is included free.
+                Less than a coffee a day for a month: {FIXIT_PRICE} / 30 days = £1.63 a day, and
+                your first 30 days of our managed service (worth £99) are included free.
               </p>
               <div className="rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 text-white/90">
-                <strong className="text-white">Bonus: a free month of RepSuites Growth</strong>{" "}
-                (normally £49). The pack fixes the foundation. Growth is the part that helps you
-                move up: it asks your customers for reviews, writes your review replies and shows
-                you each month where you started and where you are now. No card needed. Worth £98
-                in total, yours for {FIXIT_PRICE}.
+                <strong className="text-white">Bonus: 30 days of our managed service, free</strong>{" "}
+                (normally £99). The pack fixes the foundation. Then we run RepSuites Growth for you:
+                we ask your customers for reviews, reply to every review and send you a ranking
+                update each week, so you can see where you show up and act on it. No card needed.
+                Worth £148 in total, yours for {FIXIT_PRICE}.
               </div>
               <div className="flex gap-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15">
                 <ShieldCheck className="h-6 w-6 shrink-0 text-primary" aria-hidden />

@@ -153,9 +153,10 @@ function Start() {
                 role="status"
                 className="mt-5 rounded-2xl border-2 border-primary bg-gold-soft p-5 text-base"
               >
-                <b>Your free month of RepSuites Growth is included</b> with your Fix-It Pack.
-                Normally £49. No card needed. Create your account below and it switches on straight
-                away. After 30 days you choose to keep it or stay on the free plan.
+                <b>Your free 30 days of managed service are included</b> with your Fix-It Pack.
+                Normally £99. No card needed. Create your account below and we take it from there.
+                After 30 days you choose: we keep running it (£99 a month), you run it yourself (£49
+                a month), or you stay on the free plan.
               </p>
             ) : null}
             <ul className="mt-8 grid gap-3">

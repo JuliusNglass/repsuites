@@ -1,4 +1,4 @@
-// The Fix-It Pack bonus: a free month of RepSuites Growth, no card needed.
+// The Fix-It Pack bonus: 30 days of the managed service (we run Growth), no card needed.
 // claimFixitBonus runs at sign-up (/start?bonus=<pack key>). runBonusMonth
 // runs with the daily lifecycle job: a reminder 7 days before the end, then
 // back to the free plan at the end (unless they have started paying).
@@ -31,6 +31,19 @@ export async function claimFixitBonus(viewKey: string, tenantId: string): Promis
     body: { tenant_id: tenantId, source: "fixit", fixit_order_id: order.id, ends_at: ends },
   });
   if (b.error) return false;
+  // Managed month: switch on weekly ranking checks and tell the team to set up.
+  await serviceWrite("rank_settings?on_conflict=tenant_id", "", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates" },
+    body: { tenant_id: tenantId, enabled: true },
+  });
+  const team = (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
+  const t = await serviceRead<{ name: string }[]>(`tenants?select=name&id=eq.${tenantId}`, "");
+  await sendEmail({
+    to: team,
+    subject: `New managed month: ${t.data?.[0]?.name ?? tenantId}`,
+    html: `<p>A Fix-It buyer has started their free 30 days of managed service.</p><p>Business: <b>${esc(t.data?.[0]?.name ?? "")}</b><br>Tenant: ${tenantId}</p><p>To do: connect their Google profile, add up to 5 ranking searches, import past customers and switch on review requests. Weekly ranking updates go to them and a copy comes to you.</p>`,
+  }).catch(() => null);
   await serviceWrite("tenant_plans?on_conflict=tenant_id", "", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates" },
@@ -55,7 +68,7 @@ const button = (href: string, text: string) =>
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-async function ownerEmail(tenantId: string): Promise<string | null> {
+export async function ownerEmail(tenantId: string): Promise<string | null> {
   const m = await serviceRead<{ user_id: string }[]>(
     `tenant_memberships?select=user_id&tenant_id=eq.${tenantId}&role=eq.owner&limit=1`,
     "",
@@ -87,10 +100,10 @@ export async function runBonusMonth(
         await sendEmail({
           to,
           replyTo: "support@repsuites.com",
-          subject: `7 days left of your free RepSuites Growth month`,
+          subject: `7 days left of your free managed month`,
           html: email(
             first,
-            `<p>Your free month of RepSuites Growth for ${name} ends in 7 days.</p><p>Your Fix-It Pack set the foundation. Growth is the part that keeps you moving: steady reviews, replies and a monthly check of where you show up. To keep the AI review replies, review requests by text and your Google Maps tracking, it is £49 a month. That is about £1.61 a day: £49 x 12 = £588 a year, and £588 / 365 = £1.61.</p><p>If 3 extra customers a month each spend £20 with you, that is £60, more than it costs.</p>${button("https://repsuites.com/pricing", "Keep RepSuites Growth")}<p>If you do nothing, you go back to the free plan and keep your review page and QR code.</p>`,
+            `<p>Your free 30 days of managed service for ${name} end in 7 days.</p><p>Your Fix-It Pack set the foundation. Growth is the part that keeps you moving: steady reviews, replies and a weekly ranking update. You have three choices:</p><ul><li><b>We keep running it:</b> £99 a month, about £3.25 a day (£99 x 12 = £1,188 a year, / 365 = £3.25). Just reply to this email.</li><li><b>You run it yourself:</b> £49 a month, about £1.61 a day (£49 x 12 = £588, / 365 = £1.61).</li><li><b>Stop:</b> do nothing and you go back to the free plan. Your review page and QR code keep working.</li></ul><p>If 3 extra customers a month each spend £20 with you, that is £60, more than the £49 plan costs.</p>${button("https://repsuites.com/pricing", "Run it myself for £49")}`,
           ),
         }).catch(() => null);
       await serviceWrite(`tenant_bonus?tenant_id=eq.${b.tenant_id}`, "", {
@@ -119,10 +132,10 @@ export async function runBonusMonth(
         await sendEmail({
           to,
           replyTo: "support@repsuites.com",
-          subject: `Your free RepSuites Growth month has ended`,
+          subject: `Your free managed month has ended`,
           html: email(
             first,
-            `<p>Your free month of RepSuites Growth for ${name} has ended, so you are on the free plan now. Your review page and QR code still work.</p><p>Want the AI replies and review requests back? It is £49 a month, about £1.61 a day, with a 14-day free trial.</p>${button("https://repsuites.com/pricing", "Turn Growth back on")}`,
+            `<p>Your free 30 days of managed service for ${name} have ended, so you are on the free plan now. Your review page and QR code still work.</p><p>Want it back? Reply to this email and we will keep running it for £99 a month, or run it yourself for £49 a month (about £1.61 a day).</p>${button("https://repsuites.com/pricing", "Run it myself for £49")}`,
           ),
         }).catch(() => null);
     }

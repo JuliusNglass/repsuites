@@ -75,7 +75,7 @@ export function storyCards(s: StoryInput): string[] {
         .join("")}</ol>`,
     );
   cards.push(
-    `<p class="sk">What next?</p><h2>Want us to do the fixes for you?</h2><p>We write every fix from your report, ready to copy into Google. £49 one-off, and your first month of RepSuites Growth (worth £49) is free.</p>${s.fixUrl ? `<a class="sbtn" href="${esc(s.fixUrl)}">Fix it for me</a>` : ""}<button type="button" class="sbtn ghost" data-close>See my full report</button>${s.cleaning ? `<p class="small">Run a cleaning team? <a href="https://ops.accelur8clientwork.com/cleaning">See SparkOps</a>, the app we built for cleaning businesses.</p>` : ""}`,
+    `<p class="sk">What next?</p><h2>Want us to do the fixes for you?</h2><p>We write every fix from your report, ready to copy into Google. £49 one-off, and your first 30 days of our managed service are free (worth £99).</p>${s.fixUrl ? `<a class="sbtn" href="${esc(s.fixUrl)}">Fix it for me</a>` : ""}<button type="button" class="sbtn ghost" data-close>See my full report</button>${s.cleaning ? `<p class="small">Run a cleaning team? <a href="https://ops.accelur8clientwork.com/cleaning">See SparkOps</a>, the app we built for cleaning businesses.</p>` : ""}`,
   );
   return cards;
 }
