@@ -43,6 +43,12 @@ describe("checkSummary", () => {
   });
 });
 
+describe("summary for WhatsApp", () => {
+  it("always has three gaps", () => {
+    expect(checkSummary({ ...base, fixes: [] }).gaps).toHaveLength(3);
+  });
+});
+
 describe("gated check tag", () => {
   it("marks the contact as waiting for SEND", () => {
     const t = ghlLeadTags({

@@ -1469,6 +1469,13 @@ export function checkSummary(r: Report): {
     keyword: g0?.keyword ?? r.maps.keyword ?? "",
     topCompetitor: top?.name ?? "",
     reviewLine,
-    gaps: view.fixes.slice(0, 3).map((f) => f.title),
+    // WhatsApp templates refuse empty values, so always send three.
+    gaps: [...view.fixes.map((f) => f.title), ...SPARE_GAPS].slice(0, 3),
   };
 }
+
+const SPARE_GAPS = [
+  "Post on your Google profile every week",
+  "Reply to every new review",
+  "Add fresh photos of your work each month",
+];
