@@ -730,7 +730,7 @@ export interface RenderExtra {
   minSalePence?: number | null;
   salePeriod?: string | null;
   competitorId?: string | null;
-  /** Show the £27 Fix-It Pack offer (free-check leads only). */
+  /** Show the £49 Fix-It Pack offer (free-check leads only). */
   fixit?: boolean;
   branding?: {
     agency_name: string | null;
