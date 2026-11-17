@@ -182,7 +182,11 @@ export async function runGatedScan(who: { email: string; phone: string }): Promi
 export async function handleRunScan(request: Request, ctx: unknown): Promise<Response> {
   if (request.method !== "POST") return json(405, { ok: false });
   const secret = (process.env["GHL_SCAN_WEBHOOK_TOKEN"] ?? "").trim();
-  const given = request.headers.get("x-repsuites-ghl-token") ?? "";
+  // Header preferred; GHL's standard webhook step can only add it to the link.
+  const given =
+    request.headers.get("x-repsuites-ghl-token") ??
+    new URL(request.url).searchParams.get("t") ??
+    "";
   if (secret.length < 32 || !safeEqual(given, secret)) return json(401, { ok: false });
   let body: Record<string, unknown> = {};
   try {
