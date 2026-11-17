@@ -25,6 +25,7 @@ import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiCheckFitRouteImport } from './routes/api.check-fit'
 import { Route as ApiDemoLeadRouteImport } from './routes/api.demo-lead'
+import { Route as ApiGrowthLeadRouteImport } from './routes/api.growth-lead'
 import { Route as ApiProspectConnectRouteImport } from './routes/api.prospect-connect'
 import { Route as ApiReportVideoRouteImport } from './routes/api.report-video'
 import { Route as ApiUnsubscribeRouteImport } from './routes/api.unsubscribe'
@@ -137,6 +138,11 @@ const ApiCheckFitRoute = ApiCheckFitRouteImport.update({
 const ApiDemoLeadRoute = ApiDemoLeadRouteImport.update({
   id: '/api/demo-lead',
   path: '/api/demo-lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGrowthLeadRoute = ApiGrowthLeadRouteImport.update({
+  id: '/api/growth-lead',
+  path: '/api/growth-lead',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProspectConnectRoute = ApiProspectConnectRouteImport.update({
@@ -328,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
+  '/api/growth-lead': typeof ApiGrowthLeadRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
@@ -379,6 +386,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
+  '/api/growth-lead': typeof ApiGrowthLeadRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
@@ -431,6 +439,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
+  '/api/growth-lead': typeof ApiGrowthLeadRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
   '/api/unsubscribe': typeof ApiUnsubscribeRoute
@@ -484,6 +493,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/check-fit'
     | '/api/demo-lead'
+    | '/api/growth-lead'
     | '/api/prospect-connect'
     | '/api/report-video'
     | '/api/unsubscribe'
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/check-fit'
     | '/api/demo-lead'
+    | '/api/growth-lead'
     | '/api/prospect-connect'
     | '/api/report-video'
     | '/api/unsubscribe'
@@ -586,6 +597,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/check-fit'
     | '/api/demo-lead'
+    | '/api/growth-lead'
     | '/api/prospect-connect'
     | '/api/report-video'
     | '/api/unsubscribe'
@@ -638,6 +650,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ApiCheckFitRoute: typeof ApiCheckFitRoute
   ApiDemoLeadRoute: typeof ApiDemoLeadRoute
+  ApiGrowthLeadRoute: typeof ApiGrowthLeadRoute
   ApiProspectConnectRoute: typeof ApiProspectConnectRoute
   ApiReportVideoRoute: typeof ApiReportVideoRoute
   ApiUnsubscribeRoute: typeof ApiUnsubscribeRoute
@@ -780,6 +793,13 @@ declare module '@tanstack/react-router' {
       path: '/api/demo-lead'
       fullPath: '/api/demo-lead'
       preLoaderRoute: typeof ApiDemoLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/growth-lead': {
+      id: '/api/growth-lead'
+      path: '/api/growth-lead'
+      fullPath: '/api/growth-lead'
+      preLoaderRoute: typeof ApiGrowthLeadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/prospect-connect': {
@@ -1060,6 +1080,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ApiCheckFitRoute: ApiCheckFitRoute,
   ApiDemoLeadRoute: ApiDemoLeadRoute,
+  ApiGrowthLeadRoute: ApiGrowthLeadRoute,
   ApiProspectConnectRoute: ApiProspectConnectRoute,
   ApiReportVideoRoute: ApiReportVideoRoute,
   ApiUnsubscribeRoute: ApiUnsubscribeRoute,
