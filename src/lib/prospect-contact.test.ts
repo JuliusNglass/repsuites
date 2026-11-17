@@ -160,4 +160,3 @@ describe("searchRegion", () => {
     expect(searchRegion("car detailing Newport Oregon").keep).toBeNull();
   });
 });
-

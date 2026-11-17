@@ -28,11 +28,11 @@ export const FIXIT_FAQ: [string, string][] = [
   ],
   [
     "Will this move me up on Google?",
-    "It gets your profile right, which is the foundation. On its own that is a good start, but it rarely moves you up much. Google favours profiles that stay active: fresh reviews, replies and updates, month after month. That is what RepSuites Growth keeps going, and your first month of it is free with this pack.",
+    "It gets your profile right, which is the foundation. On its own that is a good start, but it rarely moves you up much. Google favours profiles that stay active: fresh reviews, replies and updates, month after month. That is what RepSuites Growth keeps going, and with this pack we run it for you free for the first 30 days, with weekly ranking updates so you can see what is changing.",
   ],
   [
     "Is this a subscription?",
-    "No. The pack is a one-off payment of £49. Nothing else is taken. Growth is optional: after your free month you choose to keep it or not, and you can cancel any time.",
+    "No. The pack is a one-off payment of £49. Nothing else is taken. After your free 30 days you choose: we keep running it for £99 a month, you run it yourself for £49 a month, or you stop. Cancel any time.",
   ],
 ];
 

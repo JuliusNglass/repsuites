@@ -132,15 +132,16 @@ function PackPage() {
 
         <section className="surface-navy rounded-3xl p-6 sm:p-8 space-y-4 shadow-[var(--shadow-lift)]">
           <p className="eyebrow !text-primary">Your bonus</p>
-          <h2 className="text-2xl font-semibold">Turn on your free month of RepSuites Growth</h2>
+          <h2 className="text-2xl font-semibold">Turn on your free 30 days of managed service</h2>
           <p className="text-white/85">
-            These fixes are the foundation. Growth is the part that helps you move up: it asks your
-            customers for reviews by text and email, writes your review replies and reruns your
-            Google check, so you can see where you started and where you are now. Normally £49. No card needed.
-            After 30 days you choose to keep it or stay on the free plan.
+            These fixes are the foundation. For the next 30 days we run RepSuites Growth for you: we
+            ask your customers for reviews by text and email, reply to your reviews and send you a
+            ranking update each week, so you can see where you show up and act on it. Normally £99.
+            No card needed. After 30 days you choose: we keep running it (£99 a month), you run it
+            yourself (£49 a month), or you stay on the free plan.
           </p>
           <Link to="/start" search={{ bonus: key }} className="btn btn-gold btn-lg w-full">
-            Turn on my free month
+            Turn on my free 30 days
           </Link>
           <p className="text-sm text-white/75">
             Something not right? Reply to the email we sent you and we will fix it.

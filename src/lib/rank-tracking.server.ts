@@ -333,6 +333,9 @@ export async function runRankChecks(token: string) {
   let cost = 0;
   let failures = 0;
   let lastErr = "";
+  // Who shows up at the business's own spot (the middle of the grid).
+  const mid = Math.floor(grid.length / 2);
+  let leaders: string[] = [];
   // Five at a time keeps it quick without flooding DataForSEO.
   for (let i = 0; i < grid.length; i += 5) {
     const batch = grid.slice(i, i + 5);
@@ -342,6 +345,7 @@ export async function runRankChecks(token: string) {
       if (r.ok) {
         cost += r.cost;
         points.push({ ...p, rank: rankIn(r.items, basics.placeId, basics.title) });
+        if (i + j === mid) leaders = topNames(r.items, basics.placeId, basics.title);
       } else {
         failures++;
         lastErr = r.error;
@@ -376,6 +380,121 @@ export async function runRankChecks(token: string) {
     },
   });
   await setError(null);
+  await sendRankUpdate({
+    tenantId: kw.tenant_id,
+    keywordId: kw.id,
+    keyword: kw.keyword,
+    title: basics.title,
+    total: points.length,
+    found: sum.found,
+    average: sum.average,
+    top3: sum.top3,
+    leaders,
+  }).catch(() => null);
   return { status: 200, body: { ok: true, checked: 1, found: sum.found, cost } };
 }
 
+// The top three names on Google Maps at one spot, leaving out the business itself.
+export function topNames(items: any[], placeId: string | null, title: string): string[] {
+  const own = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  return (items ?? [])
+    .filter((i) => i?.type === "maps_search")
+    .filter(
+      (i) =>
+        !(placeId && i.place_id === placeId) &&
+        String(i.title ?? "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim() !== own,
+    )
+    .slice(0, 3)
+    .map((i) => String(i.title ?? "").slice(0, 80))
+    .filter(Boolean);
+}
+
+// After each weekly check: an update for the owner (and for us while we run
+// their account), so they can see what changed and act on it.
+// No em dashes in this copy (AGENTS.md).
+export function rankUpdateHtml(u: {
+  first: string;
+  name: string;
+  keyword: string;
+  total: number;
+  found: number;
+  average: number | null;
+  top3: number;
+  before: { found: number; average: number | null } | null;
+  leaders: string[];
+}): string {
+  const e = (x: string) => x.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+  let change = "This is your first check for this search, so it is your starting point.";
+  if (u.before) {
+    const d = u.found - u.before.found;
+    change =
+      d > 0
+        ? `You now show up in ${d} more of the ${u.total} spots than last week.`
+        : d < 0
+          ? `You show up in ${-d} fewer of the ${u.total} spots than last week.`
+          : `You show up in the same number of spots as last week.`;
+    if (u.average !== null && u.before.average !== null && u.average !== u.before.average)
+      change += ` Your average position went from ${u.before.average} to ${u.average} (lower is better).`;
+  }
+  const lead = u.leaders.length
+    ? `<p>At your own location, the top results for "${e(u.keyword)}" are: <b>${u.leaders.map(e).join(", ")}</b>.</p>`
+    : "";
+  return `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px;line-height:1.5;color:#0f172a;max-width:560px"><p>Hi ${e(u.first)},</p><p>Here is this week's Google Maps check for <b>${e(u.name)}</b>, searching "${e(u.keyword)}" from ${u.total} spots around you.</p><ul><li>You show up in <b>${u.found} of ${u.total}</b> spots</li><li>In the top 3 in <b>${u.top3}</b> of them</li>${u.average !== null ? `<li>Average position: <b>${u.average}</b></li>` : ""}</ul><p>${change}</p>${lead}<p><b>What helps this week:</b> ask 3 recent customers for a review, reply to every new review, and add one photo or post to your Google profile.</p><p><a href="https://repsuites.com/app" style="color:#0b1d3a;font-weight:700">See the full map</a></p><p>Rankings move slowly and change with where people search from, so watch the trend over a few weeks, not one week.</p><p>The RepSuites team</p></div>`;
+}
+
+async function sendRankUpdate(u: {
+  tenantId: string;
+  keywordId: string;
+  keyword: string;
+  title: string;
+  total: number;
+  found: number;
+  average: number | null;
+  top3: number;
+  leaders: string[];
+}) {
+  const [t, prev] = await Promise.all([
+    serviceRead<any[]>(`tenants?select=name,settings&id=eq.${u.tenantId}`, ""),
+    serviceRead<any[]>(
+      `rank_scans?select=found,average_rank&keyword_id=eq.${u.keywordId}&order=run_at.desc&offset=1&limit=1`,
+      "",
+    ),
+  ]);
+  const ten = t.data?.[0];
+  if (ten?.settings?.rank_emails === false) return;
+  const { ownerEmail } = await import("./fixit-bonus.server");
+  const { sendEmail } = await import("./email.server");
+  const p = prev.data?.[0];
+  const html = rankUpdateHtml({
+    first: String(ten?.settings?.owner_name ?? "").split(/\s+/)[0] || "there",
+    name: String(ten?.name ?? u.title ?? "your business"),
+    keyword: u.keyword,
+    total: u.total,
+    found: u.found,
+    average: u.average,
+    top3: u.top3,
+    before: p ? { found: Number(p.found ?? 0), average: p.average_rank ?? null } : null,
+    leaders: u.leaders,
+  });
+  const subject = `Your Google Maps update: ${u.found} of ${u.total} spots for "${u.keyword}"`;
+  const to = await ownerEmail(u.tenantId);
+  if (to) await sendEmail({ to, subject, html, replyTo: "support@repsuites.com" });
+  // While we run the account (managed plan or free managed month), we get a copy.
+  const [plan, bonus] = await Promise.all([
+    serviceRead<any[]>(`tenant_plans?select=plan&tenant_id=eq.${u.tenantId}`, ""),
+    serviceRead<any[]>(
+      `tenant_bonus?select=tenant_id&tenant_id=eq.${u.tenantId}&ended_at=is.null`,
+      "",
+    ),
+  ]);
+  if (plan.data?.[0]?.plan === "managed" || bonus.data?.length) {
+    const team = (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
+    await sendEmail({ to: team, subject: `[Managed] ${ten?.name ?? ""}: ${subject}`, html });
+  }
+}
