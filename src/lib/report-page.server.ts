@@ -1437,3 +1437,38 @@ ${agency.phone || agency.email ? `<p class="small"><b>${esc(agency.name)}</b>${a
 export function reportNotFound(): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RepSuites</title><style>${STYLE}</style></head><body><main style="text-align:center"><h1>Report not found</h1><p class="muted">This link may have been replaced. Ask the person who sent it for a fresh one.</p></main></body></html>`;
 }
+
+// The short summary sent by WhatsApp/SMS after someone replies SEND to the
+// free check (GHL fills its message from these). Every value comes from the
+// report. The review line only says "fewer" when that is true.
+export function checkSummary(r: Report): {
+  score: number;
+  reviews: number;
+  zones: number | null;
+  keyword: string;
+  topCompetitor: string;
+  reviewLine: string;
+  gaps: string[];
+} {
+  const view = scoreView(r);
+  const grids = gridsOf(r);
+  const g0 = grids.find((x) => !x.ranks.includes(-1)) ?? null;
+  const b = r.business;
+  const rivals = r.rivals
+    .filter((x) => relevantMapCompetitor({ title: x.name, category: x.kind }, r.maps.keyword))
+    .sort((x, y) => y.reviews - x.reviews);
+  const top = rivals[0] ?? null;
+  const reviewLine =
+    top && top.reviews > b.reviews
+      ? `${top.name} has ${top.reviews.toLocaleString("en-GB")} reviews to your ${b.reviews.toLocaleString("en-GB")}`
+      : "Your reviews are a good base to build on";
+  return {
+    score: view.score,
+    reviews: b.reviews,
+    zones: g0 ? g0.top3 : null,
+    keyword: g0?.keyword ?? r.maps.keyword ?? "",
+    topCompetitor: top?.name ?? "",
+    reviewLine,
+    gaps: view.fixes.slice(0, 3).map((f) => f.title),
+  };
+}

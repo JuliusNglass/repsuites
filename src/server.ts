@@ -78,6 +78,12 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Handled here (not as a route) so the scan can run after the reply
+      // using ctx.waitUntil; GHL only waits a few seconds for an answer.
+      if (new URL(request.url).pathname === "/api/ghl/run-scan") {
+        const { handleRunScan } = await import("./lib/gc-scan.server");
+        return await handleRunScan(request, ctx);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response, request, ctx);

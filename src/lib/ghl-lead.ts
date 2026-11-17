@@ -26,6 +26,8 @@ export type GhlLeadInput = {
   consentWhatsapp: boolean;
   reportUrl: string | null;
   source: string;
+  /** WhatsApp-gated check: no scan yet; GHL sends the "reply SEND" message. */
+  scanPending?: boolean;
 };
 
 export function splitName(full: string): { first: string; last: string } {
@@ -53,6 +55,7 @@ export function ghlLeadTags(p: GhlLeadInput): string[] {
   for (const h of new Set(p.headaches)) t.push(`headache-${h}`);
   if (p.consentEmail) t.push("consent-email");
   if (p.consentWhatsapp) t.push("consent-whatsapp");
+  if (p.scanPending) t.push("gc-scan-pending");
   // Owners with 3+ cleaners and a SparkOps-shaped headache go to the call path.
   const bigEnough = p.size !== null && p.size !== "solo";
   const opsHeadache = p.headaches.some((h) => h === "admin" || h === "hiring" || h === "checking");

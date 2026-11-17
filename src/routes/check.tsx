@@ -11,7 +11,7 @@ import { Check, Loader2, Lock, MapPin, Star } from "lucide-react";
 import { Logo } from "../components/site/Logo";
 import { BusinessSearch } from "../components/site/BusinessSearch";
 import type { BusinessDetails } from "../lib/places.functions";
-import { prebuildCheck, requestVisibilityCheck } from "../lib/leads.functions";
+import { checkGated, prebuildCheck, requestVisibilityCheck } from "../lib/leads.functions";
 import { newEventId, trackPixel } from "../lib/meta-pixel";
 import type { Headache, Size } from "../lib/ghl-lead";
 
@@ -87,6 +87,7 @@ export const Route = createFileRoute("/check")({
       },
     ],
   }),
+  loader: () => checkGated(),
   component: CheckPage,
 });
 
@@ -97,6 +98,14 @@ const SCAN_STEPS = [
   "Comparing you with businesses near you",
   "Checking where you show on Google Maps",
   "Writing up your top gaps",
+];
+
+// Shown instead of the scan steps when the WhatsApp gate is on.
+const NEXT_STEPS = [
+  "Leave your name and mobile",
+  "We send you a quick WhatsApp (or text)",
+  "Reply SEND and we run your full check",
+  "Your score and top gaps arrive on your phone",
 ];
 
 const input = "field text-base";
@@ -113,6 +122,8 @@ const PROMISES = [
 
 function CheckPage() {
   const { n, src, utm_source } = Route.useSearch();
+  const { gated } = Route.useLoaderData();
+  const [sent, setSent] = useState(false);
   const niche = NICHES[n ?? "cleaning"] ?? NICHES["general"]!;
   const nicheKey = NICHES[n ?? "cleaning"] ? (n ?? "cleaning") : "general";
   const send = useServerFn(requestVisibilityCheck);
@@ -132,7 +143,7 @@ function CheckPage() {
 
   // The scan preview ticks through while they fill in the form.
   useEffect(() => {
-    if (!place) {
+    if (!place || gated) {
       built.current = null;
       return;
     }
@@ -144,7 +155,7 @@ function CheckPage() {
     setStep(0);
     const t = setInterval(() => setStep((s) => Math.min(s + 1, SCAN_STEPS.length - 1)), 1400);
     return () => clearInterval(t);
-  }, [place]);
+  }, [place, gated]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -170,6 +181,7 @@ function CheckPage() {
           headaches: [],
           keyword: keyword.trim(),
           ...(token ? { prebuiltToken: token } : {}),
+          deferScan: gated,
           consentEmail: cEmail,
           consentWhatsapp: cWa,
           eventId,
@@ -188,7 +200,11 @@ function CheckPage() {
         return;
       }
       trackPixel("Lead", { content_name: "Free Google Check" }, eventId);
-      if (r.reportUrl) window.location.href = r.reportUrl.replace("https://repsuites.com", "");
+      if (r.deferred) {
+        setSent(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (r.reportUrl)
+        window.location.href = r.reportUrl.replace("https://repsuites.com", "");
       else
         setErr(
           "Your details are saved. We could not finish the scan, so we will email your results shortly.",
@@ -212,7 +228,37 @@ function CheckPage() {
       </header>
 
       <main className="flex-1 w-full">
-        {!place ? (
+        {sent ? (
+          <section
+            aria-labelledby="h-sent"
+            className="bg-[radial-gradient(90%_60%_at_100%_0%,var(--gold-soft),transparent_65%)]"
+          >
+            <div className="max-w-xl mx-auto px-4 py-14 sm:py-20 text-center space-y-5">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
+                <Check className="h-7 w-7" aria-hidden />
+              </span>
+              <h1 id="h-sent" className="text-3xl sm:text-4xl font-semibold">
+                Check your phone
+              </h1>
+              <p className="text-lg">
+                We have just sent a WhatsApp to <b>{f.phone}</b>. Reply <b>SEND</b> and we will run
+                the full check for <b>{place?.name ?? business}</b> and send your score and top gaps
+                straight back.
+              </p>
+              {place?.rating ? (
+                <p className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-3">
+                  <Star className="h-5 w-5 fill-primary text-primary" aria-hidden />
+                  Google shows <b className="tabular-nums">{place.rating}</b> stars from{" "}
+                  <b className="tabular-nums">{place.reviewCount ?? 0}</b> reviews. Your check shows
+                  what that means next to the businesses near you.
+                </p>
+              ) : null}
+              <p className="text-muted-foreground">
+                No WhatsApp? We will text you instead within a few minutes.
+              </p>
+            </div>
+          </section>
+        ) : !place ? (
           <section
             aria-labelledby="h1"
             className="relative overflow-x-clip bg-[radial-gradient(90%_60%_at_100%_0%,var(--gold-soft),transparent_65%)]"
@@ -339,39 +385,57 @@ function CheckPage() {
                   )}
                 </div>
                 <div className="p-5 sm:p-6">
-                  <p className="eyebrow">Your scan is running</p>
-                  <ol className="mt-3 space-y-2.5" aria-live="polite">
-                    {SCAN_STEPS.map((s, i) => (
-                      <li
-                        key={s}
-                        className={`flex items-center gap-3 ${i > step ? "text-muted-foreground" : "font-semibold"}`}
-                      >
-                        {i < step ? (
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success text-white">
-                            <Check className="h-4 w-4" aria-hidden />
-                          </span>
-                        ) : i === step ? (
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-soft ring-1 ring-primary/50">
-                            <Loader2
-                              className="h-4 w-4 animate-spin text-primary-ink"
-                              aria-hidden
-                            />
-                          </span>
-                        ) : (
-                          <span
-                            className="h-6 w-6 shrink-0 rounded-full border-2 border-border"
-                            aria-hidden
-                          />
-                        )}
-                        <span>
-                          {s}
-                          <span className="sr-only">
-                            {i < step ? " (done)" : i === step ? " (in progress)" : ""}
-                          </span>
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
+                  {gated ? (
+                    <>
+                      <p className="eyebrow">How it works</p>
+                      <ol className="mt-3 space-y-2.5">
+                        {NEXT_STEPS.map((s, i) => (
+                          <li key={s} className="flex items-center gap-3">
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-soft text-sm font-bold text-primary-ink ring-1 ring-primary/50">
+                              {i + 1}
+                            </span>
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </>
+                  ) : (
+                    <>
+                      <p className="eyebrow">Your scan is running</p>
+                      <ol className="mt-3 space-y-2.5" aria-live="polite">
+                        {SCAN_STEPS.map((s, i) => (
+                          <li
+                            key={s}
+                            className={`flex items-center gap-3 ${i > step ? "text-muted-foreground" : "font-semibold"}`}
+                          >
+                            {i < step ? (
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success text-white">
+                                <Check className="h-4 w-4" aria-hidden />
+                              </span>
+                            ) : i === step ? (
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-soft ring-1 ring-primary/50">
+                                <Loader2
+                                  className="h-4 w-4 animate-spin text-primary-ink"
+                                  aria-hidden
+                                />
+                              </span>
+                            ) : (
+                              <span
+                                className="h-6 w-6 shrink-0 rounded-full border-2 border-border"
+                                aria-hidden
+                              />
+                            )}
+                            <span>
+                              {s}
+                              <span className="sr-only">
+                                {i < step ? " (done)" : i === step ? " (in progress)" : ""}
+                              </span>
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -473,12 +537,20 @@ function CheckPage() {
                 )}
                 <button type="submit" disabled={busy} className="btn btn-gold btn-lg w-full">
                   {busy && <Loader2 className="h-5 w-5 animate-spin" aria-hidden />}
-                  {busy ? "Building your report…" : "Show my score"}
+                  {busy
+                    ? gated
+                      ? "Saving…"
+                      : "Building your report…"
+                    : gated
+                      ? "Send my results"
+                      : "Show my score"}
                 </button>
                 <p className="flex items-start gap-2 text-muted-foreground">
                   <Lock className="mt-1 h-4 w-4 shrink-0" aria-hidden />
                   <span>
-                    Free. Your results appear straight away. We never share your details. See our{" "}
+                    {gated
+                      ? "Free. We send your results to your mobile by WhatsApp or text. We never share your details. See our "
+                      : "Free. Your results appear straight away. We never share your details. See our "}
                     <Link to="/privacy" className="underline underline-offset-2 text-foreground">
                       Privacy Policy
                     </Link>
