@@ -94,3 +94,4 @@ describe("comparable ranking history", () => {
     ).toBe(false);
   });
 });
+

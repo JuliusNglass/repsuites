@@ -413,11 +413,7 @@ export function searchRegion(query: string): { code: string | null; keep: string
   // When the user names Britain explicitly, Google already has an
   // unambiguous country instruction. Do not throw away results because a
   // formatted address uses a city, county or postcode as its final segment.
-  if (
-    /\b(uk|u\.k\.|gb|great britain|united kingdom|england|scotland|wales|northern ireland)\b/i.test(
-      query,
-    )
-  )
+  if (/\b(uk|u\.k\.|gb|great britain|united kingdom|england|scotland|wales|northern ireland)\b/i.test(query))
     return { code: "GB", keep: null };
   // Google does not use one consistent suffix for British addresses. Places
   // may end in "UK", "United Kingdom", a home nation, or occasionally "GB".
@@ -427,3 +423,4 @@ export function searchRegion(query: string): { code: string | null; keep: string
     keep: ["UK", "GB", "United Kingdom", "England", "Scotland", "Wales", "Northern Ireland"],
   };
 }
+

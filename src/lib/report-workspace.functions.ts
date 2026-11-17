@@ -92,14 +92,7 @@ export const updateProspectAction = createServerFn({ method: "POST" })
     z
       .object({
         id: UUID,
-        status: z.enum([
-          "proposed",
-          "approved",
-          "in_progress",
-          "completed",
-          "rejected",
-          "verified",
-        ]),
+        status: z.enum(["proposed", "approved", "in_progress", "completed", "rejected", "verified"]),
         assignedTo: z.string().trim().max(120).optional(),
         dueOn: z.union([z.string().date(), z.literal("")]).optional(),
         note: z.string().trim().max(1000).optional(),
@@ -125,3 +118,4 @@ export const updateProspectAction = createServerFn({ method: "POST" })
     });
     return { ok: true as const };
   });
+
