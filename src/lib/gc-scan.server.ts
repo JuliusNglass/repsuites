@@ -96,26 +96,44 @@ async function pushToGhl(
   const customFields = Object.entries(fields)
     .filter(([, v]) => v !== undefined && v !== "")
     .map(([k, v]) => ({ id: FIELD[k as keyof typeof FIELD], field_value: v }));
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Version: "2021-07-28",
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
   try {
+    // No tags in the upsert: GHL replaces the whole tag list when tags are sent.
     const r = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Version: "2021-07-28",
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
+      headers,
       body: JSON.stringify({
         locationId: GHL_LOCATION_ID,
         ...(who.email ? { email: who.email } : {}),
         ...(who.phone ? { phone: who.phone } : {}),
         customFields,
-        tags: [tag],
       }),
       signal: AbortSignal.timeout(8000),
     });
-    if (!r.ok) console.error("GHL scan result upsert failed", r.status);
-    return r.ok;
+    if (!r.ok) {
+      console.error("GHL scan result upsert failed", r.status);
+      return false;
+    }
+    const c = ((await r.json().catch(() => ({}))) as { contact?: { id?: string; tags?: string[] } })
+      .contact;
+    if (!c?.id) return false;
+    const add = [tag];
+    // Now the report exists, release the held follow-up route (ghl-lead.ts).
+    if (tag === "gc-scan-ready")
+      for (const t of c.tags ?? []) if (t.startsWith("hold-route-")) add.push(t.slice(5));
+    const t = await fetch(`https://services.leadconnectorhq.com/contacts/${c.id}/tags`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ tags: add }),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!t.ok) console.error("GHL scan tag failed", t.status);
+    return t.ok;
   } catch {
     return false;
   }

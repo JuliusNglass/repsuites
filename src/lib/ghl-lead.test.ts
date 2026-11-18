@@ -30,6 +30,10 @@ describe("ghlLeadTags", () => {
   });
   it("sends solo owners and client-finding headaches to the Fix-It Pack", () => {
     expect(ghlLeadTags({ ...base, size: "solo" })).toContain("route-fixit-pack");
+    // Gated check: no report yet, so the follow-up route is held back.
+    const held = ghlLeadTags({ ...base, size: "solo", scanPending: true });
+    expect(held).toContain("hold-route-fixit-pack");
+    expect(held).not.toContain("route-fixit-pack");
     expect(ghlLeadTags({ ...base, headaches: ["clients"] })).toContain("route-fixit-pack");
   });
 });
