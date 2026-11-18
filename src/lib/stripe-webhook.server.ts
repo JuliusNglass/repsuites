@@ -192,6 +192,10 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
     case "checkout.session.completed":
       if (obj.metadata?.kind === "shop" && obj.payment_status === "paid") await shopPaid(obj);
       if (obj.metadata?.kind === "fixit" && obj.payment_status === "paid") await fixitPaid(obj);
+      if (obj.metadata?.kind === "fixit_install" && obj.payment_status === "paid") {
+        const { installPaidFromSession } = await import("./fixit-funnel.server");
+        await installPaidFromSession(obj);
+      }
       if (obj.metadata?.kind === "plan" && obj.subscription) {
         const sub = await stripe(`subscriptions/${obj.subscription}`);
         if (sub.ok) await saveSubscription(sub.data);

@@ -7,7 +7,7 @@ import { applyNoStoreHeaders, verifyRequestOriginAsync } from "./auth.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { findStandPack } from "./shop";
 import { stripe, stripeReady } from "./stripe.server";
-import { cleanToken, FIXIT_PENCE } from "./fixit";
+import { cleanToken, FIXIT_PENCE, PACK27_PENCE } from "./fixit";
 
 const ORIGIN = "https://repsuites.com";
 
@@ -25,8 +25,14 @@ export const fixitBusiness = createServerFn({ method: "GET" })
   });
 
 export const startFixitCheckout = createServerFn({ method: "POST" })
-  .validator((d: { token?: string; stand?: boolean }) =>
-    z.object({ token: z.string().optional(), stand: z.boolean().optional() }).parse(d),
+  .validator((d: { token?: string; stand?: boolean; offer?: "p27" }) =>
+    z
+      .object({
+        token: z.string().optional(),
+        stand: z.boolean().optional(),
+        offer: z.literal("p27").optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     applyNoStoreHeaders();
@@ -47,7 +53,8 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
     }
     // Optional add-on: one printed A5 table stand, sold at the shop price and
     // fulfilled through the normal shop order (see shopPaid in the webhook).
-    const stand = data.stand ? findStandPack("stand-1") : null;
+    const p27 = data.offer === "p27";
+    const stand = data.stand && !p27 ? findStandPack("stand-1") : null;
     let orderId = "";
     if (stand) {
       const ins = await serviceWrite<{ id: string }[]>("shop_orders", "", {
@@ -66,6 +73,7 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
       kind: "fixit",
       token: token ?? "",
       business,
+      ...(p27 ? { offer: "p27" } : {}),
       ...(orderId ? { order_id: orderId } : {}),
     };
     const s = await stripe<{ id: string; url: string }>("checkout/sessions", {
@@ -73,15 +81,21 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
       ...(token ? { client_reference_id: token } : {}),
       ...(email ? { customer_email: email } : {}),
       metadata: meta,
-      payment_intent_data: { metadata: meta },
+      // The £27 pack saves the card so the next page can offer a one-tap add-on
+      // (https://docs.stripe.com/payments/save-during-payment).
+      ...(p27 ? { customer_creation: "always" } : {}),
+      payment_intent_data: {
+        metadata: meta,
+        ...(p27 ? { setup_future_usage: "off_session" } : {}),
+      },
       line_items: [
         {
           quantity: 1,
           price_data: {
             currency: "gbp",
-            unit_amount: FIXIT_PENCE,
+            unit_amount: p27 ? PACK27_PENCE : FIXIT_PENCE,
             product_data: {
-              name: "Google Fix-It Pack",
+              name: p27 ? "Google Profile Fix Pack" : "Google Fix-It Pack",
               description: business
                 ? `Done-for-you Google profile fixes for ${business}. Delivered in minutes.`
                 : "Done-for-you Google profile fixes. Delivered in minutes.",
@@ -120,8 +134,8 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
         : {}),
       phone_number_collection: { enabled: true },
       allow_promotion_codes: true,
-      success_url: `${ORIGIN}/fix/thanks?s={CHECKOUT_SESSION_ID}${token ? `&r=${token}` : ""}`,
-      cancel_url: `${ORIGIN}/fix${token ? `?r=${token}` : ""}`,
+      success_url: `${ORIGIN}/fix/thanks?s={CHECKOUT_SESSION_ID}${p27 ? "&o=p27" : ""}${token ? `&r=${token}` : ""}`,
+      cancel_url: p27 ? `${ORIGIN}/profile` : `${ORIGIN}/fix${token ? `?r=${token}` : ""}`,
     });
     if (!s.ok) return { ok: false as const, error: s.error };
     return { ok: true as const, url: s.data.url };
@@ -229,4 +243,67 @@ export const fixitDetails = createServerFn({ method: "POST" })
     return r.ok
       ? { ok: true as const }
       : { ok: false as const, error: r.error ?? "Please try again." };
+  });
+
+// ---- £27 funnel: the steps after payment ----------------------------------
+
+/** Where the buyer is in the after-payment steps. */
+export const funnelState = createServerFn({ method: "POST" })
+  .validator((d: { s: string }) => z.object({ s: z.string().regex(SESSION_RE) }).parse(d))
+  .handler(async ({ data }) => {
+    applyNoStoreHeaders();
+    const { orderBySession, recordFixitOrder } = await import("./fixit-pack.server");
+    let o = await orderBySession(data.s);
+    if (!o) {
+      const s = await stripe<any>(`checkout/sessions/${data.s}`, undefined, "GET").catch(
+        () => null,
+      );
+      if (s?.ok && s.data?.payment_status === "paid" && s.data?.metadata?.kind === "fixit") {
+        await recordFixitOrder(s.data);
+        o = await orderBySession(data.s);
+      }
+    }
+    if (!o) return { status: "waiting" as const };
+    if (o.offer !== "p27") return { status: "done" as const };
+    if (!o.upsell) return { status: "upsell" as const, business: o.business };
+    if (o.upsell === "paid" && !o.plan) return { status: "plan" as const, business: o.business };
+    return { status: "done" as const, upsell: o.upsell, plan: o.plan ?? null };
+  });
+
+/** One tap: charge £22 to the card saved at checkout, or note a no. */
+export const funnelUpsell = createServerFn({ method: "POST" })
+  .validator((d: { s: string; accept: boolean }) =>
+    z.object({ s: z.string().regex(SESSION_RE), accept: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    applyNoStoreHeaders();
+    if (!(await verifyRequestOriginAsync()))
+      return { ok: false as const, error: "Please refresh the page and try again." };
+    const { orderBySession } = await import("./fixit-pack.server");
+    const { chargeInstall } = await import("./fixit-funnel.server");
+    const o = await orderBySession(data.s);
+    if (!o || o.offer !== "p27") return { ok: false as const, error: "Order not found." };
+    return chargeInstall(o, data.accept);
+  });
+
+/** After the free month: managed monthly, Growth yearly, or decide later. */
+export const funnelPlan = createServerFn({ method: "POST" })
+  .validator((d: { s: string; plan: "managed" | "growth_year" | "later" }) =>
+    z
+      .object({
+        s: z.string().regex(SESSION_RE),
+        plan: z.enum(["managed", "growth_year", "later"]),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    applyNoStoreHeaders();
+    if (!(await verifyRequestOriginAsync()))
+      return { ok: false as const, error: "Please refresh the page and try again." };
+    const { orderBySession } = await import("./fixit-pack.server");
+    const { choosePlan } = await import("./fixit-funnel.server");
+    const o = await orderBySession(data.s);
+    if (!o || o.offer !== "p27" || o.upsell !== "paid")
+      return { ok: false as const, error: "Order not found." };
+    return choosePlan(o, data.plan);
   });
