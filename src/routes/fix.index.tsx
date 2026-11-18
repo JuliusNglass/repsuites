@@ -22,7 +22,7 @@ export const Route = createFileRoute("/fix/")({
       { title: "Google Fix-It Pack | RepSuites" },
       {
         name: "description",
-        content: "We write your Google profile fixes for you. One-off £49, ready in minutes.",
+        content: "We write your Google profile fixes for you. One-off £27, ready in minutes.",
       },
     ],
   }),

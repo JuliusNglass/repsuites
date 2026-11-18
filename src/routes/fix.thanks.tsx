@@ -70,7 +70,7 @@ function Thanks() {
       "Purchase",
       {
         currency: "GBP",
-        value: o === "p27" ? 27 : 49,
+        value: 27,
         content_name: o === "p27" ? "Profile Fix Pack" : "Fix-It Pack",
       },
       s,
