@@ -137,7 +137,7 @@ export async function addBusiness(d: AddBusinessData, addedBy: string) {
   };
 }
 
-async function giveOwner(
+export async function giveOwner(
   tenantId: string,
   business: string,
   email: string,

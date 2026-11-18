@@ -155,6 +155,15 @@ export async function choosePlan(
   if (!sub.ok)
     return { ok: false, error: "That did not go through. We will message you to sort it." };
   await patch(o.id, { plan, plan_sub: sub.data.id });
+  // Their RepSuites login, straight away (an email to choose a password).
+  const { provisionPlanAccount } = await import("./fixit-account.server");
+  const acct = await provisionPlanAccount(o, key, sub.data.id).catch(() => null);
+  if (!acct?.ok)
+    await tellTeam(
+      "Plan account not set up automatically",
+      o,
+      `chose a plan but the account setup failed (${acct?.note ?? "error"}). Set it up by hand.`,
+    );
   await tellTeam(
     plan === "managed"
       ? "Managed plan chosen (£99/mo after free month)"

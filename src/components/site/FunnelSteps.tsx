@@ -12,7 +12,7 @@ import { INSTALL_PRICE, perDay } from "../../lib/fixit";
 import { GROWTH, MANAGED } from "../../lib/shop";
 import { trackPixel } from "../../lib/meta-pixel";
 
-type Step = "loading" | "upsell" | "plan";
+type Step = "loading" | "upsell" | "plan" | "ready";
 
 export function FunnelSteps({
   s,
@@ -87,8 +87,11 @@ export function FunnelSteps({
       setErr(r && !r.ok ? r.error : "Something went wrong. We will message you.");
       return;
     }
-    if (p !== "later")
+    if (p !== "later") {
       trackPixel("StartTrial", { currency: "GBP", value: p === "managed" ? 99 : 497 }, `${s}-p`);
+      setStep("ready");
+      return;
+    }
     onDone();
   }
 
@@ -96,7 +99,7 @@ export function FunnelSteps({
   const growthDay = perDay(GROWTH.yearPence);
 
   const STEPS = ["Payment", "Setup", "Keep it working"];
-  const at = step === "plan" ? 2 : 1;
+  const at = step === "ready" ? 3 : step === "plan" ? 2 : 1;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col text-base leading-relaxed">
@@ -270,6 +273,24 @@ export function FunnelSteps({
               className="w-full text-center underline text-muted-foreground min-h-11"
             >
               I will decide before my free month ends
+            </button>
+          </section>
+        )}
+        {step === "ready" && (
+          <section className="space-y-5">
+            <h1 className="text-3xl sm:text-4xl font-semibold leading-tight">
+              Your RepSuites account is ready
+            </h1>
+            <p className="text-lg">
+              We have just emailed you a link to choose your password. Open it and you will land on
+              your dashboard, with 4 short steps to get going: connect Google, add us as a manager,
+              print your review QR code, and you are done.
+            </p>
+            <p className="text-muted-foreground">
+              Nothing is taken for 30 days. Your Fix Pack is being written now.
+            </p>
+            <button type="button" className="btn btn-gold btn-lg w-full" onClick={onDone}>
+              See my Fix Pack
             </button>
           </section>
         )}
