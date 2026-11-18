@@ -50,13 +50,14 @@ describe("inSendWindow", () => {
 });
 
 describe("followupMessage", () => {
-  it("is branded, has opt-out, no em dashes, no money-back line", () => {
+  it("first text is branded with opt-out; follow-ups are short and STOP-free", () => {
     for (const s of STEPS) {
       const m = followupMessage(base, s);
       const all = `${m.sms ?? ""}${m.html ?? ""}${m.text ?? ""}`;
-      expect(all).toContain("Accelur8");
       expect(all).not.toMatch(/—|money.back|Julius/i);
-      if (m.sms) expect(m.sms).toContain("STOP");
+      if (m.sms) expect(m.sms.length).toBeLessThanOrEqual(200);
+      if (m.sms && s.step === 1) expect(m.sms).toMatch(/Accelur8.*STOP/);
+      if (m.sms && s.step !== 1) expect(m.sms).not.toContain("STOP");
     }
     expect(followupMessage(base, STEPS[0]!).sms).toContain("Hi Collins");
   });
