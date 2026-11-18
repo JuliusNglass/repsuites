@@ -75,6 +75,7 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
     `lead-${r.phaseKey}`,
     r.qualified ? "qualified" : r.solo ? "solo" : "nurture",
     ...(d.wa ? ["consent-whatsapp"] : []),
+    d.vw > 0 ? `vsl-${d.vw}` : "vsl-none",
   ];
   const [firstName, ...rest] = (d.name as string).split(/\s+/);
   const body = {
@@ -152,6 +153,8 @@ export function validate(f: FormData): any {
     eid: clean(f.get("eid"), 64).replace(/[^a-z0-9-]/gi, ""),
     fbp: clean(f.get("fbp"), 200),
     fbc: clean(f.get("fbc"), 300),
+    // Furthest point of the video watched, bucketed to 0/25/50/75/100.
+    vw: Math.min(100, Math.max(0, Math.floor(Number(f.get("vw")) / 25) * 25 || 0)),
   };
   const ok =
     d.name.length > 1 &&
@@ -175,4 +178,9 @@ export function bookingUrl(d: any) {
     phone: d.phone,
   });
   return `${FIT_CALL}?${q}`;
+}
+
+// Same-page booking: the growth site shows the calendar with our branding.
+export function bookPageUrl(d: any) {
+  return `https://growth.accelur8clientwork.com/book?${bookingUrl(d).split("?")[1]}`;
 }

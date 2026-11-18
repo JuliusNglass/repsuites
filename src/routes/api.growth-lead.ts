@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/growth-lead")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { validate, route, pushGhl, bookingUrl } = await import("../lib/growth-lead");
+        const { validate, route, pushGhl, bookPageUrl } = await import("../lib/growth-lead");
         const go = (to: string) => new Response(null, { status: 303, headers: { Location: to } });
         let form: FormData;
         try {
@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/growth-lead")({
           });
           if (!ok) console.error("growth lead: Meta CAPI failed");
         }
-        if (r.qualified) return go(bookingUrl(d));
+        if (r.qualified) return go(bookPageUrl(d));
         return go(`${GROWTH}/thanks${r.solo ? "?s=1" : ""}`);
       },
     },
