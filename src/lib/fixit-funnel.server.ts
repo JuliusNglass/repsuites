@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Stripe JSON is checked field by field. */
-// Server-only: the steps after a £49 Profile Fix Pack payment.
+// Server-only: the steps after a £27 Profile Fix Pack payment.
 // 1. chargeInstall: one tap charges £22 to the card saved at checkout
 //    (PaymentIntent with off_session + confirm, see
 //    https://docs.stripe.com/payments/save-during-payment#charge-saved-payment-method).
