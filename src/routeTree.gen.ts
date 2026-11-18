@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckRouteImport } from './routes/check'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as FixRouteImport } from './routes/fix'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
 import { Route as LoginRouteImport } from './routes/login'
@@ -35,6 +34,7 @@ import { Route as CardsIndexRouteImport } from './routes/cards.index'
 import { Route as CardsOrderRouteImport } from './routes/cards.order'
 import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
 import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
+import { Route as FixIndexRouteImport } from './routes/fix.index'
 import { Route as FixThanksRouteImport } from './routes/fix.thanks'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
@@ -75,11 +75,6 @@ const CheckRoute = CheckRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FixRoute = FixRouteImport.update({
-  id: '/fix',
-  path: '/fix',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -192,10 +187,15 @@ const FeedbackIdRoute = FeedbackIdRouteImport.update({
   path: '/feedback/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FixIndexRoute = FixIndexRouteImport.update({
+  id: '/fix/',
+  path: '/fix/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FixThanksRoute = FixThanksRouteImport.update({
-  id: '/thanks',
-  path: '/thanks',
-  getParentRoute: () => FixRoute,
+  id: '/fix/thanks',
+  path: '/fix/thanks',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const QTokenRoute = QTokenRouteImport.update({
   id: '/q/$token',
@@ -281,9 +281,9 @@ const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const FixPackKeyRoute = FixPackKeyRouteImport.update({
-  id: '/pack/$key',
-  path: '/pack/$key',
-  getParentRoute: () => FixRoute,
+  id: '/fix/pack/$key',
+  path: '/fix/pack/$key',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const RTokenMapDotgifRoute = RTokenMapDotgifRouteImport.update({
   id: '/map.gif',
@@ -333,7 +333,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
-  '/fix': typeof FixRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
@@ -360,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/r/$token': typeof RTokenRouteWithChildren
   '/x/$token': typeof XTokenRoute
   '/cards/': typeof CardsIndexRoute
+  '/fix/': typeof FixIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -387,7 +387,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
-  '/fix': typeof FixRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
@@ -414,6 +413,7 @@ export interface FileRoutesByTo {
   '/r/$token': typeof RTokenRouteWithChildren
   '/x/$token': typeof XTokenRoute
   '/cards': typeof CardsIndexRoute
+  '/fix': typeof FixIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -442,7 +442,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
-  '/fix': typeof FixRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
@@ -469,6 +468,7 @@ export interface FileRoutesById {
   '/r/$token': typeof RTokenRouteWithChildren
   '/x/$token': typeof XTokenRoute
   '/cards/': typeof CardsIndexRoute
+  '/fix/': typeof FixIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -498,7 +498,6 @@ export interface FileRouteTypes {
     | '/'
     | '/check'
     | '/dashboard'
-    | '/fix'
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
@@ -525,6 +524,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/x/$token'
     | '/cards/'
+    | '/fix/'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -552,7 +552,6 @@ export interface FileRouteTypes {
     | '/'
     | '/check'
     | '/dashboard'
-    | '/fix'
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
@@ -579,6 +578,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/x/$token'
     | '/cards'
+    | '/fix'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -606,7 +606,6 @@ export interface FileRouteTypes {
     | '/'
     | '/check'
     | '/dashboard'
-    | '/fix'
     | '/forgot-password'
     | '/google-business-profile'
     | '/login'
@@ -633,6 +632,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/x/$token'
     | '/cards/'
+    | '/fix/'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -661,7 +661,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CheckRoute: typeof CheckRoute
   DashboardRoute: typeof DashboardRoute
-  FixRoute: typeof FixRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
   LoginRoute: typeof LoginRoute
@@ -683,10 +682,12 @@ export interface RootRouteChildren {
   CardsOrderRoute: typeof CardsOrderRoute
   CardsThanksRoute: typeof CardsThanksRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
+  FixThanksRoute: typeof FixThanksRoute
   QTokenRoute: typeof QTokenRoute
   RTokenRoute: typeof RTokenRouteWithChildren
   XTokenRoute: typeof XTokenRoute
   CardsIndexRoute: typeof CardsIndexRoute
+  FixIndexRoute: typeof FixIndexRoute
   ApiBillingBackRoute: typeof ApiBillingBackRoute
   ApiInternalCheckFollowupsRoute: typeof ApiInternalCheckFollowupsRoute
   ApiInternalFixitRoute: typeof ApiInternalFixitRoute
@@ -700,6 +701,7 @@ export interface RootRouteChildren {
   ApiResendWebhookRoute: typeof ApiResendWebhookRoute
   ApiReviewTriggerTokenRoute: typeof ApiReviewTriggerTokenRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
+  FixPackKeyRoute: typeof FixPackKeyRoute
   ApiAccountingCallbackProviderRoute: typeof ApiAccountingCallbackProviderRoute
   ApiAccountingWebhookQuickbooksRoute: typeof ApiAccountingWebhookQuickbooksRoute
   ApiAccountingWebhookXeroRoute: typeof ApiAccountingWebhookXeroRoute
@@ -728,13 +730,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/fix': {
-      id: '/fix'
-      path: '/fix'
-      fullPath: '/fix'
-      preLoaderRoute: typeof FixRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -891,12 +886,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedbackIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fix/': {
+      id: '/fix/'
+      path: '/fix'
+      fullPath: '/fix/'
+      preLoaderRoute: typeof FixIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fix/thanks': {
       id: '/fix/thanks'
-      path: '/thanks'
+      path: '/fix/thanks'
       fullPath: '/fix/thanks'
       preLoaderRoute: typeof FixThanksRouteImport
-      parentRoute: typeof FixRoute
+      parentRoute: typeof rootRouteImport
     }
     '/q/$token': {
       id: '/q/$token'
@@ -1012,10 +1014,10 @@ declare module '@tanstack/react-router' {
     }
     '/fix/pack/$key': {
       id: '/fix/pack/$key'
-      path: '/pack/$key'
+      path: '/fix/pack/$key'
       fullPath: '/fix/pack/$key'
       preLoaderRoute: typeof FixPackKeyRouteImport
-      parentRoute: typeof FixRoute
+      parentRoute: typeof rootRouteImport
     }
     '/r/$token/map.gif': {
       id: '/r/$token/map.gif'
@@ -1076,18 +1078,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface FixRouteChildren {
-  FixThanksRoute: typeof FixThanksRoute
-  FixPackKeyRoute: typeof FixPackKeyRoute
-}
-
-const FixRouteChildren: FixRouteChildren = {
-  FixThanksRoute: FixThanksRoute,
-  FixPackKeyRoute: FixPackKeyRoute,
-}
-
-const FixRouteWithChildren = FixRoute._addFileChildren(FixRouteChildren)
-
 interface RTokenRouteChildren {
   RTokenMapDotgifRoute: typeof RTokenMapDotgifRoute
   RTokenPdfRoute: typeof RTokenPdfRoute
@@ -1107,7 +1097,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CheckRoute: CheckRoute,
   DashboardRoute: DashboardRoute,
-  FixRoute: FixRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GoogleBusinessProfileRoute: GoogleBusinessProfileRoute,
   LoginRoute: LoginRoute,
@@ -1129,10 +1118,12 @@ const rootRouteChildren: RootRouteChildren = {
   CardsOrderRoute: CardsOrderRoute,
   CardsThanksRoute: CardsThanksRoute,
   FeedbackIdRoute: FeedbackIdRoute,
+  FixThanksRoute: FixThanksRoute,
   QTokenRoute: QTokenRoute,
   RTokenRoute: RTokenRouteWithChildren,
   XTokenRoute: XTokenRoute,
   CardsIndexRoute: CardsIndexRoute,
+  FixIndexRoute: FixIndexRoute,
   ApiBillingBackRoute: ApiBillingBackRoute,
   ApiInternalCheckFollowupsRoute: ApiInternalCheckFollowupsRoute,
   ApiInternalFixitRoute: ApiInternalFixitRoute,
@@ -1146,6 +1137,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiResendWebhookRoute: ApiResendWebhookRoute,
   ApiReviewTriggerTokenRoute: ApiReviewTriggerTokenRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
+  FixPackKeyRoute: FixPackKeyRoute,
   ApiAccountingCallbackProviderRoute: ApiAccountingCallbackProviderRoute,
   ApiAccountingWebhookQuickbooksRoute: ApiAccountingWebhookQuickbooksRoute,
   ApiAccountingWebhookXeroRoute: ApiAccountingWebhookXeroRoute,
