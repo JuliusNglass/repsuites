@@ -89,12 +89,12 @@ export function followupMessage(
   const fix = `${SITE}/fix?r=${token}`;
   if (step.step === 1) {
     return {
-      sms: `Hi ${who}, did you get a chance to look at your Google Check for ${biz}? The fixes at the top are the quickest wins: ${report} Want us to write them all for you? £27 one-off: ${fix} - Accelur8. Reply STOP to opt out.`,
+      sms: `Hi ${who}, did you get a chance to look at your Google Check for ${biz}? The fixes at the top are the quickest wins: ${report} Want every fix written for you? £49 one-off, and we run it free for 30 days: ${fix} Any questions, just reply. - Accelur8. Reply STOP to opt out.`,
     };
   }
   if (step.step === 3) {
     return {
-      sms: `Hi ${who}, one last nudge on ${biz}'s Google Check. We can write every fix for you for £49 one-off, and your first month of Growth is free: ${fix} Or just reply with any question. - Accelur8. Reply STOP to opt out.`,
+      sms: `Hi ${who}, one last nudge on ${biz}'s Google Check. Most owners mean to do the fixes and never get round to it. For £49 we write every fix and run it free for 30 days: ${fix} Or just reply with any question. - Accelur8. Reply STOP to opt out.`,
     };
   }
   const cleaning = isCleaning(lead.keyword, biz);
@@ -106,7 +106,7 @@ export function followupMessage(
     : "";
   if (step.channel === "sms") {
     return {
-      sms: `Hi ${who}, a quick tip from your Google Check for ${biz}: fresh reviews help you show up first. Your free review link and QR code are in your report: ${report} Want us to write the rest of the fixes? £27 one-off: ${fix} - Accelur8. Reply STOP to opt out.`,
+      sms: `Hi ${who}, a quick tip from your Google Check for ${biz}: fresh reviews help you show up first. Your free review link and QR code are in your report: ${report} Want every fix written for you? £49 one-off, and we run it free for 30 days: ${fix} - Accelur8. Reply STOP to opt out.`,
     };
   }
   const subject = `${biz}: the quickest way up Google Maps`;
@@ -115,12 +115,12 @@ export function followupMessage(
 <p>A few days ago you ran a free Google Check for ${esc(biz)}. Here is the quickest win from it.</p>
 <p><strong>Get a few fresh reviews this week.</strong> Google favours businesses with recent reviews. Your report has a free review link and a QR code. Send the link to 3 happy clients today, it takes 2 minutes.</p>
 <p><a href="${report}" style="display:inline-block;background:#0f5b66;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold">Open my report</a></p>
-<p>Want the rest done for you? We write every fix from your report, ready to copy into Google, for £49 one-off, and your first month of RepSuites Growth (worth £49) is free. That is about £1.63 a day for a month. <a href="${fix}">See what you get</a>.</p>
+<p>Want the rest done for you? We write every fix from your report, ready to copy into Google, for £49 one-off. Then for 30 days we run it for you, free: we ask your customers for reviews, reply to them and send you a ranking update every week. That is about £1.63 a day for a month. <a href="${fix}">See what you get</a>.</p>
 ${sparkops}
 <p>Any questions, just reply to this email.</p>
 <p>Accelur8</p>
 </div>`;
-  const text = `Hi ${who},\n\nA few days ago you ran a free Google Check for ${biz}. Here is the quickest win from it.\n\nGet a few fresh reviews this week. Google favours businesses with recent reviews. Your report has a free review link and a QR code: ${report}\n\nWant the rest done for you? We write every fix from your report for £27 one-off, about 90p a day for a month: ${fix}${sparkopsText}\n\nAny questions, just reply to this email.\n\nAccelur8`;
+  const text = `Hi ${who},\n\nA few days ago you ran a free Google Check for ${biz}. Here is the quickest win from it.\n\nGet a few fresh reviews this week. Google favours businesses with recent reviews. Your report has a free review link and a QR code: ${report}\n\nWant the rest done for you? We write every fix from your report for £49 one-off, and we run it for you free for 30 days (about £1.63 a day for a month): ${fix}${sparkopsText}\n\nAny questions, just reply to this email.\n\nAccelur8`;
   return { subject, html, text };
 }
 
