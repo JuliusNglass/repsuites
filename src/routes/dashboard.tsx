@@ -261,16 +261,19 @@ function Dashboard() {
         </div>
         {!s.agency && <EmailCheckBar />}
         {!active && <p className="text-muted-foreground">Choose a business to get started.</p>}
-        {active && s.plan === "free" && !s.agency && (tab === "home" || welcome) && (
-          <WelcomeCard
-            key={`w-${active.id}`}
-            business={active.name}
-            googleConnected={s.googleConnected}
-            qrDownloaded={s.qrDownloaded}
-            welcome={welcome}
-            onTab={setTab}
-          />
-        )}
+        {active &&
+          (s.plan === "free" || !s.googleConnected) &&
+          !s.agency &&
+          (tab === "home" || welcome) && (
+            <WelcomeCard
+              key={`w-${active.id}`}
+              business={active.name}
+              googleConnected={s.googleConnected}
+              qrDownloaded={s.qrDownloaded}
+              welcome={welcome}
+              onTab={setTab}
+            />
+          )}
         {active && tab === "home" && s.googleConnected && (
           <TodayPanel key={`t-${active.id}`} business={active.name} onTab={setTab} />
         )}
