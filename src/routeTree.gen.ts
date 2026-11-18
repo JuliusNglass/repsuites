@@ -44,6 +44,7 @@ import { Route as ApiInternalCheckFollowupsRouteImport } from './routes/api.inte
 import { Route as ApiInternalFixitRouteImport } from './routes/api.internal.fixit'
 import { Route as ApiInternalGoogleRouteImport } from './routes/api.internal.google'
 import { Route as ApiInternalGoogleReportRouteImport } from './routes/api.internal.google-report'
+import { Route as ApiInternalGrowthChaseRouteImport } from './routes/api.internal.growth-chase'
 import { Route as ApiInternalLifecycleRouteImport } from './routes/api.internal.lifecycle'
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
 import { Route as ApiInternalReviewAutomationRouteImport } from './routes/api.internal.review-automation'
@@ -238,6 +239,11 @@ const ApiInternalGoogleReportRoute = ApiInternalGoogleReportRouteImport.update({
   path: '/api/internal/google-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalGrowthChaseRoute = ApiInternalGrowthChaseRouteImport.update({
+  id: '/api/internal/growth-chase',
+  path: '/api/internal/growth-chase',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalLifecycleRoute = ApiInternalLifecycleRouteImport.update({
   id: '/api/internal/lifecycle',
   path: '/api/internal/lifecycle',
@@ -365,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/growth-chase': typeof ApiInternalGrowthChaseRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
@@ -419,6 +426,7 @@ export interface FileRoutesByTo {
   '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/growth-chase': typeof ApiInternalGrowthChaseRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
@@ -474,6 +482,7 @@ export interface FileRoutesById {
   '/api/internal/fixit': typeof ApiInternalFixitRoute
   '/api/internal/google': typeof ApiInternalGoogleRoute
   '/api/internal/google-report': typeof ApiInternalGoogleReportRoute
+  '/api/internal/growth-chase': typeof ApiInternalGrowthChaseRoute
   '/api/internal/lifecycle': typeof ApiInternalLifecycleRoute
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
@@ -530,6 +539,7 @@ export interface FileRouteTypes {
     | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
+    | '/api/internal/growth-chase'
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-automation'
@@ -584,6 +594,7 @@ export interface FileRouteTypes {
     | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
+    | '/api/internal/growth-chase'
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-automation'
@@ -638,6 +649,7 @@ export interface FileRouteTypes {
     | '/api/internal/fixit'
     | '/api/internal/google'
     | '/api/internal/google-report'
+    | '/api/internal/growth-chase'
     | '/api/internal/lifecycle'
     | '/api/internal/rank-checks'
     | '/api/internal/review-automation'
@@ -693,6 +705,7 @@ export interface RootRouteChildren {
   ApiInternalFixitRoute: typeof ApiInternalFixitRoute
   ApiInternalGoogleRoute: typeof ApiInternalGoogleRoute
   ApiInternalGoogleReportRoute: typeof ApiInternalGoogleReportRoute
+  ApiInternalGrowthChaseRoute: typeof ApiInternalGrowthChaseRoute
   ApiInternalLifecycleRoute: typeof ApiInternalLifecycleRoute
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
   ApiInternalReviewAutomationRoute: typeof ApiInternalReviewAutomationRoute
@@ -956,6 +969,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalGoogleReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/growth-chase': {
+      id: '/api/internal/growth-chase'
+      path: '/api/internal/growth-chase'
+      fullPath: '/api/internal/growth-chase'
+      preLoaderRoute: typeof ApiInternalGrowthChaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/lifecycle': {
       id: '/api/internal/lifecycle'
       path: '/api/internal/lifecycle'
@@ -1129,6 +1149,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalFixitRoute: ApiInternalFixitRoute,
   ApiInternalGoogleRoute: ApiInternalGoogleRoute,
   ApiInternalGoogleReportRoute: ApiInternalGoogleReportRoute,
+  ApiInternalGrowthChaseRoute: ApiInternalGrowthChaseRoute,
   ApiInternalLifecycleRoute: ApiInternalLifecycleRoute,
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
   ApiInternalReviewAutomationRoute: ApiInternalReviewAutomationRoute,
