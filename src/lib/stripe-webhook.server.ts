@@ -93,7 +93,7 @@ async function fixitPaid(session: any) {
     url: "https://repsuites.com/fix",
     email: cust.email ? String(cust.email) : null,
     phone: cust.phone ? String(cust.phone) : null,
-    value: (session.amount_total ?? 2700) / 100,
+    value: (session.amount_total ?? 4900) / 100,
   });
 }
 

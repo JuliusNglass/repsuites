@@ -42,11 +42,11 @@ export function cleanToken(t: unknown): string | null {
   return /^[A-Za-z0-9_-]{20,64}$/.test(s) ? s : null;
 }
 
-// The £27 Profile Fix Pack (/profile): the same pack, sold cold from ads.
+// The £49 Profile Fix Pack (/profile): the same pack, sold cold from ads.
 // After paying, buyers are offered one tap to have it put in for them (£22,
 // with the first managed month free), then a plan for after that month.
-export const PACK27_PENCE = 2700;
-export const PACK27_PRICE = "£27";
+export const PACK27_PENCE = 4900;
+export const PACK27_PRICE = "£49";
 export const INSTALL_PENCE = 2200;
 export const INSTALL_PRICE = "£22";
 export const FREE_MONTH_DAYS = 30;
@@ -76,12 +76,12 @@ export const PACK27_FAQ: [string, string][] = [
   ],
   [
     "Is this a subscription?",
-    "No. £27 once. Nothing else is taken unless you choose an extra on the next page.",
+    "No. £49 once. Nothing else is taken unless you choose an extra on the next page.",
   ],
   ["What if I am not happy?", "Tell us within 14 days and we will rewrite it or refund you."],
 ];
 
-/** Pence per day over a year, shown as "about 7p a day". */
+/** Pence per day over a year, shown as "about 13p a day". */
 export function perDay(pence: number, days = 365): string {
   const p = pence / days;
   return p < 100

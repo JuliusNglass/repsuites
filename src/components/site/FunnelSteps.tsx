@@ -1,4 +1,4 @@
-// The steps after a £27 Profile Fix Pack payment, one page at a time:
+// The steps after a £49 Profile Fix Pack payment, one page at a time:
 // 1. "Want us to put it in for you?" £22, first managed month free (one tap).
 // 2. If yes: "After your free month" Managed £99/month, Growth £497/year, or later.
 // Then hands back to the normal thank-you flow (details, pack writing).
@@ -163,7 +163,7 @@ export function FunnelSteps({
             </ul>
             <p className="text-lg">
               That is normal. You run a cleaning business, not a Google account. But a pack that
-              sits in your inbox does nothing, and the {`£`}27 you just spent only pays off once it
+              sits in your inbox does nothing, and the {`£`}49 you just spent only pays off once it
               is live on your profile.
             </p>
             <h2 className="text-2xl font-semibold">So let us put it in for you.</h2>
