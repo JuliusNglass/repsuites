@@ -89,12 +89,12 @@ export function followupMessage(
   const fix = `${SITE}/fix?r=${token}`;
   if (step.step === 1) {
     return {
-      sms: `Hi ${who}, did you get a chance to look at your Google Check for ${biz}? The fixes at the top are the quickest wins: ${report} Want every fix written for you? £49 one-off, and we run it free for 30 days: ${fix} Any questions, just reply. - Accelur8. Reply STOP to opt out.`,
+      sms: `Hi ${who}, it's Accelur8. Your Google Check flagged one quick fix for ${biz} that most owners miss. Want me to send it over? Txt STOP to end`,
     };
   }
   if (step.step === 3) {
     return {
-      sms: `Hi ${who}, one last nudge on ${biz}'s Google Check. Most owners mean to do the fixes and never get round to it. For £49 we write every fix and run it free for 30 days: ${fix} Or just reply with any question. - Accelur8. Reply STOP to opt out.`,
+      sms: `Hi ${who}, last one from me. Want us to just do the Google fixes for ${biz}? Reply YES and I'll send the details.`,
     };
   }
   const cleaning = isCleaning(lead.keyword, biz);
@@ -106,7 +106,7 @@ export function followupMessage(
     : "";
   if (step.channel === "sms") {
     return {
-      sms: `Hi ${who}, a quick tip from your Google Check for ${biz}: fresh reviews help you show up first. Your free review link and QR code are in your report: ${report} Want every fix written for you? £49 one-off, and we run it free for 30 days: ${fix} - Accelur8. Reply STOP to opt out.`,
+      sms: `Hi ${who}, quick tip for ${biz}: list each job you want more of as its own service on Google. It helps you show up for those searches. Your report: ${report}`,
     };
   }
   const subject = `${biz}: the quickest way up Google Maps`;
