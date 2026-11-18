@@ -29,12 +29,18 @@ export type FixitOrder = {
   ready_at: string | null;
   emailed_at: string | null;
   extras: FixitExtras | null;
+  phone?: string | null;
+  offer?: string | null;
+  stripe_customer?: string | null;
+  payment_intent?: string | null;
+  upsell?: string | null;
+  plan?: string | null;
 };
 
 export type FixitExtras = { areas?: string; services?: string; different?: string };
 
 const COLS =
-  "id,stripe_session_id,view_key,report_token,business,email,name,status,attempts,pack,ready_at,emailed_at,extras";
+  "id,stripe_session_id,view_key,report_token,business,email,name,status,attempts,pack,ready_at,emailed_at,extras,phone,offer,stripe_customer,payment_intent,upsell,plan";
 const ORIGIN = "https://repsuites.com";
 
 /** Saves a paid order (from the Stripe webhook). Safe to call twice. */
@@ -51,6 +57,13 @@ export async function recordFixitOrder(session: any) {
       email: cust.email ? String(cust.email).toLowerCase() : null,
       phone: cust.phone ? String(cust.phone) : null,
       name: cust.name ? String(cust.name) : null,
+      offer: String(session?.metadata?.offer ?? "") || null,
+      stripe_customer:
+        (typeof session?.customer === "string" ? session.customer : session?.customer?.id) || null,
+      payment_intent:
+        (typeof session?.payment_intent === "string"
+          ? session.payment_intent
+          : session?.payment_intent?.id) || null,
     },
   });
 }
@@ -107,8 +120,10 @@ Nearby businesses beating them: ${report.rivals
 ${x?.areas ? `Areas they cover (from the owner): ${x.areas}\n` : ""}${x?.services ? `Services to mention (from the owner): ${x.services}\n` : ""}${x?.different ? `What makes them different (from the owner): ${x.different}\n` : ""}Use the owner's own answers above where given; they beat guesses.
 Give: a new description; the best primary Google category and 3 to 6 extra categories (real Google
 category names); 6 to 10 services with one-line descriptions; 4 Google posts for the next 4 weeks;
-3 review replies they can reuse (a 5-star review, a mixed review, an unhappy review) with [Name] where
-the reviewer's name goes; and a numbered checklist of the exact steps, in order, to make these changes
+3 review reply TEMPLATES they can reuse (a 5-star review, a mixed review, an unhappy review) with [Name]
+where the reviewer's name goes and [service] / [area] placeholders; each template must naturally use the
+search phrase or a service and town, and its "when" field should say when to use it and briefly how the
+keyword helps Google match them (one short sentence); and a numbered checklist of the exact steps, in order, to make these changes
 in their Google Business Profile.`;
 }
 

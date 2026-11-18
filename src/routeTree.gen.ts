@@ -19,6 +19,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MetaDeletionRouteImport } from './routes/meta-deletion'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as StartRouteImport } from './routes/start'
@@ -109,6 +110,11 @@ const PricingRoute = PricingRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProspectsRoute = ProspectsRouteImport.update({
@@ -334,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/meta-deletion': typeof MetaDeletionRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/profile': typeof ProfileRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/start': typeof StartRoute
@@ -387,6 +394,7 @@ export interface FileRoutesByTo {
   '/meta-deletion': typeof MetaDeletionRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/profile': typeof ProfileRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/start': typeof StartRoute
@@ -441,6 +449,7 @@ export interface FileRoutesById {
   '/meta-deletion': typeof MetaDeletionRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/profile': typeof ProfileRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/start': typeof StartRoute
@@ -496,6 +505,7 @@ export interface FileRouteTypes {
     | '/meta-deletion'
     | '/pricing'
     | '/privacy'
+    | '/profile'
     | '/prospects'
     | '/reset-password'
     | '/start'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/meta-deletion'
     | '/pricing'
     | '/privacy'
+    | '/profile'
     | '/prospects'
     | '/reset-password'
     | '/start'
@@ -602,6 +613,7 @@ export interface FileRouteTypes {
     | '/meta-deletion'
     | '/pricing'
     | '/privacy'
+    | '/profile'
     | '/prospects'
     | '/reset-password'
     | '/start'
@@ -656,6 +668,7 @@ export interface RootRouteChildren {
   MetaDeletionRoute: typeof MetaDeletionRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  ProfileRoute: typeof ProfileRoute
   ProspectsRoute: typeof ProspectsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   StartRoute: typeof StartRoute
@@ -764,6 +777,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prospects': {
@@ -1094,6 +1114,7 @@ const rootRouteChildren: RootRouteChildren = {
   MetaDeletionRoute: MetaDeletionRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  ProfileRoute: ProfileRoute,
   ProspectsRoute: ProspectsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   StartRoute: StartRoute,

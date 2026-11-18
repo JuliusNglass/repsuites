@@ -16,7 +16,7 @@ export function pixelBootScript(id: string): string {
 // Fire a standard event. eventId lets Meta match it with the server copy
 // so the same lead or sale is only counted once.
 export function trackPixel(
-  event: "Lead" | "Purchase",
+  event: "Lead" | "Purchase" | "InitiateCheckout" | "ViewContent" | "StartTrial",
   data: Record<string, unknown>,
   eventId: string,
 ) {

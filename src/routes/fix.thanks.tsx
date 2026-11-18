@@ -11,9 +11,15 @@ import { Logo } from "../components/site/Logo";
 import { BusinessSearch } from "../components/site/BusinessSearch";
 import type { BusinessDetails } from "../lib/places.functions";
 import { fixitDetails, fixitProgress } from "../lib/fixit.functions";
+import { FunnelSteps } from "../components/site/FunnelSteps";
 
 export const Route = createFileRoute("/fix/thanks")({
-  validateSearch: z.object({ s: z.string().max(260).optional(), r: z.string().max(64).optional() }),
+  validateSearch: z.object({
+    s: z.string().max(260).optional(),
+    r: z.string().max(64).optional(),
+    o: z.literal("p27").optional(),
+    i: z.coerce.number().optional(),
+  }),
   head: () => ({
     meta: [{ title: "Thank you | RepSuites" }, { name: "robots", content: "noindex" }],
   }),
@@ -30,7 +36,9 @@ const STEPS = [
 ];
 
 function Thanks() {
-  const { s, r } = Route.useSearch();
+  const { s, r, o } = Route.useSearch();
+  // The £27 pack: offer the add-ons first, then carry on as normal.
+  const [gate, setGate] = useState(o === "p27");
   const progress = useServerFn(fixitProgress);
   const saveDetails = useServerFn(fixitDetails);
   const nav = useNavigate();
@@ -57,8 +65,16 @@ function Thanks() {
     } catch {
       // private mode: still send
     }
-    trackPixel("Purchase", { currency: "GBP", value: 27, content_name: "Fix-It Pack" }, s);
-  }, [s]);
+    trackPixel(
+      "Purchase",
+      {
+        currency: "GBP",
+        value: o === "p27" ? 27 : 49,
+        content_name: o === "p27" ? "Profile Fix Pack" : "Fix-It Pack",
+      },
+      s,
+    );
+  }, [s, o]);
 
   useEffect(() => {
     if (phase !== "writing") return;
@@ -67,7 +83,7 @@ function Thanks() {
   }, [phase]);
 
   useEffect(() => {
-    if (!s || phase === "details") return;
+    if (!s || phase === "details" || gate) return;
     let stop = false;
     async function tick() {
       while (!stop) {
@@ -93,7 +109,7 @@ function Thanks() {
     return () => {
       stop = true;
     };
-  }, [s, phase, progress, nav]);
+  }, [s, phase, progress, nav, gate]);
 
   async function go(skip: boolean) {
     if (!s) return;
@@ -118,6 +134,8 @@ function Thanks() {
     }
     setPhase("writing");
   }
+
+  if (gate && s) return <FunnelSteps s={s} onDone={() => setGate(false)} />;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col text-base leading-relaxed">
@@ -262,9 +280,8 @@ function Thanks() {
           <h2 className="text-2xl font-semibold">A free month of RepSuites Growth is yours</h2>
           <p className="text-white/85">
             Your pack fixes the foundation. Steady new reviews and replies, month after month, are
-            what help you move up. When your pack is
-            ready, you can switch on your free month from the pack page, and the link is in your
-            email too. Normally £49. No card needed.
+            what help you move up. When your pack is ready, you can switch on your free month from
+            the pack page, and the link is in your email too. Normally £49. No card needed.
           </p>
         </section>
       </main>

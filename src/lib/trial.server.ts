@@ -164,7 +164,7 @@ export async function startTrialCheckout(o: {
   return s.ok ? { ok: true, url: s.data.url } : s;
 }
 
-async function ensureProduct(plan: CheckoutPlan) {
+export async function ensureProduct(plan: CheckoutPlan) {
   const p = TRIAL_PRODUCTS[plan];
   const got = await stripe(`products/${p.id}`);
   if (got.ok) return;
