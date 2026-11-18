@@ -19,6 +19,7 @@ export const Route = createFileRoute("/fix/thanks")({
     r: z.string().max(64).optional(),
     o: z.literal("p27").optional(),
     i: z.coerce.number().optional(),
+    preview: z.enum(["upsell", "plan"]).optional(),
   }),
   head: () => ({
     meta: [{ title: "Thank you | RepSuites" }, { name: "robots", content: "noindex" }],
@@ -36,7 +37,7 @@ const STEPS = [
 ];
 
 function Thanks() {
-  const { s, r, o } = Route.useSearch();
+  const { s, r, o, preview } = Route.useSearch();
   // The £27 pack: offer the add-ons first, then carry on as normal.
   const [gate, setGate] = useState(o === "p27");
   const progress = useServerFn(fixitProgress);
@@ -135,6 +136,7 @@ function Thanks() {
     setPhase("writing");
   }
 
+  if (preview) return <FunnelSteps s="preview" preview={preview} onDone={() => undefined} />;
   if (gate && s) return <FunnelSteps s={s} onDone={() => setGate(false)} />;
 
   return (
