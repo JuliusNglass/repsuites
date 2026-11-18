@@ -17,18 +17,29 @@ export function normalisePhone(p: string): string {
 }
 
 export async function sendMetaEvent(e: {
-  name: "Lead" | "Purchase";
+  name: "Lead" | "Purchase" | "LeadUnqualified";
   eventId: string;
   url: string;
   email?: string | null;
   phone?: string | null;
   value?: number;
-}): Promise<void> {
+  firstName?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  fbp?: string | null;
+  fbc?: string | null;
+}): Promise<boolean> {
   const token = (process.env["META_CAPI_TOKEN"] ?? "").trim();
-  if (!META_PIXEL_ID || !token) return;
-  const user_data: Record<string, string[]> = {};
+  if (!META_PIXEL_ID || !token) return false;
+  const user_data: Record<string, string | string[]> = {};
   if (e.email) user_data["em"] = [await sha256(e.email.trim().toLowerCase())];
   if (e.phone) user_data["ph"] = [await sha256(normalisePhone(e.phone))];
+  if (e.firstName) user_data["fn"] = [await sha256(e.firstName.trim().toLowerCase())];
+  if (e.email || e.phone) user_data["country"] = [await sha256("gb")];
+  if (e.ip) user_data["client_ip_address"] = e.ip;
+  if (e.userAgent) user_data["client_user_agent"] = e.userAgent;
+  if (e.fbp) user_data["fbp"] = e.fbp;
+  if (e.fbc) user_data["fbc"] = e.fbc;
   const body = {
     data: [
       {
@@ -43,13 +54,18 @@ export async function sendMetaEvent(e: {
     ],
   };
   try {
-    await fetch(`https://graph.facebook.com/v21.0/${META_PIXEL_ID}/events?access_token=${token}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(5000),
-    });
+    const res = await fetch(
+      `https://graph.facebook.com/v21.0/${META_PIXEL_ID}/events?access_token=${token}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+    return res.ok;
   } catch {
     // Tracking must never break a sign-up or a sale.
+    return false;
   }
 }

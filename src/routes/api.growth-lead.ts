@@ -22,6 +22,22 @@ export const Route = createFileRoute("/api/growth-lead")({
         const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
         const saved = token ? await pushGhl(token, d, r) : false;
         if (!saved) console.error("growth lead: GHL upsert failed");
+        if (d.eid) {
+          const { sendMetaEvent } = await import("../lib/meta-capi.server");
+          const ok = await sendMetaEvent({
+            name: r.qualified ? "Lead" : "LeadUnqualified",
+            eventId: d.eid,
+            url: request.headers.get("referer") || `${GROWTH}/`,
+            email: d.email,
+            phone: d.phone,
+            firstName: String(d.name).split(/\s+/)[0] ?? null,
+            ip: request.headers.get("cf-connecting-ip"),
+            userAgent: request.headers.get("user-agent"),
+            fbp: d.fbp || null,
+            fbc: d.fbc || null,
+          });
+          if (!ok) console.error("growth lead: Meta CAPI failed");
+        }
         if (r.qualified) return go(bookingUrl(d));
         return go(`${GROWTH}/thanks${r.solo ? "?s=1" : ""}`);
       },

@@ -37,3 +37,11 @@ describe("growth lead", () => {
     expect(bookingUrl(validate(form(good)))).toContain("first_name=Sarah");
   });
 });
+
+describe("validate tracking fields", () => {
+  it("keeps a safe event id and the fbp cookie", () => {
+    const d = validate(form({ ...good, eid: "ab12-<x>", fbp: "fb.1.1.2" }));
+    expect(d.eid).toBe("ab12-x");
+    expect(d.fbp).toBe("fb.1.1.2");
+  });
+});
