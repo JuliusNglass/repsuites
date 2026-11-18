@@ -14,16 +14,25 @@ import { trackPixel } from "../../lib/meta-pixel";
 
 type Step = "loading" | "upsell" | "plan";
 
-export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
+export function FunnelSteps({
+  s,
+  onDone,
+  preview,
+}: {
+  s: string;
+  onDone: () => void;
+  preview?: "upsell" | "plan";
+}) {
   const state = useServerFn(funnelState);
   const upsell = useServerFn(funnelUpsell);
   const plan = useServerFn(funnelPlan);
-  const [step, setStep] = useState<Step>("loading");
+  const [step, setStep] = useState<Step>(preview ?? "loading");
   const [biz, setBiz] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    if (preview) return;
     let stop = false;
     async function tick() {
       for (let n = 0; n < 30 && !stop; n++) {
@@ -42,9 +51,10 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
     return () => {
       stop = true;
     };
-  }, [s, state, onDone]);
+  }, [s, state, onDone, preview]);
 
   async function answer(accept: boolean) {
+    if (preview) return setStep(accept ? "plan" : "upsell");
     setBusy(accept ? "yes" : "no");
     setErr(null);
     const r = await upsell({ data: { s, accept } }).catch(() => null);
@@ -68,6 +78,7 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
   }
 
   async function choose(p: "managed" | "growth_year" | "later") {
+    if (preview) return;
     setBusy(p);
     setErr(null);
     const r = await plan({ data: { s, plan: p } }).catch(() => null);
