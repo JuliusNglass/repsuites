@@ -1,4 +1,4 @@
-// £49 Profile Fix Pack landing page (/profile), for cold ad traffic from UK
+// £27 Profile Fix Pack landing page (/profile), for cold ad traffic from UK
 // cleaning business owners. Explainer video, what you get, pay on the page.
 // After paying, /fix/thanks?o=p27 offers the add-ons. No em dashes (AGENTS.md).
 import { createFileRoute } from "@tanstack/react-router";
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/profile")({
       {
         name: "description",
         content:
-          "For UK cleaning business owners. We check your Google profile and write every missing piece for you. £49, on your WhatsApp within 30 minutes.",
+          "For UK cleaning business owners. We check your Google profile and write every missing piece for you. £27, on your WhatsApp within 30 minutes.",
       },
     ],
   }),
