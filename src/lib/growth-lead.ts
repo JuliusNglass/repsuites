@@ -45,7 +45,12 @@ const PHASE = {
   ops: "SparkOps Core (operations)",
 };
 
-export function route(a: { cleaners?: string; timing?: string; bottleneck?: string; ready?: string }) {
+export function route(a: {
+  cleaners?: string;
+  timing?: string;
+  bottleneck?: string;
+  ready?: string;
+}) {
   // Pure routing so it can be tested.
   const solo = a.cleaners === "solo";
   const research = a.timing === "research";
@@ -128,6 +133,9 @@ export function validate(f: FormData): any {
       .replace(/[^a-z0-9-]/gi, "")
       .toLowerCase(),
     trap: clean(f.get("company_fax"), 50),
+    eid: clean(f.get("eid"), 64).replace(/[^a-z0-9-]/gi, ""),
+    fbp: clean(f.get("fbp"), 200),
+    fbc: clean(f.get("fbc"), 300),
   };
   const ok =
     d.name.length > 1 &&
