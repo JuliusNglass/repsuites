@@ -59,8 +59,10 @@ export function ghlLeadTags(p: GhlLeadInput): string[] {
   // Owners with 3+ cleaners and a SparkOps-shaped headache go to the call path.
   const bigEnough = p.size !== null && p.size !== "solo";
   const opsHeadache = p.headaches.some((h) => h === "admin" || h === "hiring" || h === "checking");
-  if (bigEnough && opsHeadache) t.push("route-sparkops-call");
-  else t.push("route-fixit-pack");
+  const route = bigEnough && opsHeadache ? "route-sparkops-call" : "route-fixit-pack";
+  // While the check waits for a SEND reply there is no report yet, so the
+  // follow-up workflows must not start. Hold the route; the scan swaps it in.
+  t.push(p.scanPending ? `hold-${route}` : route);
   return t;
 }
 
