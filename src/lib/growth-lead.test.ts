@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { route, validate, bookingUrl } from "./growth-lead";
+import { route, validate, bookingUrl, bookPageUrl } from "./growth-lead";
 
 const form = (o: Record<string, string>) => {
   const f = new FormData();
@@ -62,5 +62,20 @@ describe("pushGhl tags", () => {
     expect(calls[0]?.body).not.toContain('"tags"');
     expect(calls[1]?.url).toContain("/contacts/c1/tags");
     expect(calls[1]?.body).toContain("grw-lead");
+  });
+});
+
+describe("growth video and booking", () => {
+  it("buckets watch percent", () => {
+    const f = form(good);
+    f.set("vw", "63");
+    expect(validate(f)?.vw).toBe(50);
+    f.set("vw", "abc");
+    expect(validate(f)?.vw).toBe(0);
+  });
+  it("sends qualified owners to the branded book page", () => {
+    expect(bookPageUrl(validate(form(good)))).toMatch(
+      /^https:\/\/growth\.accelur8clientwork\.com\/book\?first_name=Sarah/,
+    );
   });
 });
