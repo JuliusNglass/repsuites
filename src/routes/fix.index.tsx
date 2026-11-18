@@ -9,7 +9,7 @@ import { Logo } from "../components/site/Logo";
 import { fixitBusiness, startFixitCheckout } from "../lib/fixit.functions";
 import { FIXIT_FAQ, FIXIT_INCLUDES, FIXIT_PRICE } from "../lib/fixit";
 
-export const Route = createFileRoute("/fix")({
+export const Route = createFileRoute("/fix/")({
   validateSearch: z.object({
     r: z.string().optional(),
     buy: z.coerce.number().optional(),
