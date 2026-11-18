@@ -1,3 +1,7 @@
 /social/*
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=86400, no-transform
+
+/media/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=604800
