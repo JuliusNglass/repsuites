@@ -115,12 +115,12 @@ export function followupMessage(
 <p>A few days ago you ran a free Google Check for ${esc(biz)}. Here is the quickest win from it.</p>
 <p><strong>Get a few fresh reviews this week.</strong> Google favours businesses with recent reviews. Your report has a free review link and a QR code. Send the link to 3 happy clients today, it takes 2 minutes.</p>
 <p><a href="${report}" style="display:inline-block;background:#0f5b66;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:bold">Open my report</a></p>
-<p>Want the rest written for you? For £27 one-off we check your profile and write every missing piece, ready to copy and paste, on your WhatsApp within 30 minutes. That is about 7p a day over a year. <a href="${fix}">Watch how it works</a>.</p>
+<p>Want the rest written for you? For £49 one-off we check your profile and write every missing piece, ready to copy and paste, on your WhatsApp within 30 minutes. That is about 13p a day over a year. <a href="${fix}">Watch how it works</a>.</p>
 ${sparkops}
 <p>Any questions, just reply to this email.</p>
 <p>Accelur8</p>
 </div>`;
-  const text = `Hi ${who},\n\nA few days ago you ran a free Google Check for ${biz}. Here is the quickest win from it.\n\nGet a few fresh reviews this week. Google favours businesses with recent reviews. Your report has a free review link and a QR code: ${report}\n\nWant the rest written for you? For £27 one-off we write every missing piece, ready to copy and paste, within 30 minutes (about 7p a day over a year): ${fix}${sparkopsText}\n\nAny questions, just reply to this email.\n\nAccelur8`;
+  const text = `Hi ${who},\n\nA few days ago you ran a free Google Check for ${biz}. Here is the quickest win from it.\n\nGet a few fresh reviews this week. Google favours businesses with recent reviews. Your report has a free review link and a QR code: ${report}\n\nWant the rest written for you? For £49 one-off we write every missing piece, ready to copy and paste, within 30 minutes (about 13p a day over a year): ${fix}${sparkopsText}\n\nAny questions, just reply to this email.\n\nAccelur8`;
   return { subject, html, text };
 }
 

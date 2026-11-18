@@ -38,7 +38,7 @@ const STEPS = [
 
 function Thanks() {
   const { s, r, o, preview } = Route.useSearch();
-  // The £27 pack: offer the add-ons first, then carry on as normal.
+  // The Profile Fix Pack: offer the add-ons first, then carry on as normal.
   const [gate, setGate] = useState(o === "p27");
   const progress = useServerFn(fixitProgress);
   const saveDetails = useServerFn(fixitDetails);
@@ -70,7 +70,7 @@ function Thanks() {
       "Purchase",
       {
         currency: "GBP",
-        value: o === "p27" ? 27 : 49,
+        value: 49,
         content_name: o === "p27" ? "Profile Fix Pack" : "Fix-It Pack",
       },
       s,

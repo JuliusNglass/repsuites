@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Supabase/Stripe JSON is checked field by field. */
-// Server-only: when a £27 funnel buyer picks a plan, set up their RepSuites
+// Server-only: when a Profile Fix Pack buyer picks a plan, set up their RepSuites
 // account straight away: the business (tenant) on the chosen plan, its QR code
 // and review link, the owner login (an email to choose a password), and the
 // Stripe subscription tagged with the tenant so the webhook keeps the plan in

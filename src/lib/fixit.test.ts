@@ -8,7 +8,7 @@ describe("fixit", () => {
     expect(cleanToken("bad token with spaces and more")).toBeNull();
     expect(cleanToken(undefined)).toBeNull();
   });
-  it("is £27 and has no em dashes in its copy", () => {
+  it("is £49 and has no em dashes in its copy", () => {
     expect(FIXIT_PENCE).toBe(4900);
     const copy = [...FIXIT_INCLUDES, ...FIXIT_FAQ.flat()].join(" ");
     expect(copy).not.toMatch(/—/);

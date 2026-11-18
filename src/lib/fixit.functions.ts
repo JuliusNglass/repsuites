@@ -81,7 +81,7 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
       ...(token ? { client_reference_id: token } : {}),
       ...(email ? { customer_email: email } : {}),
       metadata: meta,
-      // The £27 pack saves the card so the next page can offer a one-tap add-on
+      // The Profile Fix Pack saves the card so the next page can offer a one-tap add-on
       // (https://docs.stripe.com/payments/save-during-payment).
       ...(p27 ? { customer_creation: "always" } : {}),
       payment_intent_data: {
@@ -255,7 +255,7 @@ export const fixitDetails = createServerFn({ method: "POST" })
       : { ok: false as const, error: r.error ?? "Please try again." };
   });
 
-// ---- £27 funnel: the steps after payment ----------------------------------
+// ---- Profile Fix Pack funnel: the steps after payment ----------------------------------
 
 /** Where the buyer is in the after-payment steps. */
 export const funnelState = createServerFn({ method: "POST" })
