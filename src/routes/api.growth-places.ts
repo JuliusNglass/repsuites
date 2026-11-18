@@ -52,6 +52,36 @@ export const Route = createFileRoute("/api/growth-places")({
               detail: (p.formattedAddress ?? "").slice(0, 200),
               website: (p.websiteUri ?? "").slice(0, 300),
             }));
+          // Text Search often misses service-area cleaners (no shop address);
+          // Autocomplete finds them, so top up from it.
+          if (places.length < 5) {
+            const a = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+              method: "POST",
+              signal: ctl.signal,
+              headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key },
+              body: JSON.stringify({ input: q, includedRegionCodes: ["gb"] }),
+            }).catch(() => null);
+            const aj = (a && a.ok ? await a.json().catch(() => ({})) : {}) as {
+              suggestions?: {
+                placePrediction?: {
+                  placeId?: string;
+                  structuredFormat?: { mainText?: { text?: string }; secondaryText?: { text?: string } };
+                };
+              }[];
+            };
+            for (const s of aj.suggestions ?? []) {
+              const p = s.placePrediction;
+              const name = p?.structuredFormat?.mainText?.text;
+              if (!p?.placeId || !name || places.some((x) => x.id === p.placeId)) continue;
+              places.push({
+                id: p.placeId.slice(0, 300),
+                name: name.slice(0, 160),
+                detail: (p.structuredFormat?.secondaryText?.text ?? "").slice(0, 200),
+                website: "",
+              });
+              if (places.length >= 5) break;
+            }
+          }
           return json({ places });
         } catch {
           return json({ places: [] });
