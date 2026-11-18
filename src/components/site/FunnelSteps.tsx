@@ -84,6 +84,9 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
   const managedDay = perDay(MANAGED.monthPence * 12);
   const growthDay = perDay(GROWTH.yearPence);
 
+  const STEPS = ["Payment", "Setup", "Keep it working"];
+  const at = step === "plan" ? 2 : 1;
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col text-base leading-relaxed">
       <header className="border-b border-border/70 bg-background/80 backdrop-blur-md">
@@ -92,36 +95,70 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
         </div>
       </header>
       <main
-        className="flex-1 w-full max-w-xl mx-auto px-4 py-10 sm:py-14 space-y-6"
+        className="flex-1 w-full max-w-xl mx-auto px-4 py-8 sm:py-12 space-y-6"
         aria-live="polite"
       >
-        <p className="inline-flex items-center gap-2 text-sm font-medium text-primary-ink">
-          <CheckCircle2 className="h-5 w-5" aria-hidden /> Payment received. Your pack is being
-          written.
-        </p>
+        <div
+          role="alert"
+          className="rounded-2xl border-2 border-primary bg-gold-soft/60 p-4 space-y-3"
+        >
+          <p className="font-semibold text-lg">
+            Payment received. Please don&apos;t close this page yet, you are not quite done.
+          </p>
+          <ol className="flex gap-2 text-sm" aria-label="Your order">
+            {STEPS.map((t, i) => (
+              <li
+                key={t}
+                className={`flex-1 rounded-full px-3 py-1.5 text-center font-medium ${
+                  i < at
+                    ? "bg-primary text-primary-foreground"
+                    : i === at
+                      ? "bg-background ring-2 ring-primary"
+                      : "bg-background/60 text-muted-foreground"
+                }`}
+              >
+                {i < at ? <Check className="inline h-4 w-4 mr-1" aria-hidden /> : null}
+                {t}
+              </li>
+            ))}
+          </ol>
+        </div>
 
         {step === "loading" && (
           <p className="inline-flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> One moment
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Loading your next step
           </p>
         )}
 
         {step === "upsell" && (
           <section className="space-y-5">
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">One last thing</p>
-            <h1 className="text-3xl sm:text-4xl font-semibold">
-              Want us to put it all in for you?
+            <h1 className="text-3xl sm:text-4xl font-semibold leading-tight">
+              Your pack is on its way. Now, be honest with yourself for a second.
             </h1>
+            <p className="text-lg">Most owners we talk to think one of these when it arrives:</p>
+            <ul className="space-y-2 text-lg">
+              {[
+                "\u201cI don\u2019t even know where to start in Google.\u201d",
+                "\u201cI\u2019ll do it at the weekend.\u201d (Then the weekend fills up.)",
+                "\u201cWhat if I put something in the wrong place and make it worse?\u201d",
+              ].map((t) => (
+                <li key={t} className="rounded-xl bg-muted/50 px-4 py-3 italic">
+                  {t}
+                </li>
+              ))}
+            </ul>
             <p className="text-lg">
-              Your pack is ready to copy and paste. Or we can add every fix to{" "}
-              {biz ? <b>{biz}</b> : "your profile"} for you, and look after it for a month.
+              That is normal. You run a cleaning business, not a Google account. But a pack that
+              sits in your inbox does nothing, and the {`£`}27 you just spent only pays off once it
+              is live on your profile.
             </p>
+            <h2 className="text-2xl font-semibold">So let us put it in for you.</h2>
             <ul className="space-y-2">
               {[
-                "We add every fix to your Google profile for you",
-                "Your first month of our managed service, free",
-                "Review requests, keyword-rich replies and weekly posts, done for you",
-                "No calls, no logins shared. You add us as a manager in 2 taps",
+                `We add every fix to ${biz ?? "your profile"} for you, correctly, this week`,
+                "Nothing to learn, nothing to remember, no risk of getting it wrong",
+                "Plus your first month of us looking after it, free: review requests, keyword-rich replies and weekly posts",
+                "No calls and no passwords. You add us as a manager in 2 taps, we send the steps",
               ].map((t) => (
                 <li key={t} className="flex gap-2">
                   <Check className="h-5 w-5 mt-0.5 text-primary-ink shrink-0" aria-hidden />
@@ -132,7 +169,8 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
             <div className="rounded-2xl border border-border p-4 bg-gold-soft/40">
               <p className="text-2xl font-semibold">{INSTALL_PRICE} one-off</p>
               <p className="text-sm text-muted-foreground">
-                Added to the card you just used. No forms. Nothing else taken.
+                Less than one hour of a cleaner&apos;s time. Added to the card you just used, no
+                forms. Nothing else is taken.
               </p>
             </div>
             <button
@@ -162,11 +200,28 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
 
         {step === "plan" && (
           <section className="space-y-5">
-            <p className="text-sm uppercase tracking-wide text-muted-foreground">You are all set</p>
-            <h1 className="text-3xl sm:text-4xl font-semibold">After your free month</h1>
+            <h1 className="text-3xl sm:text-4xl font-semibold leading-tight">
+              Done. One last choice, so this keeps paying off.
+            </h1>
             <p className="text-lg">
-              Google favours profiles that stay active. Pick how you want to keep it going. Nothing
-              is taken for 30 days, and you can cancel before then.
+              Your profile is about to look its best. The catch: Google keeps checking whether a
+              business is still active. Owners usually tell us:
+            </p>
+            <ul className="space-y-2 text-lg">
+              {[
+                "\u201cI never remember to ask customers for reviews.\u201d",
+                "\u201cI don\u2019t know what to post, and I haven\u2019t got time to.\u201d",
+                "\u201cI did all this once, then slipped back down.\u201d",
+              ].map((t) => (
+                <li key={t} className="rounded-xl bg-muted/50 px-4 py-3 italic">
+                  {t}
+                </li>
+              ))}
+            </ul>
+            <p className="text-lg">
+              Your free month covers that. After it, choose how you want to keep it going, so the
+              work you have just paid for does not fade. Nothing is taken for 30 days, and you can
+              cancel before then.
             </p>
             <button
               type="button"
@@ -175,8 +230,13 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
               className="w-full text-left rounded-2xl border-2 border-primary p-5 space-y-1 hover:bg-gold-soft/40 transition"
             >
               <p className="text-sm font-semibold uppercase text-primary-ink">Most popular</p>
-              <p className="text-xl font-semibold">We keep doing it for you</p>
-              <p>£99 a month after your free month ({managedDay}). Cancel any time.</p>
+              <p className="text-xl font-semibold">Keep doing it for me</p>
+              <p>
+                We ask for reviews, reply with your keywords and post every week. You do nothing.
+              </p>
+              <p className="font-medium">
+                £99 a month after your free month ({managedDay}). Cancel any time.
+              </p>
               {busy === "managed" && <Loader2 className="h-5 w-5 animate-spin" aria-hidden />}
             </button>
             <button
@@ -185,8 +245,11 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
               onClick={() => choose("growth_year")}
               className="w-full text-left rounded-2xl border border-border p-5 space-y-1 hover:bg-gold-soft/40 transition"
             >
-              <p className="text-xl font-semibold">Do it yourself with our software, yearly</p>
-              <p>£497 a year after your free month ({growthDay}). Saves £91 on monthly.</p>
+              <p className="text-xl font-semibold">I&apos;ll do it, with your software</p>
+              <p>Reminders, AI replies and post ideas, so you never forget. Billed yearly.</p>
+              <p className="font-medium">
+                £497 a year after your free month ({growthDay}). Saves £91 on monthly.
+              </p>
               {busy === "growth_year" && <Loader2 className="h-5 w-5 animate-spin" aria-hidden />}
             </button>
             <button
@@ -195,7 +258,7 @@ export function FunnelSteps({ s, onDone }: { s: string; onDone: () => void }) {
               onClick={() => choose("later")}
               className="w-full text-center underline text-muted-foreground min-h-11"
             >
-              I will decide later
+              I will decide before my free month ends
             </button>
           </section>
         )}

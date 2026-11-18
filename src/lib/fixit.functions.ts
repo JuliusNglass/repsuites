@@ -133,6 +133,16 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
           }
         : {}),
       phone_number_collection: { enabled: true },
+      ...(p27
+        ? {
+            custom_text: {
+              submit: {
+                message:
+                  "After paying, stay on the next page. There is one quick step to finish your order.",
+              },
+            },
+          }
+        : {}),
       allow_promotion_codes: true,
       success_url: `${ORIGIN}/fix/thanks?s={CHECKOUT_SESSION_ID}${p27 ? "&o=p27" : ""}${token ? `&r=${token}` : ""}`,
       cancel_url: p27 ? `${ORIGIN}/profile` : `${ORIGIN}/fix${token ? `?r=${token}` : ""}`,
