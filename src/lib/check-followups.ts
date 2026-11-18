@@ -67,6 +67,30 @@ export function dueStep(
   return { ...next, channel };
 }
 
+// Gated check: the lead was asked to reply SEND and has not yet. Two short
+// reminders (steps 4 and 5), then nothing. The first ask carries the opt-out
+// line, so these do not repeat it.
+export const SEND_REMINDERS = [
+  { step: 4, afterHours: 2 },
+  { step: 5, afterHours: 22 },
+] as const;
+
+export function sendReminderDue(createdAt: string, done: number[], now: Date): 4 | 5 | null {
+  const ageH = (now.getTime() - new Date(createdAt).getTime()) / 3_600_000;
+  if (!Number.isFinite(ageH) || ageH < 0 || ageH > 72) return null;
+  const next = SEND_REMINDERS.find((r) => !done.includes(r.step));
+  if (!next || ageH < next.afterHours) return null;
+  return next.step;
+}
+
+export function sendReminderSms(name: string, business: string, step: 4 | 5): string {
+  const who = firstName(name);
+  const biz = business.trim();
+  return step === 4
+    ? `Hi ${who}, your free Google Check for ${biz} is ready. Just reply SEND and it's yours. Accelur8`
+    : `Hi ${who}, still want to see how ${biz} shows up on Google? Reply SEND and we'll text your free report. Accelur8`;
+}
+
 export function firstName(name: string): string {
   const f = name.trim().split(/\s+/)[0] ?? "";
   return f ? f.charAt(0).toUpperCase() + f.slice(1) : "there";
@@ -89,7 +113,7 @@ export function followupMessage(
   const fix = `${SITE}/profile`;
   if (step.step === 1) {
     return {
-      sms: `Hi ${who}, it's Accelur8. Had a chance to look at your Google Check for ${biz} yet? What stood out most? Txt STOP to end`,
+      sms: `Hi ${who}, had a chance to look at your Google Check for ${biz} yet? What stood out most? Accelur8`,
     };
   }
   if (step.step === 3) {

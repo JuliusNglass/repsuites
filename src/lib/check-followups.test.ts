@@ -3,6 +3,8 @@ import {
   dueStep,
   followupMessage,
   inSendWindow,
+  sendReminderDue,
+  sendReminderSms,
   STEPS,
   type FollowupLead,
 } from "./check-followups";
@@ -50,14 +52,14 @@ describe("inSendWindow", () => {
 });
 
 describe("followupMessage", () => {
-  it("first text is branded with opt-out; follow-ups are short and STOP-free", () => {
+  it("follow-ups are branded, short and STOP-free (the opt-out is in the first GHL text)", () => {
     for (const s of STEPS) {
       const m = followupMessage(base, s);
       const all = `${m.sms ?? ""}${m.html ?? ""}${m.text ?? ""}`;
       expect(all).not.toMatch(/—|money.back|Julius/i);
       if (m.sms) expect(m.sms.length).toBeLessThanOrEqual(200);
-      if (m.sms && s.step === 1) expect(m.sms).toMatch(/Accelur8.*STOP/);
-      if (m.sms && s.step !== 1) expect(m.sms).not.toContain("STOP");
+      if (m.sms && s.step === 1) expect(m.sms).toMatch(/Accelur8$/);
+      if (m.sms) expect(m.sms).not.toContain("STOP");
     }
     expect(followupMessage(base, STEPS[0]!).sms).toContain("Hi Collins");
   });
@@ -66,5 +68,22 @@ describe("followupMessage", () => {
     expect(
       followupMessage({ ...base, keyword: "plumber", business: "Pipes Ltd" }, STEPS[1]!).html,
     ).not.toContain("SparkOps");
+  });
+});
+
+describe("reply SEND reminders", () => {
+  it("sends at 2h then 22h, never after 72h", () => {
+    expect(sendReminderDue(base.createdAt, [], at(1))).toBeNull();
+    expect(sendReminderDue(base.createdAt, [], at(3))).toBe(4);
+    expect(sendReminderDue(base.createdAt, [4], at(10))).toBeNull();
+    expect(sendReminderDue(base.createdAt, [4], at(23))).toBe(5);
+    expect(sendReminderDue(base.createdAt, [4, 5], at(30))).toBeNull();
+    expect(sendReminderDue(base.createdAt, [], at(80))).toBeNull();
+  });
+  it("is about them and has no opt-out line", () => {
+    const m = sendReminderSms("dean osbourne", "Cambridge Storage", 4);
+    expect(m).toContain("Hi Dean");
+    expect(m).toContain("reply SEND".replace("reply", "Just reply"));
+    expect(m).not.toMatch(/STOP/);
   });
 });

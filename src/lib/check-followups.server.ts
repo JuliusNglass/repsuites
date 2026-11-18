@@ -10,18 +10,16 @@ import {
   followupMessage,
   inSendWindow,
   MAX_AGE_HOURS,
+  sendReminderDue,
+  sendReminderSms,
   STEPS,
   type FollowupLead,
 } from "./check-followups";
 
-const STOP_TAGS = [
-  "replied",
-  "customer",
-  "fixit-paid",
-  "repsuites-customer",
-  "no-followup",
-  "gc-scan-pending",
-];
+const STOP_TAGS = ["replied", "customer", "fixit-paid", "repsuites-customer", "no-followup"];
+// Waiting for the lead to reply SEND: no report yet, so no report follow-ups,
+// but this is not a reason to stop them for good.
+const PENDING_TAG = "gc-scan-pending";
 
 function julius(): string {
   return (process.env["REPSUITES_LEADS_TO"] ?? "").trim() || "julius@accelur8.com";
@@ -147,6 +145,19 @@ export async function runCheckFollowups(token: string) {
       keyword: report.maps?.keyword ?? null,
     };
     const prior = doneBy.get(row.id) ?? [];
+    if (!lead.reportToken) {
+      // Gated check not run yet: remind them to reply SEND (two texts at most).
+      const r = sendReminderDue(lead.createdAt, prior, now);
+      if (!r || !lead.phone) continue;
+      budget--;
+      const contact = await findContact(lead);
+      if (!contact || contact.dnd || !contact.tags.includes(PENDING_TAG)) continue;
+      if (contact.tags.some((t) => STOP_TAGS.includes(t))) continue;
+      const okSend = await sendSms(contact.id, sendReminderSms(lead.name, lead.business, r));
+      await record(row.id, r, "sms", okSend ? "sent" : "failed");
+      if (okSend) sent.push(`${lead.business} - reply SEND reminder ${r - 3}`);
+      continue;
+    }
     const step = dueStep(lead, prior, now);
     if (!step) continue;
     budget--;
@@ -164,6 +175,7 @@ export async function runCheckFollowups(token: string) {
       continue;
     }
     const contact = await findContact(lead);
+    if (contact?.tags.includes(PENDING_TAG)) continue; // report not delivered yet
     if (contact && (contact.dnd || contact.tags.some((t) => STOP_TAGS.includes(t)))) {
       await stopAll(row.id, prior, "stopped_ghl");
       continue;

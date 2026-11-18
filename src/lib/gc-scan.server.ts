@@ -133,6 +133,16 @@ async function pushToGhl(
       signal: AbortSignal.timeout(6000),
     });
     if (!t.ok) console.error("GHL scan tag failed", t.status);
+    // The scan has run (ready or failed), so the contact is no longer waiting.
+    if ((c.tags ?? []).includes("gc-scan-pending")) {
+      const d = await fetch(`https://services.leadconnectorhq.com/contacts/${c.id}/tags`, {
+        method: "DELETE",
+        headers,
+        body: JSON.stringify({ tags: ["gc-scan-pending"] }),
+        signal: AbortSignal.timeout(6000),
+      }).catch(() => null);
+      if (!d?.ok) console.error("GHL pending tag removal failed", d?.status);
+    }
     return t.ok;
   } catch {
     return false;
