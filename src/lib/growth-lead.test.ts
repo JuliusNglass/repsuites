@@ -45,3 +45,22 @@ describe("validate tracking fields", () => {
     expect(d.fbp).toBe("fb.1.1.2");
   });
 });
+
+describe("pushGhl tags", () => {
+  it("adds tags after the upsert instead of replacing them", async () => {
+    const { pushGhl, route } = await import("./growth-lead");
+    const calls: { url: string; body: string }[] = [];
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async (u: string, init: RequestInit) => {
+      calls.push({ url: String(u), body: String(init.body) });
+      return new Response(JSON.stringify({ contact: { id: "c1" } }));
+    }) as typeof fetch;
+    const d = validate(form(good));
+    const ok = await pushGhl("t", d, route(d));
+    globalThis.fetch = orig;
+    expect(ok).toBe(true);
+    expect(calls[0]?.body).not.toContain('"tags"');
+    expect(calls[1]?.url).toContain("/contacts/c1/tags");
+    expect(calls[1]?.body).toContain("grw-lead");
+  });
+});

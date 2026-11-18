@@ -85,7 +85,6 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
     phone: d.phone,
     companyName: d.business,
     source: `SparkOps growth page (${d.src || "direct"})`,
-    tags,
     customFields: [
       { id: F.cleaners, field_value: (OPT.cleaners as any)[d.cleaners] },
       { id: F.website, field_value: d.site },
@@ -107,7 +106,24 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
       },
       body: JSON.stringify(body),
     }).catch(() => null);
-    if (res?.ok) return true;
+    if (res?.ok) {
+      // Upsert replaces the whole tag list, so tags are added separately
+      // to keep any tags the contact already has.
+      const j = (await res.json().catch(() => null)) as { contact?: { id?: string } } | null;
+      const id = j?.contact?.id;
+      if (!id) return false;
+      const t = await fetch(`https://services.leadconnectorhq.com/contacts/${id}/tags`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Version: "2021-07-28",
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ tags }),
+      }).catch(() => null);
+      return !!t?.ok;
+    }
     await new Promise((x) => setTimeout(x, 800 * (i + 1)));
   }
   return false;
