@@ -207,6 +207,12 @@ export async function runCheckFollowups(token: string) {
     }
     await record(row.id, step.step, step.channel, okSend ? "sent" : "failed");
     if (okSend) sent.push(`${lead.business} - step ${step.step} by ${step.channel}`);
+    // After the last step they did not buy: hand them to the long nurture (never dropped).
+    if (okSend && step.step === 3 && contact)
+      await ghl(`/contacts/${contact.id}/tags`, {
+        method: "POST",
+        body: JSON.stringify({ tags: ["nurture"] }),
+      });
   }
 
   if (sent.length) {

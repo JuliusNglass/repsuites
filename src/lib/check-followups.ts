@@ -118,7 +118,7 @@ export function followupMessage(
   }
   if (step.step === 3) {
     return {
-      sms: `Hi ${who}, last one from me. This short video shows how Google picks the top 3 near you, and how we fix it for ${biz}: ${fix}`,
+      sms: `Hi ${who}, last one from me. For £27 one-off we write every missing piece of ${biz}'s Google profile, on your WhatsApp in 30 mins: ${SITE}/fix Accelur8`,
     };
   }
   const cleaning = isCleaning(lead.keyword, biz);
