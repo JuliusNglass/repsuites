@@ -103,8 +103,12 @@ export async function runGrowthChase(token: string) {
           : chaseSms(step, c.firstName, bookLink(c)),
       }),
     });
-    const status = r?.ok ? "sent" : "failed";
-    if (!r?.ok) console.error("growth chase: SMS failed", r?.status);
+    // A failed send is not recorded, so the next run retries it.
+    if (!r?.ok) {
+      console.error("growth chase: SMS failed", r?.status);
+      continue;
+    }
+    const status = "sent";
     await serviceWrite("growth_chase", "", {
       method: "POST",
       headers: { Prefer: "resolution=ignore-duplicates" },
