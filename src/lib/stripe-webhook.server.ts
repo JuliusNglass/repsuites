@@ -113,6 +113,47 @@ async function tagPlanCustomer(session: any) {
   }).catch(() => false);
 }
 
+// Every Stripe payment also lands in GHL as a won deal with its amount, so GHL
+// shows all revenue. Fix Pack already sends Meta its Purchase at checkout.
+const SALE_LABEL: Record<string, string> = {
+  fixit: "Fix Pack",
+  fixit_install: "Fix Pack install",
+  shop: "Card order",
+  plan: "RepSuites plan",
+};
+async function stripeSale(session: any) {
+  const kind = String(session?.metadata?.kind ?? "");
+  const pence = Number(session?.amount_total ?? 0);
+  if (!SALE_LABEL[kind] || !(pence > 0) || session?.payment_status !== "paid") return;
+  const cust = session.customer_details ?? {};
+  const plan = String(session?.metadata?.plan ?? "");
+  const { recordStripeSale } = await import("./sale-sync.server");
+  await recordStripeSale({
+    email: cust.email ? String(cust.email).toLowerCase() : null,
+    phone: cust.phone ? String(cust.phone) : null,
+    name: cust.name ? String(cust.name) : null,
+    value: pence / 100,
+    label: kind === "plan" && plan ? `RepSuites ${plan}` : SALE_LABEL[kind]!,
+    sendMeta: kind !== "fixit",
+  });
+}
+
+// A subscription charge after the first one (renewal, or the first charge
+// after a free trial): a won deal in GHL with the amount. No Meta event.
+async function invoiceSale(inv: any) {
+  const pence = Number(inv?.amount_paid ?? 0);
+  if (String(inv?.billing_reason ?? "") !== "subscription_cycle" || !(pence > 0)) return;
+  const { recordStripeSale } = await import("./sale-sync.server");
+  await recordStripeSale({
+    email: inv.customer_email ? String(inv.customer_email).toLowerCase() : null,
+    phone: inv.customer_phone ? String(inv.customer_phone) : null,
+    name: inv.customer_name ? String(inv.customer_name) : null,
+    value: pence / 100,
+    label: "RepSuites renewal",
+    sendMeta: false,
+  });
+}
+
 async function shopPaid(session: any) {
   const orderId = String(session?.metadata?.order_id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(orderId)) return;
@@ -196,6 +237,7 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
         const { installPaidFromSession } = await import("./fixit-funnel.server");
         await installPaidFromSession(obj);
       }
+      await stripeSale(obj).catch(() => null);
       if (obj.metadata?.kind === "plan" && obj.subscription) {
         const sub = await stripe(`subscriptions/${obj.subscription}`);
         if (sub.ok) await saveSubscription(sub.data);
@@ -223,6 +265,10 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
     case "checkout.session.async_payment_succeeded":
       if (obj.metadata?.kind === "shop") await shopPaid(obj);
       if (obj.metadata?.kind === "fixit") await fixitPaid(obj);
+      await stripeSale(obj).catch(() => null);
+      break;
+    case "invoice.paid":
+      await invoiceSale(obj).catch(() => null);
       break;
     case "customer.subscription.created":
     case "customer.subscription.updated":
