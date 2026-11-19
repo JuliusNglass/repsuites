@@ -184,3 +184,27 @@ export function bookingUrl(d: any) {
 export function bookPageUrl(d: any) {
   return `https://growth.accelur8clientwork.com/book?${bookingUrl(d).split("?")[1]}`;
 }
+
+// Instant alert to the owner for a qualified lead, so a call goes out within minutes.
+export const ALERT_TO = "julius@accelur8.com";
+export function leadAlert(d: any, r: ReturnType<typeof route>) {
+  const tel = String(d.phone).replace(/[^\d+]/g, "");
+  const rows: [string, string][] = [
+    ["Name", d.name],
+    ["Business", d.business],
+    ["Phone", d.phone],
+    ["Email", d.email],
+    ["Team", (OPT.cleaners as any)[d.cleaners] ?? d.cleaners],
+    ["Biggest problem", (OPT.bottleneck as any)[d.bottleneck] ?? d.bottleneck],
+    ["Timing", (OPT.timing as any)[d.timing] ?? d.timing],
+    ["Video watched", `${d.vw}%`],
+    ["Source", d.src || "direct"],
+  ];
+  const subject = `New qualified lead: ${d.business} (${(OPT.cleaners as any)[d.cleaners] ?? ""} cleaners)`;
+  const text = `${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\nCall now: tel:${tel}\nThey were sent to the booking page. Phase: ${r.phaseKey}`;
+  const html =
+    `<p style="font:16px/1.5 sans-serif"><a href="tel:${esc(tel)}" style="display:inline-block;background:#F5B324;color:#0B1B33;padding:12px 20px;border-radius:8px;font-weight:700;text-decoration:none">Call ${esc(String(d.name).split(/\s+/)[0])} now</a></p>` +
+    `<table style="font:15px/1.5 sans-serif">${rows.map(([k, v]) => `<tr><td style="padding-right:12px;color:#555">${esc(k)}</td><td><b>${esc(v)}</b></td></tr>`).join("")}</table>` +
+    `<p style="font:14px/1.5 sans-serif;color:#555">They were sent to the booking page. If they have not booked in 10 minutes the text chase starts on its own.</p>`;
+  return { subject, text, html };
+}

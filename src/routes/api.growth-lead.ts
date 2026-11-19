@@ -38,7 +38,24 @@ export const Route = createFileRoute("/api/growth-lead")({
           });
           if (!ok) console.error("growth lead: Meta CAPI failed");
         }
-        if (r.qualified) return go(bookPageUrl(d));
+        if (r.qualified) {
+          // Instant owner alert; never block the lead's redirect on it.
+          try {
+            const { leadAlert, ALERT_TO } = await import("../lib/growth-lead");
+            const { sendEmail } = await import("../lib/email.server");
+            const a = leadAlert(d, r);
+            const sent = await sendEmail({
+              to: ALERT_TO,
+              fromName: "Lead alert",
+              replyTo: d.email,
+              ...a,
+            });
+            if (!sent.ok) console.error("growth lead: alert failed", sent.error);
+          } catch (e) {
+            console.error("growth lead: alert error", e);
+          }
+          return go(bookPageUrl(d));
+        }
         return go(`${GROWTH}/thanks${r.solo ? "?s=1" : ""}`);
       },
     },
