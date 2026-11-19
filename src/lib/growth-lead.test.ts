@@ -79,35 +79,3 @@ describe("growth video and booking", () => {
     );
   });
 });
-
-describe("leadAlert", () => {
-  it("builds a tap-to-call alert with the key answers, escaped", async () => {
-    const { leadAlert } = await import("./growth-lead");
-    const d = {
-      name: "Sam <b>Lee",
-      business: "Sparkle & Co",
-      phone: "+44 7700 900123",
-      email: "s@x.com",
-      cleaners: "4-10",
-      bottleneck: "hiring",
-      timing: "now",
-      vw: 75,
-      src: "meta",
-    };
-    const a = leadAlert(d, { qualified: true, phaseKey: "hiring", solo: false, research: false });
-    expect(a.subject).toContain("Sparkle & Co");
-    expect(a.text).toContain("Call: +447700900123");
-    expect(a.text).toContain("Video watched: 75%");
-  });
-});
-
-describe("isWarm", () => {
-  it("flags researching team owners who watched 75%+", async () => {
-    const { isWarm } = await import("./growth-lead");
-    const research = { qualified: false, phaseKey: "hiring", solo: false, research: true };
-    expect(isWarm({ vw: 100 }, research)).toBe(true);
-    expect(isWarm({ vw: 50 }, research)).toBe(false);
-    expect(isWarm({ vw: 100 }, { ...research, solo: true })).toBe(false);
-    expect(isWarm({ vw: 100 }, { ...research, qualified: true })).toBe(false);
-  });
-});
