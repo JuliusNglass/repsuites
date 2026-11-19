@@ -53,46 +53,121 @@ export async function runSaleSync(token: string) {
   let sales = 0;
   for (const o of opps) {
     if (done.has(o.id)) continue;
-    // Claim the row first so a sale is never sent twice.
-    const claim = await serviceWrite<{ opportunity_id: string }[]>("growth_sales", "", {
-      method: "POST",
-      headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
-      body: {
-        opportunity_id: o.id,
-        contact_id: o.contact!.id,
-        value: Number(o.monetaryValue) || 0,
-      },
-    });
-    if (claim.error || !claim.data?.length) continue;
-    const cid = o.contact!.id!;
-    const meta = await sendMetaEvent({
-      name: "Purchase",
-      eventId: `sale-${o.id}`,
-      url: "https://growth.accelur8clientwork.com/",
-      email: o.contact?.email ?? null,
-      phone: o.contact?.phone ?? null,
-      firstName: (o.contact?.name ?? "").split(/\s+/)[0] || null,
-      value: Number(o.monetaryValue) || 0,
-    });
-    await ghl(`/contacts/${cid}/tags`, {
-      method: "POST",
-      body: JSON.stringify({ tags: ["customer"] }),
-    });
-    const task = await ghl(`/contacts/${cid}/tasks`, {
-      method: "POST",
-      body: JSON.stringify({
-        title: saleTitle(o),
-        body: `Happy days. Deal "${o.name ?? ""}" marked won. Meta Purchase ${meta ? "sent" : "NOT sent"}. Next: book the onboarding.`,
-        dueDate: new Date(Date.now() + 60 * 60_000).toISOString(),
-        completed: false,
-        assignedTo: ALERT_USER_ID,
-      }),
-    });
-    await serviceWrite(`growth_sales?opportunity_id=eq.${encodeURIComponent(o.id)}`, "", {
-      method: "PATCH",
-      body: { meta_sent: meta, alerted: !!task?.ok },
-    });
-    sales++;
+    if (await closeSale(o)) sales++;
   }
   return { status: 200, body: { ok: true, sales } };
+}
+
+// Claim, Meta Purchase (unless already sent elsewhere), tag "customer" and
+// owner task for one won deal. Exported so Stripe payments use the same path.
+export async function closeSale(o: WonOpp, opts: { sendMeta?: boolean } = {}): Promise<boolean> {
+  // Claim the row first so a sale is never sent twice.
+  const claim = await serviceWrite<{ opportunity_id: string }[]>("growth_sales", "", {
+    method: "POST",
+    headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
+    body: {
+      opportunity_id: o.id,
+      contact_id: o.contact!.id,
+      value: Number(o.monetaryValue) || 0,
+    },
+  });
+  if (claim.error || !claim.data?.length) return false;
+  const cid = o.contact!.id!;
+  const meta =
+    opts.sendMeta === false
+      ? false
+      : await sendMetaEvent({
+          name: "Purchase",
+          eventId: `sale-${o.id}`,
+          url: "https://growth.accelur8clientwork.com/",
+          email: o.contact?.email ?? null,
+          phone: o.contact?.phone ?? null,
+          firstName: (o.contact?.name ?? "").split(/\s+/)[0] || null,
+          value: Number(o.monetaryValue) || 0,
+        });
+  await ghl(`/contacts/${cid}/tags`, {
+    method: "POST",
+    body: JSON.stringify({ tags: ["customer"] }),
+  });
+  const task = await ghl(`/contacts/${cid}/tasks`, {
+    method: "POST",
+    body: JSON.stringify({
+      title: saleTitle(o),
+      body: `Happy days. Deal "${o.name ?? ""}" marked won. Meta Purchase ${
+        opts.sendMeta === false ? "sent at checkout" : meta ? "sent" : "NOT sent"
+      }. Next: book the onboarding.`,
+      dueDate: new Date(Date.now() + 60 * 60_000).toISOString(),
+      completed: false,
+      assignedTo: ALERT_USER_ID,
+    }),
+  });
+  await serviceWrite(`growth_sales?opportunity_id=eq.${encodeURIComponent(o.id)}`, "", {
+    method: "PATCH",
+    body: { meta_sent: opts.sendMeta === false || meta, alerted: !!task?.ok },
+  });
+  return true;
+}
+
+// A Stripe payment (Fix Pack, plan, renewal, shop order): find or make the GHL
+// contact, add a won deal with the amount in the RepSuites pipeline, then close
+// it like any other sale. Best effort: never throws, never fails the webhook.
+export const STRIPE_PIPELINE = "7HPoniUK6tAyeGc5hRpN"; // RepSuites - Visibilty and Trust
+export const STRIPE_STAGE = "843bb823-2636-44ce-86c5-f73b8632ff84"; // Active
+export async function recordStripeSale(p: {
+  email: string | null;
+  phone: string | null;
+  name: string | null;
+  value: number;
+  label: string;
+  sendMeta: boolean;
+}): Promise<boolean> {
+  try {
+    if ((!p.email && !p.phone) || !(p.value > 0)) return false;
+    const u = await ghl("/contacts/upsert", {
+      method: "POST",
+      body: JSON.stringify({
+        locationId: GHL_LOCATION_ID,
+        ...(p.email ? { email: p.email } : {}),
+        ...(p.phone ? { phone: p.phone } : {}),
+        ...(p.name ? { name: p.name } : {}),
+      }),
+    });
+    const cid = u?.ok ? ((await u.json()) as { contact?: { id?: string } }).contact?.id : null;
+    if (!cid) {
+      console.error("stripe sale: GHL contact failed", u?.status);
+      return false;
+    }
+    const who = p.name || p.email || p.phone || "Customer";
+    const r = await ghl("/opportunities/", {
+      method: "POST",
+      body: JSON.stringify({
+        locationId: GHL_LOCATION_ID,
+        pipelineId: STRIPE_PIPELINE,
+        pipelineStageId: STRIPE_STAGE,
+        contactId: cid,
+        name: `${who} - ${p.label}`,
+        status: "won",
+        monetaryValue: p.value,
+        source: "Stripe",
+      }),
+    });
+    const id = r?.ok ? ((await r.json()) as { opportunity?: { id?: string } }).opportunity?.id : null;
+    if (!id) {
+      console.error("stripe sale: GHL deal failed", r?.status);
+      return false;
+    }
+    return await closeSale(
+      {
+        id,
+        name: `${who} - ${p.label}`,
+        monetaryValue: p.value,
+        status: "won",
+        contact: { id: cid, name: p.name, email: p.email, phone: p.phone },
+      },
+      { sendMeta: p.sendMeta },
+    );
+  } catch (e) {
+    console.error("stripe sale failed", e);
+    return false;
+  }
 }
