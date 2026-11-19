@@ -41,10 +41,7 @@ async function qualifiedLeads(): Promise<Contact[]> {
     body: JSON.stringify({
       locationId: GHL_LOCATION_ID,
       pageLimit: 100,
-      filters: [
-        { field: "tags", operator: "contains", value: "grw-lead" },
-        { field: "tags", operator: "contains", value: "qualified" },
-      ],
+      filters: [{ field: "tags", operator: "contains", value: "grw-lead" }],
       sort: [{ field: "dateAdded", direction: "desc" }],
     }),
   });
@@ -54,7 +51,10 @@ async function qualifiedLeads(): Promise<Contact[]> {
   }
   const cutoff = Date.now() - CHASE_MAX_HOURS * 3_600_000;
   return (((await r.json()) as { contacts?: Contact[] }).contacts ?? []).filter(
-    (c) => c.dateAdded && new Date(c.dateAdded).getTime() >= cutoff,
+    (c) =>
+      c.dateAdded &&
+      new Date(c.dateAdded).getTime() >= cutoff &&
+      (c.tags ?? []).some((t) => t === "qualified" || t === "grw-warm"),
   );
 }
 

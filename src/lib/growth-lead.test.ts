@@ -100,3 +100,14 @@ describe("leadAlert", () => {
     expect(a.text).toContain("Video watched: 75%");
   });
 });
+
+describe("isWarm", () => {
+  it("flags researching team owners who watched 75%+", async () => {
+    const { isWarm } = await import("./growth-lead");
+    const research = { qualified: false, phaseKey: "hiring", solo: false, research: true };
+    expect(isWarm({ vw: 100 }, research)).toBe(true);
+    expect(isWarm({ vw: 50 }, research)).toBe(false);
+    expect(isWarm({ vw: 100 }, { ...research, solo: true })).toBe(false);
+    expect(isWarm({ vw: 100 }, { ...research, qualified: true })).toBe(false);
+  });
+});

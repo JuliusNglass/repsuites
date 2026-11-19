@@ -76,6 +76,7 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
     r.qualified ? "qualified" : r.solo ? "solo" : "nurture",
     ...(d.wa ? ["consent-whatsapp"] : []),
     d.vw > 0 ? `vsl-${d.vw}` : "vsl-none",
+    ...(isWarm(d, r) ? ["grw-warm"] : []),
   ];
   const [firstName, ...rest] = (d.name as string).split(/\s+/);
   const body = {
@@ -123,7 +124,7 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
         },
         body: JSON.stringify({ tags }),
       }).catch(() => null);
-      if (r.qualified) {
+      if (r.qualified || isWarm(d, r)) {
         // In-app alert: a task assigned to the owner pushes to the LeadConnector app.
         const a = leadAlert(d, r);
         const k = await fetch(`https://services.leadconnectorhq.com/contacts/${id}/tasks`, {
@@ -221,7 +222,13 @@ export function leadAlert(d: any, r: ReturnType<typeof route>) {
     ["Video watched", `${d.vw}%`],
     ["Source", d.src || "direct"],
   ];
-  const subject = `New qualified lead: ${d.business} (${(OPT.cleaners as any)[d.cleaners] ?? ""} cleaners)`;
+  const subject = `${r.qualified ? "New qualified lead" : "Warm lead (watched the video)"}: ${d.business} (${(OPT.cleaners as any)[d.cleaners] ?? ""} cleaners)`;
   const text = `${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\nCall: ${tel}\nSent to the booking page; text chase starts in 10 min if not booked. Phase: ${r.phaseKey}`;
   return { subject, text };
+}
+
+// A "just researching" lead with a team who watched most of the video is warm:
+// chase and alert like a qualified lead instead of waiting for the slow nurture.
+export function isWarm(d: { vw?: number }, r: ReturnType<typeof route>) {
+  return !r.qualified && !r.solo && (d.vw ?? 0) >= 75;
 }
