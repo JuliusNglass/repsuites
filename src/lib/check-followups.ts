@@ -113,7 +113,7 @@ export function followupMessage(
   const fix = `${SITE}/profile`;
   if (step.step === 1) {
     return {
-      sms: `Hi ${who}, did you get a chance to look at the free Google Check you asked for? Here it is again for ${biz}: ${report} What stood out most? Accelur8`,
+      sms: `Hi ${who}, did you see the free Google Check you asked for? Here it is again for ${biz}: ${report} What stood out most? Accelur8`,
     };
   }
   if (step.step === 3) {
