@@ -123,6 +123,27 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
         },
         body: JSON.stringify({ tags }),
       }).catch(() => null);
+      if (r.qualified) {
+        // In-app alert: a task assigned to the owner pushes to the LeadConnector app.
+        const a = leadAlert(d, r);
+        const k = await fetch(`https://services.leadconnectorhq.com/contacts/${id}/tasks`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Version: "2021-07-28",
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            title: a.subject,
+            body: a.text,
+            dueDate: new Date(Date.now() + 10 * 60_000).toISOString(),
+            completed: false,
+            assignedTo: ALERT_USER_ID,
+          }),
+        }).catch(() => null);
+        if (!k?.ok) console.error("growth lead: alert task failed", k?.status);
+      }
       return !!t?.ok;
     }
     await new Promise((x) => setTimeout(x, 800 * (i + 1)));
@@ -183,4 +204,24 @@ export function bookingUrl(d: any) {
 // Same-page booking: the growth site shows the calendar with our branding.
 export function bookPageUrl(d: any) {
   return `https://growth.accelur8clientwork.com/book?${bookingUrl(d).split("?")[1]}`;
+}
+
+// Instant alert to the owner for a qualified lead, so a call goes out within minutes.
+export const ALERT_USER_ID = "gaVnE5zfNEw6S4hntJmA"; // owner's GHL user
+export function leadAlert(d: any, r: ReturnType<typeof route>) {
+  const tel = String(d.phone).replace(/[^\d+]/g, "");
+  const rows: [string, string][] = [
+    ["Name", d.name],
+    ["Business", d.business],
+    ["Phone", d.phone],
+    ["Email", d.email],
+    ["Team", (OPT.cleaners as any)[d.cleaners] ?? d.cleaners],
+    ["Biggest problem", (OPT.bottleneck as any)[d.bottleneck] ?? d.bottleneck],
+    ["Timing", (OPT.timing as any)[d.timing] ?? d.timing],
+    ["Video watched", `${d.vw}%`],
+    ["Source", d.src || "direct"],
+  ];
+  const subject = `New qualified lead: ${d.business} (${(OPT.cleaners as any)[d.cleaners] ?? ""} cleaners)`;
+  const text = `${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\nCall: ${tel}\nSent to the booking page; text chase starts in 10 min if not booked. Phase: ${r.phaseKey}`;
+  return { subject, text };
 }
