@@ -31,3 +31,20 @@ describe("chaseSms", () => {
     }
   });
 });
+
+describe("free check route for unqualified leads", () => {
+  it("routes nurture/solo but not qualified", async () => {
+    const { isCheckRoute } = await import("./growth-chase");
+    expect(isCheckRoute(["grw-lead", "nurture"])).toBe(true);
+    expect(isCheckRoute(["grw-lead", "solo"])).toBe(true);
+    expect(isCheckRoute(["grw-lead", "qualified"])).toBe(false);
+    expect(isCheckRoute(["grw-lead", "qualified", "nurture"])).toBe(false);
+  });
+  it("first text has the opt-out, later ones do not, all point at the check", async () => {
+    const { checkSms, CHECK_LINK } = await import("./growth-chase");
+    expect(checkSms(1, "dee", "Complete cleaning")).toContain("STOP");
+    expect(checkSms(1, "dee", "Complete cleaning")).toContain("Hi Dee, when someone near you");
+    expect(checkSms(2, "dee", null)).not.toContain("STOP");
+    expect(checkSms(3, "dee", null)).toContain(CHECK_LINK);
+  });
+});

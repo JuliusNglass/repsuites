@@ -1,9 +1,17 @@
-// Growth Fit Call chase: runs every 10 minutes (database cron). Finds qualified
-// growth leads in GHL who have not booked and sends the next due text.
+// Growth chase: runs every 10 minutes (database cron). Qualified growth leads get texts
+// to book the Fit Call themselves; unqualified ones (solo/researching) get texts to the free Google Check.
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
 import { inSendWindow } from "./check-followups";
-import { bookLink, chaseDue, chaseSms, CHASE_MAX_HOURS, CHASE_STOP_TAGS } from "./growth-chase";
+import {
+  bookLink,
+  chaseDue,
+  chaseSms,
+  checkSms,
+  isCheckRoute,
+  CHASE_MAX_HOURS,
+  CHASE_STOP_TAGS,
+} from "./growth-chase";
 
 type Contact = {
   id: string;
@@ -14,6 +22,7 @@ type Contact = {
   tags?: string[];
   dnd?: boolean;
   dateAdded?: string;
+  companyName?: string | null;
 };
 
 async function ghl(path: string, init: RequestInit = {}): Promise<Response | null> {
@@ -54,7 +63,7 @@ async function qualifiedLeads(): Promise<Contact[]> {
     (c) =>
       c.dateAdded &&
       new Date(c.dateAdded).getTime() >= cutoff &&
-      (c.tags ?? []).some((t) => t === "qualified" || t === "grw-warm"),
+      (c.tags ?? []).some((t) => t === "qualified" || t === "nurture" || t === "solo"),
   );
 }
 
@@ -89,7 +98,9 @@ export async function runGrowthChase(token: string) {
       body: JSON.stringify({
         type: "SMS",
         contactId: c.id,
-        message: chaseSms(step, c.firstName, bookLink(c)),
+        message: isCheckRoute(c.tags ?? [])
+          ? checkSms(step, c.firstName, c.companyName)
+          : chaseSms(step, c.firstName, bookLink(c)),
       }),
     });
     const status = r?.ok ? "sent" : "failed";

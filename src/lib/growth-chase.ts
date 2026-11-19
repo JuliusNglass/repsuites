@@ -16,7 +16,14 @@ export const CHASE_MAX_HOURS = 96;
 // Leads from before the chase went live were followed up by hand.
 export const CHASE_START = "2026-11-19T00:00:00Z";
 
-export const CHASE_STOP_TAGS = ["grw-booked", "replied", "customer", "no-followup", "grw-nobook"];
+export const CHASE_STOP_TAGS = [
+  "grw-booked",
+  "replied",
+  "customer",
+  "no-followup",
+  "grw-nobook",
+  "free-check",
+];
 
 export function chaseDue(createdAt: string, done: number[], now: Date): ChaseStep | null {
   const t = new Date(createdAt).getTime();
@@ -59,4 +66,24 @@ export function chaseSms(
   if (step === 2)
     return `${hi}, still want more booked jobs and reliable cleaners? 15 minutes is all it takes: ${link} Accelur8`;
   return `${hi}, last nudge from us. If now isn't the right time, no problem. When you're ready: ${link} Accelur8`;
+}
+
+// Unqualified growth leads (solo or just researching) never get a call: they are
+// sent into the free Google Check, which leads to the paid visibility fix.
+export const CHECK_LINK = "https://repsuites.com/check?n=cleaning&src=grw-sms";
+export function isCheckRoute(tags: string[]): boolean {
+  return !tags.includes("qualified") && (tags.includes("nurture") || tags.includes("solo"));
+}
+export function checkSms(
+  step: ChaseStep,
+  firstName: string | null | undefined,
+  business: string | null | undefined,
+): string {
+  const hi = `Hi ${first(firstName)}`;
+  const biz = (business ?? "").trim() || "your business";
+  if (step === 1)
+    return `${hi}, when someone near you searches for a cleaner, does ${biz} come up? Get your free Google Check in 30 seconds: ${CHECK_LINK} Accelur8 (reply STOP to opt out)`;
+  if (step === 2)
+    return `${hi}, most cleaning jobs go to the 3 firms Google shows first. See where ${biz} sits, free: ${CHECK_LINK} Accelur8`;
+  return `${hi}, last one from us. Your free Google Check for ${biz} is still here when you want it: ${CHECK_LINK} Accelur8`;
 }

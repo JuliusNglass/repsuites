@@ -49,6 +49,7 @@ import { Route as ApiInternalLifecycleRouteImport } from './routes/api.internal.
 import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal.rank-checks'
 import { Route as ApiInternalReviewAutomationRouteImport } from './routes/api.internal.review-automation'
 import { Route as ApiInternalReviewRequestsRouteImport } from './routes/api.internal.review-requests'
+import { Route as ApiInternalSaleSyncRouteImport } from './routes/api.internal.sale-sync'
 import { Route as ApiMetaDataDeletionRouteImport } from './routes/api.meta.data-deletion'
 import { Route as ApiResendWebhookRouteImport } from './routes/api.resend.webhook'
 import { Route as ApiReviewTriggerTokenRouteImport } from './routes/api.review-trigger.$token'
@@ -266,6 +267,11 @@ const ApiInternalReviewRequestsRoute =
     path: '/api/internal/review-requests',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalSaleSyncRoute = ApiInternalSaleSyncRouteImport.update({
+  id: '/api/internal/sale-sync',
+  path: '/api/internal/sale-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMetaDataDeletionRoute = ApiMetaDataDeletionRouteImport.update({
   id: '/api/meta/data-deletion',
   path: '/api/meta/data-deletion',
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
+  '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
@@ -431,6 +438,7 @@ export interface FileRoutesByTo {
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
+  '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/api/internal/rank-checks': typeof ApiInternalRankChecksRoute
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
+  '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
@@ -544,6 +553,7 @@ export interface FileRouteTypes {
     | '/api/internal/rank-checks'
     | '/api/internal/review-automation'
     | '/api/internal/review-requests'
+    | '/api/internal/sale-sync'
     | '/api/meta/data-deletion'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
@@ -599,6 +609,7 @@ export interface FileRouteTypes {
     | '/api/internal/rank-checks'
     | '/api/internal/review-automation'
     | '/api/internal/review-requests'
+    | '/api/internal/sale-sync'
     | '/api/meta/data-deletion'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
@@ -654,6 +665,7 @@ export interface FileRouteTypes {
     | '/api/internal/rank-checks'
     | '/api/internal/review-automation'
     | '/api/internal/review-requests'
+    | '/api/internal/sale-sync'
     | '/api/meta/data-deletion'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
@@ -710,6 +722,7 @@ export interface RootRouteChildren {
   ApiInternalRankChecksRoute: typeof ApiInternalRankChecksRoute
   ApiInternalReviewAutomationRoute: typeof ApiInternalReviewAutomationRoute
   ApiInternalReviewRequestsRoute: typeof ApiInternalReviewRequestsRoute
+  ApiInternalSaleSyncRoute: typeof ApiInternalSaleSyncRoute
   ApiMetaDataDeletionRoute: typeof ApiMetaDataDeletionRoute
   ApiResendWebhookRoute: typeof ApiResendWebhookRoute
   ApiReviewTriggerTokenRoute: typeof ApiReviewTriggerTokenRoute
@@ -1004,6 +1017,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalReviewRequestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/sale-sync': {
+      id: '/api/internal/sale-sync'
+      path: '/api/internal/sale-sync'
+      fullPath: '/api/internal/sale-sync'
+      preLoaderRoute: typeof ApiInternalSaleSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/meta/data-deletion': {
       id: '/api/meta/data-deletion'
       path: '/api/meta/data-deletion'
@@ -1154,6 +1174,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalRankChecksRoute: ApiInternalRankChecksRoute,
   ApiInternalReviewAutomationRoute: ApiInternalReviewAutomationRoute,
   ApiInternalReviewRequestsRoute: ApiInternalReviewRequestsRoute,
+  ApiInternalSaleSyncRoute: ApiInternalSaleSyncRoute,
   ApiMetaDataDeletionRoute: ApiMetaDataDeletionRoute,
   ApiResendWebhookRoute: ApiResendWebhookRoute,
   ApiReviewTriggerTokenRoute: ApiReviewTriggerTokenRoute,
