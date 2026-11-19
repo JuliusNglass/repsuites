@@ -123,6 +123,27 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
         },
         body: JSON.stringify({ tags }),
       }).catch(() => null);
+      if (r.qualified) {
+        // In-app alert: a task assigned to the owner pushes to the LeadConnector app.
+        const a = leadAlert(d, r);
+        const k = await fetch(`https://services.leadconnectorhq.com/contacts/${id}/tasks`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Version: "2021-07-28",
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            title: a.subject,
+            body: a.text,
+            dueDate: new Date(Date.now() + 10 * 60_000).toISOString(),
+            completed: false,
+            assignedTo: ALERT_USER_ID,
+          }),
+        }).catch(() => null);
+        if (!k?.ok) console.error("growth lead: alert task failed", k?.status);
+      }
       return !!t?.ok;
     }
     await new Promise((x) => setTimeout(x, 800 * (i + 1)));
@@ -186,7 +207,7 @@ export function bookPageUrl(d: any) {
 }
 
 // Instant alert to the owner for a qualified lead, so a call goes out within minutes.
-export const ALERT_TO = "julius@accelur8.com";
+export const ALERT_USER_ID = "gaVnE5zfNEw6S4hntJmA"; // owner's GHL user
 export function leadAlert(d: any, r: ReturnType<typeof route>) {
   const tel = String(d.phone).replace(/[^\d+]/g, "");
   const rows: [string, string][] = [
@@ -201,10 +222,6 @@ export function leadAlert(d: any, r: ReturnType<typeof route>) {
     ["Source", d.src || "direct"],
   ];
   const subject = `New qualified lead: ${d.business} (${(OPT.cleaners as any)[d.cleaners] ?? ""} cleaners)`;
-  const text = `${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\nCall now: tel:${tel}\nThey were sent to the booking page. Phase: ${r.phaseKey}`;
-  const html =
-    `<p style="font:16px/1.5 sans-serif"><a href="tel:${esc(tel)}" style="display:inline-block;background:#F5B324;color:#0B1B33;padding:12px 20px;border-radius:8px;font-weight:700;text-decoration:none">Call ${esc(String(d.name).split(/\s+/)[0])} now</a></p>` +
-    `<table style="font:15px/1.5 sans-serif">${rows.map(([k, v]) => `<tr><td style="padding-right:12px;color:#555">${esc(k)}</td><td><b>${esc(v)}</b></td></tr>`).join("")}</table>` +
-    `<p style="font:14px/1.5 sans-serif;color:#555">They were sent to the booking page. If they have not booked in 10 minutes the text chase starts on its own.</p>`;
-  return { subject, text, html };
+  const text = `${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}\n\nCall: ${tel}\nSent to the booking page; text chase starts in 10 min if not booked. Phase: ${r.phaseKey}`;
+  return { subject, text };
 }

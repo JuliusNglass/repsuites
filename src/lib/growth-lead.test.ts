@@ -96,9 +96,7 @@ describe("leadAlert", () => {
     };
     const a = leadAlert(d, { qualified: true, phaseKey: "hiring", solo: false, research: false });
     expect(a.subject).toContain("Sparkle & Co");
-    expect(a.text).toContain("tel:+447700900123");
+    expect(a.text).toContain("Call: +447700900123");
     expect(a.text).toContain("Video watched: 75%");
-    expect(a.html).not.toContain("<b>Lee");
-    expect(a.html).toContain("Sparkle &#38; Co");
   });
 });
