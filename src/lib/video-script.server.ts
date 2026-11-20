@@ -95,7 +95,7 @@ const SYSTEM = `You write scripts for short hand-drawn doodle explainer videos f
 - Plain UK English a 15 year old understands. No jargon, no em dashes, no prices unless the brief gives them, no made-up facts, awards, numbers or reviews.
 - "picture" describes the hand-drawn scene in plain words for the client: 2 to 4 things revealed left to right, using the business's brand colours and characters if the brief gives them. People in cleaning and care businesses are drawn as women unless the brief says otherwise.
 - "words" is at most 3 short words written on screen, or empty.
-- The title is a short internal name for the video.`;
+- The title is a short, catchy name for the video that the client sees. Never mention versions or changes in it.`;
 
 async function writeScript(
   b: VideoBrief,
