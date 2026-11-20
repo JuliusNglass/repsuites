@@ -121,6 +121,7 @@ const SALE_LABEL: Record<string, string> = {
   shop: "Card order",
   plan: "RepSuites plan",
   review_trial: "RepSuites £1 trial",
+  video_order: "Explainer videos",
 };
 async function stripeSale(session: any) {
   const kind = String(session?.metadata?.kind ?? "");
@@ -137,6 +138,7 @@ async function stripeSale(session: any) {
     label: kind === "plan" && plan ? `RepSuites ${plan}` : SALE_LABEL[kind]!,
     sendMeta: kind !== "fixit",
     ...(kind === "review_trial" ? { tags: ["repsuites-trial"] } : {}),
+    ...(kind === "video_order" ? { tags: ["video-client"] } : {}),
   });
 }
 
