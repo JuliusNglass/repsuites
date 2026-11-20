@@ -139,7 +139,7 @@ export async function runLifecycle(token: string) {
       const r = await sendEmail({
         to: d.f.owner_email!,
         replyTo: julius(),
-        fromName: "Julius at RepSuites",
+        fromName: "RepSuites",
         subject: d.subject,
         html: d.html,
       });

@@ -266,7 +266,7 @@ export async function signUpFree(
     sendEmail({
       to: email,
       replyTo: to,
-      fromName: "Julius at RepSuites",
+      fromName: "RepSuites",
       subject: `${name.split(" ")[0]}, your first job takes 60 seconds`,
       html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px;line-height:1.5;color:#0f172a;max-width:560px">
 <p>Hi ${esc(name.split(" ")[0] ?? "")},</p>
@@ -276,7 +276,7 @@ export async function signUpFree(
 <p style="margin:20px 0"><a href="https://repsuites.com/dashboard#settings" style="background:#f5b324;color:#0f172a;font-weight:700;text-decoration:none;padding:12px 18px;border-radius:10px;display:inline-block">Connect Google now</a></p>
 <p>No time, or not sure where to start? Just reply "help" and we will set it up with you.</p>
 <p>Quick question: how did you find RepSuites? One word is fine.</p>
-<p>Julius<br>RepSuites, by Accelur8</p></div>`,
+<p>RepSuites, by Accelur8</p></div>`,
     }).catch(() => null),
   ]);
 

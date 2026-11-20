@@ -131,8 +131,8 @@ export function sparkMessage(
     : `I put together a short report for ${p.name}`;
   const line = reviewScanLine(p.scan);
   const scan = line && p.scan?.quote ? `${line} One says: "${p.scan.quote}"` : line;
-  const body = `${hi}, I'm Julius. My wife runs a cleaning company, so I built SparkOps to run hers, and ${made}.${finding ? ` ${finding}` : ""}${scan ? ` ${scan}` : ""}\n\n${SPARK_HOOK} ${opts.video ? "Watch it here" : "The report shows where those hours go"}: ${link}\n\n${SPARK_QUESTION}`;
-  return opts.email ? `${body}\n\nReply STOP and I won't message again.` : body;
+  const body = `${hi}, it's Accelur8. SparkOps was built inside a real cleaning company, and ${made}.${finding ? ` ${finding}` : ""}${scan ? ` ${scan}` : ""}\n\n${SPARK_HOOK} ${opts.video ? "Watch it here" : "The report shows where those hours go"}: ${link}\n\n${SPARK_QUESTION}`;
+  return body;
 }
 
 export function sparkSubject(name: string, video = false): string {

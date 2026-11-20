@@ -74,7 +74,7 @@ describe("SparkOps outreach", () => {
       },
       link,
     );
-    expect(t.startsWith("Hi Sam, I'm Julius.")).toBe(true);
+    expect(t.startsWith("Hi Sam, it's Accelur8.")).toBe(true);
     expect(t).toContain("short report for Sparkle Clean");
     expect(t).toContain("only 2 of the 25 spots");
     expect(t).toContain("Most cleaning owners spend about 6 hours a week on rota and admin.");
@@ -85,16 +85,16 @@ describe("SparkOps outreach", () => {
     expect(t).not.toContain("STOP");
     expect(t).not.toMatch(/—/);
   });
-  it("falls back to the review gap, and the email has a STOP line", () => {
+  it("falls back to the review gap, and the email has no opt-out line", () => {
     const p = {
       name: "Sparkle Clean",
       gap: { leader: "Shine Co", leaderReviews: 120, reviews: 14 },
     };
     expect(sparkFinding(p)).toBe("Shine Co has 120 Google reviews. You have 14.");
     const e = sparkMessage(p, link, { email: true });
-    expect(e.startsWith("Hi, I'm Julius.")).toBe(true);
+    expect(e.startsWith("Hi, it's Accelur8.")).toBe(true);
     expect(e).toContain("Shine Co has 120 Google reviews");
-    expect(e.endsWith("Reply STOP and I won't message again.")).toBe(true);
+    expect(e).not.toContain("STOP");
   });
   it("has no finding when there is nothing to say", () => {
     expect(sparkFinding({ name: "X" })).toBe("");

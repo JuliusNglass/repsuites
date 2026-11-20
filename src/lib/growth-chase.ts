@@ -82,7 +82,7 @@ export function checkSms(
   const hi = `Hi ${first(firstName)}`;
   const biz = (business ?? "").trim() || "your business";
   if (step === 1)
-    return `${hi}, when someone near you searches for a cleaner, does ${biz} come up? Get your free Google Check in 30 seconds: ${CHECK_LINK} Accelur8 (reply STOP to opt out)`;
+    return `${hi}, when someone near you searches for a cleaner, does ${biz} come up? Get your free Google Check in 30 seconds: ${CHECK_LINK} Accelur8`;
   if (step === 2)
     return `${hi}, most cleaning jobs go to the 3 firms Google shows first. See where ${biz} sits, free: ${CHECK_LINK} Accelur8`;
   return `${hi}, last one from us. Your free Google Check for ${biz} is still here when you want it: ${CHECK_LINK} Accelur8`;

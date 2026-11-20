@@ -148,7 +148,7 @@ export function emailFor(type: EmailType, f: Facts, unsubUrl: string): Email {
   const home = isHomeService(f.name);
   const hi = `<p>Hi ${esc(first)},</p>`;
   const help = `<p>No time, or not sure where to start? Just reply "help" and we will set it up with you.</p>`;
-  const sign = `${help}<p>Julius<br>RepSuites, by Accelur8</p>`;
+  const sign = `${help}<p>RepSuites, by Accelur8</p>`;
   const foot = `<p style="font-size:14px;color:#64748b;margin-top:24px">You get these tips because ${biz} has a RepSuites account. <a href="${unsubUrl}" style="color:#64748b">Stop these emails</a>.</p>`;
   const wrap = (subject: string, body: string): Email => ({
     subject,

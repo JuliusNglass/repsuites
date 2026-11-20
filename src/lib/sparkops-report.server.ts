@@ -40,7 +40,7 @@ export function sparkBookingLink(name: string): string {
   if (/^https:\/\//.test(url)) return url;
   const wa = salesWhatsApp();
   if (wa)
-    return `https://wa.me/${wa}?text=${encodeURIComponent(`Hi Julius, I read the SparkOps report for ${name}. Can we book a 15-minute demo?`)}`;
+    return `https://wa.me/${wa}?text=${encodeURIComponent(`Hi, I read the SparkOps report for ${name}. Can we book a 15-minute demo?`)}`;
   return `mailto:julius@accelur8.com?subject=${encodeURIComponent(`SparkOps demo for ${name}`)}`;
 }
 
