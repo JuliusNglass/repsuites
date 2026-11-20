@@ -136,6 +136,7 @@ async function stripeSale(session: any) {
     value: pence / 100,
     label: kind === "plan" && plan ? `RepSuites ${plan}` : SALE_LABEL[kind]!,
     sendMeta: kind !== "fixit",
+    ...(kind === "review_trial" ? { tags: ["repsuites-trial"] } : {}),
   });
 }
 

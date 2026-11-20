@@ -120,6 +120,8 @@ export async function recordStripeSale(p: {
   value: number;
   label: string;
   sendMeta: boolean;
+  // Extra GHL tags (e.g. "repsuites-trial" starts the trial reminder workflow).
+  tags?: string[];
 }): Promise<boolean> {
   try {
     if ((!p.email && !p.phone) || !(p.value > 0)) return false;
@@ -130,6 +132,7 @@ export async function recordStripeSale(p: {
         ...(p.email ? { email: p.email } : {}),
         ...(p.phone ? { phone: p.phone } : {}),
         ...(p.name ? { name: p.name } : {}),
+        ...(p.tags?.length ? { tags: p.tags } : {}),
       }),
     });
     const cid = u?.ok ? ((await u.json()) as { contact?: { id?: string } }).contact?.id : null;
