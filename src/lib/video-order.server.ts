@@ -91,6 +91,7 @@ export async function saveVideoBrief(sessionId: string, b: VideoBrief) {
   });
   const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
   let saved = false;
+  let contactId: string | null = null;
   if (token) {
     const [first, ...rest] = b.name.split(/\s+/);
     const res = await ghl(
@@ -117,8 +118,19 @@ export async function saveVideoBrief(sessionId: string, b: VideoBrief) {
       );
       saved = !!n?.ok;
     }
+    contactId = id ?? null;
   }
   if (!mail.ok && !saved)
     return { ok: false as const, error: "We could not save your brief. Please try again." };
+  // Write the script and send it for approval. Best effort: the brief is already saved.
+  const { startScript } = await import("./video-script.server");
+  await startScript({
+    sessionId,
+    pack: o.pack,
+    email: o.email,
+    phone: o.phone,
+    contactId,
+    brief: b,
+  }).catch((e) => console.error("video script failed", e));
   return { ok: true as const };
 }

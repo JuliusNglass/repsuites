@@ -54,6 +54,7 @@ import { Route as ApiInternalRankChecksRouteImport } from './routes/api.internal
 import { Route as ApiInternalReviewAutomationRouteImport } from './routes/api.internal.review-automation'
 import { Route as ApiInternalReviewRequestsRouteImport } from './routes/api.internal.review-requests'
 import { Route as ApiInternalSaleSyncRouteImport } from './routes/api.internal.sale-sync'
+import { Route as ApiInternalVideoOrdersRouteImport } from './routes/api.internal.video-orders'
 import { Route as ApiMetaDataDeletionRouteImport } from './routes/api.meta.data-deletion'
 import { Route as ApiResendWebhookRouteImport } from './routes/api.resend.webhook'
 import { Route as ApiReviewTriggerTokenRouteImport } from './routes/api.review-trigger.$token'
@@ -62,6 +63,7 @@ import { Route as FixPackKeyRouteImport } from './routes/fix.pack.$key'
 import { Route as RTokenMapDotgifRouteImport } from './routes/r.$token.map[.]gif'
 import { Route as RTokenPdfRouteImport } from './routes/r.$token.pdf'
 import { Route as RTokenPresentRouteImport } from './routes/r.$token.present'
+import { Route as VideosApproveTokenRouteImport } from './routes/videos.approve.$token'
 import { Route as ApiAccountingCallbackProviderRouteImport } from './routes/api.accounting.callback.$provider'
 import { Route as ApiAccountingWebhookQuickbooksRouteImport } from './routes/api.accounting.webhook.quickbooks'
 import { Route as ApiAccountingWebhookXeroRouteImport } from './routes/api.accounting.webhook.xero'
@@ -296,6 +298,11 @@ const ApiInternalSaleSyncRoute = ApiInternalSaleSyncRouteImport.update({
   path: '/api/internal/sale-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalVideoOrdersRoute = ApiInternalVideoOrdersRouteImport.update({
+  id: '/api/internal/video-orders',
+  path: '/api/internal/video-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMetaDataDeletionRoute = ApiMetaDataDeletionRouteImport.update({
   id: '/api/meta/data-deletion',
   path: '/api/meta/data-deletion',
@@ -335,6 +342,11 @@ const RTokenPresentRoute = RTokenPresentRouteImport.update({
   id: '/present',
   path: '/present',
   getParentRoute: () => RTokenRoute,
+} as any)
+const VideosApproveTokenRoute = VideosApproveTokenRouteImport.update({
+  id: '/videos/approve/$token',
+  path: '/videos/approve/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAccountingCallbackProviderRoute =
   ApiAccountingCallbackProviderRouteImport.update({
@@ -411,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
+  '/api/internal/video-orders': typeof ApiInternalVideoOrdersRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
@@ -419,6 +432,7 @@ export interface FileRoutesByFullPath {
   '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/r/$token/present': typeof RTokenPresentRoute
+  '/videos/approve/$token': typeof VideosApproveTokenRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -471,6 +485,7 @@ export interface FileRoutesByTo {
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
+  '/api/internal/video-orders': typeof ApiInternalVideoOrdersRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
@@ -479,6 +494,7 @@ export interface FileRoutesByTo {
   '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/r/$token/present': typeof RTokenPresentRoute
+  '/videos/approve/$token': typeof VideosApproveTokenRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -532,6 +548,7 @@ export interface FileRoutesById {
   '/api/internal/review-automation': typeof ApiInternalReviewAutomationRoute
   '/api/internal/review-requests': typeof ApiInternalReviewRequestsRoute
   '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
+  '/api/internal/video-orders': typeof ApiInternalVideoOrdersRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
@@ -540,6 +557,7 @@ export interface FileRoutesById {
   '/r/$token/map.gif': typeof RTokenMapDotgifRoute
   '/r/$token/pdf': typeof RTokenPdfRoute
   '/r/$token/present': typeof RTokenPresentRoute
+  '/videos/approve/$token': typeof VideosApproveTokenRoute
   '/api/accounting/callback/$provider': typeof ApiAccountingCallbackProviderRoute
   '/api/accounting/webhook/quickbooks': typeof ApiAccountingWebhookQuickbooksRoute
   '/api/accounting/webhook/xero': typeof ApiAccountingWebhookXeroRoute
@@ -594,6 +612,7 @@ export interface FileRouteTypes {
     | '/api/internal/review-automation'
     | '/api/internal/review-requests'
     | '/api/internal/sale-sync'
+    | '/api/internal/video-orders'
     | '/api/meta/data-deletion'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
@@ -602,6 +621,7 @@ export interface FileRouteTypes {
     | '/r/$token/map.gif'
     | '/r/$token/pdf'
     | '/r/$token/present'
+    | '/videos/approve/$token'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -654,6 +674,7 @@ export interface FileRouteTypes {
     | '/api/internal/review-automation'
     | '/api/internal/review-requests'
     | '/api/internal/sale-sync'
+    | '/api/internal/video-orders'
     | '/api/meta/data-deletion'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
@@ -662,6 +683,7 @@ export interface FileRouteTypes {
     | '/r/$token/map.gif'
     | '/r/$token/pdf'
     | '/r/$token/present'
+    | '/videos/approve/$token'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -714,6 +736,7 @@ export interface FileRouteTypes {
     | '/api/internal/review-automation'
     | '/api/internal/review-requests'
     | '/api/internal/sale-sync'
+    | '/api/internal/video-orders'
     | '/api/meta/data-deletion'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
@@ -722,6 +745,7 @@ export interface FileRouteTypes {
     | '/r/$token/map.gif'
     | '/r/$token/pdf'
     | '/r/$token/present'
+    | '/videos/approve/$token'
     | '/api/accounting/callback/$provider'
     | '/api/accounting/webhook/quickbooks'
     | '/api/accounting/webhook/xero'
@@ -775,11 +799,13 @@ export interface RootRouteChildren {
   ApiInternalReviewAutomationRoute: typeof ApiInternalReviewAutomationRoute
   ApiInternalReviewRequestsRoute: typeof ApiInternalReviewRequestsRoute
   ApiInternalSaleSyncRoute: typeof ApiInternalSaleSyncRoute
+  ApiInternalVideoOrdersRoute: typeof ApiInternalVideoOrdersRoute
   ApiMetaDataDeletionRoute: typeof ApiMetaDataDeletionRoute
   ApiResendWebhookRoute: typeof ApiResendWebhookRoute
   ApiReviewTriggerTokenRoute: typeof ApiReviewTriggerTokenRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   FixPackKeyRoute: typeof FixPackKeyRoute
+  VideosApproveTokenRoute: typeof VideosApproveTokenRoute
   ApiAccountingCallbackProviderRoute: typeof ApiAccountingCallbackProviderRoute
   ApiAccountingWebhookQuickbooksRoute: typeof ApiAccountingWebhookQuickbooksRoute
   ApiAccountingWebhookXeroRoute: typeof ApiAccountingWebhookXeroRoute
@@ -1104,6 +1130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalSaleSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/video-orders': {
+      id: '/api/internal/video-orders'
+      path: '/api/internal/video-orders'
+      fullPath: '/api/internal/video-orders'
+      preLoaderRoute: typeof ApiInternalVideoOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/meta/data-deletion': {
       id: '/api/meta/data-deletion'
       path: '/api/meta/data-deletion'
@@ -1159,6 +1192,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/r/$token/present'
       preLoaderRoute: typeof RTokenPresentRouteImport
       parentRoute: typeof RTokenRoute
+    }
+    '/videos/approve/$token': {
+      id: '/videos/approve/$token'
+      path: '/videos/approve/$token'
+      fullPath: '/videos/approve/$token'
+      preLoaderRoute: typeof VideosApproveTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/accounting/callback/$provider': {
       id: '/api/accounting/callback/$provider'
@@ -1259,11 +1299,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalReviewAutomationRoute: ApiInternalReviewAutomationRoute,
   ApiInternalReviewRequestsRoute: ApiInternalReviewRequestsRoute,
   ApiInternalSaleSyncRoute: ApiInternalSaleSyncRoute,
+  ApiInternalVideoOrdersRoute: ApiInternalVideoOrdersRoute,
   ApiMetaDataDeletionRoute: ApiMetaDataDeletionRoute,
   ApiResendWebhookRoute: ApiResendWebhookRoute,
   ApiReviewTriggerTokenRoute: ApiReviewTriggerTokenRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   FixPackKeyRoute: FixPackKeyRoute,
+  VideosApproveTokenRoute: VideosApproveTokenRoute,
   ApiAccountingCallbackProviderRoute: ApiAccountingCallbackProviderRoute,
   ApiAccountingWebhookQuickbooksRoute: ApiAccountingWebhookQuickbooksRoute,
   ApiAccountingWebhookXeroRoute: ApiAccountingWebhookXeroRoute,

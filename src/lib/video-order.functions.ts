@@ -45,3 +45,50 @@ export const videoBrief = createServerFn({ method: "POST" })
     const { saveVideoBrief } = await import("./video-order.server");
     return saveVideoBrief(data.s, c.brief);
   });
+
+const TOKEN = z.string().regex(/^[a-f0-9]{64}$/);
+
+export const videoScriptRead = createServerFn({ method: "POST" })
+  .validator((d: { t: string }) => z.object({ t: TOKEN }).parse(d))
+  .handler(async ({ data }) => {
+    applyNoStoreHeaders();
+    const { readByToken } = await import("./video-script.server");
+    const o = await readByToken(data.t);
+    if (!o || !o.script) return { found: false as const };
+    return {
+      found: true as const,
+      business: o.business,
+      status: o.status,
+      round: o.round,
+      script: o.script,
+    };
+  });
+
+export const videoScriptDecide = createServerFn({ method: "POST" })
+  .validator((d: { t: string; approve: boolean; reasons?: string[]; note?: string }) =>
+    z
+      .object({
+        t: TOKEN,
+        approve: z.boolean(),
+        reasons: z
+          .array(z.enum(["tone", "wording", "pictures", "length", "offer"]))
+          .max(5)
+          .default([]),
+        note: z.string().max(1500).default(""),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    applyNoStoreHeaders();
+    if (!(await verifyRequestOriginAsync()))
+      return { ok: false as const, error: "Please refresh the page and try again." };
+    if (!data.approve && !data.reasons.length && !data.note.trim())
+      return { ok: false as const, error: "Please tell us what to change." };
+    const { decide } = await import("./video-script.server");
+    return decide(
+      data.t,
+      data.approve
+        ? { approve: true }
+        : { approve: false, reasons: data.reasons, note: data.note.trim() },
+    );
+  });

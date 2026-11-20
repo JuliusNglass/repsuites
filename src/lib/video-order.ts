@@ -24,6 +24,7 @@ export interface VideoBrief {
   site: string;
   customers: string[];
   goal: VideoGoal;
+  brand: string;
   notes: string;
 }
 
@@ -46,6 +47,7 @@ export function checkBrief(
     site: clean(raw["site"], 300),
     customers,
     goal,
+    brand: clean(raw["brand"], 600),
     notes: clean(raw["notes"], 1500),
   };
   if (!brief.name) return { ok: false, error: "Please add your name." };
@@ -67,6 +69,7 @@ export function briefText(b: VideoBrief, pack: VideoPack, email: string): string
     `Website or social: ${b.site || "-"}`,
     `Goal: ${VIDEO_GOALS[b.goal]}`,
     ...b.customers.map((c, i) => `Ideal customer ${i + 1}: ${c}`),
+    `Brand colours and characters: ${b.brand || "-"}`,
     `Notes: ${b.notes || "-"}`,
   ].join("\n");
 }

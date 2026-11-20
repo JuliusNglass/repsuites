@@ -87,7 +87,9 @@ function BriefPage() {
               <CheckCircle2 className="h-6 w-6 text-success" aria-hidden /> Thank you, we have your
               brief
             </p>
-            <p>Your first script will be with you soon. Nothing is made until you approve it.</p>
+            <p>
+              Your script is on its way by text and email. Nothing is made until you approve it.
+            </p>
           </section>
         ) : st.status === "ready" ? (
           <>
@@ -151,6 +153,13 @@ function BriefPage() {
                 ))}
               </fieldset>
               <label className="block space-y-1">
+                <span className="font-semibold">Brand colours, characters or style (optional)</span>
+                <span className="block text-sm text-muted-foreground">
+                  For example: navy and gold, a friendly woman cleaner, our logo is a bee.
+                </span>
+                <textarea name="brand" rows={2} className={field} />
+              </label>
+              <label className="block space-y-1">
                 <span className="font-semibold">Anything else we should know? (optional)</span>
                 <textarea name="notes" rows={3} className={field} />
               </label>
@@ -161,7 +170,7 @@ function BriefPage() {
               )}
               <button type="submit" disabled={busy} className="btn btn-gold btn-lg w-full">
                 {busy ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : null}
-                {busy ? "Sending" : "Send my brief"}
+                {busy ? "Writing your script, about a minute" : "Send my brief"}
               </button>
             </form>
           </>
