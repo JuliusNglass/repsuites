@@ -47,13 +47,11 @@ export const approveLink = (token: string) => `https://repsuites.com/videos/appr
 const first = (name: string) => name.trim().split(/\s+/)[0] || "there";
 
 export function scriptReadySms(name: string, token: string, round: number): string {
-  return round > 0
-    ? `Hi ${first(name)}, your updated video script is ready. Have a look and tap Approve or Request changes: ${approveLink(token)} Accelur8`
-    : `Hi ${first(name)}, your video script is ready. Read it in 2 minutes, then tap Approve or Request changes: ${approveLink(token)} Accelur8`;
+  return `Hi ${first(name)}, your ${round > 0 ? "updated " : ""}video script is in your email (check spam too). Approve it or ask for changes here: ${approveLink(token)} Accelur8`;
 }
 
 export function reminderSms(name: string, token: string): string {
-  return `Hi ${first(name)}, your video is waiting on one tap from you. Approve the script, or tell us what to change: ${approveLink(token)} Accelur8`;
+  return `Hi ${first(name)}, your video is waiting on you. The script is in your email (check spam too), or tap: ${approveLink(token)} Accelur8`;
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
