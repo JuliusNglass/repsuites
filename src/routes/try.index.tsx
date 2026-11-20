@@ -72,6 +72,10 @@ function TryPage() {
             {busy ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : null}
             {busy ? "Opening secure payment" : "Pay £1 and start"}
           </button>
+          <p className="rounded-lg border border-border bg-gold-soft p-3 font-semibold">
+            Paying is step 1 of 3. After you pay, you come straight back here to add your customer.
+            Please keep the page open until you see "Request sent".
+          </p>
           {err && (
             <p role="alert" className="font-semibold text-destructive">
               {err}

@@ -240,6 +240,10 @@ export async function handleStripeWebhook(raw: string, sig: string | null) {
         await installPaidFromSession(obj);
       }
       await stripeSale(obj).catch(() => null);
+      if (obj.metadata?.kind === "review_trial" && obj.status === "complete") {
+        const { emailTrialFinishLink } = await import("./review-trial.server");
+        await emailTrialFinishLink(obj).catch(() => null);
+      }
       if (obj.metadata?.kind === "plan" && obj.subscription) {
         const sub = await stripe(`subscriptions/${obj.subscription}`);
         if (sub.ok) await saveSubscription(sub.data);

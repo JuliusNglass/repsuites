@@ -66,7 +66,7 @@ export function reviewTrialCheckoutBody(o: { token: string; business: string; em
     custom_text: {
       submit: {
         message:
-          "£1 today for your first 30 days, then £49 a month. Cancel any time before day 30 and you won't pay again.",
+          "Step 1 of 3. After you pay, you go straight back to add your first customer, so please don't close the page. £1 today for your first 30 days, then £49 a month. Cancel any time before day 30 and you won't pay again.",
       },
     },
     success_url: `${ORIGIN}/try/next?s={CHECKOUT_SESSION_ID}`,
@@ -245,4 +245,30 @@ export async function finishReviewTrial(
   );
   if (!q.ok && q.error !== "duplicate") return { ok: false, error: q.error };
   return { ok: true, business, channel, owner: owner.status };
+}
+
+/** Safety net: email the buyer the link to finish setup, in case they closed the page after paying. */
+export async function emailTrialFinishLink(session: {
+  id?: string;
+  customer_email?: string | null;
+  customer_details?: { email?: string | null } | null;
+}) {
+  const email = String(
+    session?.customer_details?.email ?? session?.customer_email ?? "",
+  ).toLowerCase();
+  const id = String(session?.id ?? "");
+  if (!email || !id) return;
+  const link = `${ORIGIN}/try/next?s=${encodeURIComponent(id)}`;
+  const { sendEmail } = await import("./email.server");
+  await sendEmail({
+    to: email,
+    replyTo: "support@repsuites.com",
+    subject: "Your £1 is paid. One step left: add your first customer",
+    html: `<p>Thanks, your £1 is paid.</p>
+<p>Now add the customer you just finished a job for, and we send them a friendly review request in your business name.</p>
+<p><a href="${link}">Add your first customer</a></p>
+<p>Already done it? Then you can ignore this email.</p>
+<p>Accelur8</p>`,
+    text: `Thanks, your £1 is paid. Add your first customer here: ${link}\nAccelur8`,
+  }).catch(() => null);
 }
