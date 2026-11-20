@@ -40,6 +40,8 @@ import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as TryIndexRouteImport } from './routes/try.index'
 import { Route as TryNextRouteImport } from './routes/try.next'
+import { Route as VideosIndexRouteImport } from './routes/videos.index'
+import { Route as VideosBriefRouteImport } from './routes/videos.brief'
 import { Route as XTokenRouteImport } from './routes/x.$token'
 import { Route as ApiBillingBackRouteImport } from './routes/api.billing.back'
 import { Route as ApiInternalCheckFollowupsRouteImport } from './routes/api.internal.check-followups'
@@ -221,6 +223,16 @@ const TryNextRoute = TryNextRouteImport.update({
   path: '/try/next',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VideosIndexRoute = VideosIndexRouteImport.update({
+  id: '/videos/',
+  path: '/videos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VideosBriefRoute = VideosBriefRouteImport.update({
+  id: '/videos/brief',
+  path: '/videos/brief',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const XTokenRoute = XTokenRouteImport.update({
   id: '/x/$token',
   path: '/x/$token',
@@ -382,10 +394,12 @@ export interface FileRoutesByFullPath {
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/try/next': typeof TryNextRoute
+  '/videos/brief': typeof VideosBriefRoute
   '/x/$token': typeof XTokenRoute
   '/cards/': typeof CardsIndexRoute
   '/fix/': typeof FixIndexRoute
   '/try/': typeof TryIndexRoute
+  '/videos/': typeof VideosIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -440,10 +454,12 @@ export interface FileRoutesByTo {
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/try/next': typeof TryNextRoute
+  '/videos/brief': typeof VideosBriefRoute
   '/x/$token': typeof XTokenRoute
   '/cards': typeof CardsIndexRoute
   '/fix': typeof FixIndexRoute
   '/try': typeof TryIndexRoute
+  '/videos': typeof VideosIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -499,10 +515,12 @@ export interface FileRoutesById {
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/try/next': typeof TryNextRoute
+  '/videos/brief': typeof VideosBriefRoute
   '/x/$token': typeof XTokenRoute
   '/cards/': typeof CardsIndexRoute
   '/fix/': typeof FixIndexRoute
   '/try/': typeof TryIndexRoute
+  '/videos/': typeof VideosIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -559,10 +577,12 @@ export interface FileRouteTypes {
     | '/q/$token'
     | '/r/$token'
     | '/try/next'
+    | '/videos/brief'
     | '/x/$token'
     | '/cards/'
     | '/fix/'
     | '/try/'
+    | '/videos/'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -617,10 +637,12 @@ export interface FileRouteTypes {
     | '/q/$token'
     | '/r/$token'
     | '/try/next'
+    | '/videos/brief'
     | '/x/$token'
     | '/cards'
     | '/fix'
     | '/try'
+    | '/videos'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -675,10 +697,12 @@ export interface FileRouteTypes {
     | '/q/$token'
     | '/r/$token'
     | '/try/next'
+    | '/videos/brief'
     | '/x/$token'
     | '/cards/'
     | '/fix/'
     | '/try/'
+    | '/videos/'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -734,10 +758,12 @@ export interface RootRouteChildren {
   QTokenRoute: typeof QTokenRoute
   RTokenRoute: typeof RTokenRouteWithChildren
   TryNextRoute: typeof TryNextRoute
+  VideosBriefRoute: typeof VideosBriefRoute
   XTokenRoute: typeof XTokenRoute
   CardsIndexRoute: typeof CardsIndexRoute
   FixIndexRoute: typeof FixIndexRoute
   TryIndexRoute: typeof TryIndexRoute
+  VideosIndexRoute: typeof VideosIndexRoute
   ApiBillingBackRoute: typeof ApiBillingBackRoute
   ApiInternalCheckFollowupsRoute: typeof ApiInternalCheckFollowupsRoute
   ApiInternalFixitRoute: typeof ApiInternalFixitRoute
@@ -980,6 +1006,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TryNextRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/videos/': {
+      id: '/videos/'
+      path: '/videos'
+      fullPath: '/videos/'
+      preLoaderRoute: typeof VideosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/videos/brief': {
+      id: '/videos/brief'
+      path: '/videos/brief'
+      fullPath: '/videos/brief'
+      preLoaderRoute: typeof VideosBriefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/x/$token': {
       id: '/x/$token'
       path: '/x/$token'
@@ -1202,10 +1242,12 @@ const rootRouteChildren: RootRouteChildren = {
   QTokenRoute: QTokenRoute,
   RTokenRoute: RTokenRouteWithChildren,
   TryNextRoute: TryNextRoute,
+  VideosBriefRoute: VideosBriefRoute,
   XTokenRoute: XTokenRoute,
   CardsIndexRoute: CardsIndexRoute,
   FixIndexRoute: FixIndexRoute,
   TryIndexRoute: TryIndexRoute,
+  VideosIndexRoute: VideosIndexRoute,
   ApiBillingBackRoute: ApiBillingBackRoute,
   ApiInternalCheckFollowupsRoute: ApiInternalCheckFollowupsRoute,
   ApiInternalFixitRoute: ApiInternalFixitRoute,
