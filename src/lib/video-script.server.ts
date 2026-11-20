@@ -102,7 +102,10 @@ async function writeScript(
   extra: { previous?: VideoScript; feedback?: string },
 ): Promise<VideoScript | null> {
   const key = (process.env["REPSUITES_ANTHROPIC_API_KEY"] ?? "").trim();
-  if (!key) return null;
+  if (!key) {
+    console.error("video script: no AI key");
+    return null;
+  }
   const str = { type: "string" };
   const brief = [
     `Business: ${b.business}`,
@@ -113,8 +116,8 @@ async function writeScript(
     `Notes: ${b.notes || "none"}`,
   ].join("\n");
   const ask = extra.previous
-    ? `${brief}\n\nThe client asked for changes to this script:\n${JSON.stringify(extra.previous)}\n\nTheir feedback:\n${extra.feedback}\n\nWrite the new version. Keep what they did not ask to change.`
-    : `${brief}\n\nWrite the script.`;
+    ? `${brief}\n\nThe client asked for changes to this script:\n${JSON.stringify(extra.previous)}\n\nTheir feedback:\n${extra.feedback}\n\nWrite the new version. Keep what they did not ask to change. Record it with the video_script tool.`
+    : `${brief}\n\nWrite the script and record it with the video_script tool.`;
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -149,15 +152,21 @@ async function writeScript(
             },
           },
         ],
-        tool_choice: { type: "tool", name: "video_script" },
+        tool_choice: { type: "auto" },
         messages: [{ role: "user", content: ask }],
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("video script: AI failed", res.status, (await res.text()).slice(0, 300));
+      return null;
+    }
     const j = (await res.json()) as any;
     const use = (j?.content ?? []).find((c: any) => c?.type === "tool_use");
-    return cleanScript(use?.input);
-  } catch {
+    const out = cleanScript(use?.input);
+    if (!out) console.error("video script: unusable AI output", j?.stop_reason);
+    return out;
+  } catch (e) {
+    console.error("video script: AI error", e);
     return null;
   }
 }
