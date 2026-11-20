@@ -23,6 +23,8 @@ export const CHASE_STOP_TAGS = [
   "no-followup",
   "grw-nobook",
   "free-check",
+  "q-not-interested",
+  "disp-not-interested",
 ];
 
 export function chaseDue(createdAt: string, done: number[], now: Date): ChaseStep | null {

@@ -16,7 +16,18 @@ import {
   type FollowupLead,
 } from "./check-followups";
 
-const STOP_TAGS = ["replied", "customer", "fixit-paid", "repsuites-customer", "no-followup"];
+const STOP_TAGS = [
+  "replied",
+  "customer",
+  "fixit-paid",
+  "repsuites-customer",
+  "no-followup",
+  "q-not-interested",
+  "disp-not-interested",
+  "diag-status-lost",
+  "q-wrong-number",
+  "disp-wrong-number",
+];
 // Waiting for the lead to reply SEND: no report yet, so no report follow-ups,
 // but this is not a reason to stop them for good.
 const PENDING_TAG = "gc-scan-pending";
