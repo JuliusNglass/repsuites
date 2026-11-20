@@ -59,7 +59,7 @@ export function smsPeriod(now: Date): string {
 }
 
 // A texted request that fits one text part (160 characters) wherever it can.
-// Links are written without "https://" (phones still make them tappable).
+// Links start with "https://": many phones only make a link tappable with it.
 // Tries the friendliest wording first and falls back to shorter ones.
 export function oneTextRequest(a: {
   name: string;
@@ -67,7 +67,7 @@ export function oneTextRequest(a: {
   token: string;
   reminder: boolean;
 }): string {
-  const link = `repsuites.com/q/${a.token}`;
+  const link = `https://repsuites.com/q/${a.token}`;
   const stop = `Stop: repsuites.com/x/${a.token}`;
   const first = a.name.trim().split(/\s+/)[0]?.slice(0, 15) ?? "";
   const hi = first ? `Hi ${first}, ` : "Hi, ";
