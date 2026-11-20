@@ -5,9 +5,25 @@ import { RequestsPanel } from "../components/reviews/RequestsPanel";
 import { Logo } from "../components/site/Logo";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Building2, ChevronDown, ChevronRight, Plus, Search } from "lucide-react";
+import {
+  BarChart3,
+  Building2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  LogOut,
+  Megaphone,
+  MoreHorizontal,
+  Plus,
+  QrCode,
+  Search,
+  Settings,
+  Star,
+  Users,
+} from "lucide-react";
 import { selectTenant, signOut } from "../lib/auth.functions";
 import { listMyBusinesses } from "../lib/businesses.functions";
 import { GooglePanel } from "../components/reviews/GooglePanel";
@@ -20,8 +36,7 @@ import { AccessHelpCard } from "../components/reviews/AccessHelpCard";
 import { AddBusinessForm } from "../components/agency/AddBusinessForm";
 import { AccountingCard } from "../components/reviews/AccountingCard";
 import { PastCustomersCard } from "../components/reviews/PastCustomersCard";
-import { JourneyPanel } from "../components/reviews/JourneyPanel";
-import { TodayPanel } from "../components/reviews/TodayPanel";
+import { HomeSummary } from "../components/reviews/HomeSummary";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard | RepSuites" }] }),
@@ -29,16 +44,22 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
+// Four tabs; the less used pages live under More. Old #hash links still work.
 const TABS = [
-  { id: "home", label: "Home" },
-  { id: "reviews", label: "Reviews" },
-  { id: "qr", label: "QR card" },
-  { id: "ask", label: "Ask" },
-  { id: "results", label: "Results" },
-  { id: "posts", label: "Posts" },
-  { id: "settings", label: "Settings" },
+  { id: "home", label: "Home", icon: Home },
+  { id: "ask", label: "Customers", icon: Users },
+  { id: "reviews", label: "Reviews", icon: Star },
+  { id: "more", label: "More", icon: MoreHorizontal },
 ] as const;
-type TabId = (typeof TABS)[number]["id"];
+const MORE = [
+  { id: "qr", label: "QR card and review link", icon: QrCode },
+  { id: "results", label: "Results and Google ranking", icon: BarChart3 },
+  { id: "posts", label: "Google posts and print card", icon: Megaphone },
+  { id: "settings", label: "Account, billing and Google", icon: Settings },
+] as const;
+type TabId = (typeof TABS)[number]["id"] | (typeof MORE)[number]["id"];
+const ALL_IDS: string[] = [...TABS, ...MORE].map((t) => t.id);
+const navOf = (t: TabId) => (MORE.some((m) => m.id === t) ? "more" : t);
 
 function Dashboard() {
   const s = Route.useLoaderData();
@@ -51,7 +72,7 @@ function Dashboard() {
   const [tab, setTabState] = useState<TabId>(() => {
     if (typeof window === "undefined") return "home";
     const h = window.location.hash.slice(1);
-    return TABS.some((t) => t.id === h) ? (h as TabId) : "home";
+    return ALL_IDS.includes(h) ? (h as TabId) : "home";
   });
   const setTab = (t: TabId) => {
     setTabState(t);
@@ -63,19 +84,6 @@ function Dashboard() {
     () => typeof window !== "undefined" && window.location.search.includes("welcome=1"),
   );
   const [q, setQ] = useState("");
-  // Phones: the tab bar scrolls sideways; a fade and arrow on the right show
-  // there is more until the end is reached.
-  const tabBar = useRef<HTMLDivElement>(null);
-  const [moreTabs, setMoreTabs] = useState(false);
-  const checkTabs = () => {
-    const el = tabBar.current;
-    if (el) setMoreTabs(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  };
-  useEffect(() => {
-    checkTabs();
-    window.addEventListener("resize", checkTabs);
-    return () => window.removeEventListener("resize", checkTabs);
-  });
 
   const list = s.ok ? s.businesses : [];
   const filtered = useMemo(() => {
@@ -211,45 +219,60 @@ function Dashboard() {
       )}
 
       {active && (
-        <nav className="sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur-md backdrop-saturate-150">
-          <div className="relative max-w-3xl mx-auto">
-            <div
-              ref={tabBar}
-              onScroll={checkTabs}
-              className="px-2 sm:px-4 flex gap-1 overflow-x-auto no-scrollbar scroll-smooth"
-            >
-              {TABS.map((t) => (
+        <nav
+          aria-label="Sections"
+          className="hidden sm:block sticky top-0 z-10 border-b border-border bg-background/85 backdrop-blur-md backdrop-saturate-150"
+        >
+          <div className="max-w-3xl mx-auto px-4 flex gap-1">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                aria-current={navOf(tab) === t.id ? "page" : undefined}
+                className={`min-h-12 px-4 py-3 text-base font-semibold border-b-[3px] transition-colors ${
+                  navOf(tab) === t.id
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
+      {active && (
+        <nav
+          aria-label="Sections"
+          className="sm:hidden fixed bottom-0 inset-x-0 z-20 border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+        >
+          <div className="grid grid-cols-4">
+            {TABS.map((t) => {
+              const on = navOf(tab) === t.id;
+              return (
                 <button
                   key={t.id}
                   type="button"
                   onClick={() => setTab(t.id)}
-                  aria-current={tab === t.id ? "page" : undefined}
-                  className={`shrink-0 min-h-12 px-4 py-3 text-base font-semibold border-b-[3px] transition-colors ${
-                    tab === t.id
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  aria-current={on ? "page" : undefined}
+                  className={`min-h-16 flex flex-col items-center justify-center gap-1 text-sm font-semibold transition-colors ${
+                    on ? "text-foreground" : "text-muted-foreground"
                   }`}
                 >
+                  <t.icon
+                    className={`w-6 h-6 transition-transform ${on ? "scale-110" : ""}`}
+                    aria-hidden="true"
+                  />
                   {t.label}
                 </button>
-              ))}
-              <span className="shrink-0 w-6" aria-hidden="true" />
-            </div>
-            {moreTabs && (
-              <button
-                type="button"
-                aria-label="More tabs"
-                onClick={() => tabBar.current?.scrollBy({ left: 160 })}
-                className="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-end pr-1 bg-gradient-to-l from-background via-background/90 to-transparent text-muted-foreground"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            )}
+              );
+            })}
           </div>
         </nav>
       )}
 
-      <main className="max-w-3xl mx-auto px-4 py-6 sm:px-6 sm:py-8 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 pt-6 pb-28 sm:px-6 sm:py-8 space-y-6">
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             {active?.name ?? "Welcome back"}
@@ -261,30 +284,61 @@ function Dashboard() {
         </div>
         {!s.agency && <EmailCheckBar />}
         {!active && <p className="text-muted-foreground">Choose a business to get started.</p>}
-        {active &&
-          (s.plan === "free" || !s.googleConnected) &&
-          !s.agency &&
-          (tab === "home" || welcome) && (
-            <WelcomeCard
-              key={`w-${active.id}`}
-              business={active.name}
-              googleConnected={s.googleConnected}
-              qrDownloaded={s.qrDownloaded}
-              welcome={welcome}
-              onTab={setTab}
-            />
-          )}
-        {active && tab === "home" && s.googleConnected && (
-          <TodayPanel key={`t-${active.id}`} business={active.name} onTab={setTab} />
+        {active && welcome && !s.agency && tab === "home" && (
+          <WelcomeCard
+            key={`w-${active.id}`}
+            business={active.name}
+            googleConnected={s.googleConnected}
+            qrDownloaded={s.qrDownloaded}
+            welcome={welcome}
+            onTab={setTab}
+          />
         )}
         {active && tab === "home" && (
-          <JourneyPanel
-            key={`j-${active.id}`}
-            business={active.name}
+          <HomeSummary
+            key={`h-${active.id}`}
             googleConnected={s.googleConnected}
             qrDownloaded={s.qrDownloaded}
             onTab={setTab}
           />
+        )}
+        {active && tab === "more" && (
+          <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
+            {MORE.map((m) => (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  onClick={() => setTab(m.id)}
+                  className="w-full min-h-14 flex items-center gap-3 px-4 py-3 text-left text-base"
+                >
+                  <m.icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                  <span className="flex-1">{m.label}</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+            <li>
+              <button
+                type="button"
+                onClick={async () => {
+                  await out();
+                  navigate({ to: "/" });
+                }}
+                className="w-full min-h-14 flex items-center gap-3 px-4 py-3 text-left text-base text-muted-foreground"
+              >
+                <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" /> Sign out
+              </button>
+            </li>
+          </ul>
+        )}
+        {active && navOf(tab) === "more" && tab !== "more" && (
+          <button
+            type="button"
+            onClick={() => setTab("more")}
+            className="inline-flex items-center gap-1 min-h-11 text-base font-semibold text-muted-foreground"
+          >
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" /> More
+          </button>
         )}
         {active && tab === "reviews" && (
           <>
