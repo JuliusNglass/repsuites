@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckRouteImport } from './routes/check'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as GoRouteImport } from './routes/go'
 import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MetaDeletionRouteImport } from './routes/meta-deletion'
@@ -88,6 +89,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoRoute = GoRouteImport.update({
+  id: '/go',
+  path: '/go',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GoogleBusinessProfileRoute = GoogleBusinessProfileRouteImport.update({
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/go': typeof GoRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/meta-deletion': typeof MetaDeletionRoute
@@ -444,6 +451,7 @@ export interface FileRoutesByTo {
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/go': typeof GoRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/meta-deletion': typeof MetaDeletionRoute
@@ -507,6 +515,7 @@ export interface FileRoutesById {
   '/check': typeof CheckRoute
   '/dashboard': typeof DashboardRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/go': typeof GoRoute
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/meta-deletion': typeof MetaDeletionRoute
@@ -571,6 +580,7 @@ export interface FileRouteTypes {
     | '/check'
     | '/dashboard'
     | '/forgot-password'
+    | '/go'
     | '/google-business-profile'
     | '/login'
     | '/meta-deletion'
@@ -633,6 +643,7 @@ export interface FileRouteTypes {
     | '/check'
     | '/dashboard'
     | '/forgot-password'
+    | '/go'
     | '/google-business-profile'
     | '/login'
     | '/meta-deletion'
@@ -695,6 +706,7 @@ export interface FileRouteTypes {
     | '/check'
     | '/dashboard'
     | '/forgot-password'
+    | '/go'
     | '/google-business-profile'
     | '/login'
     | '/meta-deletion'
@@ -758,6 +770,7 @@ export interface RootRouteChildren {
   CheckRoute: typeof CheckRoute
   DashboardRoute: typeof DashboardRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  GoRoute: typeof GoRoute
   GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
   LoginRoute: typeof LoginRoute
   MetaDeletionRoute: typeof MetaDeletionRoute
@@ -841,6 +854,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/go': {
+      id: '/go'
+      path: '/go'
+      fullPath: '/go'
+      preLoaderRoute: typeof GoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/google-business-profile': {
@@ -1258,6 +1278,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckRoute: CheckRoute,
   DashboardRoute: DashboardRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  GoRoute: GoRoute,
   GoogleBusinessProfileRoute: GoogleBusinessProfileRoute,
   LoginRoute: LoginRoute,
   MetaDeletionRoute: MetaDeletionRoute,
