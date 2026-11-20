@@ -38,6 +38,8 @@ import { Route as FixIndexRouteImport } from './routes/fix.index'
 import { Route as FixThanksRouteImport } from './routes/fix.thanks'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
+import { Route as TryIndexRouteImport } from './routes/try.index'
+import { Route as TryNextRouteImport } from './routes/try.next'
 import { Route as XTokenRouteImport } from './routes/x.$token'
 import { Route as ApiBillingBackRouteImport } from './routes/api.billing.back'
 import { Route as ApiInternalCheckFollowupsRouteImport } from './routes/api.internal.check-followups'
@@ -209,6 +211,16 @@ const RTokenRoute = RTokenRouteImport.update({
   path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TryIndexRoute = TryIndexRouteImport.update({
+  id: '/try/',
+  path: '/try/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TryNextRoute = TryNextRouteImport.update({
+  id: '/try/next',
+  path: '/try/next',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const XTokenRoute = XTokenRouteImport.update({
   id: '/x/$token',
   path: '/x/$token',
@@ -369,9 +381,11 @@ export interface FileRoutesByFullPath {
   '/fix/thanks': typeof FixThanksRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
+  '/try/next': typeof TryNextRoute
   '/x/$token': typeof XTokenRoute
   '/cards/': typeof CardsIndexRoute
   '/fix/': typeof FixIndexRoute
+  '/try/': typeof TryIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -425,9 +439,11 @@ export interface FileRoutesByTo {
   '/fix/thanks': typeof FixThanksRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
+  '/try/next': typeof TryNextRoute
   '/x/$token': typeof XTokenRoute
   '/cards': typeof CardsIndexRoute
   '/fix': typeof FixIndexRoute
+  '/try': typeof TryIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -482,9 +498,11 @@ export interface FileRoutesById {
   '/fix/thanks': typeof FixThanksRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
+  '/try/next': typeof TryNextRoute
   '/x/$token': typeof XTokenRoute
   '/cards/': typeof CardsIndexRoute
   '/fix/': typeof FixIndexRoute
+  '/try/': typeof TryIndexRoute
   '/api/billing/back': typeof ApiBillingBackRoute
   '/api/internal/check-followups': typeof ApiInternalCheckFollowupsRoute
   '/api/internal/fixit': typeof ApiInternalFixitRoute
@@ -540,9 +558,11 @@ export interface FileRouteTypes {
     | '/fix/thanks'
     | '/q/$token'
     | '/r/$token'
+    | '/try/next'
     | '/x/$token'
     | '/cards/'
     | '/fix/'
+    | '/try/'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -596,9 +616,11 @@ export interface FileRouteTypes {
     | '/fix/thanks'
     | '/q/$token'
     | '/r/$token'
+    | '/try/next'
     | '/x/$token'
     | '/cards'
     | '/fix'
+    | '/try'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -652,9 +674,11 @@ export interface FileRouteTypes {
     | '/fix/thanks'
     | '/q/$token'
     | '/r/$token'
+    | '/try/next'
     | '/x/$token'
     | '/cards/'
     | '/fix/'
+    | '/try/'
     | '/api/billing/back'
     | '/api/internal/check-followups'
     | '/api/internal/fixit'
@@ -709,9 +733,11 @@ export interface RootRouteChildren {
   FixThanksRoute: typeof FixThanksRoute
   QTokenRoute: typeof QTokenRoute
   RTokenRoute: typeof RTokenRouteWithChildren
+  TryNextRoute: typeof TryNextRoute
   XTokenRoute: typeof XTokenRoute
   CardsIndexRoute: typeof CardsIndexRoute
   FixIndexRoute: typeof FixIndexRoute
+  TryIndexRoute: typeof TryIndexRoute
   ApiBillingBackRoute: typeof ApiBillingBackRoute
   ApiInternalCheckFollowupsRoute: typeof ApiInternalCheckFollowupsRoute
   ApiInternalFixitRoute: typeof ApiInternalFixitRoute
@@ -940,6 +966,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/try/': {
+      id: '/try/'
+      path: '/try'
+      fullPath: '/try/'
+      preLoaderRoute: typeof TryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/try/next': {
+      id: '/try/next'
+      path: '/try/next'
+      fullPath: '/try/next'
+      preLoaderRoute: typeof TryNextRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/x/$token': {
       id: '/x/$token'
       path: '/x/$token'
@@ -1161,9 +1201,11 @@ const rootRouteChildren: RootRouteChildren = {
   FixThanksRoute: FixThanksRoute,
   QTokenRoute: QTokenRoute,
   RTokenRoute: RTokenRouteWithChildren,
+  TryNextRoute: TryNextRoute,
   XTokenRoute: XTokenRoute,
   CardsIndexRoute: CardsIndexRoute,
   FixIndexRoute: FixIndexRoute,
+  TryIndexRoute: TryIndexRoute,
   ApiBillingBackRoute: ApiBillingBackRoute,
   ApiInternalCheckFollowupsRoute: ApiInternalCheckFollowupsRoute,
   ApiInternalFixitRoute: ApiInternalFixitRoute,

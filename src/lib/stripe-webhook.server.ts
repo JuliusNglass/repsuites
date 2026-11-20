@@ -120,6 +120,7 @@ const SALE_LABEL: Record<string, string> = {
   fixit_install: "Fix Pack install",
   shop: "Card order",
   plan: "RepSuites plan",
+  review_trial: "RepSuites £1 trial",
 };
 async function stripeSale(session: any) {
   const kind = String(session?.metadata?.kind ?? "");
