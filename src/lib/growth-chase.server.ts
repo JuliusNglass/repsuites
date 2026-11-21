@@ -125,7 +125,7 @@ export async function runGrowthChase(token: string) {
     if (r?.ok && step === 3)
       await ghl(`/contacts/${c.id}/tags`, {
         method: "POST",
-        body: JSON.stringify({ tags: ["grw-nobook", "nurture"] }),
+        body: JSON.stringify({ tags: ["grw-nobook", "nurture", "nurture-12m"] }),
       });
   }
   return { status: 200, body: { ok: true, sent } };
