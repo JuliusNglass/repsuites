@@ -60,7 +60,7 @@ describe("pushGhl tags", () => {
     const d = validate(form(good));
     const ok = await pushGhl("t", d, route(d));
     globalThis.fetch = orig;
-    expect(ok).toBe(true);
+    expect(ok).toBe("c1");
     expect(calls[0]?.body).not.toContain('"tags"');
     expect(calls[1]?.url).toContain("/contacts/c1/tags");
     expect(calls[1]?.body).toContain("grw-lead");

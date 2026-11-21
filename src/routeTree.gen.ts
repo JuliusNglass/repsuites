@@ -27,6 +27,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiCheckFitRouteImport } from './routes/api.check-fit'
 import { Route as ApiDemoLeadRouteImport } from './routes/api.demo-lead'
 import { Route as ApiGrowthLeadRouteImport } from './routes/api.growth-lead'
+import { Route as ApiGrowthMonthRouteImport } from './routes/api.growth-month'
 import { Route as ApiGrowthPlacesRouteImport } from './routes/api.growth-places'
 import { Route as ApiProspectConnectRouteImport } from './routes/api.prospect-connect'
 import { Route as ApiReportVideoRouteImport } from './routes/api.report-video'
@@ -160,6 +161,11 @@ const ApiDemoLeadRoute = ApiDemoLeadRouteImport.update({
 const ApiGrowthLeadRoute = ApiGrowthLeadRouteImport.update({
   id: '/api/growth-lead',
   path: '/api/growth-lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGrowthMonthRoute = ApiGrowthMonthRouteImport.update({
+  id: '/api/growth-month',
+  path: '/api/growth-month',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGrowthPlacesRoute = ApiGrowthPlacesRouteImport.update({
@@ -408,6 +414,7 @@ export interface FileRoutesByFullPath {
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
+  '/api/growth-month': typeof ApiGrowthMonthRoute
   '/api/growth-places': typeof ApiGrowthPlacesRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
@@ -472,6 +479,7 @@ export interface FileRoutesByTo {
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
+  '/api/growth-month': typeof ApiGrowthMonthRoute
   '/api/growth-places': typeof ApiGrowthPlacesRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
@@ -537,6 +545,7 @@ export interface FileRoutesById {
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
+  '/api/growth-month': typeof ApiGrowthMonthRoute
   '/api/growth-places': typeof ApiGrowthPlacesRoute
   '/api/prospect-connect': typeof ApiProspectConnectRoute
   '/api/report-video': typeof ApiReportVideoRoute
@@ -603,6 +612,7 @@ export interface FileRouteTypes {
     | '/api/check-fit'
     | '/api/demo-lead'
     | '/api/growth-lead'
+    | '/api/growth-month'
     | '/api/growth-places'
     | '/api/prospect-connect'
     | '/api/report-video'
@@ -667,6 +677,7 @@ export interface FileRouteTypes {
     | '/api/check-fit'
     | '/api/demo-lead'
     | '/api/growth-lead'
+    | '/api/growth-month'
     | '/api/growth-places'
     | '/api/prospect-connect'
     | '/api/report-video'
@@ -731,6 +742,7 @@ export interface FileRouteTypes {
     | '/api/check-fit'
     | '/api/demo-lead'
     | '/api/growth-lead'
+    | '/api/growth-month'
     | '/api/growth-places'
     | '/api/prospect-connect'
     | '/api/report-video'
@@ -796,6 +808,7 @@ export interface RootRouteChildren {
   ApiCheckFitRoute: typeof ApiCheckFitRoute
   ApiDemoLeadRoute: typeof ApiDemoLeadRoute
   ApiGrowthLeadRoute: typeof ApiGrowthLeadRoute
+  ApiGrowthMonthRoute: typeof ApiGrowthMonthRoute
   ApiGrowthPlacesRoute: typeof ApiGrowthPlacesRoute
   ApiProspectConnectRoute: typeof ApiProspectConnectRoute
   ApiReportVideoRoute: typeof ApiReportVideoRoute
@@ -965,6 +978,13 @@ declare module '@tanstack/react-router' {
       path: '/api/growth-lead'
       fullPath: '/api/growth-lead'
       preLoaderRoute: typeof ApiGrowthLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/growth-month': {
+      id: '/api/growth-month'
+      path: '/api/growth-month'
+      fullPath: '/api/growth-month'
+      preLoaderRoute: typeof ApiGrowthMonthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/growth-places': {
@@ -1312,6 +1332,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCheckFitRoute: ApiCheckFitRoute,
   ApiDemoLeadRoute: ApiDemoLeadRoute,
   ApiGrowthLeadRoute: ApiGrowthLeadRoute,
+  ApiGrowthMonthRoute: ApiGrowthMonthRoute,
   ApiGrowthPlacesRoute: ApiGrowthPlacesRoute,
   ApiProspectConnectRoute: ApiProspectConnectRoute,
   ApiReportVideoRoute: ApiReportVideoRoute,

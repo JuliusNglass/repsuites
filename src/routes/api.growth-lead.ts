@@ -39,7 +39,16 @@ export const Route = createFileRoute("/api/growth-lead")({
           if (!ok) console.error("growth lead: Meta CAPI failed");
         }
         if (r.urgent) return go(bookPageUrl(d));
-        if (r.later) return go(`${bookPageUrl(d)}&later=1`);
+        if (r.later) {
+          // Not ready yet: they watch the cost video, then pick a start month (no call now).
+          if (!saved) return go(`${bookPageUrl(d)}&later=1`);
+          const q = new URLSearchParams({
+            c: saved,
+            first_name: String(d.name).split(/\s+/)[0] ?? "",
+            o: r.phaseKey,
+          });
+          return go(`${GROWTH}/start?${q}`);
+        }
         return go(`${GROWTH}/thanks?s=1`);
       },
     },

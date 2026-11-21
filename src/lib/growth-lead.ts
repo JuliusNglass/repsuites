@@ -70,7 +70,11 @@ const clean = (s: unknown, n = 200) =>
     .trim()
     .slice(0, n);
 
-export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>) {
+export async function pushGhl(
+  token: string,
+  d: any,
+  r: ReturnType<typeof route>,
+): Promise<string | false> {
   const tags = [
     "grw-lead",
     `src-${d.src || "direct"}`,
@@ -127,7 +131,7 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
         },
         body: JSON.stringify({ tags }),
       }).catch(() => null);
-      return !!t?.ok;
+      return t?.ok ? id : false;
     }
     await new Promise((x) => setTimeout(x, 800 * (i + 1)));
   }

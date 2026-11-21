@@ -128,5 +128,49 @@ export async function runGrowthChase(token: string) {
         body: JSON.stringify({ tags: ["grw-nobook", "nurture", "nurture-12m"] }),
       });
   }
-  return { status: 200, body: { ok: true, sent } };
+  const started = await startReminders(now);
+  return { status: 200, body: { ok: true, sent, started } };
+}
+
+// Leads who picked a start month get the booking link 14 days before that month.
+async function startReminders(now: Date): Promise<number> {
+  const { reminderDue, startSms } = await import("./growth-month");
+  const r = await ghl("/contacts/search", {
+    method: "POST",
+    body: JSON.stringify({
+      locationId: GHL_LOCATION_ID,
+      pageLimit: 100,
+      filters: [{ field: "tags", operator: "contains", value: "grw-month-picked" }],
+    }),
+  });
+  if (!r?.ok) return 0;
+  let n = 0;
+  for (const c of ((await r.json()) as { contacts?: Contact[] }).contacts ?? []) {
+    const tags = c.tags ?? [];
+    if (!c.phone || c.dnd || tags.includes("start-sent") || tags.includes("grw-booked")) continue;
+    const m = tags.find((t) => /^start-20\d\d-\d\d$/.test(t))?.slice(6);
+    if (!m || !reminderDue(m, now)) continue;
+    const q = new URLSearchParams({
+      first_name: c.firstName ?? "",
+      last_name: c.lastName ?? "",
+      email: c.email ?? "",
+      phone: c.phone ?? "",
+    });
+    const link = `https://growth.accelur8clientwork.com/book?${q}`;
+    const s = await ghl("/conversations/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "SMS",
+        contactId: c.id,
+        message: startSms(c.firstName, m, link),
+      }),
+    });
+    if (!s?.ok) continue;
+    await ghl(`/contacts/${c.id}/tags`, {
+      method: "POST",
+      body: JSON.stringify({ tags: ["start-sent"] }),
+    });
+    n++;
+  }
+  return n;
 }
