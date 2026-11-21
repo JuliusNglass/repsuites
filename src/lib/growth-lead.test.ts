@@ -37,7 +37,7 @@ describe("growth lead", () => {
     expect(d).toMatchObject({ bottleneck: "commercial", timing: "now" });
   });
   it("does not qualify solo owners or researchers", () => {
-    expect(route({ ...good, cleaners: "solo" }).qualified).toBe(false);
+    expect(route({ ...good, cleaners: "solo", bottleneck: "rebook" }).qualified).toBe(false);
     expect(route({ ...good, timing: "research" })).toMatchObject({
       qualified: true,
       urgent: false,
@@ -45,6 +45,16 @@ describe("growth lead", () => {
     });
     expect(route({ ...good, timing: "3m" })).toMatchObject({ urgent: false, later: true });
     expect(route({ ...good, timing: "now" })).toMatchObject({ urgent: true, later: false });
+  });
+  it("sends solo owners who want commercial work now to the commercial video", () => {
+    expect(route({ ...good, cleaners: "solo", ready: "hire" })).toMatchObject({
+      qualified: true,
+      grow: true,
+      solo: false,
+      phaseKey: "commercial",
+    });
+    expect(route({ ...good, cleaners: "solo", timing: "research" }).qualified).toBe(false);
+    expect(route({ ...good, cleaners: "solo", ready: "no" }).qualified).toBe(false);
   });
   it("rejects missing answers and accepts a full form", () => {
     expect(validate(form({ ...good, cleaners: "" }))).toBeNull();

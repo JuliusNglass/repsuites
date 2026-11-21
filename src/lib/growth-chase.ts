@@ -4,9 +4,9 @@
 
 export type ChaseStep = 1 | 2 | 3;
 
-// 10 minutes, next day, day 3.
+// 3 minutes, next day, day 3.
 export const CHASE: { step: ChaseStep; afterMinutes: number }[] = [
-  { step: 1, afterMinutes: 10 },
+  { step: 1, afterMinutes: 3 },
   { step: 2, afterMinutes: 20 * 60 },
   { step: 3, afterMinutes: 68 * 60 },
 ];
@@ -27,6 +27,21 @@ export const CHASE_STOP_TAGS = [
   "q-not-interested",
   "disp-not-interested",
 ];
+
+// Cleaning owners work every day. The first text goes at any hour, so a lead
+// who fills in the form at 1am hears back within minutes. Later texts go any
+// day of the week, 8am to 9pm UK time.
+export function chaseWindowOk(step: ChaseStep, now: Date): boolean {
+  if (step === 1) return true;
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/London",
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(now),
+  );
+  return hour >= 8 && hour < 21;
+}
 
 export function chaseDue(createdAt: string, done: number[], now: Date): ChaseStep | null {
   const t = new Date(createdAt).getTime();
@@ -106,6 +121,22 @@ export function chaseSms(
   if (step === 2)
     return `${hi}, did you get a chance to watch it? It shows how you get ${want}: ${link} Accelur8`;
   return `${hi}, last nudge from us. If now isn't the right time, no problem. The video is here when you're ready: ${link} Accelur8`;
+}
+
+// Owners working alone who want commercial work and are ready now: they can
+// win contracts and hire cleaners at the same time, so they get the
+// commercial video with words that fit them.
+export function growSms(
+  step: ChaseStep,
+  firstName: string | null | undefined,
+  link: string,
+): string {
+  const hi = `Hi ${first(firstName)}`;
+  if (step === 1)
+    return `${hi}, thanks for your answers. You can start winning office and school cleaning contracts now, and hire cleaners in time to do them. This 2-minute video shows how: ${link} Accelur8`;
+  if (step === 2)
+    return `${hi}, did you get a chance to watch it? Contracts and hiring can run side by side, so you're never stuck waiting: ${link} Accelur8`;
+  return `${hi}, last nudge from us. The video is here when you're ready: ${link} Accelur8`;
 }
 
 // Unqualified growth leads (solo or just researching) never get a call: they are

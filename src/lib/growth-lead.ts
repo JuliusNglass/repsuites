@@ -63,13 +63,19 @@ export function route(a: {
   // "3 months" and "just researching" pick a future date and join the nurture.
   // "We don't want commercial work" is treated like solo: trial + nurture, no call.
   const noComm = a.ready === "no";
-  const urgent = !solo && !noComm && a.timing === "now";
+  // Owners working alone who want commercial work and are ready now are not
+  // dropped: they see the commercial video (contracts and hiring side by side).
+  const grow =
+    solo && !noComm && a.timing === "now" && (a.bottleneck ?? "commercial") === "commercial";
+  const team = !solo || grow;
+  const urgent = team && !noComm && a.timing === "now";
   return {
-    qualified: !solo && !noComm,
+    qualified: team && !noComm,
     urgent,
-    later: !solo && !noComm && !urgent,
-    phaseKey: lead,
-    solo: solo || noComm,
+    later: team && !noComm && !urgent,
+    phaseKey: grow ? "commercial" : lead,
+    solo: (solo && !grow) || noComm,
+    grow,
     research,
   };
 }
@@ -92,7 +98,10 @@ export async function pushGhl(
     ...(d.angle ? [`angle-${d.angle}`] : []),
     `lead-${r.phaseKey}`,
     r.qualified ? "qualified" : "solo",
-    ...(r.later ? ["grw-future", "nurture", "nurture-12m"] : []),
+    ...(r.grow ? ["solo-grow"] : []),
+    // "Later" leads still get the video texts; grw-future is only added when
+    // they pick a start month (it stops the chase).
+    ...(r.later ? ["nurture", "nurture-12m"] : []),
     ...(d.wa ? ["consent-whatsapp"] : []),
     d.vw > 0 ? `vsl-${d.vw}` : "vsl-none",
   ];

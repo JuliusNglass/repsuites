@@ -2,13 +2,14 @@
 // to book the Fit Call themselves; unqualified ones (solo/researching) get texts to the free Google Check.
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
-import { inSendWindow } from "./check-followups";
 import {
   offerFor,
   salesLink,
   chaseDue,
   chaseSms,
   checkSms,
+  growSms,
+  chaseWindowOk,
   isCheckRoute,
   CHASE_MAX_HOURS,
   CHASE_STOP_TAGS,
@@ -75,7 +76,6 @@ export async function runGrowthChase(token: string) {
   });
   if (ok.error || ok.data !== true) return { status: 401, body: { ok: false } };
   const now = new Date();
-  if (!inSendWindow(now)) return { status: 200, body: { ok: true, skipped: "outside hours" } };
 
   const leads = await qualifiedLeads();
   if (!leads.length) return { status: 200, body: { ok: true, sent: 0 } };
@@ -93,20 +93,23 @@ export async function runGrowthChase(token: string) {
   for (const c of leads) {
     if (!c.phone || c.dnd || (c.tags ?? []).some((t) => CHASE_STOP_TAGS.includes(t))) continue;
     const step = chaseDue(c.dateAdded ?? "", doneBy.get(c.id) ?? [], now);
-    if (!step) continue;
+    if (!step || !chaseWindowOk(step, now)) continue;
+    const tags = c.tags ?? [];
     const r = await ghl("/conversations/messages", {
       method: "POST",
       body: JSON.stringify({
         type: "SMS",
         contactId: c.id,
-        message: isCheckRoute(c.tags ?? [])
+        message: isCheckRoute(tags)
           ? checkSms(step, c.firstName, c.companyName)
-          : chaseSms(
-              step,
-              c.firstName,
-              salesLink(offerFor(c.tags ?? []), c),
-              offerFor(c.tags ?? []),
-            ),
+          : tags.includes("solo-grow")
+            ? growSms(step, c.firstName, salesLink("commercial", c))
+            : chaseSms(
+                step,
+                c.firstName,
+                salesLink(offerFor(c.tags ?? []), c),
+                offerFor(c.tags ?? []),
+              ),
       }),
     });
     // A failed send is not recorded, so the next run retries it.
@@ -128,7 +131,7 @@ export async function runGrowthChase(token: string) {
         body: JSON.stringify({ tags: ["grw-nobook", "nurture", "nurture-12m"] }),
       });
   }
-  const started = await startReminders(now);
+  const started = chaseWindowOk(2, now) ? await startReminders(now) : 0;
   return { status: 200, body: { ok: true, sent, started } };
 }
 

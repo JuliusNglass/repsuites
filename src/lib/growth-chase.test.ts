@@ -5,9 +5,9 @@ const created = "2026-11-22T10:00:00Z";
 const at = (min: number) => new Date(new Date(created).getTime() + min * 60_000);
 
 describe("chaseDue", () => {
-  it("texts at 10 min, next day and day 3, in order", () => {
-    expect(chaseDue(created, [], at(5))).toBeNull();
-    expect(chaseDue(created, [], at(11))).toBe(1);
+  it("texts at 3 min, next day and day 3, in order", () => {
+    expect(chaseDue(created, [], at(2))).toBeNull();
+    expect(chaseDue(created, [], at(4))).toBe(1);
     expect(chaseDue(created, [1], at(60))).toBeNull();
     expect(chaseDue(created, [1], at(20 * 60 + 1))).toBe(2);
     expect(chaseDue(created, [1, 2], at(68 * 60 + 1))).toBe(3);
@@ -57,5 +57,24 @@ describe("free check route for unqualified leads", () => {
     expect(checkSms(1, "dee", "Complete cleaning")).toContain("repsuites.com/try");
     expect(checkSms(2, "dee", null)).not.toContain("STOP");
     expect(checkSms(3, "dee", null)).toContain(CHECK_LINK);
+  });
+});
+
+describe("chase timing", () => {
+  it("sends the first text at any hour and later ones 8am to 9pm", async () => {
+    const { chaseWindowOk, chaseDue } = await import("./growth-chase");
+    const sunday1am = new Date("2026-11-22T01:00:00Z");
+    expect(chaseWindowOk(1, sunday1am)).toBe(true);
+    expect(chaseWindowOk(2, sunday1am)).toBe(false);
+    expect(chaseWindowOk(2, new Date("2026-11-22T10:00:00Z"))).toBe(true);
+    expect(chaseDue("2026-11-22T00:55:00Z", [], sunday1am)).toBe(1);
+  });
+  it("solo grow texts have the link and no opt-out", async () => {
+    const { growSms } = await import("./growth-chase");
+    for (const s of [1, 2, 3] as const) {
+      const t = growSms(s, "Laura", "https://x.test/a");
+      expect(t).toContain("https://x.test/a");
+      expect(t).not.toMatch(/STOP|—/);
+    }
   });
 });
