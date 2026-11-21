@@ -13,8 +13,8 @@ export const CHASE: { step: ChaseStep; afterMinutes: number }[] = [
 
 // Leads older than this never start or continue the chase.
 export const CHASE_MAX_HOURS = 96;
-// Leads from before the chase went live were followed up by hand.
-export const CHASE_START = "2026-11-19T00:00:00Z";
+// Leads from before the chase went live (21 Nov) were followed up by hand.
+export const CHASE_START = "2026-11-21T00:00:00Z";
 
 export const CHASE_STOP_TAGS = [
   "grw-booked",

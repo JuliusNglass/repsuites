@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bookLink, chaseDue, chaseSms, offerFor, salesLink } from "./growth-chase";
 
-const created = "2026-11-20T10:00:00Z";
+const created = "2026-11-22T10:00:00Z";
 const at = (min: number) => new Date(new Date(created).getTime() + min * 60_000);
 
 describe("chaseDue", () => {
@@ -15,7 +15,7 @@ describe("chaseDue", () => {
   });
   it("ignores old leads and leads from before launch", () => {
     expect(chaseDue(created, [], at(97 * 60))).toBeNull();
-    expect(chaseDue("2026-11-18T16:44:00Z", [], new Date("2026-11-19T09:00:00Z"))).toBeNull();
+    expect(chaseDue("2026-11-20T16:44:00Z", [], new Date("2026-11-21T09:00:00Z"))).toBeNull();
   });
 });
 
