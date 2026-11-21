@@ -37,6 +37,7 @@ import { Route as CardsThanksRouteImport } from './routes/cards.thanks'
 import { Route as FeedbackIdRouteImport } from './routes/feedback.$id'
 import { Route as FixIndexRouteImport } from './routes/fix.index'
 import { Route as FixThanksRouteImport } from './routes/fix.thanks'
+import { Route as LCodeRouteImport } from './routes/l.$code'
 import { Route as QTokenRouteImport } from './routes/q.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as TryIndexRouteImport } from './routes/try.index'
@@ -209,6 +210,11 @@ const FixIndexRoute = FixIndexRouteImport.update({
 const FixThanksRoute = FixThanksRouteImport.update({
   id: '/fix/thanks',
   path: '/fix/thanks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LCodeRoute = LCodeRouteImport.update({
+  id: '/l/$code',
+  path: '/l/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QTokenRoute = QTokenRouteImport.update({
@@ -410,6 +416,7 @@ export interface FileRoutesByFullPath {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/fix/thanks': typeof FixThanksRoute
+  '/l/$code': typeof LCodeRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/try/next': typeof TryNextRoute
@@ -473,6 +480,7 @@ export interface FileRoutesByTo {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/fix/thanks': typeof FixThanksRoute
+  '/l/$code': typeof LCodeRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/try/next': typeof TryNextRoute
@@ -537,6 +545,7 @@ export interface FileRoutesById {
   '/cards/thanks': typeof CardsThanksRoute
   '/feedback/$id': typeof FeedbackIdRoute
   '/fix/thanks': typeof FixThanksRoute
+  '/l/$code': typeof LCodeRoute
   '/q/$token': typeof QTokenRoute
   '/r/$token': typeof RTokenRouteWithChildren
   '/try/next': typeof TryNextRoute
@@ -602,6 +611,7 @@ export interface FileRouteTypes {
     | '/cards/thanks'
     | '/feedback/$id'
     | '/fix/thanks'
+    | '/l/$code'
     | '/q/$token'
     | '/r/$token'
     | '/try/next'
@@ -665,6 +675,7 @@ export interface FileRouteTypes {
     | '/cards/thanks'
     | '/feedback/$id'
     | '/fix/thanks'
+    | '/l/$code'
     | '/q/$token'
     | '/r/$token'
     | '/try/next'
@@ -728,6 +739,7 @@ export interface FileRouteTypes {
     | '/cards/thanks'
     | '/feedback/$id'
     | '/fix/thanks'
+    | '/l/$code'
     | '/q/$token'
     | '/r/$token'
     | '/try/next'
@@ -792,6 +804,7 @@ export interface RootRouteChildren {
   CardsThanksRoute: typeof CardsThanksRoute
   FeedbackIdRoute: typeof FeedbackIdRoute
   FixThanksRoute: typeof FixThanksRoute
+  LCodeRoute: typeof LCodeRoute
   QTokenRoute: typeof QTokenRoute
   RTokenRoute: typeof RTokenRouteWithChildren
   TryNextRoute: typeof TryNextRoute
@@ -1022,6 +1035,13 @@ declare module '@tanstack/react-router' {
       path: '/fix/thanks'
       fullPath: '/fix/thanks'
       preLoaderRoute: typeof FixThanksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/l/$code': {
+      id: '/l/$code'
+      path: '/l/$code'
+      fullPath: '/l/$code'
+      preLoaderRoute: typeof LCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/q/$token': {
@@ -1300,6 +1320,7 @@ const rootRouteChildren: RootRouteChildren = {
   CardsThanksRoute: CardsThanksRoute,
   FeedbackIdRoute: FeedbackIdRoute,
   FixThanksRoute: FixThanksRoute,
+  LCodeRoute: LCodeRoute,
   QTokenRoute: QTokenRoute,
   RTokenRoute: RTokenRouteWithChildren,
   TryNextRoute: TryNextRoute,
