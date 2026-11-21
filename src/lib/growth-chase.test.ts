@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookLink, chaseDue, chaseSms } from "./growth-chase";
+import { bookLink, chaseDue, chaseSms, offerFor, salesLink } from "./growth-chase";
 
 const created = "2026-11-20T10:00:00Z";
 const at = (min: number) => new Date(new Date(created).getTime() + min * 60_000);
@@ -32,6 +32,17 @@ describe("chaseSms", () => {
   });
 });
 
+describe("sales page first", () => {
+  it("picks the page from their answers and never sends a bare booking link", () => {
+    expect(offerFor(["lead-commercial"])).toBe("commercial");
+    expect(offerFor(["lead-hiring"])).toBe("hiring");
+    expect(offerFor(["lead-rebook"])).toBe("reactivation");
+    const l = salesLink("commercial", { firstName: "Victor" });
+    expect(l).toBe("https://growth.accelur8clientwork.com/commercial?first_name=Victor");
+    for (const s of [1, 2, 3] as const) expect(chaseSms(s, "victor", l)).not.toContain("/book");
+  });
+});
+
 describe("free check route for unqualified leads", () => {
   it("routes nurture/solo but not qualified", async () => {
     const { isCheckRoute } = await import("./growth-chase");
@@ -40,10 +51,10 @@ describe("free check route for unqualified leads", () => {
     expect(isCheckRoute(["grw-lead", "qualified"])).toBe(false);
     expect(isCheckRoute(["grw-lead", "qualified", "nurture"])).toBe(false);
   });
-  it("no text has an opt-out line, all point at the check", async () => {
+  it("no text has an opt-out line, all point at the £1 trial", async () => {
     const { checkSms, CHECK_LINK } = await import("./growth-chase");
     expect(checkSms(1, "dee", "Complete cleaning")).not.toContain("STOP");
-    expect(checkSms(1, "dee", "Complete cleaning")).toContain("Hi Dee, when someone near you");
+    expect(checkSms(1, "dee", "Complete cleaning")).toContain("repsuites.com/try");
     expect(checkSms(2, "dee", null)).not.toContain("STOP");
     expect(checkSms(3, "dee", null)).toContain(CHECK_LINK);
   });

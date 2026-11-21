@@ -4,7 +4,8 @@ import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
 import { inSendWindow } from "./check-followups";
 import {
-  bookLink,
+  offerFor,
+  salesLink,
   chaseDue,
   chaseSms,
   checkSms,
@@ -100,7 +101,12 @@ export async function runGrowthChase(token: string) {
         contactId: c.id,
         message: isCheckRoute(c.tags ?? [])
           ? checkSms(step, c.firstName, c.companyName)
-          : chaseSms(step, c.firstName, bookLink(c)),
+          : chaseSms(
+              step,
+              c.firstName,
+              salesLink(offerFor(c.tags ?? []), c),
+              offerFor(c.tags ?? []),
+            ),
       }),
     });
     // A failed send is not recorded, so the next run retries it.

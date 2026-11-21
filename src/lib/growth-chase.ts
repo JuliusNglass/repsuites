@@ -56,23 +56,60 @@ function first(name?: string | null): string {
   return f ? f.charAt(0).toUpperCase() + f.slice(1).toLowerCase() : "there";
 }
 
-// About them, short, no opt-out line (the first text in the sequence has it).
+export type Offer = "commercial" | "hiring" | "reactivation";
+
+/** The sales page that matches what they told us they want. */
+export function offerFor(tags: string[]): Offer {
+  if (tags.includes("lead-hiring")) return "hiring";
+  if (tags.includes("lead-rebook")) return "reactivation";
+  return "commercial";
+}
+
+/** Their own sales page: video first, then they can book from the page. */
+export function salesLink(
+  offer: Offer,
+  c: {
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  },
+): string {
+  return bookLink(c).replace("/book?", `/${offer}?`);
+}
+
+const TOPIC: Record<Offer, [string, string]> = {
+  commercial: [
+    "winning office contracts alongside your domestic work",
+    "more contracts that pay every month",
+  ],
+  hiring: ["hiring reliable cleaners without the chasing", "reliable cleaners who turn up"],
+  reactivation: [
+    "filling your diary from past customers",
+    "your diary filled from customers you already have",
+  ],
+};
+
+// About them, short, no opt-out line. Never a bare booking link: the page shows
+// the video first, and only then offers a time (no call without watching).
 export function chaseSms(
   step: ChaseStep,
   firstName: string | null | undefined,
   link: string,
+  offer: Offer = "commercial",
 ): string {
   const hi = `Hi ${first(firstName)}`;
+  const [topic, want] = TOPIC[offer];
   if (step === 1)
-    return `${hi}, your growth plan is one step away. Pick a 15-min time that suits you: ${link} Accelur8`;
+    return `${hi}, here's a 2-minute video on ${topic}, made for you: ${link} If it fits, you can pick a time from that page. Accelur8`;
   if (step === 2)
-    return `${hi}, still want more booked jobs and reliable cleaners? 15 minutes is all it takes: ${link} Accelur8`;
-  return `${hi}, last nudge from us. If now isn't the right time, no problem. When you're ready: ${link} Accelur8`;
+    return `${hi}, did you get a chance to watch it? It shows how you get ${want}: ${link} Accelur8`;
+  return `${hi}, last nudge from us. If now isn't the right time, no problem. The video is here when you're ready: ${link} Accelur8`;
 }
 
 // Unqualified growth leads (solo or just researching) never get a call: they are
-// sent into the free Google Check, which leads to the paid visibility fix.
-export const CHECK_LINK = "https://repsuites.com/check?n=cleaning&src=grw-sms";
+// sent the £1 for 30 days review trial instead.
+export const CHECK_LINK = "https://repsuites.com/try?utm_source=grw-sms";
 export function isCheckRoute(tags: string[]): boolean {
   return !tags.includes("qualified") && (tags.includes("nurture") || tags.includes("solo"));
 }
@@ -84,8 +121,8 @@ export function checkSms(
   const hi = `Hi ${first(firstName)}`;
   const biz = (business ?? "").trim() || "your business";
   if (step === 1)
-    return `${hi}, when someone near you searches for a cleaner, does ${biz} come up? Get your free Google Check in 30 seconds: ${CHECK_LINK} Accelur8`;
+    return `${hi}, happy customers rarely leave a Google review on their own. For £1, try a tool that asks for you, in the name of ${biz}, for 30 days: ${CHECK_LINK} Accelur8`;
   if (step === 2)
-    return `${hi}, most cleaning jobs go to the 3 firms Google shows first. See where ${biz} sits, free: ${CHECK_LINK} Accelur8`;
-  return `${hi}, last one from us. Your free Google Check for ${biz} is still here when you want it: ${CHECK_LINK} Accelur8`;
+    return `${hi}, most cleaning jobs go to the firms with the most recent Google reviews. 30 days of getting more, for £1: ${CHECK_LINK} Accelur8`;
+  return `${hi}, last one from us. The £1 review trial for ${biz} is here when you want it: ${CHECK_LINK} Accelur8`;
 }
