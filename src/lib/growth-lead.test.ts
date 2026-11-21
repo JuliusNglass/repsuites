@@ -22,17 +22,32 @@ describe("growth lead", () => {
   it("routes commercial-ready teams to the commercial phase and qualifies them", () => {
     expect(route(good)).toMatchObject({ qualified: true, phaseKey: "commercial" });
   });
-  it("sends commercial owners who must hire first to hiring", () => {
-    expect(route({ ...good, ready: "hire" }).phaseKey).toBe("hiring");
+  it("keeps commercial owners who must hire first on the commercial offer", () => {
+    expect(route({ ...good, ready: "hire" })).toMatchObject({
+      qualified: true,
+      phaseKey: "commercial",
+    });
+  });
+  it("treats owners who don't want commercial work like solo", () => {
+    expect(route({ ...good, ready: "no" })).toMatchObject({ qualified: false, solo: true });
+  });
+  it("accepts the shorter survey without bottleneck and timing", () => {
+    const { bottleneck: _b, timing: _t, ...rest } = good;
+    const d = validate(form(rest));
+    expect(d).toMatchObject({ bottleneck: "commercial", timing: "now" });
   });
   it("does not qualify solo owners or researchers", () => {
     expect(route({ ...good, cleaners: "solo" }).qualified).toBe(false);
-    expect(route({ ...good, timing: "research" })).toMatchObject({ qualified: true, urgent: false, later: true });
+    expect(route({ ...good, timing: "research" })).toMatchObject({
+      qualified: true,
+      urgent: false,
+      later: true,
+    });
     expect(route({ ...good, timing: "3m" })).toMatchObject({ urgent: false, later: true });
     expect(route({ ...good, timing: "now" })).toMatchObject({ urgent: true, later: false });
   });
   it("rejects missing answers and accepts a full form", () => {
-    expect(validate(form({ ...good, timing: "" }))).toBeNull();
+    expect(validate(form({ ...good, cleaners: "" }))).toBeNull();
     expect(validate(form(good))?.email).toBe("sarah@example.com");
   });
   it("prefills the booking link", () => {

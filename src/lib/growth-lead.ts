@@ -31,6 +31,7 @@ const OPT = {
     ops: "Admin and day-to-day organisation",
   },
   ready: {
+    // Stored in GHL with the original wording; the survey shows newer labels.
     yes: "Yes, we're ready",
     hire: "We'd need to hire first",
     no: "Not looking for commercial work",
@@ -55,12 +56,22 @@ export function route(a: {
   const solo = a.cleaners === "solo";
   const research = a.timing === "research";
   let lead: string = a.bottleneck ?? "ops";
-  if (a.bottleneck === "commercial" && a.ready !== "yes") lead = "hiring";
-  if (a.ready === "hire" && a.bottleneck !== "rebook" && a.bottleneck !== "ops") lead = "hiring";
+  // Commercial is the main offer: owners who must hire first stay on commercial
+  // (they can run hiring alongside it); only non-commercial bottlenecks move to hiring.
+  if (a.ready === "hire" && a.bottleneck === "hiring") lead = "hiring";
   // Team owners are qualified. Only "Ready now" sees the calendar straight away;
   // "3 months" and "just researching" pick a future date and join the nurture.
-  const urgent = !solo && a.timing === "now";
-  return { qualified: !solo, urgent, later: !solo && !urgent, phaseKey: lead, solo, research };
+  // "We don't want commercial work" is treated like solo: trial + nurture, no call.
+  const noComm = a.ready === "no";
+  const urgent = !solo && !noComm && a.timing === "now";
+  return {
+    qualified: !solo && !noComm,
+    urgent,
+    later: !solo && !noComm && !urgent,
+    phaseKey: lead,
+    solo: solo || noComm,
+    research,
+  };
 }
 
 export const esc = (s: unknown) =>
@@ -147,9 +158,10 @@ export function validate(f: FormData): any {
     site: clean(f.get("site"), 300),
     cleaners: clean(f.get("cleaners"), 10),
     split: clean(f.get("split"), 10),
-    bottleneck: clean(f.get("bottleneck"), 12),
+    // Survey v3 (21 Nov 2026) no longer asks these two; commercial and "now" are the defaults.
+    bottleneck: clean(f.get("bottleneck"), 12) || "commercial",
     ready: clean(f.get("ready"), 10),
-    timing: clean(f.get("timing"), 10),
+    timing: clean(f.get("timing"), 10) || "now",
     wa: f.get("wa") === "1",
     src: clean(f.get("src"), 30)
       .replace(/[^a-z0-9-]/gi, "")
