@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/growth-lead")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { validate, route, pushGhl, bookPageUrl } = await import("../lib/growth-lead");
+        const { validate, route, pushGhl } = await import("../lib/growth-lead");
         const go = (to: string) => new Response(null, { status: 303, headers: { Location: to } });
         let form: FormData;
         try {
@@ -38,16 +38,24 @@ export const Route = createFileRoute("/api/growth-lead")({
           });
           if (!ok) console.error("growth lead: Meta CAPI failed");
         }
-        if (r.urgent) return go(bookPageUrl(d));
-        if (r.later) {
-          // Not ready yet: they watch the cost video, then pick a start month (no call now).
-          if (!saved) return go(`${bookPageUrl(d)}&later=1`);
+        if (r.qualified) {
+          // Every team owner watches the offer video (with the cost) before booking.
+          // "Not yet" on that page leads to the Why wait page, then book or pick a month.
+          const [first, ...rest] = String(d.name).split(/\s+/);
           const q = new URLSearchParams({
-            c: saved,
-            first_name: String(d.name).split(/\s+/)[0] ?? "",
-            o: r.phaseKey,
+            first_name: first ?? "",
+            last_name: rest.join(" "),
+            email: d.email,
+            phone: d.phone,
+            ...(saved ? { c: saved } : {}),
           });
-          return go(`${GROWTH}/start?${q}`);
+          const page =
+            r.phaseKey === "hiring"
+              ? "hiring"
+              : r.phaseKey === "rebook"
+                ? "reactivation"
+                : "commercial";
+          return go(`${GROWTH}/${page}?${q}`);
         }
         return go(`${GROWTH}/thanks?s=1`);
       },
