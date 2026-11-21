@@ -78,3 +78,15 @@ describe("chase timing", () => {
     }
   });
 });
+
+describe("later leads", () => {
+  it("get the Why wait video after the first text", async () => {
+    const { isLater, laterSms, whyLink } = await import("./growth-chase");
+    expect(isLater(["qualified", "nurture"])).toBe(true);
+    expect(isLater(["qualified"])).toBe(false);
+    const link = whyLink({ firstName: "Ross", email: "r@x.test" });
+    expect(link).toContain("/why?");
+    expect(laterSms(2, "Ross", link)).toContain(link);
+    expect(laterSms(3, "Ross", link)).not.toMatch(/STOP|—/);
+  });
+});

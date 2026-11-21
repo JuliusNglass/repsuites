@@ -9,6 +9,9 @@ import {
   chaseSms,
   checkSms,
   growSms,
+  isLater,
+  laterSms,
+  whyLink,
   chaseWindowOk,
   isCheckRoute,
   CHASE_MAX_HOURS,
@@ -102,14 +105,16 @@ export async function runGrowthChase(token: string) {
         contactId: c.id,
         message: isCheckRoute(tags)
           ? checkSms(step, c.firstName, c.companyName)
-          : tags.includes("solo-grow")
-            ? growSms(step, c.firstName, salesLink("commercial", c))
-            : chaseSms(
-                step,
-                c.firstName,
-                salesLink(offerFor(c.tags ?? []), c),
-                offerFor(c.tags ?? []),
-              ),
+          : isLater(tags) && step > 1
+            ? laterSms(step, c.firstName, whyLink(c))
+            : tags.includes("solo-grow")
+              ? growSms(step, c.firstName, salesLink("commercial", c))
+              : chaseSms(
+                  step,
+                  c.firstName,
+                  salesLink(offerFor(c.tags ?? []), c),
+                  offerFor(c.tags ?? []),
+                ),
       }),
     });
     // A failed send is not recorded, so the next run retries it.

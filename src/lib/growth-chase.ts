@@ -123,6 +123,26 @@ export function chaseSms(
   return `${hi}, last nudge from us. If now isn't the right time, no problem. The video is here when you're ready: ${link} Accelur8`;
 }
 
+// Team owners who said "in 3 months" or "just researching": the first text is
+// the offer video; the next two point at the Why wait video (cost of waiting),
+// so they are won over rather than left to drift.
+export function isLater(tags: string[]): boolean {
+  return tags.includes("qualified") && tags.includes("nurture");
+}
+export function whyLink(c: Parameters<typeof salesLink>[1]): string {
+  return bookLink(c).replace("/book?", "/why?");
+}
+export function laterSms(
+  step: ChaseStep,
+  firstName: string | null | undefined,
+  link: string,
+): string {
+  const hi = `Hi ${first(firstName)}`;
+  if (step === 2)
+    return `${hi}, waiting 3 months feels safe, but every month without a contract is income another firm is taking. This short video shows what waiting really costs: ${link} Accelur8`;
+  return `${hi}, last nudge from us. If you'd rather start later, you can pick your start month here and we'll remind you: ${link} Accelur8`;
+}
+
 // Owners working alone who want commercial work and are ready now: they can
 // win contracts and hire cleaners at the same time, so they get the
 // commercial video with words that fit them.
