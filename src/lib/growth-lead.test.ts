@@ -27,7 +27,9 @@ describe("growth lead", () => {
   });
   it("does not qualify solo owners or researchers", () => {
     expect(route({ ...good, cleaners: "solo" }).qualified).toBe(false);
-    expect(route({ ...good, timing: "research" }).qualified).toBe(false);
+    expect(route({ ...good, timing: "research" })).toMatchObject({ qualified: true, urgent: false, later: true });
+    expect(route({ ...good, timing: "3m" })).toMatchObject({ urgent: false, later: true });
+    expect(route({ ...good, timing: "now" })).toMatchObject({ urgent: true, later: false });
   });
   it("rejects missing answers and accepts a full form", () => {
     expect(validate(form({ ...good, timing: "" }))).toBeNull();

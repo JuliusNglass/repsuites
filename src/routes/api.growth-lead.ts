@@ -38,8 +38,9 @@ export const Route = createFileRoute("/api/growth-lead")({
           });
           if (!ok) console.error("growth lead: Meta CAPI failed");
         }
-        if (r.qualified) return go(bookPageUrl(d));
-        return go(`${GROWTH}/thanks${r.solo ? "?s=1" : ""}`);
+        if (r.urgent) return go(bookPageUrl(d));
+        if (r.later) return go(`${bookPageUrl(d)}&later=1`);
+        return go(`${GROWTH}/thanks?s=1`);
       },
     },
   },

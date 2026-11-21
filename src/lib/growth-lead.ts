@@ -57,7 +57,10 @@ export function route(a: {
   let lead: string = a.bottleneck ?? "ops";
   if (a.bottleneck === "commercial" && a.ready !== "yes") lead = "hiring";
   if (a.ready === "hire" && a.bottleneck !== "rebook" && a.bottleneck !== "ops") lead = "hiring";
-  return { qualified: !solo && !research, phaseKey: lead, solo, research };
+  // Team owners are qualified. Only "Ready now" sees the calendar straight away;
+  // "3 months" and "just researching" pick a future date and join the nurture.
+  const urgent = !solo && a.timing === "now";
+  return { qualified: !solo, urgent, later: !solo && !urgent, phaseKey: lead, solo, research };
 }
 
 export const esc = (s: unknown) =>
@@ -73,7 +76,8 @@ export async function pushGhl(token: string, d: any, r: ReturnType<typeof route>
     `src-${d.src || "direct"}`,
     ...(d.angle ? [`angle-${d.angle}`] : []),
     `lead-${r.phaseKey}`,
-    r.qualified ? "qualified" : r.solo ? "solo" : "nurture",
+    r.qualified ? "qualified" : "solo",
+    ...(r.later ? ["grw-future", "nurture", "nurture-12m"] : []),
     ...(d.wa ? ["consent-whatsapp"] : []),
     d.vw > 0 ? `vsl-${d.vw}` : "vsl-none",
   ];

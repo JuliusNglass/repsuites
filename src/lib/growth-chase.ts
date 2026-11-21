@@ -18,6 +18,7 @@ export const CHASE_START = "2026-11-21T00:00:00Z";
 
 export const CHASE_STOP_TAGS = [
   "grw-booked",
+  "grw-future",
   "replied",
   "customer",
   "no-followup",
