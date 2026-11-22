@@ -199,3 +199,22 @@ export function checkSms(
     return `${hi}, most cleaning jobs go to the firms with the most recent Google reviews. 30 days of getting more, for £1: ${CHECK_LINK} Accelur8`;
   return `${hi}, last one from us. The £1 review trial for ${biz} is here when you want it: ${CHECK_LINK} Accelur8`;
 }
+
+// Leads who watched most of the offer video before filling in the form: the
+// next texts send them straight to booking rather than asking if they watched.
+export function watchedVideo(tags: string[]): boolean {
+  return tags.some((t) => {
+    const m = /^vsl-(\d+)$/.exec(t);
+    return !!m && Number(m[1]) >= 75;
+  });
+}
+export function watchedSms(
+  step: ChaseStep,
+  firstName: string | null | undefined,
+  link: string,
+): string {
+  const hi = `Hi ${first(firstName)}`;
+  if (step === 3)
+    return `${hi}, last nudge from us. If now isn't right, no problem. You can pick a time here whenever you're ready: ${link} Accelur8`;
+  return `${hi}, glad you watched the video. Pick a time that suits you here and we'll map out your contract plan: ${link} Accelur8`;
+}

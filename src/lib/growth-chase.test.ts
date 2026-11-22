@@ -102,3 +102,21 @@ describe("approved first texts", () => {
     expect(w).not.toMatch(/https?:|£1|STOP/);
   });
 });
+
+import { watchedVideo, watchedSms } from "./growth-chase";
+describe("watched video follow-ups", () => {
+  it("counts 75% or more as watched", () => {
+    expect(watchedVideo(["vsl-100"])).toBe(true);
+    expect(watchedVideo(["vsl-75"])).toBe(true);
+    expect(watchedVideo(["vsl-50"])).toBe(false);
+    expect(watchedVideo(["vsl-none"])).toBe(false);
+  });
+  it("sends them to booking, not 'did you watch'", () => {
+    const m = watchedSms(2, "Joanna", "https://x.test/book");
+    expect(m).toContain("glad you watched");
+    expect(m).toContain("https://x.test/book");
+    expect(m).not.toMatch(/did you get a chance/i);
+    expect(m).not.toContain("—");
+    expect(watchedSms(3, "Joanna", "https://x.test/book")).toContain("last nudge");
+  });
+});

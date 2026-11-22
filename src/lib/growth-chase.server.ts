@@ -11,6 +11,9 @@ import {
   welcomeSms,
   growSms,
   isLater,
+  watchedVideo,
+  watchedSms,
+  bookLink,
   laterSms,
   whyLink,
   chaseWindowOk,
@@ -117,7 +120,9 @@ export async function runGrowthChase(token: string) {
             c.companyName,
             salesLink(tags.includes("solo-grow") ? "commercial" : offerFor(tags), c),
           )
-        : isLater(tags)
+        : watchedVideo(tags) && !isLater(tags)
+          ? watchedSms(step, c.firstName, bookLink(c))
+          : isLater(tags)
           ? laterSms(step, c.firstName, whyLink(c))
           : tags.includes("solo-grow")
             ? growSms(step, c.firstName, salesLink("commercial", c))
