@@ -15,6 +15,8 @@ export const LINKS: Record<string, string> = {
   // The £1 trial is no longer offered (22 Nov): old trial links go to the offer page.
   trial: "https://growth.accelur8clientwork.com/commercial?utm_source=nurture",
   videos: "https://repsuites.com/videos?utm_source=nurture",
+  // Unlisted YouTube copy of the commercial video, for leads wary of other links.
+  yt: "https://youtu.be/ByRUFtEiSe4",
   commercial: "https://growth.accelur8clientwork.com/commercial?utm_source=nurture",
   hiring: "https://growth.accelur8clientwork.com/hiring?utm_source=nurture",
   reactivation: "https://growth.accelur8clientwork.com/reactivation?utm_source=nurture",
