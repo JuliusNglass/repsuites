@@ -90,3 +90,15 @@ describe("later leads", () => {
     expect(laterSms(3, "Ross", link)).not.toMatch(/STOP|—/);
   });
 });
+
+describe("approved first texts", () => {
+  it("new lead text names the business, has the link and an email option", async () => {
+    const { firstSms, welcomeSms } = await import("./growth-chase");
+    const t = firstSms("Laura", "Tidy Towns", "https://x.test/v");
+    expect(t).toContain("Tidy Towns");
+    expect(t).toContain("https://x.test/v");
+    expect(t).toContain("reply EMAIL");
+    const w = welcomeSms("Henry", null);
+    expect(w).not.toMatch(/https?:|£1|STOP/);
+  });
+});

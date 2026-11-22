@@ -106,6 +106,27 @@ const TOPIC: Record<Offer, [string, string]> = {
   ],
 };
 
+// First text to a new lead (approved 22 Nov): names the form and the business so
+// the link feels safe, and offers email instead.
+export function firstSms(
+  firstName: string | null | undefined,
+  business: string | null | undefined,
+  link: string,
+): string {
+  const biz = (business ?? "").trim() || "your business";
+  return `Hi ${first(firstName)}, it's Accelur8, from the form you just filled in for ${biz}. Here's a quick video on how the whole offer works: ${link} It's our own page, with nothing to download or sign up for. Prefer it by email? Just reply EMAIL. Accelur8`;
+}
+
+// Unqualified leads (approved 22 Nov): one friendly text, no link, then the
+// 12-month email lessons. The £1 trial is no longer texted to anyone.
+export function welcomeSms(
+  firstName: string | null | undefined,
+  business: string | null | undefined,
+): string {
+  const biz = (business ?? "").trim() || "your business";
+  return `Hi ${first(firstName)}, thanks for your answers about ${biz}. Every week you'll get one short email lesson on growing a cleaning business: winning office contracts, hiring good cleaners and getting more reviews. The first one is on its way from Accelur8. If it's not in your inbox, check spam and mark it "not spam". Accelur8`;
+}
+
 // About them, short, no opt-out line. Never a bare booking link: the page shows
 // the video first, and only then offers a time (no call without watching).
 export function chaseSms(

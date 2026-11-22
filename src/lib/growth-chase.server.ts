@@ -7,7 +7,8 @@ import {
   salesLink,
   chaseDue,
   chaseSms,
-  checkSms,
+  firstSms,
+  welcomeSms,
   growSms,
   isLater,
   laterSms,
@@ -98,24 +99,32 @@ export async function runGrowthChase(token: string) {
     const step = chaseDue(c.dateAdded ?? "", doneBy.get(c.id) ?? [], now);
     if (!step || !chaseWindowOk(step, now)) continue;
     const tags = c.tags ?? [];
+    const check = isCheckRoute(tags);
+    // Unqualified leads get one welcome text only; later steps are recorded as skipped.
+    if (check && step > 1) {
+      await serviceWrite("growth_chase", "", {
+        method: "POST",
+        headers: { Prefer: "resolution=ignore-duplicates" },
+        body: { contact_id: c.id, step, status: "skipped" },
+      });
+      continue;
+    }
+    const message = check
+      ? welcomeSms(c.firstName, c.companyName)
+      : step === 1
+        ? firstSms(
+            c.firstName,
+            c.companyName,
+            salesLink(tags.includes("solo-grow") ? "commercial" : offerFor(tags), c),
+          )
+        : isLater(tags)
+          ? laterSms(step, c.firstName, whyLink(c))
+          : tags.includes("solo-grow")
+            ? growSms(step, c.firstName, salesLink("commercial", c))
+            : chaseSms(step, c.firstName, salesLink(offerFor(tags), c), offerFor(tags));
     const r = await ghl("/conversations/messages", {
       method: "POST",
-      body: JSON.stringify({
-        type: "SMS",
-        contactId: c.id,
-        message: isCheckRoute(tags)
-          ? checkSms(step, c.firstName, c.companyName)
-          : isLater(tags) && step > 1
-            ? laterSms(step, c.firstName, whyLink(c))
-            : tags.includes("solo-grow")
-              ? growSms(step, c.firstName, salesLink("commercial", c))
-              : chaseSms(
-                  step,
-                  c.firstName,
-                  salesLink(offerFor(c.tags ?? []), c),
-                  offerFor(c.tags ?? []),
-                ),
-      }),
+      body: JSON.stringify({ type: "SMS", contactId: c.id, message }),
     });
     // A failed send is not recorded, so the next run retries it.
     if (!r?.ok) {
@@ -129,6 +138,12 @@ export async function runGrowthChase(token: string) {
       body: { contact_id: c.id, step, status },
     });
     if (r?.ok) sent++;
+    // Unqualified leads go straight into the 12-month email lessons (NUR 1).
+    if (r?.ok && check)
+      await ghl(`/contacts/${c.id}/tags`, {
+        method: "POST",
+        body: JSON.stringify({ tags: ["nurture", "nurture-12m"] }),
+      });
     // After the last text, hand them to the long nurture (never dropped).
     if (r?.ok && step === 3)
       await ghl(`/contacts/${c.id}/tags`, {
