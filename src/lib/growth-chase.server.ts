@@ -123,10 +123,10 @@ export async function runGrowthChase(token: string) {
         : watchedVideo(tags) && !isLater(tags)
           ? watchedSms(step, c.firstName, bookLink(c))
           : isLater(tags)
-          ? laterSms(step, c.firstName, whyLink(c))
-          : tags.includes("solo-grow")
-            ? growSms(step, c.firstName, salesLink("commercial", c))
-            : chaseSms(step, c.firstName, salesLink(offerFor(tags), c), offerFor(tags));
+            ? laterSms(step, c.firstName, whyLink(c))
+            : tags.includes("solo-grow")
+              ? growSms(step, c.firstName, salesLink("commercial", c))
+              : chaseSms(step, c.firstName, salesLink(offerFor(tags), c), offerFor(tags));
     const r = await ghl("/conversations/messages", {
       method: "POST",
       body: JSON.stringify({ type: "SMS", contactId: c.id, message }),
