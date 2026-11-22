@@ -26,6 +26,7 @@ import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiCheckFitRouteImport } from './routes/api.check-fit'
 import { Route as ApiDemoLeadRouteImport } from './routes/api.demo-lead'
+import { Route as ApiGrowthConfirmRouteImport } from './routes/api.growth-confirm'
 import { Route as ApiGrowthLeadRouteImport } from './routes/api.growth-lead'
 import { Route as ApiGrowthMonthRouteImport } from './routes/api.growth-month'
 import { Route as ApiGrowthPlacesRouteImport } from './routes/api.growth-places'
@@ -156,6 +157,11 @@ const ApiCheckFitRoute = ApiCheckFitRouteImport.update({
 const ApiDemoLeadRoute = ApiDemoLeadRouteImport.update({
   id: '/api/demo-lead',
   path: '/api/demo-lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGrowthConfirmRoute = ApiGrowthConfirmRouteImport.update({
+  id: '/api/growth-confirm',
+  path: '/api/growth-confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGrowthLeadRoute = ApiGrowthLeadRouteImport.update({
@@ -413,6 +419,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
+  '/api/growth-confirm': typeof ApiGrowthConfirmRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
   '/api/growth-month': typeof ApiGrowthMonthRoute
   '/api/growth-places': typeof ApiGrowthPlacesRoute
@@ -478,6 +485,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
+  '/api/growth-confirm': typeof ApiGrowthConfirmRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
   '/api/growth-month': typeof ApiGrowthMonthRoute
   '/api/growth-places': typeof ApiGrowthPlacesRoute
@@ -544,6 +552,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
+  '/api/growth-confirm': typeof ApiGrowthConfirmRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
   '/api/growth-month': typeof ApiGrowthMonthRoute
   '/api/growth-places': typeof ApiGrowthPlacesRoute
@@ -611,6 +620,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/check-fit'
     | '/api/demo-lead'
+    | '/api/growth-confirm'
     | '/api/growth-lead'
     | '/api/growth-month'
     | '/api/growth-places'
@@ -676,6 +686,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/check-fit'
     | '/api/demo-lead'
+    | '/api/growth-confirm'
     | '/api/growth-lead'
     | '/api/growth-month'
     | '/api/growth-places'
@@ -741,6 +752,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/check-fit'
     | '/api/demo-lead'
+    | '/api/growth-confirm'
     | '/api/growth-lead'
     | '/api/growth-month'
     | '/api/growth-places'
@@ -807,6 +819,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ApiCheckFitRoute: typeof ApiCheckFitRoute
   ApiDemoLeadRoute: typeof ApiDemoLeadRoute
+  ApiGrowthConfirmRoute: typeof ApiGrowthConfirmRoute
   ApiGrowthLeadRoute: typeof ApiGrowthLeadRoute
   ApiGrowthMonthRoute: typeof ApiGrowthMonthRoute
   ApiGrowthPlacesRoute: typeof ApiGrowthPlacesRoute
@@ -971,6 +984,13 @@ declare module '@tanstack/react-router' {
       path: '/api/demo-lead'
       fullPath: '/api/demo-lead'
       preLoaderRoute: typeof ApiDemoLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/growth-confirm': {
+      id: '/api/growth-confirm'
+      path: '/api/growth-confirm'
+      fullPath: '/api/growth-confirm'
+      preLoaderRoute: typeof ApiGrowthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/growth-lead': {
@@ -1331,6 +1351,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ApiCheckFitRoute: ApiCheckFitRoute,
   ApiDemoLeadRoute: ApiDemoLeadRoute,
+  ApiGrowthConfirmRoute: ApiGrowthConfirmRoute,
   ApiGrowthLeadRoute: ApiGrowthLeadRoute,
   ApiGrowthMonthRoute: ApiGrowthMonthRoute,
   ApiGrowthPlacesRoute: ApiGrowthPlacesRoute,
