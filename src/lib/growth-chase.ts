@@ -204,8 +204,9 @@ export function checkSms(
   return `${hi}, last one from us. The £1 review trial for ${biz} is here when you want it: ${CHECK_LINK} Accelur8`;
 }
 
-// Leads who watched most of the offer video before filling in the form: the
-// next texts send them straight to booking rather than asking if they watched.
+// Leads who watched most of the growth page video before filling in the form: the
+// next texts skip "did you watch it?" and send them to the offer page (price video
+// plus booking), so nobody books without seeing the price.
 export function watchedVideo(tags: string[]): boolean {
   return tags.some((t) => {
     const m = /^vsl-(\d+)$/.exec(t);
