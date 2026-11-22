@@ -138,6 +138,14 @@ export async function runGrowthChase(token: string) {
       body: { contact_id: c.id, step, status },
     });
     if (r?.ok) sent++;
+    // Call prep: the lead's own video link on their contact, to share on a call.
+    if (step === 1)
+      await ghl(`/contacts/${c.id}/notes`, {
+        method: "POST",
+        body: JSON.stringify({
+          body: `Call video (tracked, this lead only): ${salesLink("commercial", c)}\nYouTube copy: https://youtu.be/ByRUFtEiSe4`,
+        }),
+      });
     // Unqualified leads go straight into the 12-month email lessons (NUR 1).
     if (r?.ok && check)
       await ghl(`/contacts/${c.id}/tags`, {
