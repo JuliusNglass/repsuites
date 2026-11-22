@@ -12,7 +12,8 @@ export const LINKS: Record<string, string> = {
   top3: "https://youtube.com/shorts/drUw51M-00s",
   channel: "https://www.youtube.com/@accelur8-er5fx",
   scorecard: "https://ops.accelur8clientwork.com/scorecard?utm_source=nurture",
-  trial: "https://repsuites.com/try?utm_source=nurture",
+  // The £1 trial is no longer offered (22 Nov): old trial links go to the offer page.
+  trial: "https://growth.accelur8clientwork.com/commercial?utm_source=nurture",
   videos: "https://repsuites.com/videos?utm_source=nurture",
   commercial: "https://growth.accelur8clientwork.com/commercial?utm_source=nurture",
   hiring: "https://growth.accelur8clientwork.com/hiring?utm_source=nurture",
