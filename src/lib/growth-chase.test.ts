@@ -9,8 +9,8 @@ describe("chaseDue", () => {
     expect(chaseDue(created, [], at(2))).toBeNull();
     expect(chaseDue(created, [], at(4))).toBe(1);
     expect(chaseDue(created, [1], at(60))).toBeNull();
-    expect(chaseDue(created, [1], at(20 * 60 + 1))).toBe(2);
-    expect(chaseDue(created, [1, 2], at(68 * 60 + 1))).toBe(3);
+    expect(chaseDue(created, [1], at(8 * 60 + 1))).toBe(2);
+    expect(chaseDue(created, [1, 2], at(44 * 60 + 1))).toBe(3);
     expect(chaseDue(created, [1, 2, 3], at(80 * 60))).toBeNull();
   });
   it("ignores old leads and leads from before launch", () => {
@@ -66,7 +66,11 @@ describe("chase timing", () => {
     const sunday1am = new Date("2026-11-22T01:00:00Z");
     expect(chaseWindowOk(1, sunday1am)).toBe(true);
     expect(chaseWindowOk(2, sunday1am)).toBe(false);
-    expect(chaseWindowOk(2, new Date("2026-11-22T10:00:00Z"))).toBe(true);
+    expect(chaseWindowOk(2, new Date("2026-11-23T07:30:00Z"))).toBe(true);
+    expect(chaseWindowOk(2, new Date("2026-11-23T09:29:00Z"))).toBe(true);
+    expect(chaseWindowOk(2, new Date("2026-11-23T07:29:00Z"))).toBe(false);
+    expect(chaseWindowOk(2, new Date("2026-11-23T09:30:00Z"))).toBe(false);
+    expect(chaseWindowOk(3, new Date("2026-11-22T10:00:00Z"))).toBe(false);
     expect(chaseDue("2026-11-22T00:55:00Z", [], sunday1am)).toBe(1);
   });
   it("solo grow texts have the link and no opt-out", async () => {

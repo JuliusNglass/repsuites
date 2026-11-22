@@ -4,11 +4,12 @@
 
 export type ChaseStep = 1 | 2 | 3;
 
-// 3 minutes, next day, day 3.
+// 3 minutes, then the next morning, then two mornings later. Later texts only
+// go 7:30 to 9:30am UK time, before work: many owners also have a day job.
 export const CHASE: { step: ChaseStep; afterMinutes: number }[] = [
   { step: 1, afterMinutes: 3 },
-  { step: 2, afterMinutes: 20 * 60 },
-  { step: 3, afterMinutes: 68 * 60 },
+  { step: 2, afterMinutes: 8 * 60 },
+  { step: 3, afterMinutes: 44 * 60 },
 ];
 
 // Leads older than this never start or continue the chase.
@@ -30,17 +31,20 @@ export const CHASE_STOP_TAGS = [
 
 // Cleaning owners work every day. The first text goes at any hour, so a lead
 // who fills in the form at 1am hears back within minutes. Later texts go any
-// day of the week, 8am to 9pm UK time.
+// day of the week, 7:30 to 9:30am UK time, while their hands are still free.
 export function chaseWindowOk(step: ChaseStep, now: Date): boolean {
   if (step === 1) return true;
-  const hour = Number(
-    new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/London",
-      hour: "numeric",
-      hourCycle: "h23",
-    }).format(now),
-  );
-  return hour >= 8 && hour < 21;
+  const [h, m] = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour: "numeric",
+    minute: "numeric",
+    hourCycle: "h23",
+  })
+    .format(now)
+    .split(":")
+    .map(Number);
+  const mins = (h ?? 0) * 60 + (m ?? 0);
+  return mins >= 7 * 60 + 30 && mins < 9 * 60 + 30;
 }
 
 export function chaseDue(createdAt: string, done: number[], now: Date): ChaseStep | null {
