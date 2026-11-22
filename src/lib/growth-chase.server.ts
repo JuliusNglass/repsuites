@@ -83,9 +83,10 @@ export async function runGrowthChase(token: string) {
   });
   if (ok.error || ok.data !== true) return { status: 401, body: { ok: false } };
   const now = new Date();
+  const nudged = await noShowNudges(now);
 
   const leads = await qualifiedLeads();
-  if (!leads.length) return { status: 200, body: { ok: true, sent: 0 } };
+  if (!leads.length) return { status: 200, body: { ok: true, sent: 0, nudged } };
   const ids = leads.map((c) => `"${c.id.replace(/"/g, "")}"`).join(",");
   const done = await serviceRead<{ contact_id: string; step: number }[]>(
     `growth_chase?select=contact_id,step&contact_id=in.(${encodeURIComponent(ids)})`,
@@ -165,7 +166,7 @@ export async function runGrowthChase(token: string) {
       });
   }
   const started = chaseWindowOk(2, now) ? await startReminders(now) : 0;
-  return { status: 200, body: { ok: true, sent, started } };
+  return { status: 200, body: { ok: true, sent, started, nudged } };
 }
 
 // Leads who picked a start month get the booking link 14 days before that month.
@@ -207,6 +208,74 @@ async function startReminders(now: Date): Promise<number> {
       body: JSON.stringify({ tags: ["start-sent"] }),
     });
     n++;
+  }
+  return n;
+}
+
+// Fit Calls that started 3 to 15 minutes ago where the lead hasn't tapped the join link:
+// one "we're on the call now" text each.
+async function noShowNudges(now: Date): Promise<number> {
+  const { FIT_CALL_CALENDAR, nudgeDue, nudgeSms, joinLink } = await import("./growth-join");
+  const q = new URLSearchParams({
+    locationId: GHL_LOCATION_ID,
+    calendarId: FIT_CALL_CALENDAR,
+    startTime: String(now.getTime() - 20 * 60_000),
+    endTime: String(now.getTime()),
+  });
+  const r = await ghl(`/calendars/events?${q}`);
+  if (!r?.ok) return 0;
+  type Ev = {
+    id: string;
+    contactId?: string;
+    startTime?: string;
+    deleted?: boolean;
+    appointmentStatus?: string;
+  };
+  const due = (((await r.json()) as { events?: Ev[] }).events ?? []).filter(
+    (e) =>
+      !e.deleted &&
+      e.contactId &&
+      e.startTime &&
+      !["cancelled", "invalid", "noshow"].includes(e.appointmentStatus ?? "") &&
+      nudgeDue(e.startTime, now),
+  );
+  if (!due.length) return 0;
+  const ids = due.map((e) => `"${e.id.replace(/"/g, "")}"`).join(",");
+  const seen = await serviceRead<
+    { appt_id: string; joined_at: string | null; nudged_at: string | null }[]
+  >(`growth_join?select=appt_id,joined_at,nudged_at&appt_id=in.(${encodeURIComponent(ids)})`, "");
+  if (seen.error) return 0;
+  const skip = new Set(
+    (seen.data ?? []).filter((x) => x.joined_at || x.nudged_at).map((x) => x.appt_id),
+  );
+  let n = 0;
+  for (const e of due) {
+    if (skip.has(e.id)) continue;
+    // Claim the nudge first, so two runs can never text the same person twice.
+    const claim = await serviceWrite<unknown[]>("growth_join", "", {
+      method: "POST",
+      headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
+      body: {
+        appt_id: e.id,
+        contact_id: e.contactId,
+        start_at: e.startTime,
+        nudged_at: now.toISOString(),
+      },
+    });
+    if (claim.error || !Array.isArray(claim.data) || !claim.data.length) continue;
+    const cr = await ghl(`/contacts/${e.contactId}`);
+    const c = cr?.ok ? ((await cr.json()) as { contact?: Contact }).contact : null;
+    if (!c?.phone || c.dnd) continue;
+    const s = await ghl("/conversations/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "SMS",
+        contactId: c.id,
+        message: nudgeSms(c.firstName, joinLink(c.id)),
+      }),
+    });
+    if (s?.ok) n++;
+    else console.error("growth join: nudge failed", s?.status);
   }
   return n;
 }
