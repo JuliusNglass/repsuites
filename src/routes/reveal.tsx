@@ -3,7 +3,7 @@
 // No em dashes in this copy (AGENTS.md). Branded Accelur8.
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { breakEvenContracts, perDay, YEAR_ONE_COST, yearlyProfit } from "../lib/call-sheet";
+import { perDay, yearlyProfit } from "../lib/call-sheet";
 
 export const Route = createFileRoute("/reveal")({
   head: () => ({
@@ -24,14 +24,18 @@ function Reveal() {
   const [w, setW] = useState(s.w);
   const [m, setM] = useState(s.m);
   const [pick, setPick] = useState(3);
+  const [plan, setPlan] = useState<"full" | "monthly">("full");
+  const launch = plan === "full" ? 2000 : 2100;
+  const appCost = 9 * 97;
+  const cost = launch + appCost;
   const per = yearlyProfit(w, m);
-  const be = breakEvenContracts(w, m);
+  const be = per ? Math.round((cost / per) * 10) / 10 : null;
   const bars = useMemo(() => [1, 2, 3, 4, 5, 6].map((n) => ({ n, value: per * n })), [per]);
-  const max = Math.max(YEAR_ONE_COST, ...bars.map((b) => b.value)) * 1.1;
+  const max = Math.max(cost, ...bars.map((b) => b.value)) * 1.1;
   const sel = bars.find((b) => b.n === pick) ?? bars[2]!;
-  const left = sel.value - YEAR_ONE_COST;
+  const left = sel.value - cost;
   const H = 260;
-  const costY = H - (YEAR_ONE_COST / max) * H;
+  const costY = H - (cost / max) * H;
 
   return (
     <main className="min-h-screen bg-[#071426] px-4 py-8 text-base leading-relaxed text-white">
@@ -73,7 +77,8 @@ function Reveal() {
         <section className="rounded-2xl bg-white/5 p-4">
           <h2 className="text-xl font-bold">Money kept in a year, by number of contracts</h2>
           <p className="text-sm text-slate-300">
-            Tap a bar to see the detail. The dashed line is your year one cost.
+            Each bar is money you keep. Tap one to see how it adds up. Bars above the yellow line
+            more than cover what you invest in year one.
           </p>
           <div
             className="relative mt-4"
@@ -82,17 +87,17 @@ function Reveal() {
             aria-label="Contracts chart"
           >
             <div
-              className="absolute inset-x-0 border-t-2 border-dashed border-amber-300"
+              className="absolute inset-x-0 z-10 pointer-events-none border-t-[3px] border-dashed border-amber-300"
               style={{ top: costY }}
             >
-              <span className="absolute -top-6 right-0 rounded bg-amber-300 px-2 text-sm font-semibold text-[#071426]">
-                Year one cost {gbp(YEAR_ONE_COST)}
+              <span className="absolute -top-4 left-0 rounded-md bg-amber-300 px-2 py-1 text-sm font-bold shadow-lg text-[#071426]">
+                Year one cost {gbp(cost)}
               </span>
             </div>
             <div className="flex h-full items-end gap-2 sm:gap-4">
               {bars.map((b) => {
                 const h = Math.max(4, (b.value / max) * H);
-                const over = b.value >= YEAR_ONE_COST;
+                const over = b.value >= cost;
                 const on = b.n === pick;
                 return (
                   <button
@@ -118,37 +123,107 @@ function Reveal() {
 
         <section className="rounded-2xl bg-white p-5 text-[#071426]">
           <h2 className="text-xl font-bold">
-            With {pick} contract{pick > 1 ? "s" : ""}
+            What you earn with {pick} office contract{pick > 1 ? "s" : ""}
           </h2>
+          <p className="text-sm text-slate-600">This is money coming in to you, not a cost.</p>
           <table className="mt-3 w-full text-left">
             <tbody className="divide-y">
               <tr>
-                <td className="py-2">Each contract pays you</td>
+                <td className="py-2">Each office pays you</td>
                 <td className="py-2 text-right font-semibold">{gbp(w)} a week</td>
               </tr>
               <tr>
-                <td className="py-2">You keep {m}% of that</td>
+                <td className="py-2">After wages and products, you keep {m}% of each one</td>
                 <td className="py-2 text-right font-semibold">{gbp((w * m) / 100)} a week</td>
               </tr>
               <tr>
                 <td className="py-2">
-                  Times {pick} contract{pick > 1 ? "s" : ""}
+                  From {pick} office{pick > 1 ? "s" : ""}, you keep
                 </td>
                 <td className="py-2 text-right font-semibold">
                   {gbp((w * m * pick) / 100)} a week
                 </td>
               </tr>
               <tr>
-                <td className="py-2">Every month (about)</td>
-                <td className="py-2 text-right font-semibold">{gbp(sel.value / 12)}</td>
+                <td className="py-2">That is about</td>
+                <td className="py-2 text-right font-semibold">{gbp(sel.value / 12)} a month</td>
+              </tr>
+              <tr className="text-lg">
+                <td className="py-3 font-bold">Kept over 12 months</td>
+                <td className="py-3 text-right font-bold text-emerald-700">{gbp(sel.value)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section className="rounded-2xl bg-white p-5 text-[#071426]">
+          <h2 className="text-xl font-bold">What you invest in year one</h2>
+          <div className="mt-3 flex gap-2" role="group" aria-label="How you pay">
+            <button
+              onClick={() => setPlan("full")}
+              aria-pressed={plan === "full"}
+              className={`rounded-lg px-4 py-2 font-semibold ${plan === "full" ? "bg-[#071426] text-white" : "bg-slate-100"}`}
+            >
+              Pay in full
+            </button>
+            <button
+              onClick={() => setPlan("monthly")}
+              aria-pressed={plan === "monthly"}
+              className={`rounded-lg px-4 py-2 font-semibold ${plan === "monthly" ? "bg-[#071426] text-white" : "bg-slate-100"}`}
+            >
+              3 monthly payments
+            </button>
+          </div>
+          <table className="mt-3 w-full text-left">
+            <tbody className="divide-y">
+              <tr>
+                <td className="py-2">
+                  <b>Months 1 to 3: the launch</b>
+                  <br />
+                  <span className="text-sm text-slate-600">
+                    £900 of ads to win office contracts, your page, set-up and your ops app, all
+                    included
+                  </span>
+                </td>
+                <td className="py-2 text-right font-semibold">
+                  {plan === "full" ? "£2,000" : "3 x £700 = £2,100"}
+                </td>
               </tr>
               <tr>
-                <td className="py-2">Over a year</td>
+                <td className="py-2">
+                  <b>Months 4 to 12: your ops app</b>
+                  <br />
+                  <span className="text-sm text-slate-600">
+                    Keeps your quotes, cleans and staff running
+                  </span>
+                </td>
+                <td className="py-2 text-right font-semibold">9 x £97 = {gbp(appCost)}</td>
+              </tr>
+              <tr className="text-lg">
+                <td className="py-3 font-bold">Total for the year</td>
+                <td className="py-3 text-right font-bold">{gbp(cost)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="mt-2 text-sm text-slate-600">
+            About £{perDay(cost)} a day. The launch is a one-off. The contracts you win keep paying
+            you after it ends.
+          </p>
+        </section>
+
+        <section className="rounded-2xl bg-white p-5 text-[#071426]">
+          <h2 className="text-xl font-bold">Putting it together</h2>
+          <table className="mt-3 w-full text-left">
+            <tbody className="divide-y">
+              <tr>
+                <td className="py-2">
+                  Kept from {pick} office{pick > 1 ? "s" : ""} over 12 months
+                </td>
                 <td className="py-2 text-right font-semibold">{gbp(sel.value)}</td>
               </tr>
               <tr>
-                <td className="py-2">Year one cost</td>
-                <td className="py-2 text-right font-semibold">- {gbp(YEAR_ONE_COST)}</td>
+                <td className="py-2">Minus what you invest in year one</td>
+                <td className="py-2 text-right font-semibold">- {gbp(cost)}</td>
               </tr>
               <tr className="text-lg">
                 <td className="py-3 font-bold">
@@ -162,9 +237,8 @@ function Reveal() {
               </tr>
             </tbody>
           </table>
-          <p className="mt-3 text-sm text-slate-600">
-            Year one cost is £2,000 for the 3-month launch (ads, page and set-up included) plus 9
-            months of your ops app at £97. That is about £{perDay(YEAR_ONE_COST)} a day.
+          <p className="mt-2 text-sm text-slate-600">
+            From year two, there is no launch fee. You only pay £97 a month for the app.
           </p>
         </section>
 
