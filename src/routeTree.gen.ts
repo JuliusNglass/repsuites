@@ -23,6 +23,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProspectsRouteImport } from './routes/prospects'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RevealRouteImport } from './routes/reveal'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiCheckFitRouteImport } from './routes/api.check-fit'
@@ -144,6 +145,11 @@ const ProspectsRoute = ProspectsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RevealRoute = RevealRouteImport.update({
+  id: '/reveal',
+  path: '/reveal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StartRoute = StartRouteImport.update({
@@ -428,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reveal': typeof RevealRoute
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
@@ -496,6 +503,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reveal': typeof RevealRoute
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
@@ -565,6 +573,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/prospects': typeof ProspectsRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/reveal': typeof RevealRoute
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
@@ -635,6 +644,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/prospects'
     | '/reset-password'
+    | '/reveal'
     | '/start'
     | '/terms'
     | '/api/check-fit'
@@ -703,6 +713,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/prospects'
     | '/reset-password'
+    | '/reveal'
     | '/start'
     | '/terms'
     | '/api/check-fit'
@@ -771,6 +782,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/prospects'
     | '/reset-password'
+    | '/reveal'
     | '/start'
     | '/terms'
     | '/api/check-fit'
@@ -840,6 +852,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ProspectsRoute: typeof ProspectsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  RevealRoute: typeof RevealRoute
   StartRoute: typeof StartRoute
   TermsRoute: typeof TermsRoute
   ApiCheckFitRoute: typeof ApiCheckFitRoute
@@ -989,6 +1002,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reveal': {
+      id: '/reveal'
+      path: '/reveal'
+      fullPath: '/reveal'
+      preLoaderRoute: typeof RevealRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/start': {
@@ -1388,6 +1408,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ProspectsRoute: ProspectsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  RevealRoute: RevealRoute,
   StartRoute: StartRoute,
   TermsRoute: TermsRoute,
   ApiCheckFitRoute: ApiCheckFitRoute,
