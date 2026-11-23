@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Copy, Loader2 } from "lucide-react";
+import { SignInCard } from "../components/SignInCard";
 import { loadCallContact, saveCall, createLaunchInvoice } from "../lib/call-sheet.functions";
 import {
   breakEvenContracts,
@@ -170,7 +171,15 @@ function CallSheet() {
   return (
     <main className="mx-auto max-w-3xl space-y-5 p-4 text-base leading-relaxed text-slate-900">
       {busy === "load" && <Loader2 className="animate-spin" />}
-      {data && !data.ok && <p className="text-red-700">{data.error}</p>}
+      {data && !data.ok && /sign in/i.test(data.error) && (
+        <section>
+          <p className="mb-3">Sign in with your Accelur8 account to open this call.</p>
+          <SignInCard isConfigured onSignedIn={() => window.location.reload()} />
+        </section>
+      )}
+      {data && !data.ok && !/sign in/i.test(data.error) && (
+        <p className="text-red-700">{data.error}</p>
+      )}
       {data?.ok && (
         <section className="rounded-xl bg-slate-900 p-4 text-white">
           <h1 className="text-2xl font-bold">{data.contact.name}</h1>

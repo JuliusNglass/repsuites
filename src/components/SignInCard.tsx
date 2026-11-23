@@ -10,12 +10,15 @@ export function SignInCard({
   missingMessage,
   demoAvailable,
   hostTenant,
+  onSignedIn,
 }: {
   isConfigured: boolean;
   missingMessage?: string;
   demoAvailable?: boolean;
   // Set when the app is opened on a business's own web address.
   hostTenant?: HostTenant | null;
+  // When set, called after sign-in instead of going to the dashboard.
+  onSignedIn?: () => void;
 }) {
   const navigate = useNavigate();
   const signInFn = useServerFn(signIn);
@@ -36,7 +39,8 @@ export function SignInCard({
     try {
       const res = await signInFn({ data: { email, password } });
       if (res.ok) {
-        navigate({ to: "/dashboard" });
+        if (onSignedIn) onSignedIn();
+        else navigate({ to: "/dashboard" });
         return;
       }
       setErrorMessage(res.error || "Sign in failed");
