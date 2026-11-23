@@ -4,6 +4,7 @@ import { z } from "zod";
 import { GHL_LOCATION_ID } from "./ghl-lead";
 import { agencyGuard } from "./prospects.server";
 import { breakEvenContracts, FIELDS } from "./call-sheet";
+import { FIT_CALL_CALENDAR, safeMeet } from "./growth-join";
 
 const ID = z.string().regex(/^[A-Za-z0-9]{10,40}$/);
 const PRODUCT = "6b03eddbcc1449eec1e443a3";
@@ -39,10 +40,20 @@ export const loadCallContact = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const g = await agencyGuard(false);
     if (!g.ok) return { ok: false as const, error: g.error };
-    const [c, n] = await Promise.all([
+    const [c, n, a] = await Promise.all([
       ghl(`/contacts/${data.id}`),
       ghl(`/contacts/${data.id}/notes`),
+      ghl(`/contacts/${data.id}/appointments`),
     ]);
+    type Ev = { startTime?: string; deleted?: boolean; calendarId?: string; address?: string };
+    const toMs = (t: string) =>
+      new Date(t.replace(" ", "T") + (/[zZ]|[+-]\d\d:?\d\d$/.test(t) ? "" : "Z")).getTime();
+    const now = Date.now();
+    const call = ((a?.json.events ?? []) as Ev[])
+      .filter((e) => !e.deleted && e.calendarId === FIT_CALL_CALENDAR && e.startTime)
+      .map((e) => ({ start: toMs(e.startTime!), meet: safeMeet(e.address) }))
+      .filter((e) => e.start > now - 2 * 3_600_000)
+      .sort((x, y) => x.start - y.start)[0];
     if (!c?.ok) return { ok: false as const, error: "Contact not found." };
     const k = c.json.contact ?? {};
     const custom: Record<string, string> = {};
@@ -63,6 +74,7 @@ export const loadCallContact = createServerFn({ method: "POST" })
       },
       custom,
       notes,
+      call: call ? { start: new Date(call.start).toISOString(), meet: call.meet } : null,
     };
   });
 

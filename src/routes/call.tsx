@@ -4,12 +4,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Loader2, Video } from "lucide-react";
 import { SignInCard } from "../components/SignInCard";
 import { loadCallContact, saveCall, createLaunchInvoice } from "../lib/call-sheet.functions";
 import {
   breakEvenContracts,
   FIELDS,
+  OBJECTION_SCRIPTS,
   OBJECTIONS,
   OUTCOMES,
   perDay,
@@ -66,6 +67,7 @@ function CallSheet() {
   const [id, setId] = useState(c);
   const [data, setData] = useState<Awaited<ReturnType<typeof loadCallContact>> | null>(null);
   const [busy, setBusy] = useState("");
+  const [step, setStep] = useState(0);
   const [links, setLinks] = useState<{ plan: string; url: string }[]>([]);
   const [f, setF] = useState({
     weekly: 100,
@@ -167,181 +169,283 @@ function CallSheet() {
       </main>
     );
 
-  const input = "mt-1 w-full rounded-lg border border-slate-300 p-3 text-base";
+  const input = "mt-1 w-full rounded-lg border border-slate-300 p-2 text-base";
+  const card = "rounded-xl border border-slate-200 bg-white p-3";
+  const fill = (t: string) =>
+    t.replaceAll("{be}", be ? String(be) : "2 or 3").replace("{month}", nextMonth());
+  const obj = OBJECTION_SCRIPTS[f.objection];
+  const call = data?.ok ? data.call : null;
+  const callTime = call
+    ? new Date(call.start).toLocaleString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/London",
+      })
+    : "";
+  const revealHref = `/reveal?w=${f.weekly}&m=${f.margin}&n=${encodeURIComponent(data?.ok ? data.contact.firstName : "")}`;
+
   return (
-    <main className="mx-auto max-w-3xl space-y-5 p-4 text-base leading-relaxed text-slate-900">
-      {busy === "load" && <Loader2 className="animate-spin" />}
+    <main className="grid min-h-screen gap-3 bg-slate-100 p-3 text-base leading-relaxed text-slate-900 lg:h-screen lg:grid-cols-3 lg:overflow-hidden">
       {data && !data.ok && /sign in/i.test(data.error) && (
-        <section>
+        <section className="lg:col-span-3">
           <p className="mb-3">Sign in with your Accelur8 account to open this call.</p>
           <SignInCard isConfigured onSignedIn={() => window.location.reload()} />
         </section>
       )}
       {data && !data.ok && !/sign in/i.test(data.error) && (
-        <p className="text-red-700">{data.error}</p>
+        <p className="text-red-700 lg:col-span-3">{data.error}</p>
       )}
-      {data?.ok && (
-        <section className="rounded-xl bg-slate-900 p-4 text-white">
-          <h1 className="text-2xl font-bold">{data.contact.name}</h1>
-          <p>
-            {data.contact.company} · {data.contact.phone} · {data.contact.email}
+      {busy === "load" && <Loader2 className="animate-spin" />}
+
+      {/* Column 1: who, join, maths, money */}
+      <div className="flex flex-col gap-3 lg:overflow-y-auto">
+        {data?.ok && (
+          <section className="rounded-xl bg-slate-900 p-3 text-white">
+            <h1 className="text-xl font-bold">{data.contact.name}</h1>
+            <p className="text-sm">
+              {data.contact.company} · {data.contact.phone}
+            </p>
+            <p className="text-sm">{data.contact.email}</p>
+            {call?.meet ? (
+              <a
+                href={call.meet}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 font-semibold text-slate-900"
+              >
+                <Video size={18} /> Join Google Meet · {callTime}
+              </a>
+            ) : (
+              <p className="mt-2 text-sm text-amber-300">
+                {call
+                  ? `Call ${callTime}, no Meet link on the booking`
+                  : "No upcoming Fit Call found"}
+              </p>
+            )}
+            {data.notes.length > 0 && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-sm font-semibold">Prep notes</summary>
+                <div className="mt-1 max-h-48 overflow-y-auto">
+                  {data.notes.map((n, i) => (
+                    <p key={i} className="mt-1 whitespace-pre-wrap rounded bg-white/10 p-2 text-sm">
+                      {n.body}
+                    </p>
+                  ))}
+                </div>
+              </details>
+            )}
+          </section>
+        )}
+
+        <section className={card}>
+          <h2 className="font-bold">The maths</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-sm">
+              £ per week, typical clean
+              <input
+                type="number"
+                inputMode="decimal"
+                className={input}
+                value={f.weekly}
+                onChange={set("weekly")}
+              />
+            </label>
+            <label className="text-sm">
+              % kept
+              <input
+                type="number"
+                inputMode="decimal"
+                className={input}
+                value={f.margin}
+                onChange={set("margin")}
+              />
+            </label>
+          </div>
+          <p className="mt-2 text-sm">
+            One contract: £{f.weekly} × {f.margin}% × 52 = <b>£{profit.toLocaleString()} a year</b>.
+            Year one cost £{YEAR_ONE_COST.toLocaleString()} (about £{perDay(YEAR_ONE_COST)} a day).
           </p>
-          {data.notes.length > 0 && (
-            <details className="mt-3">
-              <summary className="cursor-pointer font-semibold">
-                Prep notes ({data.notes.length})
-              </summary>
-              {data.notes.map((n, i) => (
-                <p key={i} className="mt-2 whitespace-pre-wrap rounded bg-white/10 p-2 text-sm">
-                  {n.body}
-                </p>
-              ))}
-            </details>
+          <p className="text-xl font-bold text-emerald-700">Break-even: {be ?? "-"} contracts</p>
+          <a
+            className="mt-2 block rounded-lg bg-emerald-700 px-3 py-2 text-center font-semibold text-white"
+            target="_blank"
+            rel="noreferrer"
+            href={revealHref}
+          >
+            Open the reveal to share on screen
+          </a>
+        </section>
+
+        <section className={card}>
+          <h2 className="font-bold">Payment link</h2>
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            <button
+              disabled={!!busy}
+              onClick={() => onInvoice("full")}
+              className="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white"
+            >
+              {busy === "full" ? "Creating..." : "£2,000 in full"}
+            </button>
+            <button
+              disabled={!!busy}
+              onClick={() => onInvoice("monthly")}
+              className="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white"
+            >
+              {busy === "monthly" ? "Creating..." : "3 x £700"}
+            </button>
+          </div>
+          {links.map((l) => (
+            <p key={l.url} className="mt-2 flex items-center gap-2 break-all text-sm">
+              <b>{l.plan === "full" ? "£2,000" : "3 x £700"}:</b>
+              <a className="underline" href={l.url} target="_blank" rel="noreferrer">
+                {l.url}
+              </a>
+              <button aria-label="Copy link" onClick={() => navigator.clipboard?.writeText(l.url)}>
+                <Copy size={16} />
+              </button>
+            </p>
+          ))}
+          <p className="mt-1 text-sm text-slate-600">The link is copied for you to text.</p>
+        </section>
+      </div>
+
+      {/* Column 2: the script, one step at a time */}
+      <div className="flex flex-col gap-3 lg:overflow-y-auto">
+        <section className={card}>
+          <h2 className="font-bold">Script</h2>
+          <div className="mt-2 flex flex-wrap gap-1" role="tablist">
+            {steps.map((s, i) => (
+              <button
+                key={s.t}
+                role="tab"
+                aria-selected={i === step}
+                onClick={() => setStep(i)}
+                className={`h-10 w-10 rounded-full font-semibold ${i === step ? "bg-slate-900 text-white" : "bg-slate-100"}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+          <h3 className="mt-3 text-lg font-bold">{steps[step]!.t}</h3>
+          <p className="mt-1 text-lg">{steps[step]!.say}</p>
+          <div className="mt-3 flex justify-between">
+            <button
+              disabled={step === 0}
+              onClick={() => setStep(step - 1)}
+              className="flex items-center gap-1 rounded-lg bg-slate-100 px-3 py-2 disabled:opacity-40"
+            >
+              <ChevronLeft size={18} /> Back
+            </button>
+            <button
+              disabled={step === steps.length - 1}
+              onClick={() => setStep(step + 1)}
+              className="flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-2 text-white disabled:opacity-40"
+            >
+              Next <ChevronRight size={18} />
+            </button>
+          </div>
+        </section>
+        <section className={card}>
+          <h2 className="font-bold">Objection? Tap it</h2>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {Object.keys(OBJECTION_SCRIPTS).map((o) => (
+              <button
+                key={o}
+                aria-pressed={f.objection === o}
+                onClick={() => setF((p) => ({ ...p, objection: p.objection === o ? "" : o }))}
+                className={`rounded-full px-3 py-1.5 font-semibold ${f.objection === o ? "bg-amber-400" : "bg-slate-100"}`}
+              >
+                {o}
+              </button>
+            ))}
+          </div>
+          {obj && (
+            <div className="mt-3 space-y-2">
+              <p>
+                <b>Say:</b> {fill(obj.handle)}
+              </p>
+              <p className="rounded-lg bg-emerald-50 p-2">
+                <b>Pivot to close:</b> {fill(obj.pivot)}
+              </p>
+            </div>
           )}
         </section>
-      )}
+      </div>
 
-      <section className="rounded-xl border p-4">
-        <h2 className="mb-2 text-xl font-bold">The maths</h2>
-        <div className="grid grid-cols-2 gap-3">
-          <label>
-            Typical clean, £ per week
+      {/* Column 3: capture and save */}
+      <div className="flex flex-col gap-3 lg:overflow-y-auto">
+        <section className={`${card} grid grid-cols-2 gap-2`}>
+          <h2 className="col-span-2 font-bold">Their answers</h2>
+          <label className="text-sm">
+            Commercial now £/wk
             <input
               type="number"
-              inputMode="decimal"
               className={input}
-              value={f.weekly}
-              onChange={set("weekly")}
+              value={f.commercialNow}
+              onChange={set("commercialNow")}
             />
           </label>
-          <label>
-            Margin kept, %
+          <label className="text-sm">
+            Decision maker
+            <input className={input} value={f.decisionMaker} onChange={set("decisionMaker")} />
+          </label>
+          <label className="col-span-2 text-sm">
+            How they win commercial work
+            <input className={input} value={f.howWin} onChange={set("howWin")} />
+          </label>
+          <label className="col-span-2 text-sm">
+            Main blocker
+            <input className={input} value={f.blocker} onChange={set("blocker")} />
+          </label>
+          <label className="text-sm">
+            Objection
+            <select className={input} value={f.objection} onChange={set("objection")}>
+              <option value="">-</option>
+              {OBJECTIONS.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm">
+            Outcome
+            <select className={input} value={f.outcome} onChange={set("outcome")}>
+              <option value="">-</option>
+              {OUTCOMES.map((o) => (
+                <option key={o}>{o}</option>
+              ))}
+            </select>
+          </label>
+          <label className="col-span-2 text-sm">
+            Recording link
             <input
-              type="number"
-              inputMode="decimal"
               className={input}
-              value={f.margin}
-              onChange={set("margin")}
+              placeholder="https://"
+              value={f.recording}
+              onChange={set("recording")}
             />
           </label>
-        </div>
-        <p className="mt-3">
-          One contract keeps you £{f.weekly} × {f.margin}% × 52 weeks ={" "}
-          <b>£{profit.toLocaleString()} a year</b>.
-        </p>
-        <p>
-          Year one costs £{YEAR_ONE_COST.toLocaleString()} (£2,000 launch + 9 months of SparkOps at
-          £97). That's about £{perDay(YEAR_ONE_COST)} a day.
-        </p>
-        <p className="mt-2 text-2xl font-bold text-emerald-700">
-          Break-even: {be ?? "-"} contracts
-        </p>
-      </section>
-
-      <section className="space-y-3">
-        {steps.map((s) => (
-          <details key={s.t} className="rounded-xl border p-4" open>
-            <summary className="cursor-pointer font-semibold">{s.t}</summary>
-            <p className="mt-2">{s.say}</p>
-          </details>
-        ))}
-      </section>
-
-      <section className="grid gap-3 rounded-xl border p-4 sm:grid-cols-2">
-        <label>
-          Commercial income now, £/week
-          <input
-            type="number"
-            className={input}
-            value={f.commercialNow}
-            onChange={set("commercialNow")}
-          />
-        </label>
-        <label>
-          Decision maker
-          <input className={input} value={f.decisionMaker} onChange={set("decisionMaker")} />
-        </label>
-        <label className="sm:col-span-2">
-          How they win commercial work
-          <input className={input} value={f.howWin} onChange={set("howWin")} />
-        </label>
-        <label className="sm:col-span-2">
-          Main blocker
-          <input className={input} value={f.blocker} onChange={set("blocker")} />
-        </label>
-        <label>
-          Objection
-          <select className={input} value={f.objection} onChange={set("objection")}>
-            <option value="">-</option>
-            {OBJECTIONS.map((o) => (
-              <option key={o}>{o}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Outcome
-          <select className={input} value={f.outcome} onChange={set("outcome")}>
-            <option value="">-</option>
-            {OUTCOMES.map((o) => (
-              <option key={o}>{o}</option>
-            ))}
-          </select>
-        </label>
-        <label className="sm:col-span-2">
-          Recording link (Google Meet)
-          <input
-            className={input}
-            placeholder="https://"
-            value={f.recording}
-            onChange={set("recording")}
-          />
-        </label>
-        <label className="sm:col-span-2">
-          Notes
-          <textarea rows={4} className={input} value={f.notes} onChange={set("notes")} />
-        </label>
-        <button
-          disabled={!!busy}
-          onClick={onSave}
-          className="rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white sm:col-span-2"
-        >
-          {busy === "save" ? "Saving..." : "Save to GHL"}
-        </button>
-      </section>
-
-      <section className="rounded-xl border p-4">
-        <h2 className="mb-2 text-xl font-bold">Payment link</h2>
-        <div className="flex flex-wrap gap-3">
+          <label className="col-span-2 text-sm">
+            Notes
+            <textarea rows={5} className={input} value={f.notes} onChange={set("notes")} />
+          </label>
           <button
             disabled={!!busy}
-            onClick={() => onInvoice("full")}
-            className="rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white"
+            onClick={onSave}
+            className="col-span-2 rounded-lg bg-slate-900 px-3 py-3 font-semibold text-white"
           >
-            {busy === "full" ? "Creating..." : "Pay in full £2,000"}
+            {busy === "save" ? "Saving..." : "Save to GHL"}
           </button>
-          <button
-            disabled={!!busy}
-            onClick={() => onInvoice("monthly")}
-            className="rounded-lg bg-emerald-700 px-4 py-3 font-semibold text-white"
-          >
-            {busy === "monthly" ? "Creating..." : "3 x £700"}
-          </button>
-        </div>
-        {links.map((l) => (
-          <p key={l.url} className="mt-3 flex items-center gap-2 break-all">
-            <b>{l.plan === "full" ? "£2,000" : "3 x £700"}:</b>{" "}
-            <a className="underline" href={l.url} target="_blank" rel="noreferrer">
-              {l.url}
-            </a>
-            <button aria-label="Copy link" onClick={() => navigator.clipboard?.writeText(l.url)}>
-              <Copy size={18} />
-            </button>
-          </p>
-        ))}
-        <p className="mt-2 text-sm text-slate-600">
-          The link is copied for you. Text it from GHL or your phone.
-        </p>
-      </section>
+        </section>
+      </div>
     </main>
   );
+}
+
+function nextMonth(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 2, 1);
+  return d.toLocaleString("en-GB", { month: "long" });
 }

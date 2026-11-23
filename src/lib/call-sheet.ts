@@ -50,3 +50,49 @@ export const FIELDS = {
   recording: "RdEktecgvLjdA1SPODAe",
   howWin: "RQqoOMtycE4KbUSDd7f6",
 } as const;
+
+/** Objection handling: say this, then pivot back to the close. {be} = break-even, {name} = first name. */
+export const OBJECTION_SCRIPTS: Record<string, { handle: string; pivot: string }> = {
+  Partner: {
+    handle:
+      "Makes sense, it's a big decision. Can I ask, if it was only you deciding, would you go ahead today? ... What do you think they will ask? Let's answer that now so you have it. Could we get them on for 5 minutes now, or book 10 minutes together tomorrow?",
+    pivot:
+      "If they're happy with the numbers we just went through, which suits you both better: £2,000 in one go, or 3 payments of £700?",
+  },
+  "Think about it": {
+    handle:
+      "Totally fair. So I can help, what exactly do you want to think over: the money, the timing, or whether it will work for you? ... (Answer that one thing only, using their numbers.)",
+    pivot:
+      "Now that's answered, is there anything else stopping you? ... Great, shall I send the link for in full or the 3 payments?",
+  },
+  Price: {
+    handle:
+      "I understand. Let's look at it with your numbers. You need about {be} office contracts to cover the whole year. That's about £7.87 a day. And every contract after that is money in your pocket, year after year.",
+    pivot:
+      "Would 3 payments of £700 make it easier to start now, so the first contracts are paying for it as you go?",
+  },
+  Time: {
+    handle:
+      "That's exactly why it's built this way. We run the ads, the page and the follow-up texts. Your part is quoting and visiting the offices that ask, about an hour a week to start.",
+    pivot:
+      "If an hour a week brings in {be} contracts, is that worth it? ... Great, in full or 3 payments?",
+  },
+  "Lead guarantee": {
+    handle:
+      "We never guarantee a number of leads, nobody honest can. We guarantee the work: the ads, the page, the follow-ups and the quoting system. You only need about {be} contracts to cover the year.",
+    pivot:
+      "How many do you think you could win if we put you in front of the right offices? ... So {be} feels doable? Then let's get you started. In full or 3 payments?",
+  },
+  "Not ready yet": {
+    handle:
+      "What would need to change for you to be ready? ... The ads take a few weeks to bring in your first offices, so starting later means contracts start later too. Waiting doesn't make it cheaper, it only pushes the income back.",
+    pivot:
+      "If we start now, your first office could be paying you before {month}. Shall we lock in your start: in full or 3 payments?",
+  },
+  "Tried ads before": {
+    handle:
+      "What happened last time? ... Usually it's no fast follow-up, the wrong offer or the wrong type of business. This is commercial only, with texts going out within minutes and a page built to win office contracts.",
+    pivot:
+      "If that part is handled for you, is there anything else stopping you? ... In full or 3 payments?",
+  },
+};
