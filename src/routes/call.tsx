@@ -9,6 +9,8 @@ import { SignInCard } from "../components/SignInCard";
 import { loadCallContact, saveCall, createLaunchInvoice } from "../lib/call-sheet.functions";
 import {
   breakEvenContracts,
+  contractsToCover,
+  STARTER_OFFICE_HOURS,
   FIELDS,
   OBJECTION_SCRIPTS,
   OBJECTIONS,
@@ -24,38 +26,49 @@ export const Route = createFileRoute("/call")({
   component: CallSheet,
 });
 
-const STEPS: { t: string; say: string }[] = [
+// say = the words to read out. cue = a note for you only (shown differently).
+const STEPS: { t: string; say: string; cue?: string; domestic?: string }[] = [
   {
     t: "1. Open (1 min)",
     say: "Thanks for booking, {name}. In 10 minutes we'll see if commercial contracts make sense for you. If it's a fit I'll show you how to start. If not, I'll tell you. Fair?",
   },
   {
     t: "2. Who decides",
-    say: "Is anyone else involved in a decision like this, a partner or co-owner? Would they want to be on this call? (Handle partner now, not at the end.)",
+    say: "Is anyone else involved in a decision like this, a partner or co-owner? Would they want to be on this call?",
+    cue: "If there is a partner, handle it now, not at the end.",
   },
   {
     t: "3. Where you are now",
     say: "How much commercial work do you have now, roughly per week? How do you win it today? What has stopped you getting more?",
+    domestic:
+      "So you mostly do homes right now. What has stopped you going after offices and other commercial work so far?",
   },
   {
-    t: "4. The numbers",
-    say: "What does a typical small office clean pay you per week? And after wages and products, roughly what percent do you keep? (Fill in the boxes, then read the maths out.)",
+    t: "4. Your quality",
+    say: "How would your clients describe your work? ... If you won a new office contract, how long do you think they would stay with you?",
+    cue: "Let them sell themselves. You want them to say: at least 3 to 6 months. Repeat it back to them.",
   },
   {
-    t: "5. Lead question",
-    say: "If they ask how many leads you guarantee: We never guarantee leads, nobody honest can. We guarantee the work: the ads, the page, the follow-ups, the quoting system. You only need about {be} contracts to cover the year. How many do you think you could win if we put you in front of the right offices?",
+    t: "5. The numbers",
+    say: "What would a typical small office clean pay you per week? And after wages and products, roughly what percent do you keep?",
+    domestic:
+      "What do you charge per hour for a clean? ... A small office usually needs about 2 hours, 3 times a week. That's 6 hours, so at your rate that's about £{week} a week from one office.",
+    cue: "Fill in the boxes on the left (domestic: use the hourly rate box). Then read the maths out.",
   },
   {
     t: "6. Tie-down",
-    say: "So if we got you just {be} contracts, the whole year pays for itself and everything after is profit. Does that make sense?",
+    say: "You said your clients stay at least 3 to 6 months. So if we got you just {be6} contracts in the next 3 months, and each one stayed 6 months, the whole programme pays for itself. Everything after that is yours. Does that make sense?",
+    cue: "If they think 6 months is a stretch, use 3 months: {be3} contracts.",
   },
   {
-    t: "7. Think about it",
-    say: "Totally fair. What exactly do you want to think over: the money, the timing, or whether it'll work? (Answer that one thing.)",
+    t: "7. If they ask about leads",
+    say: "We never guarantee leads, nobody honest can. We guarantee the work: the ads, the page, the follow-ups and the quoting system. You only need about {be6} contracts. How many do you think you could win if we put you in front of the right offices?",
+    cue: "Only use this if they ask how many leads you guarantee.",
   },
   {
     t: "8. Close",
-    say: "It's £2,000, or 3 payments of £700. Which suits you better? I'll text you the secure link now.",
+    say: "What do you pay a cleaner for an hour? ... The 3 months is £2,000, about £22 a day. That's about what you pay a cleaner for one hour. You can pay it in full, or in 3 payments of £700. Which suits you better? I'll text you the secure link now.",
+    cue: "Objections (think about it, partner, price, time) are in the Objections box.",
   },
 ];
 
@@ -116,14 +129,27 @@ function CallSheet() {
 
   const profit = yearlyProfit(f.weekly, f.margin);
   const be = breakEvenContracts(f.weekly, f.margin);
+  const be6 = contractsToCover(f.weekly, f.margin, 26);
+  const be3 = contractsToCover(f.weekly, f.margin, 13);
+  const [domestic, setDomestic] = useState(false);
+  const [hourly, setHourly] = useState(0);
   const name = data?.ok ? data.contact.firstName || "there" : "there";
   const steps = useMemo(
     () =>
-      STEPS.map((s) => ({
-        ...s,
-        say: s.say.replace("{name}", name).replaceAll("{be}", be ? String(be) : "2 or 3"),
-      })),
-    [name, be],
+      STEPS.map((s) => {
+        const fill = (x: string) =>
+          x
+            .replace("{name}", name)
+            .replaceAll("{be6}", be6 ? String(Math.ceil(be6)) : "2 or 3")
+            .replaceAll("{be3}", be3 ? String(Math.ceil(be3)) : "4 to 6")
+            .replaceAll("{week}", String(Math.round(f.weekly)));
+        return {
+          ...s,
+          say: fill(domestic && s.domestic ? s.domestic : s.say),
+          cue: s.cue ? fill(s.cue) : undefined,
+        };
+      }),
+    [name, be6, be3, domestic, f.weekly],
   );
 
   async function onSave() {
@@ -172,7 +198,7 @@ function CallSheet() {
   const input = "mt-1 w-full rounded-lg border border-slate-300 p-2 text-base";
   const card = "rounded-xl border border-slate-200 bg-white p-3";
   const fill = (t: string) =>
-    t.replaceAll("{be}", be ? String(be) : "2 or 3").replace("{month}", nextMonth());
+    t.replaceAll("{be}", be6 ? String(Math.ceil(be6)) : "2 or 3").replace("{month}", nextMonth());
   const obj = OBJECTION_SCRIPTS[f.objection];
   const call = data?.ok ? data.call : null;
   const callTime = call
@@ -242,6 +268,30 @@ function CallSheet() {
 
         <section className={card}>
           <h2 className="font-bold">The maths</h2>
+          <label className="mt-1 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={domestic}
+              onChange={(e) => setDomestic(e.target.checked)}
+            />
+            Mostly domestic (no office work yet)
+          </label>
+          {domestic && (
+            <label className="mt-1 block text-sm">
+              Their hourly rate (£), we'll work out one small office: 2 hours, 3 times a week
+              <input
+                type="number"
+                inputMode="decimal"
+                className={input}
+                value={hourly || ""}
+                onChange={(e) => {
+                  const h = Number(e.target.value) || 0;
+                  setHourly(h);
+                  if (h > 0) setF((p) => ({ ...p, weekly: h * STARTER_OFFICE_HOURS }));
+                }}
+              />
+            </label>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <label className="text-sm">
               £ per week, typical clean
@@ -268,7 +318,15 @@ function CallSheet() {
             One contract: £{f.weekly} × {f.margin}% × 52 = <b>£{profit.toLocaleString()} a year</b>.
             Year one cost £{YEAR_ONE_COST.toLocaleString()} (about £{perDay(YEAR_ONE_COST)} a day).
           </p>
-          <p className="text-xl font-bold text-emerald-700">Break-even: {be ?? "-"} contracts</p>
+          <p className="text-xl font-bold text-emerald-700">
+            Covers the £2,000: {be6 ? Math.ceil(be6) : "-"} contracts lasting 6 months
+          </p>
+          <p className="text-sm text-slate-600">
+            Or {be3 ? Math.ceil(be3) : "-"} contracts lasting 3 months. Worked out: £{f.weekly} a
+            week × {f.margin}% kept × 26 weeks = £
+            {Math.round(f.weekly * (f.margin / 100) * 26).toLocaleString()} per contract, and £2,000
+            ÷ that = {be6 ?? "-"}.
+          </p>
           <a
             className="mt-2 block rounded-lg bg-emerald-700 px-3 py-2 text-center font-semibold text-white"
             target="_blank"
@@ -330,7 +388,17 @@ function CallSheet() {
             ))}
           </div>
           <h3 className="mt-3 text-lg font-bold">{steps[step]!.t}</h3>
-          <p className="mt-1 text-lg">{steps[step]!.say}</p>
+          {steps[step]!.cue && (
+            <p className="mt-2 rounded-lg border-l-4 border-amber-500 bg-amber-50 px-3 py-2 text-base italic text-amber-900">
+              For you: {steps[step]!.cue}
+            </p>
+          )}
+          <p className="mt-2 text-lg font-medium">
+            <span className="mr-1 text-sm font-bold uppercase tracking-wide text-slate-500">
+              Say:
+            </span>
+            {steps[step]!.say}
+          </p>
           <div className="mt-3 flex justify-between">
             <button
               disabled={step === 0}

@@ -17,6 +17,19 @@ export function breakEvenContracts(weekly: number, marginPct: number): number | 
   return Math.round((YEAR_ONE_COST / p) * 10) / 10;
 }
 
+/**
+ * Contracts needed to cover the £2,000 launch if each contract lasts `weeks`
+ * (13 = 3 months, 26 = 6 months), counting only what they keep. 1 decimal place.
+ */
+export function contractsToCover(weekly: number, marginPct: number, weeks: number): number | null {
+  if (!(weekly > 0) || !(marginPct > 0) || !(weeks > 0)) return null;
+  const kept = weekly * (marginPct / 100) * weeks;
+  return Math.round((LAUNCH_PRICE / kept) * 10) / 10;
+}
+
+/** A starter office contract from a domestic hourly rate: 2 hours, 3 times a week. */
+export const STARTER_OFFICE_HOURS = 6;
+
 export function perDay(amount: number): number {
   return Math.round((amount / 365) * 100) / 100;
 }
@@ -51,7 +64,7 @@ export const FIELDS = {
   howWin: "RQqoOMtycE4KbUSDd7f6",
 } as const;
 
-/** Objection handling: say this, then pivot back to the close. {be} = break-even, {name} = first name. */
+/** Objection handling: say this, then pivot back to the close. {be} = contracts lasting 6 months that cover the £2,000, {name} = first name. */
 export const OBJECTION_SCRIPTS: Record<string, { handle: string; pivot: string }> = {
   Partner: {
     handle:
@@ -67,7 +80,7 @@ export const OBJECTION_SCRIPTS: Record<string, { handle: string; pivot: string }
   },
   Price: {
     handle:
-      "I understand. Let's look at it with your numbers. You need about {be} office contracts to cover the whole year. That's about £7.87 a day. And every contract after that is money in your pocket, year after year.",
+      "I understand. Let's look at it with your numbers. With your numbers, about {be} office contracts lasting 6 months cover it. The 3 months is about £22 a day, roughly what you pay a cleaner for one hour. Every contract after that is money in your pocket.",
     pivot:
       "Would 3 payments of £700 make it easier to start now, so the first contracts are paying for it as you go?",
   },
@@ -79,7 +92,7 @@ export const OBJECTION_SCRIPTS: Record<string, { handle: string; pivot: string }
   },
   "Lead guarantee": {
     handle:
-      "We never guarantee a number of leads, nobody honest can. We guarantee the work: the ads, the page, the follow-ups and the quoting system. You only need about {be} contracts to cover the year.",
+      "We never guarantee a number of leads, nobody honest can. We guarantee the work: the ads, the page, the follow-ups and the quoting system. You only need about {be} contracts lasting 6 months to cover it.",
     pivot:
       "How many do you think you could win if we put you in front of the right offices? ... So {be} feels doable? Then let's get you started. In full or 3 payments?",
   },
