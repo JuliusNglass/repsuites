@@ -314,10 +314,7 @@ function CallSheet() {
               />
             </label>
           </div>
-          <p className="mt-2 text-sm">
-            One contract: £{f.weekly} × {f.margin}% × 52 = <b>£{profit.toLocaleString()} a year</b>.
-            Year one cost £{YEAR_ONE_COST.toLocaleString()} (about £{perDay(YEAR_ONE_COST)} a day).
-          </p>
+
           <p className="text-xl font-bold text-emerald-700">
             Covers the £2,000: {be6 ? Math.ceil(be6) : "-"} contracts lasting 6 months
           </p>
