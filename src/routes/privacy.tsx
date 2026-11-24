@@ -110,6 +110,26 @@ export const Route = createFileRoute("/privacy")({
           </a>
           . See <a href="/google-business-profile">how the Google connection works</a>.
         </p>
+        <h3>Google Calendar (SparkOps bookings)</h3>
+        <p>
+          A business using SparkOps can also connect its Google Calendar so customers can book
+          times. With your permission we use two Google Calendar scopes, and only for this:
+        </p>
+        <ul>
+          <li>
+            <strong>calendar.freebusy</strong>: to see when you are busy, so those times are not
+            offered on your booking page. We never read event titles, descriptions or guests.
+          </li>
+          <li>
+            <strong>calendar.events</strong>: to add a booking to your calendar (with a Google
+            Meet link) when a customer books, and to remove that same event if they cancel. We do
+            not read, change or delete any event we did not create.
+          </li>
+        </ul>
+        <p>
+          We store only a refresh token (encrypted) and the IDs of events we created. Disconnecting
+          in SparkOps deletes the token straight away. The same Limited Use rules above apply.
+        </p>
 
         <h2>5. Facebook and Instagram data</h2>
         <p>
