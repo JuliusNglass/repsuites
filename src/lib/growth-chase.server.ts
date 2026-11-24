@@ -2,6 +2,7 @@
 // to book the Fit Call themselves; unqualified ones (solo/researching) get texts to the free Google Check.
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
+import { FIT_CALL_CALENDAR } from "./growth-join";
 import {
   offerFor,
   salesLink,
@@ -11,6 +12,10 @@ import {
   welcomeSms,
   growSms,
   isLater,
+  isFunnelV4,
+  readySms,
+  laterFirstSms,
+  bookLink,
   watchedVideo,
   watchedSms,
   laterSms,
@@ -50,6 +55,29 @@ async function ghl(path: string, init: RequestInit = {}): Promise<Response | nul
   } catch {
     return null;
   }
+}
+
+async function hasUpcomingFitCall(contactId: string): Promise<boolean> {
+  const r = await ghl(`/contacts/${contactId}/appointments`);
+  if (!r?.ok) return false;
+  const events = (
+    (await r.json().catch(() => ({}))) as {
+      events?: {
+        calendarId?: string;
+        startTime?: string;
+        deleted?: boolean;
+        appointmentStatus?: string;
+      }[];
+    }
+  ).events;
+  const now = Date.now() - 3_600_000;
+  return (events ?? []).some(
+    (e) =>
+      !e.deleted &&
+      e.calendarId === FIT_CALL_CALENDAR &&
+      !["cancelled", "invalid"].includes(e.appointmentStatus ?? "") &&
+      new Date((e.startTime ?? "").replace(" ", "T") + "Z").getTime() > now,
+  );
 }
 
 async function qualifiedLeads(): Promise<Contact[]> {
@@ -112,21 +140,38 @@ export async function runGrowthChase(token: string) {
       });
       continue;
     }
+    // Never chase someone who has already booked, even if the booked tag has
+    // not been added yet (GHL workflows can lag or be paused).
+    if (!check && (await hasUpcomingFitCall(c.id))) {
+      await serviceWrite("growth_chase", "", {
+        method: "POST",
+        headers: { Prefer: "resolution=ignore-duplicates" },
+        body: { contact_id: c.id, step, status: "skipped" },
+      });
+      continue;
+    }
+    const v4 = isFunnelV4(tags);
     const message = check
       ? welcomeSms(c.firstName, c.companyName)
-      : step === 1
-        ? firstSms(
-            c.firstName,
-            c.companyName,
-            salesLink(tags.includes("solo-grow") ? "commercial" : offerFor(tags), c),
-          )
-        : watchedVideo(tags) && !isLater(tags)
-          ? watchedSms(step, c.firstName, salesLink(offerFor(tags), c))
-          : isLater(tags)
-            ? laterSms(step, c.firstName, whyLink(c))
-            : tags.includes("solo-grow")
-              ? growSms(step, c.firstName, salesLink("commercial", c))
-              : chaseSms(step, c.firstName, salesLink(offerFor(tags), c), offerFor(tags));
+      : v4 && isLater(tags)
+        ? step === 1
+          ? laterFirstSms(c.firstName, c.companyName, whyLink(c))
+          : laterSms(step, c.firstName, whyLink(c))
+        : v4
+          ? readySms(step, c.firstName, c.companyName, bookLink(c))
+          : step === 1
+            ? firstSms(
+                c.firstName,
+                c.companyName,
+                salesLink(tags.includes("solo-grow") ? "commercial" : offerFor(tags), c),
+              )
+            : watchedVideo(tags) && !isLater(tags)
+              ? watchedSms(step, c.firstName, salesLink(offerFor(tags), c))
+              : isLater(tags)
+                ? laterSms(step, c.firstName, whyLink(c))
+                : tags.includes("solo-grow")
+                  ? growSms(step, c.firstName, salesLink("commercial", c))
+                  : chaseSms(step, c.firstName, salesLink(offerFor(tags), c), offerFor(tags));
     const r = await ghl("/conversations/messages", {
       method: "POST",
       body: JSON.stringify({ type: "SMS", contactId: c.id, message }),

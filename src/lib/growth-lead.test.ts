@@ -106,3 +106,38 @@ describe("growth video and booking", () => {
     );
   });
 });
+
+describe("survey v4", () => {
+  it("accepts the form without the domestic/commercial question", async () => {
+    const { validate } = await import("./growth-lead");
+    const f = new FormData();
+    for (const [k, v] of Object.entries({
+      name: "Ann Lee",
+      email: "ann@x.co",
+      phone: "07700900123",
+      business: "Ann Cleans",
+      cleaners: "4-10",
+      ready: "yes",
+      timing: "3m",
+    }))
+      f.set(k, v);
+    const d = validate(f);
+    expect(d).not.toBeNull();
+    expect(d.timing).toBe("3m");
+  });
+  it("rejects a bad split value if one is sent", async () => {
+    const { validate } = await import("./growth-lead");
+    const f = new FormData();
+    for (const [k, v] of Object.entries({
+      name: "Ann Lee",
+      email: "ann@x.co",
+      phone: "07700900123",
+      business: "Ann Cleans",
+      cleaners: "4-10",
+      ready: "yes",
+      split: "nonsense",
+    }))
+      f.set(k, v);
+    expect(validate(f)).toBeNull();
+  });
+});

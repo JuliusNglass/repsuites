@@ -124,3 +124,30 @@ describe("watched video follow-ups", () => {
     expect(watchedSms(3, "Joanna", "https://x.test/book")).toContain("last nudge");
   });
 });
+
+describe("funnel v4 texts", () => {
+  it("ready leads get their booking link, never a video nudge", async () => {
+    const { readySms, isFunnelV4 } = await import("./growth-chase");
+    expect(isFunnelV4(["grw-lead", "funnel-v4"])).toBe(true);
+    for (const step of [1, 2, 3] as const) {
+      const t = readySms(
+        step,
+        "kelechi",
+        "Adkleen Ltd",
+        "https://growth.accelur8clientwork.com/book?x=1",
+      );
+      expect(t).toContain("https://growth.accelur8clientwork.com/book?x=1");
+      expect(t).toMatch(/^Hi Kelechi,/);
+      expect(t).toMatch(/Accelur8$/);
+      expect(t).not.toMatch(/video|STOP|opt out|—|Julius/i);
+    }
+    expect(readySms(1, "a", "Adkleen Ltd", "https://x")).toContain("Adkleen Ltd");
+  });
+  it("later leads get the Why wait page", async () => {
+    const { laterFirstSms } = await import("./growth-chase");
+    const t = laterFirstSms("ann", null, "https://growth.accelur8clientwork.com/why?a=1");
+    expect(t).toContain("your business");
+    expect(t).toContain("https://growth.accelur8clientwork.com/why?a=1");
+    expect(t).not.toMatch(/STOP|—/);
+  });
+});

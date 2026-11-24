@@ -223,3 +223,32 @@ export function watchedSms(
     return `${hi}, last nudge from us. If now isn't right, no problem. You can pick a time here whenever you're ready: ${link} Accelur8`;
   return `${hi}, glad you watched the video. Pick a time that suits you here and we'll map out your contract plan: ${link} Accelur8`;
 }
+
+// Funnel v4 (24 Nov 2026): leads have already watched the offer video, with
+// the cost, before the form. Ready-now leads get their booking link, never
+// another "watch the video" text; later leads get the Why wait page.
+export function isFunnelV4(tags: string[]): boolean {
+  return tags.includes("funnel-v4");
+}
+export function readySms(
+  step: ChaseStep,
+  firstName: string | null | undefined,
+  business: string | null | undefined,
+  link: string,
+): string {
+  const hi = `Hi ${first(firstName)}`;
+  const biz = (business ?? "").trim() || "your business";
+  if (step === 1)
+    return `${hi}, it's Accelur8, from the form you just filled in for ${biz}. Here's your link to pick a time for your free 15-minute call: ${link} It's our own page, with nothing to download. Accelur8`;
+  if (step === 2)
+    return `${hi}, just checking you saw this. Pick a time that suits you for your free call here: ${link} Accelur8`;
+  return `${hi}, last nudge from us. If now isn't the right time, no problem. You can pick a time here whenever you're ready: ${link} Accelur8`;
+}
+export function laterFirstSms(
+  firstName: string | null | undefined,
+  business: string | null | undefined,
+  link: string,
+): string {
+  const biz = (business ?? "").trim() || "your business";
+  return `Hi ${first(firstName)}, it's Accelur8, from the form you just filled in for ${biz}. Starting later is fine. This short video shows what waiting can cost, and you can pick your start month on the same page: ${link} Accelur8`;
+}

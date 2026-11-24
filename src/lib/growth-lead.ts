@@ -94,6 +94,8 @@ export async function pushGhl(
 ): Promise<string | false> {
   const tags = [
     "grw-lead",
+    // Funnel v4: saw the offer video (with the cost) before the form.
+    "funnel-v4",
     `src-${d.src || "direct"}`,
     ...(d.angle ? [`angle-${d.angle}`] : []),
     `lead-${r.phaseKey}`,
@@ -191,7 +193,8 @@ export function validate(f: FormData): any {
     d.phone.replace(/\D/g, "").length >= 10 &&
     d.business.length > 1 &&
     (OPT.cleaners as any)[d.cleaners] &&
-    (OPT.split as any)[d.split] &&
+    // Survey v4 (24 Nov 2026) no longer asks domestic/commercial split.
+    (!d.split || (OPT.split as any)[d.split]) &&
     (OPT.bottleneck as any)[d.bottleneck] &&
     (OPT.ready as any)[d.ready] &&
     (OPT.timing as any)[d.timing];

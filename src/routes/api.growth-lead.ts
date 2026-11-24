@@ -39,8 +39,9 @@ export const Route = createFileRoute("/api/growth-lead")({
           if (!ok) console.error("growth lead: Meta CAPI failed");
         }
         if (r.qualified) {
-          // Every team owner watches the offer video (with the cost) before booking.
-          // "Not yet" on that page leads to the Why wait page, then book or pick a month.
+          // Funnel v4 (24 Nov 2026): the growth page shows the offer video (with
+          // the cost) before the form. "Ready now" goes straight to booking;
+          // "3 months" or "researching" goes to the Why wait page.
           const [first, ...rest] = String(d.name).split(/\s+/);
           const q = new URLSearchParams({
             first_name: first ?? "",
@@ -55,6 +56,11 @@ export const Route = createFileRoute("/api/growth-lead")({
               : r.phaseKey === "rebook"
                 ? "reactivation"
                 : "commercial";
+          if (page === "commercial") {
+            if (r.urgent) return go(`${GROWTH}/book?${q}`);
+            q.set("o", "commercial");
+            return go(`${GROWTH}/why?${q}`);
+          }
           return go(`${GROWTH}/${page}?${q}`);
         }
         return go(`${GROWTH}/thanks?s=1`);
