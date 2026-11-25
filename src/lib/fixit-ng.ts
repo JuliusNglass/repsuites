@@ -84,5 +84,8 @@ export const NG_FAQ: [string, string][] = [
     "Will this put me at number 1?",
     "Nobody honest can promise that. It gives Google what it needs to understand and show your business, which most owners are missing.",
   ],
-  ["How do I pay?", "Card, bank transfer or USSD, through Paystack. One payment. No subscription."],
+  [
+    "How do I pay?",
+    "By card on a secure payment page. Bank transfer and USSD are coming soon. One payment, no subscription.",
+  ],
 ];

@@ -321,8 +321,7 @@ function Checkout({
         )}
       </button>
       <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
-        <Lock className="h-4 w-4" aria-hidden /> Card, bank transfer or USSD by Paystack. One
-        payment.
+        <Lock className="h-4 w-4" aria-hidden /> Secure payment. One payment, no subscription.
       </p>
       <button
         type="button"
