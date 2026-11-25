@@ -27,7 +27,29 @@ export const Route = createFileRoute("/call")({
 });
 
 // say = the words to read out. cue = a note for you only (shown differently).
-const STEPS: { t: string; say: string; cue?: string; domestic?: string }[] = [
+// fields = the answer boxes for that step.
+type FieldKey =
+  | "decisionMaker"
+  | "commercialNow"
+  | "howWin"
+  | "blocker"
+  | "quality"
+  | "stayMonths"
+  | "weekly"
+  | "margin"
+  | "cleanerHourly";
+const FIELD_LABELS: Record<FieldKey, { label: string; num?: boolean }> = {
+  decisionMaker: { label: "Who decides" },
+  commercialNow: { label: "Commercial work now (£ per week)", num: true },
+  howWin: { label: "How they win work today" },
+  blocker: { label: "What has stopped them getting more" },
+  quality: { label: "How their clients describe their work" },
+  stayMonths: { label: "How long a new client would stay (months)", num: true },
+  weekly: { label: "£ per week for one small office", num: true },
+  margin: { label: "% they keep after wages and products", num: true },
+  cleanerHourly: { label: "What they pay a cleaner per hour (£)", num: true },
+};
+const STEPS: { t: string; say: string; cue?: string; domestic?: string; fields?: FieldKey[] }[] = [
   {
     t: "1. Open (1 min)",
     say: "Thanks for booking, {name}. In 10 minutes we'll see if commercial contracts make sense for you. If it's a fit I'll show you how to start. If not, I'll tell you. Fair?",
@@ -36,39 +58,37 @@ const STEPS: { t: string; say: string; cue?: string; domestic?: string }[] = [
     t: "2. Who decides",
     say: "Is anyone else involved in a decision like this, a partner or co-owner? Would they want to be on this call?",
     cue: "If there is a partner, handle it now, not at the end.",
+    fields: ["decisionMaker"],
   },
   {
     t: "3. Where you are now",
     say: "How much commercial work do you have now, roughly per week? How do you win it today? What has stopped you getting more?",
     domestic:
-      "So you mostly do homes right now. What has stopped you going after offices and other commercial work so far?",
+      "So you mostly do homes right now. How do you win new clients today? What has stopped you going after offices and other commercial work so far?",
+    fields: ["commercialNow", "howWin", "blocker"],
   },
   {
     t: "4. Your quality",
     say: "How would your clients describe your work? ... If you won a new office contract, how long do you think they would stay with you?",
     cue: "Let them sell themselves. You want them to say: at least 3 to 6 months. Repeat it back to them.",
+    fields: ["quality", "stayMonths"],
   },
   {
     t: "5. The numbers",
-    say: "What would a typical small office clean pay you per week? And after wages and products, roughly what percent do you keep?",
+    say: "What would a typical small office clean pay you per week? ... For a guide, a barber shop is often about £40 to £75 a week, a small office £100 to £180, a community hall £60 to £120. Does that sound about right where you are? And after wages and products, roughly what percent do you keep?",
     domestic:
-      "What do you charge per hour for a clean? ... A small office usually needs about 2 hours, 3 times a week. That's 6 hours, so at your rate that's about £{week} a week from one office.",
-    cue: "Fill in the boxes on the left (domestic: use the hourly rate box). Then read the maths out.",
+      "What do you charge per hour for a clean? ... A small office usually needs about 2 hours, 3 times a week. That's 6 hours, so at your rate that's about £{week} a week from one office. After wages and products, roughly what percent do you keep?",
+    cue: "The guide prices are rough UK figures, not researched for their town. Check them against what they say. Domestic only: tick Mostly domestic and type their hourly rate.",
+    fields: ["weekly", "margin"],
   },
   {
     t: "6. Tie-down",
-    say: "You said your clients stay at least 3 to 6 months. So if we got you just {be6} contracts in the next 3 months, and each one stayed 6 months, the whole programme pays for itself. Everything after that is yours. Does that make sense?",
-    cue: "If they think 6 months is a stretch, use 3 months: {be3} contracts.",
+    say: "You said a new client would stay about {stay} months. So if we got you just {be} contracts in the next 3 months, and each one stayed about {stay} months, the whole programme pays for itself. Everything after that is pure profit. Does that make sense?",
   },
   {
-    t: "7. If they ask about leads",
-    say: "We never guarantee leads, nobody honest can. We guarantee the work: the ads, the page, the follow-ups and the quoting system. You only need about {be6} contracts. How many do you think you could win if we put you in front of the right offices?",
-    cue: "Only use this if they ask how many leads you guarantee.",
-  },
-  {
-    t: "8. Close",
+    t: "7. Close",
     say: "What do you pay a cleaner for an hour? ... The 3 months is £2,000, about £22 a day. That's about what you pay a cleaner for one hour. You can pay it in full, or in 3 payments of £700. Which suits you better? I'll text you the secure link now.",
-    cue: "Objections (think about it, partner, price, time) are in the Objections box.",
+    fields: ["cleanerHourly"],
   },
 ];
 
@@ -93,6 +113,10 @@ function CallSheet() {
     recording: "",
     howWin: "",
     notes: "",
+    quality: "",
+    stayMonths: 6,
+    cleanerHourly: 0,
+    transcript: "",
   });
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) =>
     setF((p) => ({
@@ -129,7 +153,7 @@ function CallSheet() {
 
   const profit = yearlyProfit(f.weekly, f.margin);
   const be = breakEvenContracts(f.weekly, f.margin);
-  const be6 = contractsToCover(f.weekly, f.margin, 26);
+  const be6 = contractsToCover(f.weekly, f.margin, Math.round((f.stayMonths || 6) * 4.33));
   const be3 = contractsToCover(f.weekly, f.margin, 13);
   const [domestic, setDomestic] = useState(false);
   const [hourly, setHourly] = useState(0);
@@ -140,8 +164,8 @@ function CallSheet() {
         const fill = (x: string) =>
           x
             .replace("{name}", name)
-            .replaceAll("{be6}", be6 ? String(Math.ceil(be6)) : "2 or 3")
-            .replaceAll("{be3}", be3 ? String(Math.ceil(be3)) : "4 to 6")
+            .replaceAll("{be}", be6 ? String(Math.ceil(be6)) : "2 or 3")
+            .replaceAll("{stay}", String(f.stayMonths || 6))
             .replaceAll("{week}", String(Math.round(f.weekly)));
         return {
           ...s,
@@ -149,7 +173,7 @@ function CallSheet() {
           cue: s.cue ? fill(s.cue) : undefined,
         };
       }),
-    [name, be6, be3, domestic, f.weekly],
+    [name, be6, domestic, f.weekly, f.stayMonths],
   );
 
   async function onSave() {
@@ -316,13 +340,16 @@ function CallSheet() {
           </div>
 
           <p className="text-xl font-bold text-emerald-700">
-            Covers the £2,000: {be6 ? Math.ceil(be6) : "-"} contracts lasting 6 months
+            Covers the £2,000: {be6 ? Math.ceil(be6) : "-"} contracts lasting {f.stayMonths || 6}{" "}
+            months
           </p>
           <p className="text-sm text-slate-600">
             Or {be3 ? Math.ceil(be3) : "-"} contracts lasting 3 months. Worked out: £{f.weekly} a
-            week × {f.margin}% kept × 26 weeks = £
-            {Math.round(f.weekly * (f.margin / 100) * 26).toLocaleString()} per contract, and £2,000
-            ÷ that = {be6 ?? "-"}.
+            week × {f.margin}% kept × {Math.round((f.stayMonths || 6) * 4.33)} weeks = £
+            {Math.round(
+              f.weekly * (f.margin / 100) * Math.round((f.stayMonths || 6) * 4.33),
+            ).toLocaleString()}{" "}
+            per contract, and £2,000 ÷ that = {be6 ?? "-"}.
           </p>
           <a
             className="mt-2 block rounded-lg bg-emerald-700 px-3 py-2 text-center font-semibold text-white"
@@ -396,6 +423,22 @@ function CallSheet() {
             </span>
             {steps[step]!.say}
           </p>
+          {(STEPS[step]!.fields ?? []).length > 0 && (
+            <div className="mt-3 grid gap-2 rounded-lg bg-slate-50 p-3">
+              {(STEPS[step]!.fields ?? []).map((k) => (
+                <label key={k} className="text-sm font-semibold">
+                  {FIELD_LABELS[k].label}
+                  <input
+                    type={FIELD_LABELS[k].num ? "number" : "text"}
+                    inputMode={FIELD_LABELS[k].num ? "decimal" : undefined}
+                    className={input}
+                    value={String(f[k] ?? "")}
+                    onChange={set(k)}
+                  />
+                </label>
+              ))}
+            </div>
+          )}
           <div className="mt-3 flex justify-between">
             <button
               disabled={step === 0}
@@ -490,6 +533,15 @@ function CallSheet() {
               placeholder="https://"
               value={f.recording}
               onChange={set("recording")}
+            />
+          </label>
+          <label className="col-span-2 text-sm">
+            Call transcript (paste it here, or paste it in the chat and Claude fills the boxes)
+            <textarea
+              rows={4}
+              className={input}
+              value={f.transcript}
+              onChange={set("transcript")}
             />
           </label>
           <label className="col-span-2 text-sm">

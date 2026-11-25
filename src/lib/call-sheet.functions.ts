@@ -93,6 +93,10 @@ const Save = z.object({
     .refine((s) => !s || s.startsWith("https://"), "Link must start with https://"),
   howWin: z.string().max(500),
   notes: z.string().max(4000),
+  quality: z.string().max(500).optional(),
+  stayMonths: z.number().min(0).max(120).optional(),
+  cleanerHourly: z.number().min(0).max(1000).optional(),
+  transcript: z.string().max(20000).optional(),
 });
 
 export const saveCall = createServerFn({ method: "POST" })
@@ -125,8 +129,12 @@ export const saveCall = createServerFn({ method: "POST" })
       `Commercial income now: £${data.commercialNow}/week. Decision maker: ${data.decisionMaker || "-"}`,
       `Main blocker: ${data.blocker || "-"}`,
       `How they win work: ${data.howWin || "-"}`,
+      `How clients describe their work: ${data.quality || "-"}`,
+      `A new client would stay: ${data.stayMonths ? `${data.stayMonths} months` : "-"}`,
+      `Pays a cleaner: ${data.cleanerHourly ? `£${data.cleanerHourly} an hour` : "-"}`,
       data.recording ? `Recording: ${data.recording}` : "",
       data.notes ? `Notes: ${data.notes}` : "",
+      data.transcript ? `Transcript:\n${data.transcript.slice(0, 15000)}` : "",
     ]
       .filter(Boolean)
       .join("\n");
