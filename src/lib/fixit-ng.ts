@@ -61,6 +61,10 @@ export const NG_LESSONS: { title: string; body: string }[] = [
 
 export const NG_FAQ: [string, string][] = [
   [
+    "What if it is not right for my business?",
+    "Tell us within 14 days and we rewrite it for you. Just reply on WhatsApp or email.",
+  ],
+  [
     "How fast do I get it?",
     "In minutes, on WhatsApp and email, straight after you pay. You only tell us which business it is.",
   ],

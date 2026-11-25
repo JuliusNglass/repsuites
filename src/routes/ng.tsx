@@ -96,16 +96,22 @@ function NgPage() {
               For business owners in Nigeria
             </p>
             <h1 className="text-3xl sm:text-5xl font-semibold leading-tight">
-              Customers are searching Google for what you sell. Are they finding you?
+              When someone near you searches for what you sell, your business should be one of the 3
+              they see.
             </h1>
             <p className="text-lg text-muted-foreground">
-              Most owners have never been shown how Google, ChatGPT and Google AI choose which
-              businesses to show. This 3 minute video shows you, and the simple fix.
+              Right now those searches go to the 3 businesses Google shows on the map. This 3 minute
+              video shows how Google and AI answers pick them, and the 20 minute fix that puts your
+              business in the running.
             </p>
             <p className="text-lg">
               <b>Google Fix-it Pack:</b> {naira(diy)} once.{" "}
               <span className="text-primary-ink font-semibold">
-                That is {nairaPerDay(diy)} for a year, less than one sachet of pure water.
+                That is {nairaPerDay(diy)} over a year
+                {price === 10
+                  ? ", less than a sachet of pure water"
+                  : ", about one sachet of pure water"}
+                .
               </span>
             </p>
             <button
@@ -113,8 +119,11 @@ function NgPage() {
               onClick={scrollToBuy}
               className="btn btn-gold btn-lg w-full sm:w-auto"
             >
-              Get my Fix-it Pack
+              Show me the fix
             </button>
+            <p className="text-sm text-muted-foreground">
+              Try it on your own profile. Not right? Tell us within 14 days and we rewrite it.
+            </p>
           </div>
 
           <div className="relative">
@@ -152,8 +161,9 @@ function NgPage() {
           </div>
           <div className="rounded-2xl bg-gold-soft/50 p-5">
             <b>Try it now:</b> open Google on your phone and type what you sell plus your area (for
-            example "hair salon Lekki"). Are you in the top 3 on the map? If not, the Fix-it Pack is
-            for you.
+            example "hair salon Lekki"). If you are not in the top 3 on the map, every one of those
+            searches is going to someone else today. That is the reason to fix it now, not next
+            month.
           </div>
         </section>
 
