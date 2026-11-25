@@ -17,7 +17,7 @@ export const Route = createFileRoute("/fix/thanks")({
   validateSearch: z.object({
     s: z.string().max(260).optional(),
     r: z.string().max(64).optional(),
-    o: z.literal("p27").optional(),
+    o: z.enum(["p27", "ng"]).optional(),
     i: z.coerce.number().optional(),
     preview: z.enum(["upsell", "plan"]).optional(),
   }),
@@ -68,11 +68,13 @@ function Thanks() {
     }
     trackPixel(
       "Purchase",
-      {
-        currency: "GBP",
-        value: 27,
-        content_name: o === "p27" ? "Profile Fix Pack" : "Fix-It Pack",
-      },
+      o === "ng"
+        ? { currency: "NGN", content_name: "Fix-it Pack Nigeria" }
+        : {
+            currency: "GBP",
+            value: 27,
+            content_name: o === "p27" ? "Profile Fix Pack" : "Fix-It Pack",
+          },
       s,
     );
   }, [s, o]);

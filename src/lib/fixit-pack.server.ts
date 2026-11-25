@@ -58,6 +58,15 @@ export async function recordFixitOrder(session: any) {
       phone: cust.phone ? String(cust.phone) : null,
       name: cust.name ? String(cust.name) : null,
       offer: String(session?.metadata?.offer ?? "") || null,
+      ...(String(session?.metadata?.offer ?? "").startsWith("ng_")
+        ? {
+            market: "ng",
+            currency: "ngn",
+            tier: String(session.metadata.offer).slice(3),
+            provider: session?.ng?.provider ?? "stripe",
+            amount_minor: Number(session?.ng?.amount ?? session?.amount_total ?? 0) || null,
+          }
+        : {}),
       stripe_customer:
         (typeof session?.customer === "string" ? session.customer : session?.customer?.id) || null,
       payment_intent:
@@ -97,8 +106,12 @@ export async function findReport(o: FixitOrder): Promise<{ token: string; report
   return row?.report ? { token: row.report_token, report: row.report } : null;
 }
 
-const SYSTEM = `You write Google Business Profile fixes for small UK local businesses.
-Plain UK English a 16 year old can read. Short sentences. No em dashes, no hype, no made-up facts:
+const SYSTEM_NG_NOTE = `This business is in Nigeria. Write for Nigerian customers: plain Nigerian
+English, local area and street names as given, prices never mentioned, and services the way Nigerians
+search for them (for example "near me", the area name, "in Lagos").`;
+
+const SYSTEM = `You write Google Business Profile fixes for small local businesses.
+Plain English a 16 year old can read. Short sentences. No em dashes, no hype, no made-up facts:
 never invent awards, years in business, prices, staff names or guarantees. Only use what the data says,
 and the obvious services for this kind of business. Use the search phrase customers use, naturally.
 Google rules: description up to 750 characters, no links or phone numbers in it; posts up to 1500
@@ -130,6 +143,7 @@ in their Google Business Profile.`;
 async function writePack(
   report: Report,
   x: FixitExtras | null,
+  ng = false,
 ): Promise<FixitPack | { error: string }> {
   const key = (process.env["REPSUITES_ANTHROPIC_API_KEY"] ?? "").trim();
   if (!key) return { error: "AI key missing" };
@@ -147,7 +161,7 @@ async function writePack(
       body: JSON.stringify({
         model: (process.env["REPSUITES_POSTS_MODEL"] ?? "").trim() || "claude-sonnet-5-5",
         max_tokens: 6000,
-        system: SYSTEM,
+        system: ng ? `${SYSTEM}\n${SYSTEM_NG_NOTE}` : SYSTEM,
         tools: [
           {
             name: "fixit_pack",
@@ -221,8 +235,13 @@ async function writePack(
   }
 }
 
+export function isNg(o: FixitOrder): boolean {
+  return String(o.offer ?? "").startsWith("ng_");
+}
+
 async function emailPack(o: FixitOrder) {
   if (!o.email) return;
+  if (isNg(o)) return emailPackNg(o);
   const url = `${ORIGIN}/fix/pack/${o.view_key}`;
   const first = String(o.name ?? "").split(/\s+/)[0] || "there";
   const r = await sendEmail({
@@ -230,6 +249,28 @@ async function emailPack(o: FixitOrder) {
     subject: `Your Google Fix-It Pack${o.business ? ` for ${o.business}` : ""} is ready`,
     html: `<p>Hi ${first},</p><p>Your Google Fix-It Pack is ready. Everything is written for you, with a copy button next to each part and the steps in order.</p><p><a href="${url}" style="display:inline-block;background:#0b1d3a;color:#fff;padding:14px 22px;border-radius:999px;text-decoration:none;font-weight:700">Open my Fix-It Pack</a></p><p><b>Your first 30 days of our managed service are free.</b> We ask your customers for reviews, reply to them and send you a ranking update every week, so the fixes keep working. Nothing to set up: we will be in touch by text to get started.</p><p>Most owners finish it in about 20 minutes. If anything is not right, just reply to this email and we will sort it.</p><p>Accelur8</p>`,
     text: `Hi ${first}, your Google Fix-It Pack is ready: ${url}  Reply to this email if anything is not right. Accelur8`,
+    replyTo: "julius@accelur8.com",
+  });
+  if (r.ok)
+    await serviceWrite(`fixit_orders?id=eq.${o.id}`, "", {
+      method: "PATCH",
+      body: { emailed_at: new Date().toISOString() },
+    });
+}
+
+// Nigeria: no UK managed month. Done-for-you buyers are told what happens next.
+async function emailPackNg(o: FixitOrder) {
+  const url = `${ORIGIN}/fix/pack/${o.view_key}`;
+  const first = String(o.name ?? "").split(/\s+/)[0] || "there";
+  const dfy = o.offer === "ng_dfy";
+  const next = dfy
+    ? "<p><b>Done for you:</b> we will message you on WhatsApp today to be added as a manager on your Google profile (no password needed). Then we put everything in for you.</p>"
+    : "<p>Most people finish it in about 20 minutes on their phone. Start with step 1 and copy each part in.</p>";
+  const r = await sendEmail({
+    to: o.email!,
+    subject: `Your Google Fix-it Pack${o.business ? ` for ${o.business}` : ""} is ready`,
+    html: `<p>Hi ${first},</p><p>Your Google Fix-it Pack is ready. Everything is written for you, with a copy button next to each part and the steps in order.</p><p><a href="${url}" style="display:inline-block;background:#0b1d3a;color:#fff;padding:14px 22px;border-radius:999px;text-decoration:none;font-weight:700">Open my Fix-it Pack</a></p>${next}<p>Questions? Just reply to this email.</p><p>Accelur8</p>`,
+    text: `Hi ${first}, your Google Fix-it Pack is ready: ${url}  Accelur8`,
     replyTo: "julius@accelur8.com",
   });
   if (r.ok)
@@ -265,7 +306,7 @@ export async function processFixit(o: FixitOrder): Promise<FixitOrder> {
     });
     return { ...o, status: "needs_info" };
   }
-  const pack = await writePack(found.report, o.extras);
+  const pack = await writePack(found.report, o.extras, isNg(o));
   if ("error" in pack) {
     await serviceWrite(`fixit_orders?id=eq.${o.id}`, "", {
       method: "PATCH",

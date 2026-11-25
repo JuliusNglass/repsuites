@@ -79,6 +79,23 @@ async function fixitPaid(session: any) {
   // Table stand added at checkout: mark its shop order paid and notify.
   if (session?.metadata?.order_id) await shopPaid(session);
   const cust = session.customer_details ?? {};
+  // Nigeria: the contact goes to Accelur8's SparkOps, never GHL.
+  if (String(session?.metadata?.offer ?? "").startsWith("ng_")) {
+    const m = session.metadata;
+    const { sendFixitNgEvent } = await import("./paystack.server");
+    await sendFixitNgEvent({
+      event: "paid",
+      tier: String(m.offer).slice(3),
+      price: Number(m.price),
+      name: cust.name ?? m.name ?? "",
+      phone: cust.phone ?? m.phone ?? "",
+      email: cust.email ? String(cust.email).toLowerCase() : "",
+      business: m.business ?? "",
+      ref: m.ref || String(session.id).slice(0, 80),
+      amount_kobo: Number(session.amount_total ?? 0),
+    });
+    return;
+  }
   const { tagFixitPaid } = await import("./ghl-lead.server");
   await tagFixitPaid({
     email: cust.email ? String(cust.email).toLowerCase() : null,
@@ -127,6 +144,8 @@ async function stripeSale(session: any) {
   const kind = String(session?.metadata?.kind ?? "");
   const pence = Number(session?.amount_total ?? 0);
   if (!SALE_LABEL[kind] || !(pence > 0) || session?.payment_status !== "paid") return;
+  // Nigeria orders are tracked in SparkOps (fixitPaid), not GHL.
+  if (String(session?.metadata?.offer ?? "").startsWith("ng_")) return;
   const cust = session.customer_details ?? {};
   const plan = String(session?.metadata?.plan ?? "");
   const { recordStripeSale } = await import("./sale-sync.server");

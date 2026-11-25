@@ -18,6 +18,7 @@ import { Route as GoRouteImport } from './routes/go'
 import { Route as GoogleBusinessProfileRouteImport } from './routes/google-business-profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MetaDeletionRouteImport } from './routes/meta-deletion'
+import { Route as NgRouteImport } from './routes/ng'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -63,6 +64,7 @@ import { Route as ApiInternalReviewRequestsRouteImport } from './routes/api.inte
 import { Route as ApiInternalSaleSyncRouteImport } from './routes/api.internal.sale-sync'
 import { Route as ApiInternalVideoOrdersRouteImport } from './routes/api.internal.video-orders'
 import { Route as ApiMetaDataDeletionRouteImport } from './routes/api.meta.data-deletion'
+import { Route as ApiPaystackWebhookRouteImport } from './routes/api.paystack.webhook'
 import { Route as ApiResendWebhookRouteImport } from './routes/api.resend.webhook'
 import { Route as ApiReviewTriggerTokenRouteImport } from './routes/api.review-trigger.$token'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
@@ -120,6 +122,11 @@ const LoginRoute = LoginRouteImport.update({
 const MetaDeletionRoute = MetaDeletionRouteImport.update({
   id: '/meta-deletion',
   path: '/meta-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NgRoute = NgRouteImport.update({
+  id: '/ng',
+  path: '/ng',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -350,6 +357,11 @@ const ApiMetaDataDeletionRoute = ApiMetaDataDeletionRouteImport.update({
   path: '/api/meta/data-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPaystackWebhookRoute = ApiPaystackWebhookRouteImport.update({
+  id: '/api/paystack/webhook',
+  path: '/api/paystack/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiResendWebhookRoute = ApiResendWebhookRouteImport.update({
   id: '/api/resend/webhook',
   path: '/api/resend/webhook',
@@ -429,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/meta-deletion': typeof MetaDeletionRoute
+  '/ng': typeof NgRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -474,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
   '/api/internal/video-orders': typeof ApiInternalVideoOrdersRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -498,6 +512,7 @@ export interface FileRoutesByTo {
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/meta-deletion': typeof MetaDeletionRoute
+  '/ng': typeof NgRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -543,6 +558,7 @@ export interface FileRoutesByTo {
   '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
   '/api/internal/video-orders': typeof ApiInternalVideoOrdersRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -568,6 +584,7 @@ export interface FileRoutesById {
   '/google-business-profile': typeof GoogleBusinessProfileRoute
   '/login': typeof LoginRoute
   '/meta-deletion': typeof MetaDeletionRoute
+  '/ng': typeof NgRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
@@ -613,6 +630,7 @@ export interface FileRoutesById {
   '/api/internal/sale-sync': typeof ApiInternalSaleSyncRoute
   '/api/internal/video-orders': typeof ApiInternalVideoOrdersRoute
   '/api/meta/data-deletion': typeof ApiMetaDataDeletionRoute
+  '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/resend/webhook': typeof ApiResendWebhookRoute
   '/api/review-trigger/$token': typeof ApiReviewTriggerTokenRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -639,6 +657,7 @@ export interface FileRouteTypes {
     | '/google-business-profile'
     | '/login'
     | '/meta-deletion'
+    | '/ng'
     | '/pricing'
     | '/privacy'
     | '/profile'
@@ -684,6 +703,7 @@ export interface FileRouteTypes {
     | '/api/internal/sale-sync'
     | '/api/internal/video-orders'
     | '/api/meta/data-deletion'
+    | '/api/paystack/webhook'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
@@ -708,6 +728,7 @@ export interface FileRouteTypes {
     | '/google-business-profile'
     | '/login'
     | '/meta-deletion'
+    | '/ng'
     | '/pricing'
     | '/privacy'
     | '/profile'
@@ -753,6 +774,7 @@ export interface FileRouteTypes {
     | '/api/internal/sale-sync'
     | '/api/internal/video-orders'
     | '/api/meta/data-deletion'
+    | '/api/paystack/webhook'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
@@ -777,6 +799,7 @@ export interface FileRouteTypes {
     | '/google-business-profile'
     | '/login'
     | '/meta-deletion'
+    | '/ng'
     | '/pricing'
     | '/privacy'
     | '/profile'
@@ -822,6 +845,7 @@ export interface FileRouteTypes {
     | '/api/internal/sale-sync'
     | '/api/internal/video-orders'
     | '/api/meta/data-deletion'
+    | '/api/paystack/webhook'
     | '/api/resend/webhook'
     | '/api/review-trigger/$token'
     | '/api/stripe/webhook'
@@ -847,6 +871,7 @@ export interface RootRouteChildren {
   GoogleBusinessProfileRoute: typeof GoogleBusinessProfileRoute
   LoginRoute: typeof LoginRoute
   MetaDeletionRoute: typeof MetaDeletionRoute
+  NgRoute: typeof NgRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
@@ -892,6 +917,7 @@ export interface RootRouteChildren {
   ApiInternalSaleSyncRoute: typeof ApiInternalSaleSyncRoute
   ApiInternalVideoOrdersRoute: typeof ApiInternalVideoOrdersRoute
   ApiMetaDataDeletionRoute: typeof ApiMetaDataDeletionRoute
+  ApiPaystackWebhookRoute: typeof ApiPaystackWebhookRoute
   ApiResendWebhookRoute: typeof ApiResendWebhookRoute
   ApiReviewTriggerTokenRoute: typeof ApiReviewTriggerTokenRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
@@ -967,6 +993,13 @@ declare module '@tanstack/react-router' {
       path: '/meta-deletion'
       fullPath: '/meta-deletion'
       preLoaderRoute: typeof MetaDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ng': {
+      id: '/ng'
+      path: '/ng'
+      fullPath: '/ng'
+      preLoaderRoute: typeof NgRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -1284,6 +1317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMetaDataDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/paystack/webhook': {
+      id: '/api/paystack/webhook'
+      path: '/api/paystack/webhook'
+      fullPath: '/api/paystack/webhook'
+      preLoaderRoute: typeof ApiPaystackWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/resend/webhook': {
       id: '/api/resend/webhook'
       path: '/api/resend/webhook'
@@ -1403,6 +1443,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoogleBusinessProfileRoute: GoogleBusinessProfileRoute,
   LoginRoute: LoginRoute,
   MetaDeletionRoute: MetaDeletionRoute,
+  NgRoute: NgRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
@@ -1448,6 +1489,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalSaleSyncRoute: ApiInternalSaleSyncRoute,
   ApiInternalVideoOrdersRoute: ApiInternalVideoOrdersRoute,
   ApiMetaDataDeletionRoute: ApiMetaDataDeletionRoute,
+  ApiPaystackWebhookRoute: ApiPaystackWebhookRoute,
   ApiResendWebhookRoute: ApiResendWebhookRoute,
   ApiReviewTriggerTokenRoute: ApiReviewTriggerTokenRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
