@@ -15,7 +15,7 @@ const USER_ID = "gaVnE5zfNEw6S4hntJmA";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = any;
 
-async function ghl(path: string, init: RequestInit = {}) {
+async function ghl(path: string, init: RequestInit = {}, version = "2021-07-28") {
   const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
   if (!token) return null;
   try {
@@ -23,7 +23,7 @@ async function ghl(path: string, init: RequestInit = {}) {
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,
-        Version: "2021-07-28",
+        Version: version,
         "Content-Type": "application/json",
         Accept: "application/json",
       },
@@ -222,6 +222,8 @@ export const loadTodayCalls = createServerFn({ method: "GET" }).handler(async ()
   const end = Date.parse(`${day}T23:59:59Z`) + 3_600_000;
   const r = await ghl(
     `/calendars/events?locationId=${GHL_LOCATION_ID}&calendarId=${FIT_CALL_CALENDAR}&startTime=${start}&endTime=${end}`,
+    {},
+    "2021-04-15",
   );
   const events: Json[] = r?.ok ? (r.json?.events ?? []) : [];
   const calls = events
