@@ -39,8 +39,8 @@ function Reveal() {
 
   return (
     <main className="min-h-screen bg-[#071426] px-3 py-4 text-base leading-relaxed text-white sm:px-4 lg:py-3">
-      <div className="mx-auto grid max-w-7xl gap-3 lg:grid-cols-3 lg:gap-3">
-        <header className="lg:col-span-2">
+      <div className="mx-auto grid max-w-[1500px] gap-3 lg:grid-cols-4 lg:gap-3">
+        <header className="lg:col-span-4">
           <p className="text-sm font-semibold uppercase tracking-wider text-amber-300">Accelur8</p>
           <h1 className="mt-1 text-2xl font-bold lg:text-3xl">
             {s.n ? `${s.n}, here's your contract plan` : "Your contract plan"}
@@ -242,7 +242,7 @@ function Reveal() {
           </p>
         </section>
 
-        <section className="rounded-2xl bg-emerald-400 p-3 text-center text-[#071426] lg:col-span-3">
+        <section className="rounded-2xl bg-emerald-400 p-3 text-center text-[#071426] lg:col-span-4">
           <p className="text-lg">You need about</p>
           <p className="text-5xl font-bold">{be ?? "-"}</p>
           <p className="text-lg">
@@ -250,7 +250,7 @@ function Reveal() {
           </p>
         </section>
 
-        <p className="text-sm text-slate-400 lg:col-span-3">
+        <p className="text-sm text-slate-400 lg:col-span-4">
           Examples use your own numbers. We guarantee the work, not a number of contracts.
         </p>
       </div>
