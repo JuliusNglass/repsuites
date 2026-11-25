@@ -151,7 +151,22 @@ export const startFixitCheckout = createServerFn({ method: "POST" })
     return { ok: true as const, url: s.data.url };
   });
 
-const SESSION_RE = /^cs_(live|test)_[A-Za-z0-9]{10,200}$/;
+// Stripe Checkout ids, or our Paystack references ("ps_...", Nigeria).
+const SESSION_RE = /^(cs_(live|test)_[A-Za-z0-9]{10,200}|ps_[A-Za-z0-9]{16,64})$/;
+
+/** Order not saved yet (webhook still on its way): ask the payment provider. */
+async function recordFromProvider(s: string) {
+  if (s.startsWith("ps_")) {
+    const { paystack, ngPaystackPaid } = await import("./paystack.server");
+    const v = await paystack<any>(`transaction/verify/${encodeURIComponent(s)}`).catch(() => null);
+    if (v?.ok) await ngPaystackPaid(v.data);
+    return;
+  }
+  const { recordFixitOrder } = await import("./fixit-pack.server");
+  const r = await stripe<any>(`checkout/sessions/${s}`, undefined, "GET").catch(() => null);
+  if (r?.ok && r.data?.payment_status === "paid" && r.data?.metadata?.kind === "fixit")
+    await recordFixitOrder(r.data);
+}
 
 /** The thank-you page asks this every few seconds; it also writes the pack. */
 export const fixitProgress = createServerFn({ method: "POST" })
@@ -160,18 +175,12 @@ export const fixitProgress = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     applyNoStoreHeaders();
-    const { orderBySession, processFixit, recordFixitOrder, findReport } =
-      await import("./fixit-pack.server");
+    const { orderBySession, processFixit, findReport } = await import("./fixit-pack.server");
     let o = await orderBySession(data.s);
     if (!o) {
-      // The webhook may not have landed yet: check with Stripe directly.
-      const s = await stripe<any>(`checkout/sessions/${data.s}`, undefined, "GET").catch(
-        () => null,
-      );
-      if (s?.ok && s.data?.payment_status === "paid" && s.data?.metadata?.kind === "fixit") {
-        await recordFixitOrder(s.data);
-        o = await orderBySession(data.s);
-      }
+      // The webhook may not have landed yet: check with the provider directly.
+      await recordFromProvider(data.s);
+      o = await orderBySession(data.s);
     }
     if (!o) return { status: "waiting" as const };
     // First visit: ask the optional questions (and the business, if unknown).
@@ -262,16 +271,11 @@ export const funnelState = createServerFn({ method: "POST" })
   .validator((d: { s: string }) => z.object({ s: z.string().regex(SESSION_RE) }).parse(d))
   .handler(async ({ data }) => {
     applyNoStoreHeaders();
-    const { orderBySession, recordFixitOrder } = await import("./fixit-pack.server");
+    const { orderBySession } = await import("./fixit-pack.server");
     let o = await orderBySession(data.s);
     if (!o) {
-      const s = await stripe<any>(`checkout/sessions/${data.s}`, undefined, "GET").catch(
-        () => null,
-      );
-      if (s?.ok && s.data?.payment_status === "paid" && s.data?.metadata?.kind === "fixit") {
-        await recordFixitOrder(s.data);
-        o = await orderBySession(data.s);
-      }
+      await recordFromProvider(data.s);
+      o = await orderBySession(data.s);
     }
     if (!o) return { status: "waiting" as const };
     if (o.offer !== "p27") return { status: "done" as const };
