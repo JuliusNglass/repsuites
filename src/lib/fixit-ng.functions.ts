@@ -41,12 +41,25 @@ export const startNgCheckout = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Please refresh the page and try again." };
     const amount = ngAmountKobo(data.price, data.tier);
     const phone = normaliseNgPhone(data.phone);
+    const { newPaystackRef, sendFixitNgEvent } = await import("./paystack.server");
+    const ref = newPaystackRef();
+    // Saved as a contact now, so anyone who does not finish paying is followed up.
+    await sendFixitNgEvent({
+      event: "started",
+      tier: data.tier,
+      price: data.price,
+      name: data.name ?? "",
+      phone,
+      email: data.email.toLowerCase(),
+      business: data.business ?? "",
+      ref,
+      amount_kobo: amount,
+    });
     const label = data.tier === "dfy" ? "Google Fix-it Pack - Done for you" : "Google Fix-it Pack";
 
     if (data.provider === "paystack") {
-      const { paystack, paystackReady, newPaystackRef } = await import("./paystack.server");
+      const { paystack, paystackReady } = await import("./paystack.server");
       if (!paystackReady()) return { ok: false as const, error: "Payments are not open yet." };
-      const ref = newPaystackRef();
       const r = await paystack<{ authorization_url: string }>("transaction/initialize", {
         email: data.email.toLowerCase(),
         amount,

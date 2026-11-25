@@ -74,11 +74,34 @@ export async function ngPaystackPaid(tx: any): Promise<boolean> {
     customer_details: { email, phone, name: m.name ?? null },
     ng: { tier: m.tier, amount: Number(tx.amount), provider: "paystack" },
   });
-  const { addGhlTags } = await import("./ghl-lead.server");
-  await addGhlTags({
-    email,
+  await sendFixitNgEvent({
+    event: "paid",
+    tier: m.tier,
+    price: m.price,
+    name: m.name ?? "",
     phone,
-    tags: ["fixit-ng", `fixit-ng-${m.tier}`, `fixit-ng-p${m.price}`],
-  }).catch(() => false);
+    email,
+    business: m.business ?? "",
+    ref,
+    amount_kobo: Number(tx.amount),
+  });
   return true;
+}
+
+/** Nigeria contacts live in Accelur8's own SparkOps, not GHL. Best effort. */
+export async function sendFixitNgEvent(e: Record<string, unknown>): Promise<boolean> {
+  const url = (process.env["SPARKOPS_FIXIT_NG_URL"] ?? "").trim();
+  const key = (process.env["FIXIT_NG_SECRET"] ?? "").trim();
+  if (!url.startsWith("https://") || !key) return false;
+  try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-accelur8-key": key },
+      body: JSON.stringify(e),
+      signal: AbortSignal.timeout(10000),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
 }
