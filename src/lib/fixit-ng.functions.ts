@@ -57,9 +57,9 @@ export const startNgCheckout = createServerFn({ method: "POST" })
     });
     const label = data.tier === "dfy" ? "Google Fix-it Pack - Done for you" : "Google Fix-it Pack";
 
-    if (data.provider === "paystack") {
-      const { paystack, paystackReady } = await import("./paystack.server");
-      if (!paystackReady()) return { ok: false as const, error: "Payments are not open yet." };
+    const { paystack, paystackReady } = await import("./paystack.server");
+    // Until Paystack is switched on, every buyer pays by card through Stripe.
+    if (data.provider === "paystack" && paystackReady()) {
       const r = await paystack<{ authorization_url: string }>("transaction/initialize", {
         email: data.email.toLowerCase(),
         amount,
