@@ -34,15 +34,15 @@ function Reveal() {
   const max = Math.max(cost, ...bars.map((b) => b.value)) * 1.1;
   const sel = bars.find((b) => b.n === pick) ?? bars[2]!;
   const left = sel.value - cost;
-  const H = 260;
+  const H = 200;
   const costY = H - (cost / max) * H;
 
   return (
-    <main className="min-h-screen bg-[#071426] px-4 py-8 text-base leading-relaxed text-white">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <header>
+    <main className="min-h-screen bg-[#071426] px-3 py-4 text-base leading-relaxed text-white sm:px-4 lg:py-3">
+      <div className="mx-auto grid max-w-7xl gap-3 lg:grid-cols-3 lg:gap-3">
+        <header className="lg:col-span-2">
           <p className="text-sm font-semibold uppercase tracking-wider text-amber-300">Accelur8</p>
-          <h1 className="mt-1 text-3xl font-bold">
+          <h1 className="mt-1 text-2xl font-bold lg:text-3xl">
             {s.n ? `${s.n}, here's your contract plan` : "Your contract plan"}
           </h1>
           <p className="mt-2 text-slate-300">
@@ -51,7 +51,7 @@ function Reveal() {
           </p>
         </header>
 
-        <section className="grid grid-cols-2 gap-3 rounded-2xl bg-white/5 p-4">
+        <section className="grid grid-cols-2 gap-3 self-end rounded-2xl bg-white/5 p-3">
           <label className="text-sm text-slate-300">
             A typical small office pays you, per week
             <input
@@ -121,7 +121,7 @@ function Reveal() {
           <p className="mt-2 text-center text-sm text-slate-300">Contracts won</p>
         </section>
 
-        <section className="rounded-2xl bg-white p-5 text-[#071426]">
+        <section className="rounded-2xl bg-white p-4 text-[#071426]">
           <h2 className="text-xl font-bold">
             What you earn with {pick} office contract{pick > 1 ? "s" : ""}
           </h2>
@@ -156,7 +156,7 @@ function Reveal() {
           </table>
         </section>
 
-        <section className="rounded-2xl bg-white p-5 text-[#071426]">
+        <section className="rounded-2xl bg-white p-4 text-[#071426]">
           <h2 className="text-xl font-bold">What you invest in year one</h2>
           <div className="mt-3 flex gap-2" role="group" aria-label="How you pay">
             <button
@@ -211,7 +211,7 @@ function Reveal() {
           </p>
         </section>
 
-        <section className="rounded-2xl bg-white p-5 text-[#071426]">
+        <section className="rounded-2xl bg-white p-4 text-[#071426]">
           <h2 className="text-xl font-bold">Putting it together</h2>
           <table className="mt-3 w-full text-left">
             <tbody className="divide-y">
@@ -242,7 +242,7 @@ function Reveal() {
           </p>
         </section>
 
-        <section className="rounded-2xl bg-emerald-400 p-5 text-center text-[#071426]">
+        <section className="rounded-2xl bg-emerald-400 p-3 text-center text-[#071426] lg:col-span-3">
           <p className="text-lg">You need about</p>
           <p className="text-5xl font-bold">{be ?? "-"}</p>
           <p className="text-lg">
@@ -250,7 +250,7 @@ function Reveal() {
           </p>
         </section>
 
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-400 lg:col-span-3">
           Examples use your own numbers. We guarantee the work, not a number of contracts.
         </p>
       </div>
