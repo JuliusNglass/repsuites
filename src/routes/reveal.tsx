@@ -30,7 +30,7 @@ function Reveal() {
   const cost = launch + appCost;
   const per = yearlyProfit(w, m);
   const be = per ? Math.round((cost / per) * 10) / 10 : null;
-  const bars = useMemo(() => [1, 2, 3, 4, 5, 6].map((n) => ({ n, value: per * n })), [per]);
+  const bars = useMemo(() => [1, 2, 3, 4, 5].map((n) => ({ n, value: per * n })), [per]);
   const max = Math.max(cost, ...bars.map((b) => b.value)) * 1.1;
   const sel = bars.find((b) => b.n === pick) ?? bars[2]!;
   const left = sel.value - cost;
@@ -74,7 +74,7 @@ function Reveal() {
           </label>
         </section>
 
-        <section className="rounded-2xl bg-white/5 p-4">
+        <section className="min-w-0 overflow-hidden rounded-2xl bg-white/5 p-4">
           <h2 className="text-xl font-bold">Money kept in a year, by number of contracts</h2>
           <p className="text-sm text-slate-300">
             Each bar is money you keep. Tap one to see how it adds up. Bars above the yellow line
@@ -89,11 +89,7 @@ function Reveal() {
             <div
               className="absolute inset-x-0 z-10 pointer-events-none border-t-[3px] border-dashed border-amber-300"
               style={{ top: costY }}
-            >
-              <span className="absolute -top-4 left-0 rounded-md bg-amber-300 px-2 py-1 text-sm font-bold shadow-lg text-[#071426]">
-                Year one cost {gbp(cost)}
-              </span>
-            </div>
+            ></div>
             <div className="flex h-full items-end gap-2 sm:gap-4">
               {bars.map((b) => {
                 const h = Math.max(4, (b.value / max) * H);
@@ -105,7 +101,7 @@ function Reveal() {
                     onClick={() => setPick(b.n)}
                     aria-pressed={on}
                     aria-label={`${b.n} contracts, ${gbp(b.value)} a year`}
-                    className="flex flex-1 flex-col items-center justify-end focus:outline-none"
+                    className="flex min-w-0 flex-1 flex-col items-center justify-end focus:outline-none"
                   >
                     <span className="mb-1 text-sm font-semibold">{gbp(b.value)}</span>
                     <span
@@ -119,6 +115,10 @@ function Reveal() {
             </div>
           </div>
           <p className="mt-2 text-center text-sm text-slate-300">Contracts won</p>
+          <p className="mt-1 flex items-center justify-center gap-2 text-sm text-slate-300">
+            <span className="inline-block w-6 border-t-[3px] border-dashed border-amber-300" />
+            Year one cost {gbp(cost)}
+          </p>
         </section>
 
         <section className="rounded-2xl bg-white p-4 text-[#071426]">
@@ -243,11 +243,20 @@ function Reveal() {
         </section>
 
         <section className="rounded-2xl bg-emerald-400 p-3 text-center text-[#071426] lg:col-span-4">
-          <p className="text-lg">You need about</p>
-          <p className="text-5xl font-bold">{be ?? "-"}</p>
-          <p className="text-lg">
-            contracts to cover the whole year. Everything after that is yours.
-          </p>
+          {be !== null && be <= 1 ? (
+            <>
+              <p className="text-5xl font-bold">Just 1 contract</p>
+              <p className="text-lg">
+                covers your whole first year, with {gbp(per - cost)} left over for you.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg">You need</p>
+              <p className="text-5xl font-bold">{be === null ? "-" : Math.ceil(be)} contracts</p>
+              <p className="text-lg">to cover the whole year. Everything after that is yours.</p>
+            </>
+          )}
         </section>
 
         <p className="text-sm text-slate-400 lg:col-span-4">
