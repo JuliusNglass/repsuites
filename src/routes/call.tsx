@@ -133,6 +133,7 @@ function CallSheet() {
     notes: "",
     quality: "",
     stayMonths: 6,
+    contracts: 3,
     cleanerHourly: 0,
     transcript: "",
   });
@@ -253,7 +254,7 @@ function CallSheet() {
         timeZone: "Europe/London",
       })
     : "";
-  const revealHref = `/reveal?w=${f.weekly}&m=${f.margin}&n=${encodeURIComponent(data?.ok ? data.contact.firstName : "")}`;
+  const revealHref = `/reveal?w=${f.weekly}&m=${f.margin}&k=${f.contracts}&n=${encodeURIComponent(data?.ok ? data.contact.firstName : "")}`;
 
   return (
     <main className="grid min-h-screen gap-3 bg-slate-100 p-3 text-base leading-relaxed text-slate-900 lg:h-screen lg:grid-cols-3 lg:overflow-hidden">
@@ -370,6 +371,20 @@ function CallSheet() {
               />
             </label>
           </div>
+          <label className="block text-sm">
+            Contracts they want to win (shown first on the reveal)
+            <select
+              className={input}
+              value={f.contracts}
+              onChange={(e) => setF((p) => ({ ...p, contracts: Number(e.target.value) }))}
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <p className="text-xl font-bold text-emerald-700">
             Covers the £2,000: {be6 ? Math.ceil(be6) : "-"} contracts lasting {f.stayMonths || 6}{" "}

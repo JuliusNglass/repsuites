@@ -12,6 +12,7 @@ export const Route = createFileRoute("/reveal")({
   validateSearch: (s: Record<string, unknown>) => ({
     w: Number(s["w"]) > 0 ? Number(s["w"]) : 100,
     m: Number(s["m"]) > 0 ? Number(s["m"]) : 25,
+    k: [1, 2, 3, 4, 5].includes(Number(s["k"])) ? Number(s["k"]) : 3,
     n: typeof s["n"] === "string" ? s["n"].slice(0, 40) : "",
   }),
   component: Reveal,
@@ -23,7 +24,7 @@ function Reveal() {
   const s = Route.useSearch();
   const [w, setW] = useState(s.w);
   const [m, setM] = useState(s.m);
-  const [pick, setPick] = useState(3);
+  const [pick, setPick] = useState(s.k);
   const [plan, setPlan] = useState<"full" | "monthly">("full");
   const launch = plan === "full" ? 2000 : 2100;
   const appCost = 9 * 97;
