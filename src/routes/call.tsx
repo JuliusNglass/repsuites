@@ -6,7 +6,12 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Copy, Loader2, Video } from "lucide-react";
 import { SignInCard } from "../components/SignInCard";
-import { loadCallContact, saveCall, createLaunchInvoice } from "../lib/call-sheet.functions";
+import {
+  loadCallContact,
+  saveCall,
+  createLaunchInvoice,
+  loadTodayCalls,
+} from "../lib/call-sheet.functions";
 import {
   breakEvenContracts,
   contractsToCover,
@@ -21,7 +26,11 @@ import {
 } from "../lib/call-sheet";
 
 export const Route = createFileRoute("/call")({
-  head: () => ({ meta: [{ title: "Fit call" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Fit call · SparkOps" }, { name: "robots", content: "noindex" }],
+    // Team tool: show the SparkOps icon in the tab, not the RepSuites one.
+    links: [{ rel: "icon", href: "https://ops.accelur8clientwork.com/favicon.ico" }],
+  }),
   validateSearch: (s: Record<string, unknown>) => ({ c: typeof s["c"] === "string" ? s["c"] : "" }),
   component: CallSheet,
 });
@@ -97,6 +106,15 @@ function CallSheet() {
   const load = useServerFn(loadCallContact);
   const save = useServerFn(saveCall);
   const invoice = useServerFn(createLaunchInvoice);
+  const loadToday = useServerFn(loadTodayCalls);
+  const [today, setToday] = useState<
+    { contactId: string; title: string; time: string; at: number }[]
+  >([]);
+  useEffect(() => {
+    loadToday()
+      .then((r) => r.ok && setToday(r.calls))
+      .catch(() => undefined);
+  }, [loadToday]);
   const [id, setId] = useState(c);
   const [data, setData] = useState<Awaited<ReturnType<typeof loadCallContact>> | null>(null);
   const [busy, setBusy] = useState("");
@@ -249,6 +267,20 @@ function CallSheet() {
         <p className="text-red-700 lg:col-span-3">{data.error}</p>
       )}
       {busy === "load" && <Loader2 className="animate-spin" />}
+      {today.length > 0 && (
+        <nav aria-label="Today's calls" className="flex flex-wrap items-center gap-2 lg:col-span-3">
+          <span className="text-sm font-bold">Today ({today.length}):</span>
+          {today.map((t) => (
+            <a
+              key={`${t.contactId}-${t.time}`}
+              href={`/call?c=${encodeURIComponent(t.contactId)}`}
+              className={`rounded-full px-3 py-1 text-sm font-semibold ${t.contactId === c ? "bg-slate-900 text-white" : t.at < Date.now() ? "bg-slate-200 text-slate-500" : "bg-white text-slate-900 shadow-sm"}`}
+            >
+              {t.time} {t.title.replace(/ - SparkOps fit call$/i, "")}
+            </a>
+          ))}
+        </nav>
+      )}
 
       {/* Column 1: who, join, maths, money */}
       <div className="flex flex-col gap-3 lg:overflow-y-auto">

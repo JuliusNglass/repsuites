@@ -211,3 +211,36 @@ export const createLaunchInvoice = createServerFn({ method: "POST" })
       number: r.json.invoice?.invoiceNumber as string,
     };
   });
+
+/** Fit Calls booked for today (UK time), for the strip at the top of the call sheet. */
+export const loadTodayCalls = createServerFn({ method: "GET" }).handler(async () => {
+  const g = await agencyGuard(false);
+  if (!g.ok) return { ok: false as const, error: g.error, calls: [] };
+  const day = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+  // UK is UTC or UTC+1; widen by an hour each side, then filter on the UK date.
+  const start = Date.parse(`${day}T00:00:00Z`) - 3_600_000;
+  const end = Date.parse(`${day}T23:59:59Z`) + 3_600_000;
+  const r = await ghl(
+    `/calendars/events?locationId=${GHL_LOCATION_ID}&calendarId=${FIT_CALL_CALENDAR}&startTime=${start}&endTime=${end}`,
+  );
+  const events: Json[] = r?.ok ? (r.json?.events ?? []) : [];
+  const calls = events
+    .filter((e) => e.appointmentStatus !== "cancelled" && e.startTime)
+    .filter(
+      (e) =>
+        new Date(e.startTime).toLocaleDateString("en-CA", { timeZone: "Europe/London" }) === day,
+    )
+    .map((e) => ({
+      contactId: String(e.contactId ?? ""),
+      title: String(e.title ?? "Fit call"),
+      time: new Date(e.startTime).toLocaleTimeString("en-GB", {
+        timeZone: "Europe/London",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      status: String(e.appointmentStatus ?? ""),
+      at: Date.parse(e.startTime),
+    }))
+    .sort((a, b) => a.at - b.at);
+  return { ok: true as const, calls };
+});
