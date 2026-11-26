@@ -166,27 +166,43 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
     const { hqAfter } = await import("./hq.server");
     await Promise.all([
       notifyNewLead(data, reportLink),
-      // GoHighLevel contact with tags; GHL runs the follow-up. Never fails the request.
-      data.source
-        ? import("./ghl-lead.server").then(({ pushLeadToGhl }) =>
-            pushLeadToGhl({
+      // Nigeria: the contact goes to Accelur8 SparkOps (its own follow-ups), never GHL.
+      data.niche === "ng"
+        ? import("./paystack.server").then(async ({ sendFixitNgEvent, newPaystackRef }) => {
+            const { normaliseNgPhone } = await import("./fixit-ng.functions");
+            return sendFixitNgEvent({
+              event: "check",
+              tier: "diy",
+              price: 10,
               name: data.name,
+              phone: data.phone ? normaliseNgPhone(data.phone) : "",
               email: data.email.toLowerCase(),
-              phone: data.phone,
               business: data.business,
-              town: data.town,
-              niche: data.niche,
-              size: data.size ?? null,
-              headaches: data.headaches,
-              keyword: data.keyword,
-              consentEmail: data.consentEmail,
-              consentWhatsapp: data.consentWhatsapp,
-              reportUrl: reportLink,
-              source: data.source,
-              scanPending: deferred,
-            }).catch(() => false),
-          )
-        : Promise.resolve(false),
+              ref: newPaystackRef().replace(/^ps_/, "chk_"),
+              report_url: reportLink ?? "",
+            }).catch(() => false);
+          })
+        : // GoHighLevel contact with tags; GHL runs the follow-up. Never fails the request.
+          data.source
+          ? import("./ghl-lead.server").then(({ pushLeadToGhl }) =>
+              pushLeadToGhl({
+                name: data.name,
+                email: data.email.toLowerCase(),
+                phone: data.phone,
+                business: data.business,
+                town: data.town,
+                niche: data.niche,
+                size: data.size ?? null,
+                headaches: data.headaches,
+                keyword: data.keyword,
+                consentEmail: data.consentEmail,
+                consentWhatsapp: data.consentWhatsapp,
+                reportUrl: reportLink,
+                source: data.source,
+                scanPending: deferred,
+              }).catch(() => false),
+            )
+          : Promise.resolve(false),
       // Accelur8 HQ: a new inbound lead. Never fails the request.
       hqAfter(() =>
         leadId
