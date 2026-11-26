@@ -1,5 +1,5 @@
 // Client-facing investment vs return reveal, shared on screen during a fit call.
-// Numbers come from the URL (?w=weekly&m=margin&n=name). No personal data stored.
+// Numbers come from the URL (?w=weekly&m=margin&n=name&d=homes&dw=homes £/week&r=rate). No personal data stored.
 // No em dashes in this copy (AGENTS.md). Branded Accelur8.
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -14,6 +14,10 @@ export const Route = createFileRoute("/reveal")({
     m: Number(s["m"]) > 0 ? Number(s["m"]) : 25,
     k: [1, 2, 3, 4, 5].includes(Number(s["k"])) ? Number(s["k"]) : 3,
     n: typeof s["n"] === "string" ? s["n"].slice(0, 40) : "",
+    // Their business today: regular clients, what those bring in a week, hourly rate.
+    d: Number(s["d"]) > 0 ? Math.round(Number(s["d"])) : 0,
+    dw: Number(s["dw"]) > 0 ? Number(s["dw"]) : 0,
+    r: Number(s["r"]) > 0 ? Number(s["r"]) : 0,
   }),
   component: Reveal,
 });
@@ -35,6 +39,8 @@ function Reveal() {
   const max = Math.max(cost, ...bars.map((b) => b.value)) * 1.1;
   const sel = bars.find((b) => b.n === pick) ?? bars[2]!;
   const left = sel.value - cost;
+  const perHome = s.d > 0 && s.dw > 0 ? s.dw / s.d : 0;
+  const homes = perHome > 0 && w > 0 ? Math.round((w / perHome) * 10) / 10 : 0;
   const H = 200;
   const costY = H - (cost / max) * H;
 
@@ -51,6 +57,32 @@ function Reveal() {
             started.
           </p>
         </header>
+
+        {perHome > 0 && (
+          <section className="grid gap-3 rounded-2xl bg-white/5 p-3 sm:grid-cols-3 lg:col-span-4">
+            <div>
+              <p className="text-sm text-slate-300">Your business today</p>
+              <p className="text-2xl font-bold">
+                {s.d} regular homes, {gbp(s.dw)} a week
+              </p>
+              <p className="text-sm text-slate-300">About {gbp(perHome)} a week each</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-300">One small office</p>
+              <p className="text-2xl font-bold">{gbp(w)} a week</p>
+              <p className="text-sm text-slate-300">
+                {s.r
+                  ? `About 2 hours, 3 times a week, at your ${gbp(s.r)} an hour`
+                  : "One key, one invoice"}
+              </p>
+            </div>
+            <div className="rounded-xl bg-amber-300 p-3 text-[#071426]">
+              <p className="text-sm font-semibold">That's like adding</p>
+              <p className="text-3xl font-bold">{homes} homes</p>
+              <p className="text-sm">from one client, cleaned while the building is empty</p>
+            </div>
+          </section>
+        )}
 
         <section className="grid grid-cols-2 gap-3 self-end rounded-2xl bg-white/5 p-3">
           <label className="text-sm text-slate-300">
