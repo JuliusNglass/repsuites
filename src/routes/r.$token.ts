@@ -29,7 +29,10 @@ export const Route = createFileRoute("/r/$token")({
         if (new URL(request.url).searchParams.get("go") === "fix")
           return new Response(null, {
             status: 302,
-            headers: { Location: `/fix?r=${encodeURIComponent(token)}`, "Cache-Control": "no-store" },
+            headers: {
+              Location: `/fix?r=${encodeURIComponent(token)}`,
+              "Cache-Control": "no-store",
+            },
           });
         const r = await serviceRead<
           {
@@ -103,6 +106,7 @@ export const Route = createFileRoute("/r/$token")({
             competitorId: /^[A-Za-z0-9_-]{10,300}$/.test(competitorId) ? competitorId : null,
             branding: brand?.data?.[0] ?? null,
             fixit: row?.source === "inbound" && !row?.created_by,
+            ng: q.get("m") === "ng",
           }),
           { status: 200, headers: HTML },
         );
