@@ -9,7 +9,9 @@ import { hqBody, type HqEvent } from "./hq";
 import { serviceRead } from "./supabase-service.server";
 
 const env = (k: string) => (process.env[k] ?? "").trim();
-export const HQ_DEFAULT_URL = "https://efmdtpvbiibiuhmnryoe.supabase.co/functions/v1/crm-event";
+// Accelur8 HQ is retired: events now land in the Accelur8 SparkOps account.
+export const HQ_DEFAULT_URL =
+  "https://ops.accelur8clientwork.com/api/crm-event/d4cc38b767a7bb2de274c0696d7da1cc82bd";
 const TIMEOUT_MS = 4000;
 
 const hex = (buf: ArrayBuffer) =>
