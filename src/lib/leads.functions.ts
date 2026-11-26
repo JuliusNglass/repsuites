@@ -162,6 +162,8 @@ export const requestVisibilityCheck = createServerFn({ method: "POST" })
         await addProspectExtra(p.placeId, "site").catch(() => null);
       }
     }
+    // Lagos leads see the naira ending on their report.
+    if (data.niche === "ng" && reportLink) reportLink = `${reportLink}?m=ng`;
     const leadId = w.data?.[0]?.id ?? null;
     const { hqAfter } = await import("./hq.server");
     await Promise.all([
