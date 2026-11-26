@@ -100,7 +100,7 @@ function NgPage() {
               they see.
             </h1>
             <p className="text-lg text-muted-foreground">
-              Right now those searches go to the 3 businesses Google shows on the map. This 3 minute
+              Right now those searches go to the top 3 businesses in Google's map pack. This 3 minute
               video shows how Google and AI answers pick them, and the 20 minute fix that puts your
               business in the running.
             </p>
