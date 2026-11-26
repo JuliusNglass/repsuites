@@ -28,6 +28,7 @@ import { Route as RevealRouteImport } from './routes/reveal'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiCheckFitRouteImport } from './routes/api.check-fit'
+import { Route as ApiCrmTagRouteImport } from './routes/api.crm-tag'
 import { Route as ApiDemoLeadRouteImport } from './routes/api.demo-lead'
 import { Route as ApiGrowthConfirmRouteImport } from './routes/api.growth-confirm'
 import { Route as ApiGrowthLeadRouteImport } from './routes/api.growth-lead'
@@ -172,6 +173,11 @@ const TermsRoute = TermsRouteImport.update({
 const ApiCheckFitRoute = ApiCheckFitRouteImport.update({
   id: '/api/check-fit',
   path: '/api/check-fit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCrmTagRoute = ApiCrmTagRouteImport.update({
+  id: '/api/crm-tag',
+  path: '/api/crm-tag',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDemoLeadRoute = ApiDemoLeadRouteImport.update({
@@ -451,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
+  '/api/crm-tag': typeof ApiCrmTagRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/growth-confirm': typeof ApiGrowthConfirmRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
@@ -522,6 +529,7 @@ export interface FileRoutesByTo {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
+  '/api/crm-tag': typeof ApiCrmTagRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/growth-confirm': typeof ApiGrowthConfirmRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
@@ -594,6 +602,7 @@ export interface FileRoutesById {
   '/start': typeof StartRoute
   '/terms': typeof TermsRoute
   '/api/check-fit': typeof ApiCheckFitRoute
+  '/api/crm-tag': typeof ApiCrmTagRoute
   '/api/demo-lead': typeof ApiDemoLeadRoute
   '/api/growth-confirm': typeof ApiGrowthConfirmRoute
   '/api/growth-lead': typeof ApiGrowthLeadRoute
@@ -667,6 +676,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/check-fit'
+    | '/api/crm-tag'
     | '/api/demo-lead'
     | '/api/growth-confirm'
     | '/api/growth-lead'
@@ -738,6 +748,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/check-fit'
+    | '/api/crm-tag'
     | '/api/demo-lead'
     | '/api/growth-confirm'
     | '/api/growth-lead'
@@ -809,6 +820,7 @@ export interface FileRouteTypes {
     | '/start'
     | '/terms'
     | '/api/check-fit'
+    | '/api/crm-tag'
     | '/api/demo-lead'
     | '/api/growth-confirm'
     | '/api/growth-lead'
@@ -881,6 +893,7 @@ export interface RootRouteChildren {
   StartRoute: typeof StartRoute
   TermsRoute: typeof TermsRoute
   ApiCheckFitRoute: typeof ApiCheckFitRoute
+  ApiCrmTagRoute: typeof ApiCrmTagRoute
   ApiDemoLeadRoute: typeof ApiDemoLeadRoute
   ApiGrowthConfirmRoute: typeof ApiGrowthConfirmRoute
   ApiGrowthLeadRoute: typeof ApiGrowthLeadRoute
@@ -1063,6 +1076,13 @@ declare module '@tanstack/react-router' {
       path: '/api/check-fit'
       fullPath: '/api/check-fit'
       preLoaderRoute: typeof ApiCheckFitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/crm-tag': {
+      id: '/api/crm-tag'
+      path: '/api/crm-tag'
+      fullPath: '/api/crm-tag'
+      preLoaderRoute: typeof ApiCrmTagRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/demo-lead': {
@@ -1453,6 +1473,7 @@ const rootRouteChildren: RootRouteChildren = {
   StartRoute: StartRoute,
   TermsRoute: TermsRoute,
   ApiCheckFitRoute: ApiCheckFitRoute,
+  ApiCrmTagRoute: ApiCrmTagRoute,
   ApiDemoLeadRoute: ApiDemoLeadRoute,
   ApiGrowthConfirmRoute: ApiGrowthConfirmRoute,
   ApiGrowthLeadRoute: ApiGrowthLeadRoute,
