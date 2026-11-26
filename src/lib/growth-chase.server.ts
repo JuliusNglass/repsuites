@@ -2,6 +2,7 @@
 // to book the Fit Call themselves; unqualified ones (solo/researching) get texts to the free Google Check.
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
+import { sendAccelur8Sms } from "./hq.server";
 import { FIT_CALL_CALENDAR } from "./growth-join";
 import {
   offerFor,
@@ -185,13 +186,16 @@ export async function runGrowthChase(token: string) {
                 : tags.includes("solo-grow")
                   ? growSms(step, c.firstName, salesLink("commercial", c))
                   : chaseSms(step, c.firstName, salesLink(offerFor(tags), c), offerFor(tags));
-    const r = await ghl("/conversations/messages", {
-      method: "POST",
-      body: JSON.stringify({ type: "SMS", contactId: c.id, message }),
+    // From the Accelur8 SparkOps number (replies land in SparkOps), not GHL.
+    const sentOk = await sendAccelur8Sms({
+      phone: c.phone ?? "",
+      message,
+      idempotencyKey: `grw-chase-${c.id}-${step}`,
+      source: "growth_chase",
     });
     // A failed send is not recorded, so the next run retries it.
-    if (!r?.ok) {
-      console.error("growth chase: SMS failed", r?.status);
+    if (!sentOk) {
+      console.error("growth chase: SMS failed");
       continue;
     }
     const status = "sent";
@@ -200,7 +204,7 @@ export async function runGrowthChase(token: string) {
       headers: { Prefer: "resolution=ignore-duplicates" },
       body: { contact_id: c.id, step, status },
     });
-    if (r?.ok) sent++;
+    if (sentOk) sent++;
     // Call prep: the lead's own video link on their contact, to share on a call.
     if (step === 1)
       await ghl(`/contacts/${c.id}/notes`, {
@@ -210,13 +214,13 @@ export async function runGrowthChase(token: string) {
         }),
       });
     // Unqualified leads go straight into the 12-month email lessons (NUR 1).
-    if (r?.ok && check)
+    if (sentOk && check)
       await ghl(`/contacts/${c.id}/tags`, {
         method: "POST",
         body: JSON.stringify({ tags: ["nurture", "nurture-12m"] }),
       });
     // After the last text, hand them to the long nurture (never dropped).
-    if (r?.ok && step === 3)
+    if (sentOk && step === 3)
       await ghl(`/contacts/${c.id}/tags`, {
         method: "POST",
         body: JSON.stringify({ tags: ["grw-nobook", "nurture", "nurture-12m"] }),
@@ -251,15 +255,13 @@ async function startReminders(now: Date): Promise<number> {
       phone: c.phone ?? "",
     });
     const link = `https://growth.accelur8clientwork.com/book?${q}`;
-    const s = await ghl("/conversations/messages", {
-      method: "POST",
-      body: JSON.stringify({
-        type: "SMS",
-        contactId: c.id,
-        message: startSms(c.firstName, m, link),
-      }),
+    const s = await sendAccelur8Sms({
+      phone: c.phone,
+      message: startSms(c.firstName, m, link),
+      idempotencyKey: `grw-start-${c.id}-${m}`,
+      source: "growth_start",
     });
-    if (!s?.ok) continue;
+    if (!s) continue;
     await ghl(`/contacts/${c.id}/tags`, {
       method: "POST",
       body: JSON.stringify({ tags: ["start-sent"] }),
@@ -323,16 +325,14 @@ async function noShowNudges(now: Date): Promise<number> {
     const cr = await ghl(`/contacts/${e.contactId}`);
     const c = cr?.ok ? ((await cr.json()) as { contact?: Contact }).contact : null;
     if (!c?.phone || c.dnd) continue;
-    const s = await ghl("/conversations/messages", {
-      method: "POST",
-      body: JSON.stringify({
-        type: "SMS",
-        contactId: c.id,
-        message: nudgeSms(c.firstName, joinLink(c.id)),
-      }),
+    const s = await sendAccelur8Sms({
+      phone: c.phone,
+      message: nudgeSms(c.firstName, joinLink(c.id)),
+      idempotencyKey: `grw-nudge-${e.id}`,
+      source: "growth_nudge",
     });
-    if (s?.ok) n++;
-    else console.error("growth join: nudge failed", s?.status);
+    if (s) n++;
+    else console.error("growth join: nudge failed");
   }
   return n;
 }

@@ -5,6 +5,7 @@
 // waits in the render queue (picked up by a Claude scheduled task for now).
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { sendEmail } from "./email.server";
+import { sendAccelur8Sms } from "./hq.server";
 import { inSendWindow } from "./check-followups";
 import { ALERT_USER_ID } from "./growth-lead";
 import { VIDEO_GOALS, type VideoBrief, type VideoPack } from "./video-order";
@@ -65,12 +66,10 @@ async function ghl(path: string, init: RequestInit = {}): Promise<Response | nul
 const tag = (cid: string | null, tags: string[]) =>
   cid ? ghl(`/contacts/${cid}/tags`, { method: "POST", body: JSON.stringify({ tags }) }) : null;
 
-const sms = (cid: string | null, message: string) =>
-  cid
-    ? ghl("/conversations/messages", {
-        method: "POST",
-        body: JSON.stringify({ type: "SMS", contactId: cid, message }),
-      })
+// Texts go from the Accelur8 SparkOps number (replies land in SparkOps), not GHL.
+const sms = async (phone: string | null | undefined, message: string, key: string) =>
+  phone
+    ? { ok: await sendAccelur8Sms({ phone, message, idempotencyKey: key, source: "video_order" }) }
     : null;
 
 /** In-app alert for Accelur8: a GHL task, due in an hour. */
@@ -188,7 +187,11 @@ async function sendScript(o: VideoOrderRow, script: VideoScript, round: number) 
         ...scriptEmail(o.name, o.business, script, o.token, { round }),
       })
     : { ok: false as const };
-  const text = await sms(o.contact_id, scriptReadySms(o.name, o.token, round));
+  const text = await sms(
+    o.phone,
+    scriptReadySms(o.name, o.token, round),
+    `video-${o.id}-script-${round}`,
+  );
   await patch(o.id, {
     script,
     round,
@@ -307,7 +310,8 @@ export async function runVideoReminders() {
     const step = reminderDue(o.sent_at, o.reminders, now);
     if (!step || !o.script) continue;
     let ok = false;
-    if (step === 1) ok = !!(await sms(o.contact_id, reminderSms(o.name, o.token)))?.ok;
+    if (step === 1)
+      ok = !!(await sms(o.phone, reminderSms(o.name, o.token), `video-${o.id}-remind-1`))?.ok;
     if (step === 2)
       ok = o.email
         ? (

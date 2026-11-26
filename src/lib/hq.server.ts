@@ -145,3 +145,36 @@ export function plusPhone(raw: string | null | undefined): string | null {
   if (d.startsWith("0")) return `+44${d.slice(1)}`;
   return `+${d}`;
 }
+
+/**
+ * Text someone from the Accelur8 SparkOps number (replaces GHL texting), so
+ * replies land in SparkOps Conversations. A repeat idempotency key sends
+ * nothing. Never throws.
+ */
+export async function sendAccelur8Sms(a: {
+  phone: string;
+  message: string;
+  idempotencyKey: string;
+  source?: string;
+}): Promise<boolean> {
+  try {
+    const url = env("HQ_CRM_URL") || HQ_DEFAULT_URL;
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "send_sms",
+        phone: a.phone,
+        message: a.message,
+        idempotency_key: a.idempotencyKey,
+        source: a.source ?? "repsuites",
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) console.warn(`Accelur8 SMS ${a.idempotencyKey}: ${r.status}`);
+    return r.ok;
+  } catch (err) {
+    console.warn("Accelur8 SMS failed", err);
+    return false;
+  }
+}

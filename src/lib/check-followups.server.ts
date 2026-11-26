@@ -4,6 +4,7 @@
 // as a customer.
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { sendEmail } from "./email.server";
+import { sendAccelur8Sms } from "./hq.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
 import {
   dueStep,
@@ -68,13 +69,17 @@ async function findContact(lead: FollowupLead): Promise<GhlContact | null> {
   return c?.id ? { id: c.id, tags: c.tags ?? [], dnd: !!c.dnd } : null;
 }
 
-async function sendSms(contactId: string, message: string): Promise<boolean> {
-  const r = await ghl("/conversations/messages", {
-    method: "POST",
-    body: JSON.stringify({ type: "SMS", contactId, message }),
+// Texts go from the Accelur8 SparkOps number (replies land in SparkOps), not GHL.
+async function sendSms(phone: string | null, message: string, key: string): Promise<boolean> {
+  if (!phone) return false;
+  const ok = await sendAccelur8Sms({
+    phone,
+    message,
+    idempotencyKey: key,
+    source: "check_followup",
   });
-  if (r && !r.ok) console.error("check follow-up SMS failed", r.status);
-  return !!r?.ok;
+  if (!ok) console.error("check follow-up SMS failed");
+  return ok;
 }
 
 async function record(leadId: string, step: number, channel: string, status: string) {
@@ -164,7 +169,11 @@ export async function runCheckFollowups(token: string) {
       const contact = await findContact(lead);
       if (!contact || contact.dnd || !contact.tags.includes(PENDING_TAG)) continue;
       if (contact.tags.some((t) => STOP_TAGS.includes(t))) continue;
-      const okSend = await sendSms(contact.id, sendReminderSms(lead.name, lead.business, r));
+      const okSend = await sendSms(
+        lead.phone,
+        sendReminderSms(lead.name, lead.business, r),
+        `check-${row.id}-send-${r}`,
+      );
       await record(row.id, r, "sms", okSend ? "sent" : "failed");
       if (okSend) sent.push(`${lead.business} - reply SEND reminder ${r - 3}`);
       continue;
@@ -195,7 +204,9 @@ export async function runCheckFollowups(token: string) {
     const msg = followupMessage(lead, step);
     let okSend = false;
     if (step.channel === "sms" && msg.sms) {
-      okSend = contact ? await sendSms(contact.id, msg.sms) : false;
+      okSend = contact
+        ? await sendSms(lead.phone, msg.sms, `check-${row.id}-step-${prior.length}`)
+        : false;
       // Text failed (no GHL contact or no SMS access): fall back to email.
       if (!okSend && lead.email) {
         const r = await sendEmail({
