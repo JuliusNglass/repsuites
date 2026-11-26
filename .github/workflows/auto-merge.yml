@@ -1,0 +1,40 @@
+# Merges a pull request into main by itself once CI passes, so changes go live
+# without a manual click. Skips:
+# - pull requests from forks or into any branch other than main,
+# - drafts, and anything labelled "hold",
+# - pull requests that add database migrations (those are applied to the
+#   database first, then merged by hand).
+name: Auto-merge when green
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge if eligible
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -e
+          pr=$(gh pr list -R "$REPO" --head "$BRANCH" --base main --state open --json number,isDraft,labels,headRefOid \
+            --jq '.[0] | select(.isDraft == false) | select(([.labels[].name] | index("hold")) == null) | select(.headRefOid == env.SHA) | .number')
+          [ -n "$pr" ] || { echo "Nothing to merge"; exit 0; }
+          if gh pr diff "$pr" -R "$REPO" --name-only | grep -q '^supabase/migrations/'; then
+            echo "PR #$pr adds a migration: apply it first, then merge by hand."; exit 0
+          fi
+          gh pr merge "$pr" -R "$REPO" --squash --delete-branch
