@@ -71,6 +71,15 @@ const NICHES: Record<string, Niche> = {
   },
 };
 
+// Lagos owners from the Nigeria Fix-it Pack page: same free check, naira
+// funnel. Their details go to Accelur8 SparkOps, not GHL.
+NICHES["ng"] = {
+  ...NICHES["general"]!,
+  headline: "Before you pay for anything, see where Google puts your business",
+  sub: "The free 30-second Google Check. See your score, your top gaps and how you compare with businesses near you in Lagos.",
+  keywordHint: "For example: hair salon Lekki, pharmacy Ikeja, mechanic Surulere",
+};
+
 export const Route = createFileRoute("/check")({
   validateSearch: z.object({
     n: z.string().max(30).optional(),
@@ -122,7 +131,9 @@ const PROMISES = [
 
 function CheckPage() {
   const { n, src, utm_source } = Route.useSearch();
-  const { gated } = Route.useLoaderData();
+  const loaded = Route.useLoaderData();
+  // The WhatsApp gate runs through GHL (UK only); Nigeria never uses it.
+  const gated = n === "ng" ? false : loaded.gated;
   const [sent, setSent] = useState(false);
   const niche = NICHES[n ?? "cleaning"] ?? NICHES["general"]!;
   const nicheKey = NICHES[n ?? "cleaning"] ? (n ?? "cleaning") : "general";

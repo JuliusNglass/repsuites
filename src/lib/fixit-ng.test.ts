@@ -22,3 +22,14 @@ describe("Nigeria Fix-it Pack", () => {
     expect(normaliseNgPhone("+447438881617")).toBe("+447438881617");
   });
 });
+
+import { ngFixitOffer } from "./report-page.server";
+describe("Nigeria report ending", () => {
+  it("names the business, prices per day in naira and links to /ng", () => {
+    const h = ngFixitOffer("Ada <Salon>");
+    expect(h).toContain("Ada &#60;Salon&#62;");
+    expect(h).toContain("&#8358;27 a day");
+    expect(h).toContain("https://repsuites.com/ng?p=10");
+    expect(h).not.toMatch(/—|£/);
+  });
+});

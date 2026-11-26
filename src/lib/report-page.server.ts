@@ -732,6 +732,8 @@ export interface RenderExtra {
   competitorId?: string | null;
   /** Show the £27 Fix-It Pack offer (free-check leads only). */
   fixit?: boolean;
+  /** Lagos free-check lead (/check?n=ng): naira Fix-it Pack ending instead. */
+  ng?: boolean;
   branding?: {
     agency_name: string | null;
     primary_hex: string | null;
@@ -1168,6 +1170,13 @@ function executiveBrief(r: Report, view: ReturnType<typeof scoreView>): string {
   return `<section id="summary" class="hero chapter"><div class="method">Your Google visibility growth plan</div><h1 class="biz">${esc(r.business.name)}</h1><p class="diagnosis">${esc(diagnosis)}</p><div class="metric-grid"><div class="metric"><strong>${lead ? `${lead.top3}/${spots}` : "-"}</strong><span>places where you are top 3</span></div><div class="metric"><strong>${coverage == null ? "-" : `${coverage}%`}</strong><span>of the checked area is top 3</span></div><div class="metric"><strong>${average}</strong><span>average place when found</span></div><div class="metric"><strong>${priorities}</strong><span>actions to take</span></div></div><p class="small" style="margin:15px 0 0">Visibility score: <b>${view.score}/100</b>${r.maps?.checked ? "" : " (Google Maps position not checked yet, so it is left out of this score)"}.</p></section>`;
 }
 
+// Nigeria ending: the gaps above are costing calls today; the pack fixes
+// them; a 14-day rewrite promise we honour; the price as a daily figure.
+export function ngFixitOffer(business: string): string {
+  const name = esc(business || "your business");
+  return `<div class="card noprint" style="border:2px solid var(--report-accent,#f5b324)"><h3 style="margin:0 0 8px">Every day you are not in the top 3, those calls go to someone else</h3><p style="margin:0 0 10px">Today, someone near you searched Google for what you sell. Google showed them 3 businesses in the map pack, and they called one of them. The gaps above are why it was not ${name}.</p><p style="margin:0 0 10px">The Google Fix-it Pack writes every fix for ${name}: your description, categories, services, posts and review replies, ready to copy and paste in about 20 minutes. No password needed.</p><p style="margin:0 0 10px">Try it on your own profile. If it is not right for your business, tell us within 14 days and we rewrite it.</p><p style="margin:0 0 14px"><b>&#8358;10,000</b>, about <b>&#8358;27 a day</b> over a year. Less than a sachet of pure water.</p><a class="cta" href="https://repsuites.com/ng?p=10">Show me the fix</a></div>`;
+}
+
 function fixitOffer(token: string): string {
   return `<div class="card noprint"><h3 style="margin:0 0 6px">Want us to do these fixes for you?</h3><p style="margin:0 0 10px">A full, well-written Google profile tells Google exactly what you do and where. That is a big part of who shows up first. We write it all for you, ready to paste in. One-off &pound;27, no Google login needed.</p><a class="cta" href="/fix?r=${encodeURIComponent(token)}&amp;buy=1">Fix these for me</a></div>`;
 }
@@ -1409,13 +1418,13 @@ ${extra?.snapshot ? realNumbers(extra.token, extra.snapshot, extra.flash) : ""}
 </section>
 <section class="step" id="step-fixes" data-title="Fix first">
 ${chapter(4, "fixes", "Fix these 3 first")}
-${topThree(r, extra?.fixit ? extra.token : null)}
+${topThree(r, extra?.fixit && !extra.ng ? extra.token : null)}
 ${reviewStand(r, extra)}
-${extra?.fixit ? fixitOffer(extra.token) : ""}
+${extra?.ng ? ngFixitOffer(r.business.name) : extra?.fixit ? fixitOffer(extra.token) : ""}
 </section>
 <section class="step" id="step-questions" data-title="Last step">
 ${chapter(8, "questions", "One last thing")}
-${extra?.fixit ? fitQuestions(extra.token, /clean/i.test(r.maps?.keyword ?? "")) : ""}
+${extra?.fixit && !extra.ng ? fitQuestions(extra.token, /clean/i.test(r.maps?.keyword ?? "")) : ""}
 <details class="card how" id="score"><summary>How we checked, and how your score of ${view.score}/100 works</summary>
 <div class="score" style="margin-top:12px"><div class="dial" style="background:${scoreColour(view.score)}">${view.score}</div>
 <div><b>Your local visibility score, out of 100</b><p class="muted" style="margin:4px 0 0">Built from Google's own data about your business and the businesses around you.</p></div></div>
