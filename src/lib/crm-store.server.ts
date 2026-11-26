@@ -184,3 +184,83 @@ export async function backfillFromGhl(): Promise<number> {
   });
   return list.length;
 }
+
+// One-off: copies GHL conversation history (all messages) into
+// ghl_convo_export before the GHL account closes. 10 conversations per run,
+// newest first, cursor kept in ghl_convo_export_state.
+export async function exportGhlConversations(): Promise<number> {
+  const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
+  if (!token) return 0;
+  const st = await serviceRead<{ cursor: unknown; done: boolean; copied: number }[]>(
+    "ghl_convo_export_state?select=cursor,done,copied&id=eq.1",
+    "",
+  );
+  if (st.error || st.data?.[0]?.done) return 0;
+  const cursor = st.data?.[0]?.cursor as number[] | null;
+  const h = { Authorization: `Bearer ${token}`, Version: "2021-04-15", Accept: "application/json" };
+  const q = new URLSearchParams({
+    locationId: "HzEU9UBWZEzxuB5SSDYE",
+    limit: "10",
+    sort: "desc",
+    sortBy: "last_message_date",
+  });
+  if (cursor?.length) q.set("startAfterDate", String(cursor[0]));
+  const r = await fetch(`https://services.leadconnectorhq.com/conversations/search?${q}`, {
+    headers: h,
+    signal: AbortSignal.timeout(15000),
+  }).catch(() => null);
+  if (!r?.ok) return 0;
+  const list = (((await r.json()) as any).conversations ?? []) as any[];
+  const rows = await Promise.all(
+    list.map(async (c) => {
+      const msgs: any[] = [];
+      let last: string | null = null;
+      for (let page = 0; page < 2; page++) {
+        const mq = new URLSearchParams({ limit: "100" });
+        if (last) mq.set("lastMessageId", last);
+        const m = await fetch(
+          `https://services.leadconnectorhq.com/conversations/${c.id}/messages?${mq}`,
+          { headers: h, signal: AbortSignal.timeout(15000) },
+        ).catch(() => null);
+        if (!m?.ok) break;
+        const d = ((await m.json()) as any).messages ?? {};
+        for (const x of d.messages ?? [])
+          msgs.push({
+            at: x.dateAdded,
+            dir: x.direction,
+            type: x.messageType,
+            body: x.body ?? null,
+            status: x.status ?? null,
+          });
+        if (!d.nextPage || !d.lastMessageId) break;
+        last = d.lastMessageId;
+      }
+      return {
+        id: String(c.id),
+        contact_id: c.contactId ?? null,
+        contact_name: c.fullName ?? c.contactName ?? null,
+        email: c.email ?? null,
+        phone: c.phone ?? null,
+        messages: msgs,
+      };
+    }),
+  );
+  if (rows.length)
+    await serviceWrite("ghl_convo_export?on_conflict=id", "", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: rows,
+    });
+  const next = list.length ? list[list.length - 1].sort ?? [list[list.length - 1].lastMessageDate] : null;
+  await serviceWrite("ghl_convo_export_state?on_conflict=id", "", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: {
+      id: 1,
+      cursor: next,
+      done: list.length < 10,
+      copied: (st.data?.[0]?.copied ?? 0) + rows.length,
+    },
+  });
+  return rows.length;
+}

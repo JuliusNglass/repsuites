@@ -112,6 +112,8 @@ export async function runGrowthChase(token: string) {
   const now = new Date();
   const { backfillFromGhl } = await import("./crm-store.server");
   await backfillFromGhl().catch(() => 0);
+  const { exportGhlConversations } = await import("./crm-store.server");
+  await exportGhlConversations().catch(() => 0);
   const nudged = await noShowNudges(now);
 
   const leads = await qualifiedLeads();
