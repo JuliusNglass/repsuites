@@ -22,6 +22,22 @@ export const Route = createFileRoute("/api/growth-lead")({
         const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
         const saved = token ? await pushGhl(token, d, r) : false;
         if (!saved) console.error("growth lead: GHL upsert failed");
+        // Also record the lead in the Accelur8 SparkOps account (no auto chase,
+        // so it never doubles up with the GHL follow-ups).
+        const { sendHqEvent } = await import("../lib/hq.server");
+        await sendHqEvent({
+          event: "lead_captured",
+          idempotency_key: `growth:${d.email || d.phone}:${new Date().toISOString().slice(0, 13)}`,
+          contact: { email: d.email || null, phone: d.phone || null, name: String(d.name) },
+          company: { name: d.business || null },
+          data: {
+            form: "growth",
+            qualified: r.qualified,
+            urgent: r.urgent,
+            phase: r.phaseKey,
+            timing: (d as { timing?: string }).timing ?? null,
+          },
+        });
         if (d.eid) {
           const { sendMetaEvent } = await import("../lib/meta-capi.server");
           const ok = await sendMetaEvent({
