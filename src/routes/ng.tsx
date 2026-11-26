@@ -116,7 +116,7 @@ function NgPage() {
               Put me in the top 3 - {naira(diy)}
             </button>
             <p className="text-sm text-muted-foreground">
-              {nairaPerDay(diy)} a day over a year
+              {nairaPerDay(diy)} over a year
               {price === 10
                 ? ", less than a sachet of pure water"
                 : ", about a sachet of pure water"}
@@ -164,7 +164,7 @@ function NgPage() {
                   src={st.img}
                   alt=""
                   loading="lazy"
-                  className="w-full aspect-[16/9] object-cover"
+                  className="w-full aspect-[2/1] object-contain bg-white"
                 />
                 <figcaption className="p-4">
                   <span className="text-sm font-semibold text-primary-ink">Step {i + 1}</span>
