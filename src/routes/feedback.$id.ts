@@ -24,6 +24,16 @@ export const Route = createFileRoute("/feedback/$id")({
     handlers: {
       GET: async ({ params, request }) => {
         const id = String(params.id || "").toLowerCase();
+        // 26 Nov 2026: printed codes are now served by SparkOps (same ID, all
+        // codes copied and checked). 302, so this can be switched back.
+        if (/^[0-9a-f-]{36}$/.test(id)) {
+          const to = new URL(`https://ops.accelur8clientwork.com/feedback/${id}`);
+          to.search = new URL(request.url).search;
+          return new Response(null, {
+            status: 302,
+            headers: { Location: to.toString(), "Cache-Control": "no-store" },
+          });
+        }
         const t = await loadFeedbackTarget(id);
         if (!t) return new Response(notFoundPage(), { status: 404, headers: HTML });
         await serviceWrite("qr_scans", "", { method: "POST", body: { qr_id: id } }).catch(
