@@ -38,6 +38,15 @@ export const Route = createFileRoute("/api/growth-lead")({
             timing: (d as { timing?: string }).timing ?? null,
           },
         });
+        // "Later" leads start the 12-month lessons in SparkOps straight away.
+        if (r.later) {
+          const { startAccelur8Nurture } = await import("../lib/hq.server");
+          await startAccelur8Nurture({
+            name: String(d.name),
+            email: d.email || null,
+            phone: d.phone || null,
+          });
+        }
         // Their own SparkOps booking link: kept for the follow-up texts and
         // passed to the growth pages as b=, so booking happens in SparkOps.
         const b = bookToken(reply?.["book"]);

@@ -178,3 +178,26 @@ export async function sendAccelur8Sms(a: {
     return false;
   }
 }
+
+/** Start someone on Accelur8's 12-month nurture in SparkOps (replaces GHL NUR 1). Never throws. */
+export async function startAccelur8Nurture(c: {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+}): Promise<boolean> {
+  if (!c.email && !c.phone) return false;
+  try {
+    const r = await fetch(env("HQ_CRM_URL") || HQ_DEFAULT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "nurture_start",
+        contact: { name: c.name ?? null, email: c.email ?? null, phone: c.phone ?? null },
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}

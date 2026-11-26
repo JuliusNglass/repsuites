@@ -2,7 +2,7 @@
 // to book the Fit Call themselves; unqualified ones (solo/researching) get texts to the free Google Check.
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
-import { sendAccelur8Sms } from "./hq.server";
+import { sendAccelur8Sms, startAccelur8Nurture } from "./hq.server";
 import { FIT_CALL_CALENDAR } from "./growth-join";
 import {
   offerFor,
@@ -213,7 +213,13 @@ export async function runGrowthChase(token: string) {
           body: `Call video (tracked, this lead only): ${salesLink("commercial", c)}\nYouTube copy: https://youtu.be/ByRUFtEiSe4`,
         }),
       });
-    // Unqualified leads go straight into the 12-month email lessons (NUR 1).
+    // Unqualified leads go straight into the 12-month lessons (now in SparkOps).
+    const who = {
+      name: [c.firstName, c.lastName].filter(Boolean).join(" "),
+      email: c.email ?? null,
+      phone: c.phone ?? null,
+    };
+    if (sentOk && (check || step === 3)) await startAccelur8Nurture(who);
     if (sentOk && check)
       await ghl(`/contacts/${c.id}/tags`, {
         method: "POST",
