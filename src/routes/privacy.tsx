@@ -121,9 +121,9 @@ export const Route = createFileRoute("/privacy")({
             offered on your booking page. We never read event titles, descriptions or guests.
           </li>
           <li>
-            <strong>calendar.events</strong>: to add a booking to your calendar (with a Google
-            Meet link) when a customer books, and to remove that same event if they cancel. We do
-            not read, change or delete any event we did not create.
+            <strong>calendar.events</strong>: to add a booking to your calendar (with a Google Meet
+            link) when a customer books, and to remove that same event if they cancel. We do not
+            read, change or delete any event we did not create.
           </li>
         </ul>
         <p>
@@ -201,7 +201,8 @@ export const Route = createFileRoute("/privacy")({
         <h2>11. Contact Us</h2>
         <p>
           For questions about this policy, contact us at{" "}
-          <a href="mailto:support@repsuites.com">support@repsuites.com</a>.
+          <a href="mailto:support@repsuites.com">support@repsuites.com</a>, or write to Accelur8, 66
+          Paul Street, London EC2A 4NA.
         </p>
       </article>
     </PublicLayout>

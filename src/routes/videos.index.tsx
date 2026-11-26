@@ -207,7 +207,7 @@ function VideosPage() {
         </section>
       </main>
       <footer className="border-t border-border/70 py-6 text-center text-sm text-muted-foreground">
-        Accelur8, Springboard Business Innovation Centre, Cwmbran NP44 3AW
+        Accelur8, 66 Paul Street, London EC2A 4NA
       </footer>
     </div>
   );
