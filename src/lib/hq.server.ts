@@ -111,3 +111,37 @@ export async function tenantParty(tenantId: string): Promise<{
     return none;
   }
 }
+
+/** Like sendHqEvent, but returns the reply body (e.g. the lead's SparkOps
+ * booking link for lead_captured). Null on any failure. */
+export async function sendHqEventReply(e: HqEvent): Promise<Record<string, unknown> | null> {
+  try {
+    const secret = env("HQ_CRM_SECRET");
+    if (!secret) return null;
+    const req = await buildHqRequest(e, secret);
+    const r = await fetch(req.url, {
+      method: "POST",
+      headers: req.headers,
+      body: req.raw,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!r.ok) return null;
+    return (await r.json()) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+/** The 36-hex booking token from a SparkOps booking link, or null. */
+export function bookToken(url: unknown): string | null {
+  const m = typeof url === "string" ? /\/lead\/([0-9a-f]{36})$/.exec(url) : null;
+  return m ? m[1]! : null;
+}
+
+/** UK-style phone to +44 form, to match GHL contact phones. Null if too short. */
+export function plusPhone(raw: string | null | undefined): string | null {
+  const d = String(raw ?? "").replace(/\D/g, "");
+  if (d.length < 10) return null;
+  if (d.startsWith("0")) return `+44${d.slice(1)}`;
+  return `+${d}`;
+}

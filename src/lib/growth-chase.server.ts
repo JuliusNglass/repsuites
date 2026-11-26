@@ -36,6 +36,7 @@ type Contact = {
   dnd?: boolean;
   dateAdded?: string;
   companyName?: string | null;
+  b?: string | null;
 };
 
 async function ghl(path: string, init: RequestInit = {}): Promise<Response | null> {
@@ -125,7 +126,7 @@ export async function runGrowthChase(token: string) {
     doneBy.set(d.contact_id, [...(doneBy.get(d.contact_id) ?? []), d.step]);
 
   let sent = 0;
-  for (const c of leads) {
+  for (let c of leads) {
     if (!c.phone || c.dnd || (c.tags ?? []).some((t) => CHASE_STOP_TAGS.includes(t))) continue;
     const step = chaseDue(c.dateAdded ?? "", doneBy.get(c.id) ?? [], now);
     if (!step || !chaseWindowOk(step, now)) continue;
@@ -150,6 +151,18 @@ export async function runGrowthChase(token: string) {
       });
       continue;
     }
+    // Their SparkOps booking link (growth_booking), so pages book in SparkOps.
+    const bk = await serviceRead<{ book_url: string }[]>(
+      `growth_booking?select=book_url&or=(${[
+        c.email ? `email.eq.${encodeURIComponent(c.email.toLowerCase())}` : "",
+        c.phone ? `phone.eq.${encodeURIComponent(c.phone)}` : "",
+      ]
+        .filter(Boolean)
+        .join(",")})&order=created_at.desc&limit=1`,
+      "",
+    ).catch(() => null);
+    const bt = /\/lead\/([0-9a-f]{36})$/.exec(bk?.data?.[0]?.book_url ?? "")?.[1] ?? null;
+    if (bt) c = { ...c, b: bt };
     const v4 = isFunnelV4(tags);
     const message = check
       ? welcomeSms(c.firstName, c.companyName)

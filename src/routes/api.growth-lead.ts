@@ -24,8 +24,8 @@ export const Route = createFileRoute("/api/growth-lead")({
         if (!saved) console.error("growth lead: GHL upsert failed");
         // Also record the lead in the Accelur8 SparkOps account (no auto chase,
         // so it never doubles up with the GHL follow-ups).
-        const { sendHqEvent } = await import("../lib/hq.server");
-        await sendHqEvent({
+        const { sendHqEventReply, bookToken, plusPhone } = await import("../lib/hq.server");
+        const reply = await sendHqEventReply({
           event: "lead_captured",
           idempotency_key: `growth:${d.email || d.phone}:${new Date().toISOString().slice(0, 13)}`,
           contact: { email: d.email || null, phone: d.phone || null, name: String(d.name) },
@@ -38,6 +38,20 @@ export const Route = createFileRoute("/api/growth-lead")({
             timing: (d as { timing?: string }).timing ?? null,
           },
         });
+        // Their own SparkOps booking link: kept for the follow-up texts and
+        // passed to the growth pages as b=, so booking happens in SparkOps.
+        const b = bookToken(reply?.["book"]);
+        if (b) {
+          const { serviceWrite } = await import("../lib/supabase-service.server");
+          await serviceWrite("growth_booking", "", {
+            method: "POST",
+            body: {
+              email: d.email ? d.email.toLowerCase() : null,
+              phone: plusPhone(d.phone),
+              book_url: reply!["book"],
+            },
+          }).catch(() => undefined);
+        }
         if (d.eid) {
           const { sendMetaEvent } = await import("../lib/meta-capi.server");
           const ok = await sendMetaEvent({
@@ -65,6 +79,7 @@ export const Route = createFileRoute("/api/growth-lead")({
             email: d.email,
             phone: d.phone,
             ...(saved ? { c: saved } : {}),
+            ...(b ? { b } : {}),
           });
           const page =
             r.phaseKey === "hiring"

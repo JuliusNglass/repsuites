@@ -62,12 +62,15 @@ export function bookLink(c: {
   lastName?: string | null;
   email?: string | null;
   phone?: string | null;
+  /** Their SparkOps booking token: the pages then book in SparkOps. */
+  b?: string | null;
 }): string {
   const q = new URLSearchParams();
   if (c.firstName) q.set("first_name", c.firstName);
   if (c.lastName) q.set("last_name", c.lastName);
   if (c.email) q.set("email", c.email);
   if (c.phone) q.set("phone", c.phone);
+  if (c.b && /^[0-9a-f]{36}$/.test(c.b)) q.set("b", c.b);
   return `https://growth.accelur8clientwork.com/book?${q}`;
 }
 
@@ -86,15 +89,7 @@ export function offerFor(tags: string[]): Offer {
 }
 
 /** Their own sales page: video first, then they can book from the page. */
-export function salesLink(
-  offer: Offer,
-  c: {
-    firstName?: string | null;
-    lastName?: string | null;
-    email?: string | null;
-    phone?: string | null;
-  },
-): string {
+export function salesLink(offer: Offer, c: Parameters<typeof bookLink>[0]): string {
   return bookLink(c).replace("/book?", `/${offer}?`);
 }
 
