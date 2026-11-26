@@ -7,14 +7,22 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { ArrowDown, Check, ChevronDown, Loader2, Lock, MessageCircle } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Loader2,
+  Lock,
+  MapPin,
+  MessageCircle,
+} from "lucide-react";
 import { startNgCheckout } from "../lib/fixit-ng.functions";
 import {
   NG_DFY_EXTRA_KOBO,
   NG_DIY_KOBO,
   NG_FAQ,
   NG_INCLUDES,
-  NG_LESSONS,
   naira,
   nairaPerDay,
   ngAmountKobo,
@@ -88,54 +96,42 @@ function NgPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6 sm:py-10 space-y-14">
-        {/* Above the fold: problem, video with cue, price, button */}
+      <main className="max-w-5xl mx-auto px-4 py-6 sm:py-10 space-y-14 pb-28 sm:pb-10">
+        {/* Above the fold: one question, a picture of the map, the video, one button */}
         <section className="grid lg:grid-cols-2 gap-6 lg:gap-10 items-center">
-          <div className="space-y-4">
+          <div className="space-y-5">
             <p className="inline-block rounded-full bg-gold-soft px-3 py-1 text-sm font-semibold text-primary-ink">
               For business owners in Nigeria
             </p>
-            <h1 className="text-3xl sm:text-5xl font-semibold leading-tight">
-              When someone near you searches for what you sell, your business should be one of the 3
-              they see.
+            <h1 className="text-4xl sm:text-5xl font-semibold leading-tight">
+              Customers are searching for you.{" "}
+              <span className="text-primary-ink">Are you in Google's top 3?</span>
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Right now those searches go to the 3 businesses Google shows on the map. This 3 minute
-              video shows how Google and AI answers pick them, and the 20 minute fix that puts your
-              business in the running.
-            </p>
-            <p className="text-lg">
-              <b>Google Fix-it Pack:</b> {naira(diy)} once.{" "}
-              <span className="text-primary-ink font-semibold">
-                That is {nairaPerDay(diy)} over a year
-                {price === 10
-                  ? ", less than a sachet of pure water"
-                  : ", about one sachet of pure water"}
-                .
-              </span>
-            </p>
+            <MapPack />
             <button
               type="button"
               onClick={scrollToBuy}
               className="btn btn-gold btn-lg w-full sm:w-auto"
             >
-              Show me the fix
+              Put me in the top 3 - {naira(diy)}
             </button>
             <p className="text-sm text-muted-foreground">
-              Try it on your own profile. Not right? Tell us within 14 days and we rewrite it.
+              {nairaPerDay(diy)} a day over a year
+              {price === 10
+                ? ", less than a sachet of pure water"
+                : ", about a sachet of pure water"}
+              . Not right? We rewrite it free within 14 days.
             </p>
-            <p className="text-sm">
-              Not sure yet?{" "}
-              <a
-                href="/check?n=ng&src=ng"
-                className="underline underline-offset-2 font-semibold text-primary-ink"
-              >
-                Get your free Google check first
-              </a>
-            </p>
+            <a
+              href="/check?n=ng&src=ng"
+              className="flex items-center justify-between rounded-xl border-2 border-dashed border-gold px-4 py-3 font-semibold text-primary-ink hover:bg-gold-soft/40 transition"
+            >
+              Not sure? Get a free Google check first
+              <ArrowRight className="h-5 w-5" aria-hidden />
+            </a>
           </div>
 
-          <div className="relative">
+          <div className="relative mt-8 lg:mt-0">
             <div className="absolute -top-9 left-2 flex items-center gap-2 text-primary-ink font-semibold animate-bounce">
               <span className="rounded-full bg-gold-soft px-3 py-1 text-sm">Watch this first</span>
               <ArrowDown className="h-5 w-5" aria-hidden />
@@ -155,41 +151,54 @@ function NgPage() {
           </div>
         </section>
 
-        {/* Teach first */}
+        {/* Three pictures, three short lines */}
         <section className="space-y-5">
-          <h2 className="text-2xl sm:text-3xl font-semibold">
-            How customers really find a business
-          </h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {NG_LESSONS.map((l) => (
-              <div key={l.title} className="rounded-2xl border border-border p-5 space-y-2">
-                <h3 className="font-semibold text-lg">{l.title}</h3>
-                <p className="text-muted-foreground">{l.body}</p>
-              </div>
+          <h2 className="text-2xl sm:text-3xl font-semibold">How the top 3 get picked</h2>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {STEPS.map((st, i) => (
+              <figure
+                key={st.img}
+                className="rounded-2xl border border-border overflow-hidden bg-white transition hover:-translate-y-1 hover:shadow-lg"
+              >
+                <img
+                  src={st.img}
+                  alt=""
+                  loading="lazy"
+                  className="w-full aspect-[16/9] object-cover"
+                />
+                <figcaption className="p-4">
+                  <span className="text-sm font-semibold text-primary-ink">Step {i + 1}</span>
+                  <p className="font-semibold text-lg leading-snug">{st.line}</p>
+                </figcaption>
+              </figure>
             ))}
           </div>
-          <div className="rounded-2xl bg-gold-soft/50 p-5">
-            <b>Try it now:</b> open Google on your phone and type what you sell plus your area (for
-            example "hair salon Lekki"). If you are not in the top 3 on the map, every one of those
-            searches is going to someone else today. That is the reason to fix it now, not next
-            month.
+          <div className="rounded-2xl bg-primary-ink text-white p-5 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+            <p className="text-lg">
+              <b>Test it now:</b> search "what you sell + your area" on Google. Not in the top 3?
+            </p>
+            <button type="button" onClick={scrollToBuy} className="btn btn-gold shrink-0">
+              Fix it today
+            </button>
           </div>
         </section>
 
         {/* What you get + two options + checkout */}
         <section id="buy" className="grid lg:grid-cols-2 gap-8 scroll-mt-20">
           <div className="space-y-4">
-            <h2 className="text-2xl sm:text-3xl font-semibold">What you get</h2>
+            <h2 className="text-2xl sm:text-3xl font-semibold">Your Fix-it Pack</h2>
             <ul className="space-y-3">
               {NG_INCLUDES.map((t) => (
                 <li key={t} className="flex gap-3">
-                  <Check className="h-5 w-5 mt-0.5 text-primary-ink shrink-0" aria-hidden />
+                  <span className="h-7 w-7 rounded-full bg-gold-soft grid place-items-center shrink-0">
+                    <Check className="h-4 w-4 text-primary-ink" aria-hidden />
+                  </span>
                   {t}
                 </li>
               ))}
             </ul>
             <p className="flex items-center gap-2 text-muted-foreground">
-              <MessageCircle className="h-5 w-5" aria-hidden /> Sent to your WhatsApp and email in
+              <MessageCircle className="h-5 w-5" aria-hidden /> On your WhatsApp and email in
               minutes.
             </p>
           </div>
@@ -210,6 +219,49 @@ function NgPage() {
         </section>
         <p className="text-center text-sm text-muted-foreground">Accelur8</p>
       </main>
+
+      {/* Sticky button on phones */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur p-3">
+        <button type="button" onClick={scrollToBuy} className="btn btn-gold btn-lg w-full">
+          Put me in the top 3 - {naira(diy)}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const STEPS = [
+  { img: "/media/ng-n13.webp", line: "Customers search Google before they call." },
+  { img: "/media/ng-04.webp", line: "Google shows 3 businesses on the map. They get the calls." },
+  { img: "/media/ng-n15.webp", line: "Fix your profile and the next call can be yours." },
+];
+
+// A simple picture of Google's map results with an empty top spot for the reader.
+function MapPack() {
+  const rows = [
+    { n: "Your business?", you: true },
+    { n: "Competitor A", you: false },
+    { n: "Competitor B", you: false },
+  ];
+  return (
+    <div
+      className="rounded-2xl border border-border bg-white shadow-md overflow-hidden"
+      aria-hidden
+    >
+      <div className="h-16 bg-[linear-gradient(135deg,#e8f0e3_25%,#dfe9f5_25%,#dfe9f5_50%,#e8f0e3_50%,#e8f0e3_75%,#dfe9f5_75%)] bg-[length:28px_28px] relative">
+        <MapPin className="h-7 w-7 text-red-500 absolute left-1/4 top-4 fill-red-200" />
+        <MapPin className="h-7 w-7 text-red-500 absolute left-1/2 top-2 fill-red-200" />
+        <MapPin className="h-7 w-7 text-red-500 absolute left-3/4 top-5 fill-red-200" />
+      </div>
+      {rows.map((r) => (
+        <div
+          key={r.n}
+          className={`flex items-center justify-between px-4 py-2.5 border-t border-border ${r.you ? "bg-gold-soft/60 animate-pulse" : ""}`}
+        >
+          <span className={`font-semibold ${r.you ? "text-primary-ink" : ""}`}>{r.n}</span>
+          <span className="text-sm text-amber-500">{"\u2605".repeat(r.you ? 5 : 4)}</span>
+        </div>
+      ))}
     </div>
   );
 }
