@@ -157,7 +157,7 @@ export async function crmFetch(path: string, init: RequestInit = {}): Promise<Re
 /**
  * One-off: copy GHL contacts (with tags and custom fields, GHL ids kept) into
  * crm_contacts, 100 per run, resuming from a saved cursor. Existing rows are
- * merged (tags unioned), so it is safe to run while the funnel keeps writing.
+ * merged in one call (tags unioned), so it is safe to run while the funnel keeps writing.
  */
 export async function backfillFromGhl(): Promise<number> {
   const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
@@ -186,10 +186,10 @@ export async function backfillFromGhl(): Promise<number> {
   }).catch(() => null);
   if (!r?.ok) return 0;
   const list = (((await r.json()) as any).contacts ?? []) as any[];
-  for (const c of list) {
+  const rows = list.map((c) => {
     const custom: Record<string, unknown> = {};
     for (const f of c.customFields ?? []) if (f?.id) custom[f.id] = f.value;
-    const row = {
+    return {
       id: String(c.id),
       first_name: c.firstName ?? null,
       last_name: c.lastName ?? null,
@@ -200,13 +200,16 @@ export async function backfillFromGhl(): Promise<number> {
       custom,
       dnd: !!c.dnd,
       date_added: c.dateAdded ?? new Date().toISOString(),
+      tags: Array.isArray(c.tags) ? c.tags.map(String) : [],
     };
-    await serviceWrite("crm_contacts?on_conflict=id", "", {
+  });
+  // One request for the whole page (Workers limit subrequests per run).
+  if (rows.length) {
+    const w = await serviceWrite("rpc/crm_merge_contacts", "", {
       method: "POST",
-      headers: { Prefer: "resolution=merge-duplicates" },
-      body: row,
+      body: { p: rows },
     });
-    if (Array.isArray(c.tags) && c.tags.length) await addTags(row.id, c.tags.map(String));
+    if (w.error) return 0;
   }
   const last = list[list.length - 1]?.searchAfter ?? null;
   await serviceWrite("crm_backfill?on_conflict=id", "", {
