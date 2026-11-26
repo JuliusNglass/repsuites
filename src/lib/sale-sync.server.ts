@@ -1,6 +1,7 @@
 // Won-deal sync: runs every 15 minutes (database cron). For each GHL opportunity
 // newly marked won: send Meta a Purchase (so ads optimise for buyers), tag the
 // contact "customer" (stops every chase), and push an in-app task to the owner.
+import { crmFetch } from "./crm-store.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
 import { sendMetaEvent } from "./meta-capi.server";
@@ -11,7 +12,7 @@ async function ghl(path: string, init: RequestInit = {}): Promise<Response | nul
   const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
   if (!token) return null;
   try {
-    return await fetch(`https://services.leadconnectorhq.com${path}`, {
+    return await crmFetch(`${path}`, {
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,

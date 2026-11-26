@@ -4,6 +4,7 @@
 // contact's "GC" fields and adds a tag ("gc-scan-ready" or "gc-scan-failed")
 // that starts the GHL delivery workflow. Answers GHL at once and scans in the
 // background, so a slow scan never times the webhook out.
+import { crmFetch } from "./crm-store.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
 
@@ -104,7 +105,7 @@ async function pushToGhl(
   };
   try {
     // No tags in the upsert: GHL replaces the whole tag list when tags are sent.
-    const r = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+    const r = await crmFetch("/contacts/upsert", {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -126,7 +127,7 @@ async function pushToGhl(
     // Now the report exists, release the held follow-up route (ghl-lead.ts).
     if (tag === "gc-scan-ready")
       for (const t of c.tags ?? []) if (t.startsWith("hold-route-")) add.push(t.slice(5));
-    const t = await fetch(`https://services.leadconnectorhq.com/contacts/${c.id}/tags`, {
+    const t = await crmFetch(`/contacts/${c.id}/tags`, {
       method: "POST",
       headers,
       body: JSON.stringify({ tags: add }),
@@ -135,7 +136,7 @@ async function pushToGhl(
     if (!t.ok) console.error("GHL scan tag failed", t.status);
     // The scan has run (ready or failed), so the contact is no longer waiting.
     if ((c.tags ?? []).includes("gc-scan-pending")) {
-      const d = await fetch(`https://services.leadconnectorhq.com/contacts/${c.id}/tags`, {
+      const d = await crmFetch(`/contacts/${c.id}/tags`, {
         method: "DELETE",
         headers,
         body: JSON.stringify({ tags: ["gc-scan-pending"] }),

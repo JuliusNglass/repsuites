@@ -2,6 +2,7 @@
 // next due nudge to each recent check, by text (through GHL) or email.
 // Stops for good when the person has paid, replied, opted out or is marked
 // as a customer.
+import { crmFetch } from "./crm-store.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { sendEmail } from "./email.server";
 import { sendAccelur8Sms } from "./hq.server";
@@ -43,7 +44,7 @@ async function ghl(path: string, init: RequestInit = {}): Promise<Response | nul
   const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
   if (!token) return null;
   try {
-    return await fetch(`https://services.leadconnectorhq.com${path}`, {
+    return await crmFetch(`${path}`, {
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,

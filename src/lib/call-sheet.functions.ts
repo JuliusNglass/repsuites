@@ -1,4 +1,5 @@
 // Call sheet server functions (Accelur8 team only). Reads and writes GHL.
+import { crmFetch } from "./crm-store.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { GHL_LOCATION_ID } from "./ghl-lead";
@@ -19,7 +20,7 @@ async function ghl(path: string, init: RequestInit = {}, version = "2021-07-28")
   const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
   if (!token) return null;
   try {
-    const r = await fetch(`https://services.leadconnectorhq.com${path}`, {
+    const r = await crmFetch(`${path}`, {
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,

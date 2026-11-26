@@ -46,6 +46,15 @@ export async function crmFetch(path: string, init: RequestInit = {}): Promise<Re
   const body = typeof init.body === "string" ? (JSON.parse(init.body) as any) : {};
   const parts = new URL(path, "https://x").pathname.split("/").filter(Boolean);
   if (parts[0] === "calendars") return json(200, { events: [] });
+  if (parts[0] === "opportunities" && method === "POST") {
+    const r = await sparkopsCrm({
+      event: "crm_sale",
+      id: body.contactId,
+      value: body.monetaryValue,
+      name: body.name,
+    });
+    return json(r.status, r.data);
+  }
   if (parts[0] !== "contacts") return json(404, { message: "not supported" });
 
   if (method === "POST" && parts[1] === "upsert") {
@@ -56,6 +65,11 @@ export async function crmFetch(path: string, init: RequestInit = {}): Promise<Re
       contact: { ...body, phone: plus(body.phone) },
       answers,
     });
+    return json(r.status, r.data);
+  }
+  if (method === "GET" && parts[1] === "search" && parts[2] === "duplicate") {
+    const q = new URL(path, "https://x").searchParams;
+    const r = await sparkopsCrm({ event: "crm_find", email: q.get("email"), phone: q.get("number") });
     return json(r.status, r.data);
   }
   if (method === "POST" && parts[1] === "search") {
@@ -74,6 +88,24 @@ export async function crmFetch(path: string, init: RequestInit = {}): Promise<Re
     return json(r.status, r.data);
   }
   if (method === "GET" && parts[2] === "appointments") return json(200, { events: [] });
+  if (method === "GET" && parts[2] === "notes") {
+    const r = await sparkopsCrm({ event: "crm_notes", id });
+    return json(r.status, r.data);
+  }
+  if (method === "PUT" && parts.length === 2) {
+    const answers: Record<string, unknown> = {};
+    for (const f of body.customFields ?? []) if (f?.id) answers[f.id] = f.field_value ?? f.value;
+    const r = await sparkopsCrm({ event: "crm_update", id, answers });
+    return json(r.status, r.data);
+  }
+  if (method === "POST" && parts[2] === "tasks") {
+    const r = await sparkopsCrm({
+      event: "crm_note",
+      id,
+      body: `Task: ${body.title ?? ""}${body.body ? `\n${body.body}` : ""}${body.dueDate ? `\nDue: ${body.dueDate}` : ""}`,
+    });
+    return json(r.status, r.data);
+  }
   if (method === "POST" && parts[2] === "tags") {
     const r = await sparkopsCrm({ event: "crm_tags", id, tags: body.tags ?? [] });
     return json(r.status, r.data);

@@ -1,3 +1,4 @@
+import { crmFetch } from "./crm-store.server";
 import { ghlLeadBody, GHL_LOCATION_ID, type GhlLeadInput } from "./ghl-lead";
 
 // Best effort: a failure here must never lose the lead (it is already saved
@@ -8,7 +9,7 @@ export async function pushLeadToGhl(p: GhlLeadInput): Promise<boolean> {
   if (!token) return false;
   if (!p.email && !p.phone) return false;
   try {
-    const r = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+    const r = await crmFetch("/contacts/upsert", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -40,7 +41,7 @@ export async function tagFixitPaid(p: {
     .trim()
     .split(/\s+/);
   try {
-    const r = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+    const r = await crmFetch("/contacts/upsert", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -82,7 +83,7 @@ export async function addGhlTags(p: {
     Accept: "application/json",
   };
   try {
-    const u = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+    const u = await crmFetch("/contacts/upsert", {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -97,7 +98,7 @@ export async function addGhlTags(p: {
       console.error("GHL tag upsert failed", u.status);
       return false;
     }
-    const r = await fetch(`https://services.leadconnectorhq.com/contacts/${id}/tags`, {
+    const r = await crmFetch(`/contacts/${id}/tags`, {
       method: "POST",
       headers,
       body: JSON.stringify({ tags: p.tags }),
@@ -129,7 +130,7 @@ export async function pushSignupToGhl(p: {
       .replace(/^-|-$/g, "")
       .slice(0, 30) || "direct";
   try {
-    const r = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+    const r = await crmFetch("/contacts/upsert", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

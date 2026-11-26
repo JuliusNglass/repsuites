@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Stripe JSON is checked field by field. */
 // Server-only: explainer video orders. One-off Stripe payment, then a brief
 // that is emailed to Accelur8 and saved on the GHL contact (tag video-client).
+import { crmFetch } from "./crm-store.server";
 import { stripe } from "./stripe.server";
 import { sendEmail } from "./email.server";
 import { VIDEO_PACKS, briefText, type VideoBrief, type VideoPack } from "./video-order";
@@ -58,7 +59,7 @@ export async function readVideoOrder(id: string) {
 }
 
 async function ghl(path: string, body: unknown, token: string) {
-  return fetch(`https://services.leadconnectorhq.com/${path}`, {
+  return crmFetch(`${path}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

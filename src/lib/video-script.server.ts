@@ -3,6 +3,7 @@
 // script (one scene per sentence), the client gets it by text and email with
 // an approval link, gets chased on day 2, 4 and 6, and an approved order
 // waits in the render queue (picked up by a Claude scheduled task for now).
+import { crmFetch } from "./crm-store.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { sendEmail } from "./email.server";
 import { sendAccelur8Sms } from "./hq.server";
@@ -48,7 +49,7 @@ async function ghl(path: string, init: RequestInit = {}): Promise<Response | nul
   const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
   if (!token) return null;
   try {
-    return await fetch(`https://services.leadconnectorhq.com${path}`, {
+    return await crmFetch(`${path}`, {
       ...init,
       headers: {
         Authorization: `Bearer ${token}`,
