@@ -11,11 +11,17 @@ import { trialStart } from "../lib/review-trial.functions";
 import { TRIAL_DATA_PROMISE, TRIAL_TERMS } from "../lib/review-trial";
 
 export const Route = createFileRoute("/try/")({
-  validateSearch: z.object({ r: z.string().max(64).optional(), ds: z.string().max(4).optional() }),
+  validateSearch: z.object({ r: z.string().max(64).optional(), ds: z.union([z.string().max(4), z.number()]).optional() }),
   // Retired 26 Nov 2026: the £1 trial is only a downsell sent by hand after a
   // call (link with ?ds=1). Everyone else goes to the growth page.
-  beforeLoad: ({ search }) => {
-    if (search.ds !== "1") throw redirect({ href: "https://growth.accelur8clientwork.com/" });
+  beforeLoad: ({ location }) => {
+    const ds = new URLSearchParams(location.searchStr ?? "").get("ds");
+    if (
+      ds !== "1" &&
+      (location.search as { ds?: unknown })?.ds !== "1" &&
+      (location.search as { ds?: unknown })?.ds !== 1
+    )
+      throw redirect({ href: "https://growth.accelur8clientwork.com/" });
   },
   head: () => ({ meta: [{ title: "Start for £1 | RepSuites" }] }),
   component: TryPage,
