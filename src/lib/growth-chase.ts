@@ -179,26 +179,11 @@ export function growSms(
   return `${hi}, last nudge from us. The video is here when you're ready: ${link} Accelur8`;
 }
 
-// Unqualified growth leads (solo or just researching) never get a call: they are
-// sent the £1 for 30 days review trial instead.
-export const CHECK_LINK = "https://repsuites.com/try?utm_source=grw-sms";
+// Unqualified growth leads (solo or just researching) never get a call: one
+// welcome text, then the 12-month email lessons.
 export function isCheckRoute(tags: string[]): boolean {
   return !tags.includes("qualified") && (tags.includes("nurture") || tags.includes("solo"));
 }
-export function checkSms(
-  step: ChaseStep,
-  firstName: string | null | undefined,
-  business: string | null | undefined,
-): string {
-  const hi = `Hi ${first(firstName)}`;
-  const biz = (business ?? "").trim() || "your business";
-  if (step === 1)
-    return `${hi}, happy customers rarely leave a Google review on their own. For £1, try a tool that asks for you, in the name of ${biz}, for 30 days: ${CHECK_LINK} Accelur8`;
-  if (step === 2)
-    return `${hi}, most cleaning jobs go to the firms with the most recent Google reviews. 30 days of getting more, for £1: ${CHECK_LINK} Accelur8`;
-  return `${hi}, last one from us. The £1 review trial for ${biz} is here when you want it: ${CHECK_LINK} Accelur8`;
-}
-
 // Leads who watched most of the growth page video before filling in the form: the
 // next texts skip "did you watch it?" and send them to the offer page (price video
 // plus booking), so nobody books without seeing the price.

@@ -3,7 +3,7 @@
 // Sold as Accelur8. No em dashes (AGENTS.md).
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { ArrowRight, ClipboardCheck, Clapperboard, Star } from "lucide-react";
+import { ArrowRight, ClipboardCheck, Clapperboard } from "lucide-react";
 
 export const Route = createFileRoute("/go")({
   validateSearch: z.object({ src: z.string().max(20).optional() }),
@@ -26,12 +26,6 @@ function GoPage() {
   const utm = (content: string) =>
     `utm_source=${encodeURIComponent(s)}&utm_medium=social&utm_content=${content}`;
   const links = [
-    {
-      href: `https://repsuites.com/try?${utm("reviews")}`,
-      icon: Star,
-      title: "Get more Google reviews",
-      sub: "30 days for £1. That's about 3p a day.",
-    },
     {
       href: `https://ops.accelur8clientwork.com/scorecard?${utm("scorecard")}`,
       icon: ClipboardCheck,

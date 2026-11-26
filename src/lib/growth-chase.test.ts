@@ -51,13 +51,6 @@ describe("free check route for unqualified leads", () => {
     expect(isCheckRoute(["grw-lead", "qualified"])).toBe(false);
     expect(isCheckRoute(["grw-lead", "qualified", "nurture"])).toBe(false);
   });
-  it("no text has an opt-out line, all point at the £1 trial", async () => {
-    const { checkSms, CHECK_LINK } = await import("./growth-chase");
-    expect(checkSms(1, "dee", "Complete cleaning")).not.toContain("STOP");
-    expect(checkSms(1, "dee", "Complete cleaning")).toContain("repsuites.com/try");
-    expect(checkSms(2, "dee", null)).not.toContain("STOP");
-    expect(checkSms(3, "dee", null)).toContain(CHECK_LINK);
-  });
 });
 
 describe("chase timing", () => {
