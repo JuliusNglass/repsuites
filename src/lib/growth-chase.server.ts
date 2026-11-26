@@ -1,5 +1,6 @@
 // Growth chase: runs every 10 minutes (database cron). Qualified growth leads get texts
 // to book the Fit Call themselves; unqualified ones (solo/researching) get texts to the free Google Check.
+import { crmFetch } from "./crm-store.server";
 import { serviceRead, serviceWrite } from "./supabase-service.server";
 import { GHL_LOCATION_ID } from "./ghl-lead";
 import { sendAccelur8Sms, startAccelur8Nurture } from "./hq.server";
@@ -41,13 +42,10 @@ type Contact = {
 };
 
 async function ghl(path: string, init: RequestInit = {}): Promise<Response | null> {
-  const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
-  if (!token) return null;
   try {
-    return await fetch(`https://services.leadconnectorhq.com${path}`, {
+    return await crmFetch(`${path}`, {
       ...init,
       headers: {
-        Authorization: `Bearer ${token}`,
         Version: "2021-07-28",
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -112,6 +110,8 @@ export async function runGrowthChase(token: string) {
   });
   if (ok.error || ok.data !== true) return { status: 401, body: { ok: false } };
   const now = new Date();
+  const { backfillFromGhl } = await import("./crm-store.server");
+  await backfillFromGhl().catch(() => 0);
   const nudged = await noShowNudges(now);
 
   const leads = await qualifiedLeads();

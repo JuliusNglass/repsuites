@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/growth-lead")({
         if (d.trap) return go(`${GROWTH}/thanks`);
         const r = route(d);
         const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
-        const saved = token ? await pushGhl(token, d, r) : false;
+        const saved = await pushGhl(token, d, r);
         if (!saved) console.error("growth lead: GHL upsert failed");
         // Also record the lead in the Accelur8 SparkOps account (no auto chase,
         // so it never doubles up with the GHL follow-ups).

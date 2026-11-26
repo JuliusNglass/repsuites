@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { route, validate, bookingUrl, bookPageUrl } from "./growth-lead";
 
 const form = (o: Record<string, string>) => {
@@ -74,20 +74,22 @@ describe("validate tracking fields", () => {
 });
 
 describe("pushGhl tags", () => {
-  it("adds tags after the upsert instead of replacing them", async () => {
-    const { pushGhl, route } = await import("./growth-lead");
+  it("saves the contact in Accelur8's own store, then adds tags (never replaces them)", async () => {
     const calls: { url: string; body: string }[] = [];
-    const orig = globalThis.fetch;
-    globalThis.fetch = (async (u: string, init: RequestInit) => {
-      calls.push({ url: String(u), body: String(init.body) });
-      return new Response(JSON.stringify({ contact: { id: "c1" } }));
-    }) as typeof fetch;
+    vi.doMock("./crm-store.server", () => ({
+      crmFetch: async (u: string, init: RequestInit) => {
+        calls.push({ url: String(u), body: String(init.body) });
+        return new Response(JSON.stringify({ contact: { id: "c1" } }));
+      },
+    }));
+    const { pushGhl, route } = await import("./growth-lead");
     const d = validate(form(good));
     const ok = await pushGhl("t", d, route(d));
-    globalThis.fetch = orig;
+    vi.doUnmock("./crm-store.server");
     expect(ok).toBe("c1");
+    expect(calls[0]?.url).toBe("/contacts/upsert");
     expect(calls[0]?.body).not.toContain('"tags"');
-    expect(calls[1]?.url).toContain("/contacts/c1/tags");
+    expect(calls[1]?.url).toBe("/contacts/c1/tags");
     expect(calls[1]?.body).toContain("grw-lead");
   });
 });

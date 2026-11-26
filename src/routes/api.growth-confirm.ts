@@ -4,7 +4,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 const GROWTH = "https://growth.accelur8clientwork.com";
-const GHL = "https://services.leadconnectorhq.com";
 
 export const Route = createFileRoute("/api/growth-confirm")({
   server: {
@@ -30,7 +29,8 @@ export const Route = createFileRoute("/api/growth-confirm")({
           "Content-Type": "application/json",
           Accept: "application/json",
         };
-        const got = await fetch(`${GHL}/contacts/${c}`, {
+        const { crmFetch } = await import("../lib/crm-store.server");
+        const got = await crmFetch(`/contacts/${c}`, {
           headers,
           signal: AbortSignal.timeout(8000),
         })
@@ -38,7 +38,7 @@ export const Route = createFileRoute("/api/growth-confirm")({
           .catch(() => null);
         const tags: string[] = got?.contact?.tags ?? [];
         if (!tags.includes("grw-booked")) return go(false);
-        const r = await fetch(`${GHL}/contacts/${c}/tags`, {
+        const r = await crmFetch(`/contacts/${c}/tags`, {
           method: "POST",
           headers,
           body: JSON.stringify({ tags: ["grw-confirmed"] }),

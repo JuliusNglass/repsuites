@@ -20,7 +20,8 @@ export const Route = createFileRoute("/api/growth-month")({
           });
         if (!CONTACT_RE.test(c) || !validMonth(m, new Date())) return go(`${GROWTH}/start?e=1`);
         const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
-        const r = await fetch(`https://services.leadconnectorhq.com/contacts/${c}/tags`, {
+        const { crmFetch } = await import("../lib/crm-store.server");
+        const r = await crmFetch(`/contacts/${c}/tags`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,

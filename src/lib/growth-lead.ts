@@ -127,7 +127,8 @@ export async function pushGhl(
     ].filter((x) => x.field_value),
   };
   for (let i = 0; i < 3; i++) {
-    const res = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
+    const { crmFetch } = await import("./crm-store.server");
+    const res = await crmFetch("/contacts/upsert", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -143,7 +144,7 @@ export async function pushGhl(
       const j = (await res.json().catch(() => null)) as { contact?: { id?: string } } | null;
       const id = j?.contact?.id;
       if (!id) return false;
-      const t = await fetch(`https://services.leadconnectorhq.com/contacts/${id}/tags`, {
+      const t = await crmFetch(`/contacts/${id}/tags`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

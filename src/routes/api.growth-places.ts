@@ -9,7 +9,11 @@ const cors = { "Access-Control-Allow-Origin": ORIGIN, Vary: "Origin" };
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "private, max-age=300", ...cors },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "private, max-age=300",
+      ...cors,
+    },
   });
 
 export const Route = createFileRoute("/api/growth-places")({
@@ -18,7 +22,8 @@ export const Route = createFileRoute("/api/growth-places")({
       GET: async ({ request }) => {
         const origin = request.headers.get("origin") ?? "";
         const referer = request.headers.get("referer") ?? "";
-        if (origin !== ORIGIN && !referer.startsWith(ORIGIN + "/")) return json({ places: [] }, 403);
+        if (origin !== ORIGIN && !referer.startsWith(ORIGIN + "/"))
+          return json({ places: [] }, 403);
         const q = (new URL(request.url).searchParams.get("q") ?? "").trim();
         if (q.length < 3 || q.length > 80) return json({ places: [] });
         const key = (process.env["REPSUITES_GOOGLE_MAPS_KEY"] ?? "").trim();
@@ -32,7 +37,8 @@ export const Route = createFileRoute("/api/growth-places")({
             headers: {
               "Content-Type": "application/json",
               "X-Goog-Api-Key": key,
-              "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.websiteUri",
+              "X-Goog-FieldMask":
+                "places.id,places.displayName,places.formattedAddress,places.websiteUri",
             },
             body: JSON.stringify({ textQuery: q, regionCode: "gb", pageSize: 5 }),
           });
@@ -41,7 +47,12 @@ export const Route = createFileRoute("/api/growth-places")({
             return json({ places: [] });
           }
           const d = (await r.json().catch(() => ({}))) as {
-            places?: { id?: string; displayName?: { text?: string }; formattedAddress?: string; websiteUri?: string }[];
+            places?: {
+              id?: string;
+              displayName?: { text?: string };
+              formattedAddress?: string;
+              websiteUri?: string;
+            }[];
           };
           const places = (d.places ?? [])
             .filter((p) => p.id && p.displayName?.text)
@@ -65,7 +76,10 @@ export const Route = createFileRoute("/api/growth-places")({
               suggestions?: {
                 placePrediction?: {
                   placeId?: string;
-                  structuredFormat?: { mainText?: { text?: string }; secondaryText?: { text?: string } };
+                  structuredFormat?: {
+                    mainText?: { text?: string };
+                    secondaryText?: { text?: string };
+                  };
                 };
               }[];
             };
@@ -90,7 +104,10 @@ export const Route = createFileRoute("/api/growth-places")({
         }
       },
       OPTIONS: async () =>
-        new Response(null, { status: 204, headers: { ...cors, "Access-Control-Allow-Methods": "GET" } }),
+        new Response(null, {
+          status: 204,
+          headers: { ...cors, "Access-Control-Allow-Methods": "GET" },
+        }),
     },
   },
 });

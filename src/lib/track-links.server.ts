@@ -1,14 +1,12 @@
 // Server-only: record a tracked-link click and tag the contact in GHL.
+import { crmFetch } from "./crm-store.server";
 import { serviceWrite } from "./supabase-service.server";
 import { LINKS } from "./track-links";
 
 async function ghl(path: string, init: RequestInit = {}) {
-  const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
-  if (!token) return null;
-  return fetch(`https://services.leadconnectorhq.com${path}`, {
+  return crmFetch(`${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token}`,
       Version: "2021-07-28",
       "Content-Type": "application/json",
       Accept: "application/json",

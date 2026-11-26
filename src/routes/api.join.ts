@@ -18,7 +18,8 @@ export const Route = createFileRoute("/api/join")({
           });
         if (!CONTACT_RE.test(c)) return go(FALLBACK);
         const token = (process.env["GHL_PRIVATE_TOKEN"] ?? "").trim();
-        const r = await fetch(`https://services.leadconnectorhq.com/contacts/${c}/appointments`, {
+        const { crmFetch } = await import("../lib/crm-store.server");
+        const r = await crmFetch(`/contacts/${c}/appointments`, {
           headers: {
             Authorization: `Bearer ${token}`,
             Version: "2021-07-28",
