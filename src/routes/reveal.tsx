@@ -58,6 +58,29 @@ function Reveal() {
           </p>
         </header>
 
+        <section className="grid grid-cols-2 gap-3 self-end rounded-2xl bg-white/5 p-3">
+          <label className="text-sm text-slate-300">
+            A typical small office pays you, per week
+            <input
+              type="number"
+              inputMode="decimal"
+              value={w}
+              onChange={(e) => setW(Number(e.target.value) || 0)}
+              className="mt-1 w-full rounded-lg bg-white/10 p-3 text-lg font-semibold text-white"
+            />
+          </label>
+          <label className="text-sm text-slate-300">
+            You keep, after wages and products (%)
+            <input
+              type="number"
+              inputMode="decimal"
+              value={m}
+              onChange={(e) => setM(Number(e.target.value) || 0)}
+              className="mt-1 w-full rounded-lg bg-white/10 p-3 text-lg font-semibold text-white"
+            />
+          </label>
+        </section>
+
         {perHome > 0 && (
           <section className="grid gap-3 rounded-2xl bg-white/5 p-3 sm:grid-cols-3 lg:col-span-4">
             <div>
@@ -83,29 +106,6 @@ function Reveal() {
             </div>
           </section>
         )}
-
-        <section className="grid grid-cols-2 gap-3 self-end rounded-2xl bg-white/5 p-3">
-          <label className="text-sm text-slate-300">
-            A typical small office pays you, per week
-            <input
-              type="number"
-              inputMode="decimal"
-              value={w}
-              onChange={(e) => setW(Number(e.target.value) || 0)}
-              className="mt-1 w-full rounded-lg bg-white/10 p-3 text-lg font-semibold text-white"
-            />
-          </label>
-          <label className="text-sm text-slate-300">
-            You keep, after wages and products (%)
-            <input
-              type="number"
-              inputMode="decimal"
-              value={m}
-              onChange={(e) => setM(Number(e.target.value) || 0)}
-              className="mt-1 w-full rounded-lg bg-white/10 p-3 text-lg font-semibold text-white"
-            />
-          </label>
-        </section>
 
         <section className="min-w-0 overflow-hidden rounded-2xl bg-white/5 p-4">
           <h2 className="text-xl font-bold">Money kept in a year, by number of contracts</h2>
