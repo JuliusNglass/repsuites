@@ -124,6 +124,15 @@ function NgPage() {
             <p className="text-sm text-muted-foreground">
               Try it on your own profile. Not right? Tell us within 14 days and we rewrite it.
             </p>
+            <p className="text-sm">
+              Not sure yet?{" "}
+              <a
+                href="/check?n=ng&src=ng"
+                className="underline underline-offset-2 font-semibold text-primary-ink"
+              >
+                Get your free Google check first
+              </a>
+            </p>
           </div>
 
           <div className="relative">
