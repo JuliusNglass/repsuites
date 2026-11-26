@@ -43,7 +43,7 @@ export const NG_INCLUDES = [
 export const NG_LESSONS: { title: string; body: string }[] = [
   {
     title: "1. Customers search before they call",
-    body: 'People type things like "tailor near me" or "best pharmacy in Ikeja" into Google. Google shows a map with 3 businesses. Those 3 get most of the calls.',
+    body: 'People type things like "tailor near me" or "best pharmacy in Ikeja" into Google. Google puts 3 businesses at the top, in the map pack. Those 3 get most of the calls.',
   },
   {
     title: "2. Google only shows what it understands",
