@@ -564,7 +564,7 @@ function CheckPage() {
       </main>
 
       <footer className="border-t border-border bg-secondary/60 py-8 text-center text-muted-foreground">
-        Accelur8 · Cwmbran, Wales ·{" "}
+        Accelur8 · 66 Paul Street, London EC2A 4NA ·{" "}
         <Link
           to="/privacy"
           className="inline-flex min-h-11 items-center underline underline-offset-2"

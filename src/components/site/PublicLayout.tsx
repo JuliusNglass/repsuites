@@ -43,7 +43,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       <footer className="border-t border-border bg-secondary/60 py-10 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <span>
-            © {new Date().getFullYear()} Accelur8 Ltd. RepSuites is a product by Accelur8.
+            © {new Date().getFullYear()} Accelur8 Ltd, 66 Paul Street, London EC2A 4NA. RepSuites is
+            a product by Accelur8.
           </span>
           <div className="flex flex-wrap justify-center gap-x-4 [&_a]:inline-flex [&_a]:items-center [&_a]:min-h-11 [&_a]:px-1">
             <Link to="/cards" className="hover:text-foreground">
