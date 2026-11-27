@@ -45,7 +45,25 @@ export async function crmFetch(path: string, init: RequestInit = {}): Promise<Re
   const method = (init.method ?? "GET").toUpperCase();
   const body = typeof init.body === "string" ? (JSON.parse(init.body) as any) : {};
   const parts = new URL(path, "https://x").pathname.split("/").filter(Boolean);
-  if (parts[0] === "calendars") return json(200, { events: [] });
+  if (parts[0] === "calendars") {
+    const q = new URL(path, "https://x").searchParams;
+    const r = await sparkopsCrm({
+      event: "crm_calls",
+      start: q.get("startTime"),
+      end: q.get("endTime"),
+    });
+    return json(r.status, r.data);
+  }
+  if (parts[0] === "invoices" && parts[1] === "text2pay" && method === "POST") {
+    const items = (body.items ?? []) as any[];
+    const monthly = /monthly/i.test(String(items[0]?.description ?? ""));
+    const r = await sparkopsCrm({
+      event: "crm_pay",
+      id: body.contactDetails?.id,
+      plan: monthly ? "monthly" : "full",
+    });
+    return json(r.status, r.data);
+  }
   if (parts[0] === "opportunities" && method === "POST") {
     const r = await sparkopsCrm({
       event: "crm_sale",
@@ -69,7 +87,11 @@ export async function crmFetch(path: string, init: RequestInit = {}): Promise<Re
   }
   if (method === "GET" && parts[1] === "search" && parts[2] === "duplicate") {
     const q = new URL(path, "https://x").searchParams;
-    const r = await sparkopsCrm({ event: "crm_find", email: q.get("email"), phone: q.get("number") });
+    const r = await sparkopsCrm({
+      event: "crm_find",
+      email: q.get("email"),
+      phone: q.get("number"),
+    });
     return json(r.status, r.data);
   }
   if (method === "POST" && parts[1] === "search") {
@@ -87,7 +109,10 @@ export async function crmFetch(path: string, init: RequestInit = {}): Promise<Re
     const r = await sparkopsCrm({ event: "crm_get", id });
     return json(r.status, r.data);
   }
-  if (method === "GET" && parts[2] === "appointments") return json(200, { events: [] });
+  if (method === "GET" && parts[2] === "appointments") {
+    const r = await sparkopsCrm({ event: "crm_calls", id });
+    return json(r.status, r.data);
+  }
   if (method === "GET" && parts[2] === "notes") {
     const r = await sparkopsCrm({ event: "crm_notes", id });
     return json(r.status, r.data);
@@ -251,7 +276,9 @@ export async function exportGhlConversations(): Promise<number> {
       headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
       body: rows,
     });
-  const next = list.length ? list[list.length - 1].sort ?? [list[list.length - 1].lastMessageDate] : null;
+  const next = list.length
+    ? (list[list.length - 1].sort ?? [list[list.length - 1].lastMessageDate])
+    : null;
   await serviceWrite("ghl_convo_export_state?on_conflict=id", "", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
