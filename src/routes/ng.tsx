@@ -14,7 +14,6 @@ import {
   ChevronDown,
   Loader2,
   Lock,
-  MapPin,
   MessageCircle,
 } from "lucide-react";
 import { startNgCheckout } from "../lib/fixit-ng.functions";
@@ -122,9 +121,9 @@ function NgPage() {
               <span className="text-primary-ink">getting all the calls?</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              It is not because they are better than you. Google shows 3 businesses on the map, and
-              most customers call one of those 3. This 2 minute video shows why they are there, why
-              you are not, and how to change it.
+              Google shows only 3 businesses at the top of the map, and those 3 get most of the
+              calls. If you are not one of them, those customers are calling someone else. Watch
+              this 2 minute video to see why.
             </p>
           </div>
 
@@ -150,13 +149,12 @@ function NgPage() {
             </div>
           </div>
           <div className="space-y-5 lg:col-start-1">
-            <MapPack />
             <button
               type="button"
               onClick={scrollToBuy}
               className="btn btn-gold btn-lg w-full sm:w-auto"
             >
-              Put me in the top 3 - {naira(diy)}
+              Fix my Google profile - {naira(diy)}
             </button>
             <p className="text-sm text-muted-foreground">
               {nairaPerDay(diy)} over a year
@@ -249,7 +247,7 @@ function NgPage() {
         className={`${showBar ? "translate-y-0" : "translate-y-full"} transition-transform duration-300 sm:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur p-3`}
       >
         <button type="button" onClick={scrollToBuy} className="btn btn-gold btn-lg w-full">
-          Put me in the top 3 - {naira(diy)}
+          Fix my Google profile - {naira(diy)}
         </button>
       </div>
     </div>
@@ -261,36 +259,6 @@ const STEPS = [
   { img: "/media/ng-04.webp", line: "Google shows 3 businesses on the map. They get the calls." },
   { img: "/media/ng-n15.webp", line: "Fix your profile and the next call can be yours." },
 ];
-
-// A simple picture of Google's map results with an empty top spot for the reader.
-function MapPack() {
-  const rows = [
-    { n: "Your business?", you: true },
-    { n: "Competitor A", you: false },
-    { n: "Competitor B", you: false },
-  ];
-  return (
-    <div
-      className="rounded-2xl border border-border bg-white shadow-md overflow-hidden"
-      aria-hidden
-    >
-      <div className="h-16 bg-[linear-gradient(135deg,#e8f0e3_25%,#dfe9f5_25%,#dfe9f5_50%,#e8f0e3_50%,#e8f0e3_75%,#dfe9f5_75%)] bg-[length:28px_28px] relative">
-        <MapPin className="h-7 w-7 text-red-500 absolute left-1/4 top-4 fill-red-200" />
-        <MapPin className="h-7 w-7 text-red-500 absolute left-1/2 top-2 fill-red-200" />
-        <MapPin className="h-7 w-7 text-red-500 absolute left-3/4 top-5 fill-red-200" />
-      </div>
-      {rows.map((r) => (
-        <div
-          key={r.n}
-          className={`flex items-center justify-between px-4 py-2.5 border-t border-border ${r.you ? "bg-gold-soft/60 animate-pulse" : ""}`}
-        >
-          <span className={`font-semibold ${r.you ? "text-primary-ink" : ""}`}>{r.n}</span>
-          <span className="text-sm text-amber-500">{"\u2605".repeat(r.you ? 5 : 4)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function Checkout({
   price,
