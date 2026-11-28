@@ -42,7 +42,7 @@ export const Route = createFileRoute("/ng")({
   validateSearch: z.object({ p: z.coerce.number().optional() }),
   head: () => ({
     meta: [
-      { title: "Get found on Google | Google Fix-it Pack | Accelur8" },
+      { title: "Why is your competitor getting all the calls? | Accelur8" },
       {
         name: "description",
         content:
@@ -118,12 +118,13 @@ function NgPage() {
               For business owners in Nigeria
             </p>
             <h1 className="text-4xl sm:text-5xl font-semibold leading-tight">
-              Customers are searching for you.{" "}
-              <span className="text-primary-ink">Are you in Google's top 3?</span>
+              Why is the business down the road{" "}
+              <span className="text-primary-ink">getting all the calls?</span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              Google shows 3 businesses on the map and they get most of the calls. Watch how to
-              become one of them.
+              It is not because they are better than you. Google shows 3 businesses on the map, and
+              most customers call one of those 3. This 2 minute video shows why they are there, why
+              you are not, and how to change it.
             </p>
           </div>
 
