@@ -17,6 +17,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { startNgCheckout } from "../lib/fixit-ng.functions";
+import { logNgCta } from "../lib/ng-cta.functions";
 import {
   NG_DFY_EXTRA_KOBO,
   NG_DIY_KOBO,
@@ -76,9 +77,40 @@ function usePrice(fromUrl?: number): NgPrice {
   return p;
 }
 
+const CTA_TEXT = { a: "Fix my Google profile", b: "Show me what to fix" } as const;
+type Cta = keyof typeof CTA_TEXT;
+
+// Button wording test: each visitor gets one wording, remembered on their phone.
+function useCta(): Cta {
+  const [v, setV] = useState<Cta>("a");
+  useEffect(() => {
+    let x: Cta = Math.random() < 0.5 ? "a" : "b";
+    try {
+      const saved = localStorage.getItem("ng-cta");
+      if (saved === "a" || saved === "b") x = saved;
+      localStorage.setItem("ng-cta", x);
+    } catch {
+      /* private mode */
+    }
+    setV(x);
+  }, []);
+  return v;
+}
+
 function NgPage() {
   const { p } = Route.useSearch();
   const price = usePrice(p);
+  const cta = useCta();
+  const log = useServerFn(logNgCta);
+  const seen = useRef(false);
+  useEffect(() => {
+    if (seen.current) return;
+    const t = setTimeout(() => {
+      seen.current = true;
+      void log({ data: { variant: cta, kind: "view", price } }).catch(() => null);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [cta, price, log]);
   const [tier, setTier] = useState<NgTier>("diy");
   useEffect(() => trackPixel("ViewContent", { content_name: "Fix-it Pack NG" }, newEventId()), []);
   const diy = NG_DIY_KOBO[price];
@@ -92,7 +124,11 @@ function NgPage() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  const scrollToBuy = () => document.getElementById("buy")?.scrollIntoView({ behavior: "smooth" });
+  const scrollToBuy = () => {
+    void log({ data: { variant: cta, kind: "click", price } }).catch(() => null);
+    goBuy();
+  };
+  const goBuy = () => document.getElementById("buy")?.scrollIntoView({ behavior: "smooth" });
 
   return (
     <div className="min-h-screen bg-background text-foreground text-base leading-relaxed">
@@ -154,7 +190,7 @@ function NgPage() {
               onClick={scrollToBuy}
               className="btn btn-gold btn-lg w-full sm:w-auto"
             >
-              Fix my Google profile - {naira(diy)}
+              {CTA_TEXT[cta]} - {naira(diy)}
             </button>
             <p className="text-sm text-muted-foreground">
               {nairaPerDay(diy)} over a year
@@ -224,7 +260,7 @@ function NgPage() {
               minutes.
             </p>
           </div>
-          <Checkout price={price} tier={tier} setTier={setTier} />
+          <Checkout price={price} tier={tier} setTier={setTier} cta={cta} />
         </section>
 
         <section className="space-y-3 max-w-3xl">
@@ -247,7 +283,7 @@ function NgPage() {
         className={`${showBar ? "translate-y-0" : "translate-y-full"} transition-transform duration-300 sm:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur p-3`}
       >
         <button type="button" onClick={scrollToBuy} className="btn btn-gold btn-lg w-full">
-          Fix my Google profile - {naira(diy)}
+          {CTA_TEXT[cta]} - {naira(diy)}
         </button>
       </div>
     </div>
@@ -264,11 +300,14 @@ function Checkout({
   price,
   tier,
   setTier,
+  cta,
 }: {
   price: NgPrice;
   tier: NgTier;
   setTier: (t: NgTier) => void;
+  cta: Cta;
 }) {
+  const log = useServerFn(logNgCta);
   const start = useServerFn(startNgCheckout);
   const [f, setF] = useState({ name: "", phone: "", email: "", business: "" });
   const [busy, setBusy] = useState<null | "paystack" | "stripe">(null);
@@ -282,6 +321,7 @@ function Checkout({
       return;
     }
     setBusy(provider);
+    void log({ data: { variant: cta, kind: "start", price } }).catch(() => null);
     trackPixel("InitiateCheckout", { currency: "NGN", value: total / 100 }, newEventId());
     const r = await start({
       data: {
