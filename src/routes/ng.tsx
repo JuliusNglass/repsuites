@@ -127,6 +127,27 @@ function NgPage() {
             </p>
           </div>
 
+          <div
+            ref={heroEnd}
+            className="relative mt-10 mb-2 lg:my-0 lg:col-start-2 lg:row-start-1 lg:row-span-2"
+          >
+            <div className="absolute -top-9 left-2 flex items-center gap-2 text-primary-ink font-semibold animate-bounce">
+              <span className="rounded-full bg-gold-soft px-3 py-1 text-sm">Watch this first</span>
+              <ArrowDown className="h-5 w-5" aria-hidden />
+            </div>
+            <div className="rounded-2xl overflow-hidden ring-2 ring-gold bg-black aspect-video shadow-xl">
+              <video
+                className="w-full h-full"
+                src={NG_VSL}
+                poster={POSTER}
+                controls
+                playsInline
+                preload="metadata"
+              >
+                <track kind="captions" />
+              </video>
+            </div>
+          </div>
           <div className="space-y-5 lg:col-start-1">
             <MapPack />
             <button
@@ -150,28 +171,6 @@ function NgPage() {
               Not sure? Get a free Google check first
               <ArrowRight className="h-5 w-5" aria-hidden />
             </a>
-          </div>
-
-          <div
-            ref={heroEnd}
-            className="relative mt-8 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2"
-          >
-            <div className="absolute -top-9 left-2 flex items-center gap-2 text-primary-ink font-semibold animate-bounce">
-              <span className="rounded-full bg-gold-soft px-3 py-1 text-sm">Watch this first</span>
-              <ArrowDown className="h-5 w-5" aria-hidden />
-            </div>
-            <div className="rounded-2xl overflow-hidden ring-2 ring-gold bg-black aspect-video shadow-xl">
-              <video
-                className="w-full h-full"
-                src={NG_VSL}
-                poster={POSTER}
-                controls
-                playsInline
-                preload="metadata"
-              >
-                <track kind="captions" />
-              </video>
-            </div>
           </div>
         </section>
 
