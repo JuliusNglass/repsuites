@@ -5,7 +5,7 @@
 // Branded Accelur8, no personal names. No em dashes (AGENTS.md).
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import {
   ArrowDown,
@@ -83,6 +83,16 @@ function NgPage() {
   const [tier, setTier] = useState<NgTier>("diy");
   useEffect(() => trackPixel("ViewContent", { content_name: "Fix-it Pack NG" }, newEventId()), []);
   const diy = NG_DIY_KOBO[price];
+  const heroEnd = useRef<HTMLDivElement>(null);
+  const [showBar, setShowBar] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = heroEnd.current;
+      setShowBar(!!el && el.getBoundingClientRect().bottom < 0);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const scrollToBuy = () => document.getElementById("buy")?.scrollIntoView({ behavior: "smooth" });
 
   return (
@@ -90,7 +100,11 @@ function NgPage() {
       <header className="border-b border-border/70">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <span className="font-semibold tracking-tight text-lg">Accelur8</span>
-          <button type="button" onClick={scrollToBuy} className="btn btn-gold">
+          <button
+            type="button"
+            onClick={scrollToBuy}
+            className="btn btn-gold hidden sm:inline-flex"
+          >
             Fix my Google
           </button>
         </div>
@@ -98,8 +112,8 @@ function NgPage() {
 
       <main className="max-w-5xl mx-auto px-4 py-6 sm:py-10 space-y-14 pb-28 sm:pb-10">
         {/* Above the fold: one question, a picture of the map, the video, one button */}
-        <section className="grid lg:grid-cols-2 gap-6 lg:gap-10 items-center">
-          <div className="space-y-5">
+        <section className="grid lg:grid-cols-2 gap-x-10 gap-y-6 items-center">
+          <div className="space-y-3 lg:col-start-1">
             <p className="inline-block rounded-full bg-gold-soft px-3 py-1 text-sm font-semibold text-primary-ink">
               For business owners in Nigeria
             </p>
@@ -107,6 +121,13 @@ function NgPage() {
               Customers are searching for you.{" "}
               <span className="text-primary-ink">Are you in Google's top 3?</span>
             </h1>
+            <p className="text-lg text-muted-foreground">
+              Google shows 3 businesses on the map and they get most of the calls. Watch how to
+              become one of them.
+            </p>
+          </div>
+
+          <div className="space-y-5 lg:col-start-1">
             <MapPack />
             <button
               type="button"
@@ -131,7 +152,10 @@ function NgPage() {
             </a>
           </div>
 
-          <div className="relative mt-8 lg:mt-0">
+          <div
+            ref={heroEnd}
+            className="relative mt-8 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2"
+          >
             <div className="absolute -top-9 left-2 flex items-center gap-2 text-primary-ink font-semibold animate-bounce">
               <span className="rounded-full bg-gold-soft px-3 py-1 text-sm">Watch this first</span>
               <ArrowDown className="h-5 w-5" aria-hidden />
@@ -220,8 +244,10 @@ function NgPage() {
         <p className="text-center text-sm text-muted-foreground">Accelur8</p>
       </main>
 
-      {/* Sticky button on phones */}
-      <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur p-3">
+      {/* Sticky button on phones, only once the reader has seen the video and the offer */}
+      <div
+        className={`${showBar ? "translate-y-0" : "translate-y-full"} transition-transform duration-300 sm:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-background/95 backdrop-blur p-3`}
+      >
         <button type="button" onClick={scrollToBuy} className="btn btn-gold btn-lg w-full">
           Put me in the top 3 - {naira(diy)}
         </button>
